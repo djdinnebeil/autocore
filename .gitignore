@@ -1,0 +1,41 @@
+# Build outputs
+bin/
+obj/
+build/
+dist/
+out/
+Debug/
+Release/
+x64/
+x86/
+
+# Compiled binaries and debug symbols
+*.exe
+*.pdb
+*.obj
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# Editor/IDE settings
+.vscode/
+.idea/
+
+# Environment/secrets
+.env
+.env.*
+
+# Local Spotify secrets / machine-specific config
+**/sp_codes.rc
+**/sp_devices.rc
+**/sp_tokens.rc
+**/tokens.rc
+tools/**/*.dll
+
+*.db
