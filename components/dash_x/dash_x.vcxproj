@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{523fac93-9ca7-49e0-b374-9c7a0e985270}</ProjectGuid>
-    <RootNamespace>wake</RootNamespace>
+    <ProjectGuid>{f6e3eda2-3ab6-4a24-b568-bb56b70595e8}</ProjectGuid>
+    <RootNamespace>dashx</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -72,11 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\dist\</OutDir>
-    <IntDir>C:\DJ\Programming\Project Files\Auto Core\$(TargetName)\</IntDir>
-    <TargetName>wake</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <IntDir>C:\DJ\Programming\Project Files\Auto Core\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -128,33 +124,35 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalIncludeDirectories>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <EnableModules>true</EnableModules>
+      <BuildStlModules>true</BuildStlModules>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(SolutionDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>auto_core.lib; $(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\shared\core_runtime\base.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\clipboard.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\clock.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\config.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\keyboard.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\logger.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\logger_c.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\print.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\thread.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\utils.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\visual.ixx" />
-    <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
-    <ClCompile Include="wake_x.cxx" />
-    <ClCompile Include="wake_x.ixx" />
+    <ClCompile Include="..\..\shared\imports\base.ixx" />
+    <ClCompile Include="..\..\shared\imports\clipboard.ixx" />
+    <ClCompile Include="..\..\shared\imports\clock.ixx" />
+    <ClCompile Include="..\..\shared\imports\config.ixx" />
+    <ClCompile Include="..\..\shared\imports\keyboard.ixx" />
+    <ClCompile Include="..\..\shared\imports\logger.ixx" />
+    <ClCompile Include="..\..\shared\imports\logger_c.ixx" />
+    <ClCompile Include="..\..\shared\imports\print.ixx" />
+    <ClCompile Include="..\..\shared\imports\thread.ixx" />
+    <ClCompile Include="..\..\shared\imports\utils.ixx" />
+    <ClCompile Include="..\..\shared\imports\visual.ixx" />
+    <ClCompile Include="dash_x.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\assets\resource.rc" />

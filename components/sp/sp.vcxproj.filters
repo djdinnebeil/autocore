@@ -15,55 +15,52 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="itunes_x.cxx">
+    <ClCompile Include="sp_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="itunes_c.ixx">
+    <ClCompile Include="sp_c.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="itunes_t.ixx">
+    <ClCompile Include="sp_t.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="itunes_x.ixx">
+    <ClCompile Include="sp_x.ixx">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="slash_i.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\base.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\clipboard.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\clock.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\config.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\keyboard.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\logger.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\logger_c.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\print.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\thread.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\utils.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\core_runtime\visual.ixx">
-      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\base.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\clipboard.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\clock.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\config.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\keyboard.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\logger.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\logger_c.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\print.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\thread.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\utils.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\imports\visual.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

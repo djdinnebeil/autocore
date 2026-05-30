@@ -116,7 +116,7 @@ Runtime configuration files belong in `dist/config`. These files control runtime
 | `itunes.ini` | Defines the number of tabs to copy from iTunes. |
 | `logger.ini` | Enables enhanced debugging by forwarding log statements to the console window. |
 | `runtime.ini` | Controls whether runtime configuration is enabled and selects logging behavior. |
-| `runtime_map.ini` | Stores runtime key mappings used when runtime configuration is enabled. If runtime mapping is disabled, mappings are hardcoded and this file is ignored. |
+| `keymap.ini` | Stores runtime key mappings used when runtime configuration is enabled. If runtime mapping is disabled, mappings are hardcoded and this file is ignored. |
 | `server.ini` | Stores local web server settings, such as the port number. |
 | `star.ini` | Stores journal-related settings. |
 | `taskbar.ini` | Lists the first 10 programs pinned to the user's taskbar. |
@@ -130,7 +130,7 @@ The Dash folder acts as a convenience layer for modifying runtime mappings.
 | File | Purpose |
 | --- | --- |
 | `dash_x.ini` | A hard link to `dash_x.ixx`. Contains functions tagged with `\runtime`. When opened in VS Code, this makes runtime functions globally accessible for IntelliSense autocomplete. |
-| `runtime_map.ini` | A hard link to `dist/config/runtime_map.ini`. Contains the active key-to-function mappings defined by the user. |
+| `keymap.ini` | A hard link to `dist/config/keymap.ini`. Contains the active key-to-function mappings defined by the user. |
 
 This setup enables VS Code to provide autocomplete for user-defined runtime functions by opening `dash_x.ini`, while still linking directly to the active runtime mapping file.
 
@@ -152,7 +152,7 @@ The `shared` folder contains source code for the Auto Core shared runtime librar
 
 To make a function available for runtime configuration, tag it with `\runtime`.
 
-After tagging the function, run `dash_x.exe` to update the runtime function list. This ensures the new function is recognized and available for use in `runtime_map.ini`.
+After tagging the function, run `dash_x.exe` to update the runtime function list. This ensures the new function is recognized and available for use in `keymap.ini`.
 
 Runtime configuration must be enabled in `dist/config/runtime.ini` for runtime mappings to take effect.
 
@@ -371,6 +371,21 @@ $(AUTOCORE_BUILD_DIR)\assets\resource.rc
 ```
 
 ---
+
+### Visual Studio Files
+The `.vs` folder for any project should be set as a symbolic link that points to:
+`C:\DJ\Programming\Project Files\Auto Core\.vs`
+
+**Command Prompt:**
+```sh
+cd $(SolutionDir)
+mklink /D .\.vs "C:\DJ\Programming\Project Files\Auto Core\.vs"
+```
+
+Set the intermediate directory:
+C:\DJ\Programming\Project Files\Auto Core\$(ProjectName)\
+
+
 
 ## Spotify Component
 

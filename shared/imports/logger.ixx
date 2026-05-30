@@ -25,7 +25,7 @@ export string session_start;
 export ofstream main_log_stream;
 export string main_log_name;
 export string logger_datestamp;
-export string log_directory = R"(C:\DJ\Programming\auto_core_log\)";
+export string log_directory = config.logger_directory;
 
 export {
     DLL_API void logg(const string& msg);

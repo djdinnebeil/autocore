@@ -2,7 +2,7 @@
  * \file dash.ixx
  * \brief This module is used to initialize runtime configuration, if enabled.
  *
- * This module reads configuration settings from the runtime_map.ini file and sets
+ * This module reads configuration settings from the keymap.ini file and sets
  * action mappings based on the configuration. It is only used if runtime configuration
  * is enabled.
  */

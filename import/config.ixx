@@ -19,7 +19,6 @@ export module config;
 import base;
 import <Windows.h>;
 
-const wstring program_title = L"Auto Core";
 export wstring get_executable_directory();
 
 /**
@@ -31,6 +30,7 @@ public:
     string configuration_log;
     wstring current_directory;
     wstring program_title;
+    string logger_directory;
     bool runtime_enabled;
     bool runtime_debugger;
     bool runtime_logger;

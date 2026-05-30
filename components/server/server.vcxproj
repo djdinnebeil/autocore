@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{18c61b6f-0094-4f69-9917-f068b67e3efb}</ProjectGuid>
-    <RootNamespace>slash</RootNamespace>
+    <ProjectGuid>{32e7b910-fdd5-4f95-9f4f-72b7e3c8713a}</ProjectGuid>
+    <RootNamespace>server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -73,7 +73,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\dist\</OutDir>
     <IntDir>C:\DJ\Programming\Project Files\Auto Core\$(TargetName)\</IntDir>
-    <TargetName>slash</TargetName>
+    <TargetName>server</TargetName>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
@@ -138,24 +139,29 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(SolutionDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>auto_core.lib;tag.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>civetweb-cpp.lib;civetweb.lib;auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <ProgramDatabaseFile>$(SolutionDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\shared\core_runtime\base.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\clipboard.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\clock.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\config.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\keyboard.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\logger.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\logger_c.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\print.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\thread.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\utils.ixx" />
-    <ClCompile Include="..\..\shared\core_runtime\visual.ixx" />
-    <ClCompile Include="slash_x.cxx" />
+    <ClCompile Include="..\..\shared\imports\base.ixx" />
+    <ClCompile Include="..\..\shared\imports\clipboard.ixx" />
+    <ClCompile Include="..\..\shared\imports\clock.ixx" />
+    <ClCompile Include="..\..\shared\imports\config.ixx" />
+    <ClCompile Include="..\..\shared\imports\keyboard.ixx" />
+    <ClCompile Include="..\..\shared\imports\logger.ixx" />
+    <ClCompile Include="..\..\shared\imports\logger_c.ixx" />
+    <ClCompile Include="..\..\shared\imports\print.ixx" />
+    <ClCompile Include="..\..\shared\imports\thread.ixx" />
+    <ClCompile Include="..\..\shared\imports\utils.ixx" />
+    <ClCompile Include="..\..\shared\imports\visual.ixx" />
+    <ClCompile Include="server_x.cxx" />
+    <ClCompile Include="server_x.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\assets\resource.rc" />

@@ -29,6 +29,9 @@ string dash_x_path;
 string import_path;
 string src_path;
 string build_project_cmd;
+string auto_core_exe_path;
+string runtime_map_hardlink_path;
+string runtime_map_src_path;
 
 void set_project_paths() {
     ifstream dash_x_file(R"(.\config\dash_x.ini)");
@@ -41,13 +44,48 @@ void set_project_paths() {
     open_bracket = line.find('[');
     close_bracket = line.find(']');
     build_project_cmd = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+    getline(dash_x_file, line);
+    open_bracket = line.find('[');
+    close_bracket = line.find(']');
+    auto_core_exe_path = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
     dash_x_file.close();
     dash_x_path = project_path + R"(\import\dash_x.ixx)";
     import_path = project_path + R"(\import)";
     src_path = project_path + R"(\src)";
+    runtime_map_hardlink_path = auto_core_exe_path + R"(\keymap\keymap.ini)";
+    runtime_map_src_path = auto_core_exe_path + R"(\config\keymap.ini)";
+    cout << auto_core_exe_path;
 }
 
+void create_hard_link()
+{
+    fs::path hardlink_path = runtime_map_hardlink_path;
+    fs::path source_path   = runtime_map_src_path;
 
+    std::error_code ec;
+
+    // If .\dash\runtime_map.ini already exists, do nothing.
+    if (fs::exists(hardlink_path))
+    {
+        return;
+    }
+
+    if (ec)
+    {
+        throw runtime_error(
+            "Failed to check existing runtime_map.ini: " + ec.message());
+    }
+
+    if (!CreateHardLinkW(hardlink_path.c_str(), source_path.c_str(), nullptr))
+    {
+        DWORD err = GetLastError();
+
+        throw std::system_error(
+            static_cast<int>(err),
+            std::system_category(),
+            "CreateHardLinkW failed");
+    }
+}
 
 /**
  * \brief Extracts the module description comment from the dash_x.ixx file.
@@ -261,12 +299,15 @@ int main(int argc, char* argv[]) {
         << "}\n";
     runtime_file.close();
 
-    string destination_path = R"(.\dash\runtime_commands_for_intellisense.ixx)";
+    fs::create_directory("keymap");
+    string destination_path = R"(.\keymap\keymap_commands.ixx)";
     std::filesystem::copy_file(
         dash_x_path,
         destination_path,
         fs::copy_options::overwrite_existing
     );
+
+    create_hard_link();
  
     if (argc < 2) {
         cout << "Finished building dash_x" << endl;

@@ -33,8 +33,19 @@ Assuming `C:\DJ\My Folder\Auto Core\import\example_script.ixx` contains the \har
 import base;
 import print_b;
 import <Windows.h>;
+import <filesystem>;
 
-const string hard_link_directory = R"(C:\DJ\My Folder\Auto Core\shared\include\)";
+string shared_directory_path;
+
+void get_shared_directory_path() {
+    ifstream path_file(R"(.\shared_directory.ini)");
+    string line;
+    getline(path_file, line);
+    auto open_bracket = line.find('[');
+    auto close_bracket = line.find(']');
+    shared_directory_path = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+    path_file.close();
+}
 
 /**
  * \brief Creates a hard link to the specified file.
@@ -47,7 +58,7 @@ bool create_hard_link(const string& filepath) {
     if (last_backslash_pos != string::npos) {
         link_name = filepath.substr(last_backslash_pos + 1);
     }
-    string hard_link_filepath = hard_link_directory + link_name;
+    string hard_link_filepath = shared_directory_path + link_name;
     if (CreateHardLinkA(hard_link_filepath.c_str(), filepath.c_str(), NULL)) {
         print("Hard link created successfully.");
         return true;
@@ -75,9 +86,13 @@ void parse_for_hard_link(const string& filepath) {
 }
 
 int main() {
-    string path = R"(C:\DJ\My Folder\Auto Core\import)";
-    fs::create_directory(hard_link_directory);
+    get_shared_directory_path();
+    fs::path path = R"(..\..\import)";
+    fs::create_directory(shared_directory_path);
     try {
+        print("Current path: {}", fs::current_path().string());
+        print("Import path: {}", fs::absolute(path).string());
+
         if (fs::is_directory(path)) {
             for (const auto& entry : fs::directory_iterator(path)) {
                 if (entry.is_regular_file()) {
@@ -92,6 +107,7 @@ int main() {
     catch (const fs::filesystem_error& e) {
         print("{}", e.what());
     }
+
     print("Press any key to exit.");
     cin.get();
     return 0;

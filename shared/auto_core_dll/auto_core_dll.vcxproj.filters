@@ -39,37 +39,37 @@
     <ClCompile Include="..\..\src\logger_c.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\base.ixx">
+    <ClCompile Include="..\imports\base.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\clipboard.ixx">
+    <ClCompile Include="..\imports\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\clock.ixx">
+    <ClCompile Include="..\imports\clock.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\config.ixx">
+    <ClCompile Include="..\imports\config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\keyboard.ixx">
+    <ClCompile Include="..\imports\keyboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\logger.ixx">
+    <ClCompile Include="..\imports\logger.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\logger_c.ixx">
+    <ClCompile Include="..\imports\logger_c.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\print.ixx">
+    <ClCompile Include="..\imports\print.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\thread.ixx">
+    <ClCompile Include="..\imports\thread.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\utils.ixx">
+    <ClCompile Include="..\imports\utils.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\core_runtime\visual.ixx">
+    <ClCompile Include="..\imports\visual.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

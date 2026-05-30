@@ -1,8 +1,7 @@
 # Build outputs
 bin/
-obj/
 build/
-dist/
+obj/
 out/
 Debug/
 Release/
@@ -35,7 +34,6 @@ Desktop.ini
 **/sp_codes.rc
 **/sp_devices.rc
 **/sp_tokens.rc
-**/tokens.rc
 tools/**/*.dll
 
 *.db

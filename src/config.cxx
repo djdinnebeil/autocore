@@ -1,5 +1,6 @@
 module config;
 import base;
+import utils;
 import <Windows.h>;
 
 /**
@@ -34,14 +35,14 @@ wstring get_executable_directory() {
     }
 }
 
-string get_program_title() {
-    ifstream clock_file(R"(.\config\dash_x.ini)");
+wstring get_program_title() {
+    ifstream app_file(R"(.\config\app.ini)");
     string line;
-    getline(clock_file, line);
+    getline(app_file, line);
     auto open_bracket = line.find('[');
     auto close_bracket = line.find(']');
     string value = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
-    return value;
+    return str_to_wstr(value);
     
 }
 /**
@@ -52,7 +53,7 @@ string get_program_title() {
  */
 Config::Config()
     : current_directory(get_executable_directory()),
-    program_title(::program_title),
+    program_title(get_program_title()),
     runtime_enabled(false),
     start_server(false),
     configuration_log("Configuration log:\n")
@@ -140,6 +141,10 @@ void Config::load_logger_config() {
     auto close_bracket = line.find(']');
     string value = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
     send_logg_to_cout = value == "true";
+    getline(logger_file, line);
+    open_bracket = line.find('[');
+    close_bracket = line.find(']');
+    logger_directory = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
     logger_file.close();
     configuration_log += "logger values set\n";
 }

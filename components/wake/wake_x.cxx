@@ -28,7 +28,7 @@ void end_wake() {
  */
 void log_last_wake() {
     wake_logger.logg("Checking last wake log at {}", get_timestamp_with_seconds());
-    string wake_directory = R"(C:\DJ\Programming\auto_core_log\wake\)";
+    string wake_directory = config.logger_directory + R"(wake\)";
     fs::create_directories(wake_directory);
     static string previous_last_wake_file = wake_directory + "previous_wake.log";
     static string current_last_wake_file = wake_directory + "current_wake.log";

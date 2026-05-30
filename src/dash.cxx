@@ -5,7 +5,7 @@ import dash_x;
 import config;
 import <Windows.h>;
 
-// Internal helper to parse a runtime_map.ini line
+// Internal helper to parse a keymap.ini line
 static bool parse_line(string_view line, string_view& key_string, string_view& primary, string_view& secondary) {
     size_t opening_bracket = line.find('[');
     size_t closing_bracket = line.find(']');
@@ -34,11 +34,11 @@ static bool parse_line(string_view line, string_view& key_string, string_view& p
 /**
  * \brief Parses the runtime configuration file and sets the action map.
  *
- * This function reads the runtime_map.ini file, parses the configuration settings,
+ * This function reads the keymap.ini file, parses the configuration settings,
  * and sets the action map for the numpad keys based on the parsed configuration.
  */
 void parse_and_set_action_map() {
-    ifstream config_file(R"(.\config\runtime_map.ini)");
+    ifstream config_file(R"(.\config\keymap.ini)");
     string line;
     oss log_buffer;
     bool log_buffer_empty = true;
