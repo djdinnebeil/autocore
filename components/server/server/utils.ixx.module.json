@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "server\\utils.ixx.obj",
+            "outputs": [
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\vc143.pdb",
+                "server\\",
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\utils.ixx.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "utils",
+                    "source-path": "c:\\dj\\my folder\\auto core\\app\\import\\utils.ixx",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "base"
+                },
+                {
+                    "logical-name": "Windows.h",
+                    "source-path": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\Windows.h",
+                    "lookup-method": "include-angle",
+                    "unique-on-source-path": true
+                }
+            ]
+        }
+    ]
+}

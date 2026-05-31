@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "server\\print.ixx.obj",
+            "outputs": [
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\vc143.pdb",
+                "server\\",
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\print.ixx.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "print",
+                    "source-path": "c:\\dj\\my folder\\auto core\\app\\import\\print.ixx",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "base"
+                },
+                {
+                    "logical-name": "config"
+                },
+                {
+                    "logical-name": "logger"
+                },
+                {
+                    "logical-name": "clipboard"
+                },
+                {
+                    "logical-name": "Windows.h",
+                    "source-path": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\Windows.h",
+                    "lookup-method": "include-angle",
+                    "unique-on-source-path": true
+                }
+            ]
+        }
+    ]
+}

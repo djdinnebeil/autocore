@@ -31,11 +31,11 @@ The main application source lives in `src`, shared modules and the Auto Core run
 
 | Component | Purpose                                 | Executable Name | Notes |
 |-----------|-----------------------------------------|------------------|-------|
-| `dash`    | Runtime mapping and developer overlay   | `dash_x.exe`     | Supports IntelliSense-assisted runtime mapping |
-| `itunes`  | Controls iTunes                         | `itunes.exe`     | Uses COM |
+| `dash_x`  | Runtime mapping and developer overlay   | `dash_x.exe`     | Supports IntelliSense-assisted runtime mapping |
+| `itunes`  | iTunes controller                       | `itunes.exe`     | Uses COM |
 | `server`  | Hosts a local file server               | `server.exe`     | Simple HTTP server |
 | `slash`   | Empties the recycle bin                 | `slash.exe`      | Prints deleted items |
-| `sp`      | Tracks Spotify history                  | `sp.exe`         | Stores play history |
+| `sp`      | Spotify controller                      | `sp.exe`         | Stores play history |
 | `wake`    | Tracks system wake events               | `wake.exe`       | Logs resume timestamps |
 
 
@@ -58,16 +58,16 @@ For example, the main application may use `sp.cxx`, while the Spotify component 
 ```text
 Auto Core/
 ├─ assets/             Graphical resources, manifests, icons, and shared resource files.
-├─ build/              CMake configuration and build-generation files.
-├─ core/               Core Auto Core components.
+├─ components/         Auto Core components.
 ├─ dist/               Portable runtime output, including `.exe`, `.dll`, and user-facing runtime files.
 │  ├─ config/          Configuration files.
-│  ├─ dash/            Runtime configuration and developer-facing runtime mapping files.
+│  ├─ crash/*          Optional crash-reporting files.
+|  ├─ debug/           `auto_core.pdb` for debugging.
+│  ├─ keymap/          Keymap configuration files.
 │  ├─ notepad/         User-custom strings.
 │  ├─ server/          Local server setup files.
 │  ├─ sun/             Taskbar shortcut files.
-│  ├─ star/            User-specific runtime data, such as login tokens and journal databases.
-│  └─ visual/          Runtime debugging symbols, such as copied `.pdb` files.
+│  ├─ star/            User-specific runtime data, such as login tokens and journal databases.            
 ├─ docs/               Project documentation.
 ├─ import/             Main program modules.
 ├─ lib/                External libraries and `auto_core.lib`.
@@ -75,8 +75,9 @@ Auto Core/
 ├─ src/                Main application source code.
 ├─ tests/              Testing scripts and test projects.
 ├─ tools/              Developer-facing utilities for expanding project functionality.
-├─ utils/              Helper scripts, such as scripts for creating a new journaling database.
-└─ visual/             Visual Studio-related files, such as `.sln` files and development-time debug files.
+├─ utils/              Helper scripts.
+└─ vs/                 Visual Studio-related files, such as `.sln` files.
+* `dist/crash/` is created only when Auto Core records a crash. If `crash.log` exists, Auto Core reports the previous crash to the user.
 ```
 
 ### Outside the Project Folder
@@ -87,32 +88,13 @@ log/                   Debugging and operational logging.
 
 Keeping logs outside the project folder helps preserve portability and prevents local runtime output from being mixed with source-controlled project files.
 
----
-
-## Architecture Notes
-
-The current structure is a strong foundation for a portable Windows utility project. It separates development files from runtime files and keeps the portable application package centered around `dist`.
-
-| Area | Recommendation |
-| --- | --- |
-| `dist` | Treat this as the portable application package. Anything required to run the app belongs here. Source files and development-only files should remain outside it. |
-| `dist/star` | Treat login tokens, journal databases, and other user-specific files as runtime data. Do not commit real user data to source control. Include only templates or placeholder files when needed. |
-| `build` | If this folder contains source-controlled CMake files, the name is acceptable. If it also contains generated output, keep generated files under a clear subfolder such as `build/obj/`. |
-| `lib` | Consider separating generated Auto Core libraries and third-party libraries if the project grows, such as `lib/auto_core/` and `lib/external/`. |
-| `tools` and `utils` | Keep both if they serve different purposes. Use `tools` for developer-facing utilities and `utils` for smaller helper scripts used by the application or build process. |
-| `visual` | Keeping Visual Studio files in a dedicated folder is reasonable. Generated `.pdb` files should stay out of source control unless intentionally copied into `dist/visual` for runtime debugging. |
-
-The most important rule is to keep source files, build artifacts, runtime distribution files, logs, and user-specific data clearly separated.
-
----
-
 ## Runtime Configuration
 
 Runtime configuration files belong in `dist/config`. These files control runtime behavior, logging, taskbar mappings, local server settings, journaling settings, and optional runtime key mapping.
 
 | File | Purpose |
 | --- | --- |
-| `clock.ini` | Defines `end_of_day`, such as `00:59` or `24:59`. |
+| `clock.ini` | Defines `end_of_day`, such as `00:59` vs. `24:59`. |
 | `itunes.ini` | Defines the number of tabs to copy from iTunes. |
 | `logger.ini` | Enables enhanced debugging by forwarding log statements to the console window. |
 | `runtime.ini` | Controls whether runtime configuration is enabled and selects logging behavior. |
@@ -123,13 +105,13 @@ Runtime configuration files belong in `dist/config`. These files control runtime
 
 ---
 
-## Dash Runtime Mapping
+## Keymap Commands
 
-The Dash folder acts as a convenience layer for modifying runtime mappings.
+The Keymap folder acts as a convenience layer for modifying runtime mappings.
 
 | File | Purpose |
 | --- | --- |
-| `dash_x.ini` | A hard link to `dash_x.ixx`. Contains functions tagged with `\runtime`. When opened in VS Code, this makes runtime functions globally accessible for IntelliSense autocomplete. |
+| `keymap_commands.ixx` | A hard link to `dash_x.ixx`. Contains functions tagged with `\runtime`. When opened in VS Code, this makes runtime functions globally accessible for IntelliSense autocomplete. |
 | `keymap.ini` | A hard link to `dist/config/keymap.ini`. Contains the active key-to-function mappings defined by the user. |
 
 This setup enables VS Code to provide autocomplete for user-defined runtime functions by opening `dash_x.ini`, while still linking directly to the active runtime mapping file.
@@ -142,8 +124,8 @@ The `shared` folder contains source code for the Auto Core shared runtime librar
 
 | Folder or Module | Purpose |
 | --- | --- |
-| `dll_source_code` | Contains source code for `auto_core.lib` and the runtime `.dll`. |
-| `core_runtime` | Contains shared header files and shared modules. Modules shared through hard links are marked with `\hardlink`. |
+| `auto_core_dll` | Contains source code for `auto_core.lib` and the runtime `.dll`. |
+| `imports` | Contains shared header files and shared modules. Modules shared through hard links are marked with `\hardlink`. |
 | `pipes_x` | Contains the pipe module used by components that need IPC. |
 
 ---
@@ -160,9 +142,11 @@ Runtime configuration must be enabled in `dist/config/runtime.ini` for runtime m
 
 ## Adding a New Component
 
-To add a new component to Auto Core, create the project inside the `core` directory.
+To add a new component to Auto Core, create the project inside the `components` directory.
 
-Auto Core should avoid hardcoded absolute paths such as `C:\Users\Name\...` or `C:\DJ\...`. Instead, component projects should use the `AUTOCORE_BUILD_DIR` environment variable.
+Auto Core should be configured to use an environment variable 
+
+avoid hardcoded absolute paths such as `C:\Users\Name\...` or `C:\Name\...`. Instead, component projects should use the `AUTOCORE_BUILD_DIR` environment variable.
 
 ---
 

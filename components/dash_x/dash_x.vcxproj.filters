@@ -18,37 +18,37 @@
     <ClCompile Include="dash_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\base.ixx">
+    <ClCompile Include="..\..\app\import\base.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\clipboard.ixx">
+    <ClCompile Include="..\..\app\import\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\clock.ixx">
+    <ClCompile Include="..\..\app\import\clock.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\config.ixx">
+    <ClCompile Include="..\..\app\import\config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\keyboard.ixx">
+    <ClCompile Include="..\..\app\import\keyboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\logger.ixx">
+    <ClCompile Include="..\..\app\import\logger.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\logger_c.ixx">
+    <ClCompile Include="..\..\app\import\logger_c.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\print.ixx">
+    <ClCompile Include="..\..\app\import\print.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\thread.ixx">
+    <ClCompile Include="..\..\app\import\thread.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\utils.ixx">
+    <ClCompile Include="..\..\app\import\utils.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\imports\visual.ixx">
+    <ClCompile Include="..\..\app\import\visual.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,0 +1,47 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "server\\visual.ixx.obj",
+            "outputs": [
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\vc143.pdb",
+                "server\\",
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\visual.ixx.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "visual",
+                    "source-path": "c:\\dj\\my folder\\auto core\\app\\import\\visual.ixx",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "base"
+                },
+                {
+                    "logical-name": "config"
+                },
+                {
+                    "logical-name": "clock"
+                },
+                {
+                    "logical-name": "logger"
+                },
+                {
+                    "logical-name": "clipboard"
+                },
+                {
+                    "logical-name": "print"
+                },
+                {
+                    "logical-name": "utils"
+                },
+                {
+                    "logical-name": "keyboard"
+                }
+            ]
+        }
+    ]
+}

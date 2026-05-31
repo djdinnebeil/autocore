@@ -1,0 +1,27 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\dj\\my folder\\auto core\\app\\import\\base.ixx",
+        "ProvidedModule": "base",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": [
+            {
+                "Header": "c:\\program files\\microsoft visual studio\\2022\\community\\vc\\tools\\msvc\\14.40.33807\\include\\array",
+                "BMI": "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\array_524963FB1BE72DE2.ifc.dt"
+            },
+            {
+                "Header": "c:\\program files\\microsoft visual studio\\2022\\community\\vc\\tools\\msvc\\14.40.33807\\include\\condition_variable",
+                "BMI": "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\condition_variable_2EAFF0F8B88BA7D3.ifc.dt"
+            },
+            {
+                "Header": "c:\\program files\\microsoft visual studio\\2022\\community\\vc\\tools\\msvc\\14.40.33807\\include\\format",
+                "BMI": "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\format_18E3C7CE46569FD6.ifc.dt"
+            },
+            {
+                "Header": "c:\\program files\\microsoft visual studio\\2022\\community\\vc\\tools\\msvc\\14.40.33807\\include\\fstream",
+                "BMI": "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\fstream_F66B2CA67445A41D.ifc.dt"
+            }
+        ]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "server\\unordered_map_62BWF9VH6Z4C3GTG.obj",
+            "outputs": [
+                "C:\\DJ\\My Folder\\Auto Core\\components\\server\\server\\vc143.pdb",
+                "server\\unordered_map_62BWF9VH6Z4C3GTG.module.json",
+                "server\\unordered_map_62BWF9VH6Z4C3GTG.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\unordered_map",
+                    "source-path": "c:\\program files\\microsoft visual studio\\2022\\community\\vc\\tools\\msvc\\14.40.33807\\include\\unordered_map",
+                    "lookup-method": "absolute"
+                }
+            ],
+            "requires": []
+        }
+    ]
+}

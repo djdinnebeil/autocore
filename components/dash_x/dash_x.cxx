@@ -49,9 +49,9 @@ void set_project_paths() {
     close_bracket = line.find(']');
     auto_core_exe_path = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
     dash_x_file.close();
-    dash_x_path = project_path + R"(\import\dash_x.ixx)";
-    import_path = project_path + R"(\import)";
-    src_path = project_path + R"(\src)";
+    dash_x_path = project_path + R"(\app\import\dash_x.ixx)";
+    import_path = project_path + R"(\app\import)";
+    src_path = project_path + R"(\app\src)";
     runtime_map_hardlink_path = auto_core_exe_path + R"(\keymap\keymap.ini)";
     runtime_map_src_path = auto_core_exe_path + R"(\config\keymap.ini)";
     cout << auto_core_exe_path;

@@ -1,0 +1,16 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "c:\\dj\\my folder\\auto core\\components\\server\\server_x.ixx",
+        "ProvidedModule": "server_x",
+        "ImportedModules": [
+            "base",
+            "config",
+            "clock",
+            "logger",
+            "logger_c",
+            "print"
+        ],
+        "ImportedHeaderUnits": []
+    }
+}
