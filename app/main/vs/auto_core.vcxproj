@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{b34038f4-60eb-49d6-b502-9fe13bb1d102}</ProjectGuid>
+    <RootNamespace>autocore</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\build\AutoCore.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(AutoCoreDistDir)</OutDir>
+    <IntDir>$(AutoCoreBuildDir)$(TargetName)\</IntDir>
+    <TargetName>auto_core</TargetName>
+    <UseStructuredOutput>false</UseStructuredOutput>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <EnableModules>true</EnableModules>
+      <BuildStlModules>true</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreLibDir)</AdditionalIncludeDirectories>
+      <MinimalRebuild>false</MinimalRebuild>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(AutoCoreLibDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl.lib;cpr.lib;sqlite3.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>$(AutoCoreDashXCmd)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\core\modules\base.ixx" />
+    <ClCompile Include="..\..\core\modules\clipboard.ixx" />
+    <ClCompile Include="..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\core\modules\config.ixx" />
+    <ClCompile Include="..\..\core\modules\keyboard.ixx" />
+    <ClCompile Include="..\..\core\modules\logger.ixx" />
+    <ClCompile Include="..\..\core\modules\logger_c.ixx" />
+    <ClCompile Include="..\..\core\modules\print.ixx" />
+    <ClCompile Include="..\..\core\modules\thread.ixx" />
+    <ClCompile Include="..\..\core\modules\utils.ixx" />
+    <ClCompile Include="..\..\core\modules\visual.ixx" />
+    <ClCompile Include="..\..\core\src\clipboard.cxx" />
+    <ClCompile Include="..\..\core\src\clock.cxx" />
+    <ClCompile Include="..\..\core\src\config.cxx" />
+    <ClCompile Include="..\..\core\src\keyboard.cxx" />
+    <ClCompile Include="..\..\core\src\logger.cxx" />
+    <ClCompile Include="..\..\core\src\logger_c.cxx" />
+    <ClCompile Include="..\..\core\src\print.cxx" />
+    <ClCompile Include="..\..\core\src\utils.cxx" />
+    <ClCompile Include="..\modules\auto_core.ixx" />
+    <ClCompile Include="..\modules\cloud.ixx" />
+    <ClCompile Include="..\modules\core.ixx" />
+    <ClCompile Include="..\modules\crash.ixx" />
+    <ClCompile Include="..\modules\dash.ixx" />
+    <ClCompile Include="..\modules\dash_x.ixx" />
+    <ClCompile Include="..\modules\end.ixx" />
+    <ClCompile Include="..\modules\itunes.ixx" />
+    <ClCompile Include="..\modules\journal.ixx" />
+    <ClCompile Include="..\modules\journey.ixx" />
+    <ClCompile Include="..\modules\link.ixx" />
+    <ClCompile Include="..\modules\logger_t.ixx" />
+    <ClCompile Include="..\modules\logger_x.ixx" />
+    <ClCompile Include="..\modules\main.ixx" />
+    <ClCompile Include="..\modules\notepad.ixx" />
+    <ClCompile Include="..\modules\notes.ixx" />
+    <ClCompile Include="..\modules\numkey.ixx" />
+    <ClCompile Include="..\modules\pipes.ixx" />
+    <ClCompile Include="..\modules\runtime.ixx" />
+    <ClCompile Include="..\modules\server.ixx" />
+    <ClCompile Include="..\modules\slash.ixx" />
+    <ClCompile Include="..\modules\sp.ixx" />
+    <ClCompile Include="..\modules\star.ixx" />
+    <ClCompile Include="..\modules\taskbar.ixx" />
+    <ClCompile Include="..\modules\taskbar_11.ixx" />
+    <ClCompile Include="..\modules\taskbar_ps.ixx" />
+    <ClCompile Include="..\modules\tasks.ixx" />
+    <ClCompile Include="..\modules\wake.ixx" />
+    <ClCompile Include="..\src\auto_core.cxx" />
+    <ClCompile Include="..\src\cloud.cxx" />
+    <ClCompile Include="..\src\crash.cxx" />
+    <ClCompile Include="..\src\dash.cxx" />
+    <ClCompile Include="..\src\end.cxx" />
+    <ClCompile Include="..\src\itunes.cxx" />
+    <ClCompile Include="..\src\journal.cxx" />
+    <ClCompile Include="..\src\journey.cxx" />
+    <ClCompile Include="..\src\link.cxx" />
+    <ClCompile Include="..\src\logger_t.cxx" />
+    <ClCompile Include="..\src\logger_x.cxx" />
+    <ClCompile Include="..\src\main.cxx" />
+    <ClCompile Include="..\src\notepad.cxx" />
+    <ClCompile Include="..\src\notes.cxx" />
+    <ClCompile Include="..\src\pipes.cxx" />
+    <ClCompile Include="..\src\runtime.cxx" />
+    <ClCompile Include="..\src\server.cxx" />
+    <ClCompile Include="..\src\slash.cxx" />
+    <ClCompile Include="..\src\sp.cxx" />
+    <ClCompile Include="..\src\star.cxx" />
+    <ClCompile Include="..\src\taskbar.cxx" />
+    <ClCompile Include="..\src\taskbar_11.cxx" />
+    <ClCompile Include="..\src\taskbar_ps.cxx" />
+    <ClCompile Include="..\src\tasks.cxx" />
+    <ClCompile Include="..\src\wake.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resources\resource.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
