@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="UserMacros">
+    <AutoCoreBuildDir>C:\DJ\Programming\Project Files\Auto Core\</AutoCoreBuildDir>
+    <AutoCoreLibDir>C:\DJ\My Folder\Auto Core\lib\</AutoCoreLibDir>
+    <AutoCoreDistDir>C:\DJ\My Folder\Auto Core\dist\</AutoCoreDistDir>
+    <AutoCoreSymbolsDir>C:\DJ\My Folder\Auto Core\dist\symbols\</AutoCoreSymbolsDir>
+    <AutoCoreDashXCmd>"C:\DJ\My Folder\Auto Core\dist\dash_x.exe"</AutoCoreDashXCmd>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <BuildMacro Include="AutoCoreBuildDir">
+      <Value>$(AutoCoreBuildDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreLibDir">
+      <Value>$(AutoCoreLibDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreDistDir">
+      <Value>$(AutoCoreDistDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreSymbolsDir">
+      <Value>$(AutoCoreSymbolsDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreDashXCmd">
+      <Value>$(AutoCoreDashXCmd)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+
+</Project>
