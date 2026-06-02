@@ -5,7 +5,6 @@
 This module provides logging functionality for the Auto Core application. It includes
 functions to log messages with and without newline characters, update the log file,
 and handle formatting errors.
-\hardlink
 */
 module;
 

@@ -5,8 +5,6 @@
 This module includes functions to print messages to the console, with support
 for formatted strings. It also handles logging of printed messages and interaction
 with the clipboard.
-
-\hardlink
 */
 module;
 

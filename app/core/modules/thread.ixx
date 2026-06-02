@@ -5,8 +5,6 @@
 This module defines a template function for running code within a thread
 with exception handling. It catches and handles any exceptions thrown
 during the execution of the provided function.
-
-\hardlink
 */
 module;
 

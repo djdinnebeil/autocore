@@ -4,8 +4,6 @@
 
 This module contains various utility functions used throughout the application,
 including string conversions and base64 encoding.
-
-\hardlink
 */
 module;
 

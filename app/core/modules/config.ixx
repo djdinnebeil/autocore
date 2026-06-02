@@ -5,7 +5,6 @@
  * This module defines a Config class to manage global configuration settings
  * for the application. It includes methods to load configuration settings from
  * various configuration files.
- * \hardlink
  */
 module;
 

@@ -1,6 +1,5 @@
 # Build outputs
 bin/
-build/
 obj/
 out/
 Debug/
@@ -29,11 +28,5 @@ Desktop.ini
 # Environment/secrets
 .env
 .env.*
-
-# Local Spotify secrets / machine-specific config
-**/sp_codes.rc
-**/sp_devices.rc
-**/sp_tokens.rc
-tools/**/*.dll
 
 *.db

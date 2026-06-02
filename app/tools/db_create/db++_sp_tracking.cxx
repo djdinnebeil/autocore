@@ -9,14 +9,31 @@ int main() {
     char* errMsg = nullptr;
 
     // Open or create the database
-    if (sqlite3_open("star.db", &db) != SQLITE_OK) {
+    if (sqlite3_open("sp_history.db", &db) != SQLITE_OK) {
         print("Error opening/creating the database: {}", sqlite3_errmsg(db));
         return 1;
     }
     print("Opened/created database successfully");
 
     // SQL to create table + index
-    const char* sql = "CREATE TABLE IF NOT EXISTS counter (value INTEGER);";
+    const char* sql = R"sql(
+        BEGIN;
+        CREATE TABLE IF NOT EXISTS track_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            artist TEXT NOT NULL,
+            album TEXT NOT NULL,
+            duration INTEGER NOT NULL,
+            playcount INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            last_played TEXT NOT NULL
+        );
+
+        -- Composite index for fast lookups and update checks
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_song_identity 
+        ON track_history(name, artist, album);
+        COMMIT;
+    )sql";
 
     // Execute SQL
     int result = sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
@@ -28,17 +45,6 @@ int main() {
     }
 
     print("Table and index created successfully");
-
-    const char* insertSQL = "INSERT INTO counter (value) VALUES (1);";
-    result = sqlite3_exec(db, insertSQL, 0, 0, &errMsg);
-    if (result != SQLITE_OK) {
-        print("SQL error: {}", errMsg);
-        sqlite3_free(errMsg);
-    }
-    else {
-        print("Initial value inserted successfully");
-    }
-
     sqlite3_close(db);
 
     print("Press Enter to exit...");

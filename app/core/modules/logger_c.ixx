@@ -4,7 +4,6 @@
 
  This module provides a Logger class that supports specialized logging for individual components.
  It includes functions for logging messages, updating log files, and handling formatted log messages.
- \hardlink
   */
 module;
 

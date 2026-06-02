@@ -3,7 +3,6 @@
 \brief Facilitates clipboard interactions for string handling within the Auto Core system.
 
 Auto Core streamlines text insertion by utilizing the system clipboard and the 'ctrl + v' paste shortcut to send text to the active textbox.
-\hardlink
 */
 module;
 

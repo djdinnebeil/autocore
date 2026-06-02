@@ -5,7 +5,7 @@ import <sqlite3.h>;
 using namespace std;
 
 int main() {
-    sqlite3* db;
+    sqlite3* db = nullptr;
     char* errMsg = 0;
     int result;
     result = sqlite3_open("star.db", &db);

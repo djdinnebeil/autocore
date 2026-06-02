@@ -4,7 +4,6 @@
 This module centralizes the import of several essential utility modules, making it
 easier to manage and import them collectively. By importing 'visual', all the 
 grouped modules are included, simplifying the import process for other parts of the application.
-\hardlink
 */
 export module visual;
 export import base;

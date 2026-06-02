@@ -5,7 +5,6 @@
 This module centralizes the import of essential C++ Standard Library components.
 In the future, the individual `export import` statements will be replaced with `export import std` for simplicity.
 \todo The current structure allows for the potential transition and removal of specific statements when Microsoft upgrades <Windows.h>.
-\hardlink
  */
 export module base;
 

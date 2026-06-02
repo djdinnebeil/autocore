@@ -1,7 +1,6 @@
 /**
  * \file keyboard.ixx
  * \brief Supports the simulation of keyboard events.
- * \hardlink
  */
 module;
 

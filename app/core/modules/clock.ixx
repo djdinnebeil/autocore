@@ -1,7 +1,6 @@
 /**
  * \file clock.ixx
  * \brief Offers clock and timing functionalities, including timestamping and timers.
- * \hardlink
  */
 module;
 
