@@ -52,6 +52,9 @@ public:
     void remove_track();
     void recycle_bin_track();
     void delete_track();
+    int tab_end = 3;
+    bool auto_start = false;
+    void set_config();
 };
 
 export iTunes ac_iTunes;
@@ -93,6 +96,24 @@ BOOL CALLBACK enum_iTunes_window(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
+void iTunes::set_config() {
+    ifstream itunes_file(R"(.\config\itunes.ini)");
+    if (!itunes_file) {
+        return;
+    }
+    string line;
+    getline(itunes_file, line);
+    auto open_bracket = line.find('[');
+    auto close_bracket = line.find(']');
+    string value = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+    auto_start = value == "true";
+    getline(itunes_file, line);
+    open_bracket = line.find('[');
+    close_bracket = line.find(']');
+    value = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+    tab_end = stoi(value);
+    itunes_file.close();
+}
 /**
  * \brief Checks if the iTunes application is open.
  *
@@ -142,7 +163,8 @@ bool iTunes::is_playing() {
  * Initializes COM if the iTunes application is open.
  */
 iTunes::iTunes() {
-    if (is_iTunes_open()) {
+    set_config();
+    if (auto_start) {
         initialize_com();
     }
 }
@@ -524,16 +546,7 @@ void print_iTunes_songs() {
     Sleep(50);
     paste_from_clipboard();
 }
-int set_tab_end() {
-    ifstream itunes_file(R"(.\config\itunes.ini)");
-    string line;
-    getline(itunes_file, line);
-    auto open_bracket = line.find('[');
-    auto close_bracket = line.find(']');
-    string value = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
-    itunes_file.close();
-    return stoi(value);
-}
+
 /**
  * \brief Replaces tabs with brackets in the input string.
  *
@@ -544,11 +557,10 @@ string replace_tabs_with_brackets(const string& input) {
     oss output;
     output << '[';
     int tab_number = 0;
-    int tab_end = set_tab_end();
     for (char ch : input) {
         if (ch == '\t') {
             tab_number++;
-            if (tab_number == tab_end) {
+            if (tab_number == ac_iTunes.tab_end) {
                 break;
             }
             output << "] [";

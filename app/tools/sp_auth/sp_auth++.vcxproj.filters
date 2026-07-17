@@ -18,11 +18,5 @@
     <ClCompile Include="sp_auth++.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\build\base.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\build\print_b.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

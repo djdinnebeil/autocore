@@ -1,18 +1,18 @@
-import base;
-import print_b;
+import std;
 import <cpr/cpr.h>;
-import <nlohmann/json.hpp>;
+import <json.hpp>;
 import <CivetServer.h>;
 
-string client_id = "enter_client_id";
-string client_secret = "enter_client_secret";
-string redirect_uri = "http://localhost:8080/callback";
-string account_url = "https://accounts.spotify.com";
-string scope = "user-follow-read%20ugc-image-upload%20user-read-playback-state%20user-modify-playback-state%20user-read-currently-playing%20user-read-private%20user-read-email%20user-follow-modify%20user-follow-read%20user-library-modify%20user-library-read%20streaming%20app-remote-control%20user-read-playback-position%20user-top-read%20user-read-recently-played%20playlist-modify-private%20playlist-read-collaborative%20playlist-read-private%20playlist-modify-public";
-string authorization_link;
-string authorization_code;
-string access_token;
-string refresh_token;
+std::string client_id;
+std::string client_secret;
+std::string port_number;
+std::string redirect_uri;
+std::string account_url = "https://accounts.spotify.com";
+std::string scope = "user-follow-read%20ugc-image-upload%20user-read-playback-state%20user-modify-playback-state%20user-read-currently-playing%20user-read-private%20user-read-email%20user-follow-modify%20user-follow-read%20user-library-modify%20user-library-read%20streaming%20app-remote-control%20user-read-playback-position%20user-top-read%20user-read-recently-played%20playlist-modify-private%20playlist-read-collaborative%20playlist-read-private%20playlist-modify-public";
+std::string authorization_link;
+std::string authorization_code;
+std::string access_token;
+std::string refresh_token;
 
 using namespace cpr;
 
@@ -20,8 +20,8 @@ using namespace cpr;
 std::atomic<bool> terminateServer(false);
 
 // Encode to Base64
-string base64_encode(const string& in) {
-    string out;
+std::string base64_encode(const std::string& in) {
+    std::string out;
     int val = 0, valb = -6;
     for (uint8_t c : in) {
         val = (val << 8) + c;
@@ -37,30 +37,37 @@ string base64_encode(const string& in) {
 }
 
 void saveTokens() {
-    ofstream outFile("tokens.rc");
-    if (outFile.is_open()) {
-        outFile << access_token + "\n" << refresh_token;
-        outFile.close();
-        cout << "Tokens saved to tokens.rc\n";
-    }
-    else {
-        cerr << "Unable to open file for writing: tokens.rc\n";
-    }
-}
+    std::ofstream outFile("sp_tokens.rc");
 
+    if (!outFile.is_open()) {
+        std::cerr << "Unable to open token file.\n";
+        return;
+    }
+
+    const time_t timestamp =
+        std::chrono::system_clock::to_time_t(
+            std::chrono::system_clock::now()
+        );
+
+    outFile << access_token << '\n'
+        << refresh_token << '\n'
+        << timestamp;
+
+    std::cout << "Tokens saved to sp_tokens.rc\n";
+}
 // Callback handler for handling Spotify authorization
 class SpotifyCallbackHandler : public CivetHandler {
 public:
     bool handleGet(CivetServer* server, mg_connection* conn) {
         const mg_request_info* req_info = mg_get_request_info(conn);
-        string query = req_info->query_string ? req_info->query_string : "";
+        std::string query = req_info->query_string ? req_info->query_string : "";
         size_t code_pos = query.find("code=");
-        if (code_pos != string::npos) {
+        if (code_pos != std::string::npos) {
             authorization_code = query.substr(code_pos + 5);
-            cout << "Authorization code received: " << authorization_code << "\n";
+            std::cout << "Authorization code received: " << authorization_code << "\n";
 
-            string credentials = client_id + ":" + client_secret;
-            string encoded_credentials = base64_encode(credentials);
+            std::string credentials = client_id + ":" + client_secret;
+            std::string encoded_credentials = base64_encode(credentials);
             cpr::Response r = cpr::Post(cpr::Url{"https://accounts.spotify.com/api/token"},
                 cpr::Header{{"Content-Type", "application/x-www-form-urlencoded"},
                             {"Authorization", "Basic " + encoded_credentials}},
@@ -75,7 +82,7 @@ public:
                 retrieveCurrentSong();
             }
             else {
-                cout << "Failed to retrieve tokens. Status Code: " << r.status_code << "\nResponse: " << r.text << "\n";
+                std::cout << "Failed to retrieve tokens. Status Code: " << r.status_code << "\nResponse: " << r.text << "\n";
             }
 
             terminateServer.store(true);
@@ -90,23 +97,31 @@ public:
             cpr::Header{{"Authorization", "Bearer " + access_token}});
         if (r.status_code == 200) {
             auto response_json = nlohmann::json::parse(r.text);
-            cout << "Song Name: " << response_json["item"]["name"] << "\n";
-            cout << "Artist: " << response_json["item"]["artists"][0]["name"] << "\n";
-            cout << "Album: " << response_json["item"]["album"]["name"] << "\n";
+            std::cout << "Song Name: " << response_json["item"]["name"] << "\n";
+            std::cout << "Artist: " << response_json["item"]["artists"][0]["name"] << "\n";
+            std::cout << "Album: " << response_json["item"]["album"]["name"] << "\n";
         }
         else {
-            cout << "Failed to retrieve current song. Status Code: " << r.status_code << "\nResponse: " << r.text << "\n";
+            std::cout << "Failed to retrieve current song. Status Code: " << r.status_code << "\nResponse: " << r.text << "\n";
         }
     }
 };
 
 void runServer() {
-    const char* options[] ={"listening_ports", "8080", "document_root", ".", nullptr};
+    const char* options[] = {
+        "listening_ports",
+        port_number.c_str(),
+        "document_root",
+        ".",
+        nullptr
+    };
+
     CivetServer server(options);
     SpotifyCallbackHandler spotifyCallbackHandler;
     server.addHandler("/callback", spotifyCallbackHandler);
+
     while (!terminateServer.load()) {
-        this_thread::sleep_for(chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
@@ -115,11 +130,28 @@ void set_authorization_link() {
 }
 
 int main() {
-    thread serverThread(runServer);
-    cout << "Server started on http://localhost:8080\n";
+    std::cout << "Enter Spotify client ID: ";
+    getline(std::cin, client_id);
+
+    std::cout << "Enter Spotify client secret: ";
+    getline(std::cin, client_secret);
+
+    std::cout << "Enter local server port: ";
+    getline(std::cin, port_number);
+
+    redirect_uri =
+        "http://127.0.0.1:" + port_number + "/callback";
+
+    if (client_id.empty() || client_secret.empty() || port_number.empty()) {
+        std::cerr << "Client ID, client secret, and port number cannot be empty.\n";
+        return 1;
+    }
+
+    std::thread serverThread(runServer);
+    std::cout << "Server started on port " << port_number << std::endl;
     set_authorization_link();
-    cout << "Authorization link:\n" << authorization_link << "\n";
-    cin.get();
+    std::cout << "Authorization link:\n" << authorization_link << "\n";
+    std::cin.get();
     serverThread.join(); // Properly join the thread before exiting
     return 0;
 }

@@ -159,7 +159,6 @@ void threaded_print_gpt_message() {
  */
 void print_gpt_message() {
     logg("print_gpt_message()");
-    *(volatile int*)0 = 1;
     thread t([=]() {run_with_exception_handling(threaded_print_gpt_message); });
     t.detach();
 }

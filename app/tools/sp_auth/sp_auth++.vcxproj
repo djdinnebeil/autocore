@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\</OutDir>
+    <OutDir>$(SolutionDir)</OutDir>
     <IntDir>C:\DJ\Programming\Project Files\Auto Core\sp_auth++\</IntDir>
     <TargetName>sp_auth++</TargetName>
   </PropertyGroup>
@@ -128,7 +128,7 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
-      <AdditionalIncludeDirectories>..\..\lib;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,11 +136,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(SolutionDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>C:\DJ\My Folder\Auto Core\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl.lib;cpr.lib
+;civetweb.lib;civetweb-cpp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\build\base.ixx" />
-    <ClCompile Include="..\..\build\print_b.ixx" />
     <ClCompile Include="sp_auth++.cxx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

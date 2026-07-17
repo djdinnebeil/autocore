@@ -162,7 +162,7 @@ Spotify::Spotify() {
     tokens_path = R"(.\star\sp_tokens.rc)";
     devices_path = R"(.\star\sp_devices.rc)";
     codes_path = R"(.\star\sp_codes.rc)";
-    content_type = "Content-Type: application/json";
+    content_type = "application/json";
     content_length = "Content-Length: 0";
 }
 /**
@@ -201,7 +201,7 @@ void Spotify::update_devices() {
     string url = "https://api.spotify.com/v1/me/player/devices";
     auto response = Get(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     bool device_id_changed = false;
     auto devices = parse(response.text);
@@ -281,7 +281,7 @@ bool Spotify::refresh_tokens() {
         extract_tokens();
     }
     if (!check_timerate()) {
-        authorization_header = "Authorization: Bearer " + access_token;
+        authorization_header = "Bearer " + access_token;
         return true;
     }
     start_timestamp = get_unix_timestamp();
@@ -519,7 +519,7 @@ void Spotify::get_current_song() {
     string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     last_status_code = 1;
     if (response.status_code != 200) {
@@ -600,7 +600,7 @@ string Spotify::get_user_queue() {
         string url = "https://api.spotify.com/v1/me/player/queue";
         auto response = Get(
             Url {url},
-            Header {{authorization_header, content_type}}
+            Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
         );
         if (response.status_code != 200) {
             sp_logger.logg_and_print("Failed to retrieve queue");
@@ -638,7 +638,7 @@ bool Spotify::download_album_cover() {
     string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 200) {
         sp_logger.logg_and_print("Failed to retrieve song");
@@ -696,7 +696,7 @@ void Spotify::transfer_playback(string device_id) {
     string body = format(R"({{"device_ids": ["{}"], "play": true}})", device_id);
     auto response = Put(
         Url {url},
-        Header {{authorization_header, content_type}},
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}},
         Body {body}
     );
     if (response.status_code != 204) {
@@ -726,7 +726,7 @@ void Spotify::switch_player() {
     string url = "https://api.spotify.com/v1/me/player";
     auto response = Get(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code == 204) {
         play_pause();
@@ -792,7 +792,7 @@ bool Spotify::is_spotify_playing() {
     string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 200) {
         return false;
@@ -860,7 +860,7 @@ void Spotify::post_next_or_prev(string url) {
     }
     auto response = Post(
         Url {url},
-        Header {{authorization_header, content_type}}
+        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 204) {
         sp_logger.logg_and_print("post_next_or_prev() - Error: Status Code {} - {}", response.status_code, response.text);
