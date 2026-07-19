@@ -83,7 +83,6 @@ public:
     string access_token;
     string refresh_token;
     string album_url;
-    time_t start_timestamp;  // Unix timestamp when tokens were last refreshed
     int timerate;
     bool check_timerate();
     void extract_tokens();
@@ -125,6 +124,16 @@ public:
     void get_sp_position();
     void activate();
     bool end_thread;
+
+    time_t start_timestamp {};
+    time_t refresh_token_expiration {};
+
+    mutex refresh_token_mutex;
+    bool reauthorization_required = false;
+    bool reauthorization_warning_logged  = false;
+
+    bool tokens_extracted = false;
+    void check_refresh_token_expiration();
 };
 
 export Spotify ac_spotify;
@@ -248,14 +257,83 @@ void Spotify::get_credentials() {
 void Spotify::extract_tokens() {
     get_credentials();
     get_devices();
+
     ifstream rc(tokens_path);
     getline(rc, access_token);
     getline(rc, refresh_token);
+
     string time_str;
+
     getline(rc, time_str);
     start_timestamp = stoll(time_str);
+
+    getline(rc, time_str);
+    refresh_token_expiration = stoll(time_str);
+
     rc.close();
+
+    tokens_extracted = true;
+    reauthorization_required = false;
+    reauthorization_warning_logged = false;
 }
+
+void Spotify::check_refresh_token_expiration() {
+    if (reauthorization_required) {
+        return;
+    }
+
+    constexpr time_t reauthorization_buffer =
+        7 * 24 * 60 * 60;
+
+    if (refresh_token_expiration <= 0) {
+        reauthorization_required = true;
+
+        sp_logger.logg_and_print(
+            "Spotify refresh-token expiration is missing or invalid."
+        );
+
+        return;
+    }
+
+    const time_t current_time = get_unix_timestamp();
+
+    if (current_time >= refresh_token_expiration) {
+        reauthorization_required = true;
+
+        sp_logger.logg_and_print(
+            "Spotify refresh token has expired."
+        );
+
+        return;
+    }
+
+    const time_t reauthorization_warning_time =
+        refresh_token_expiration - reauthorization_buffer;
+
+    if (
+        current_time >= reauthorization_warning_time &&
+        !reauthorization_warning_logged
+        ) {
+        reauthorization_warning_logged = true;
+
+        constexpr time_t seconds_per_day =
+            24 * 60 * 60;
+
+        const time_t seconds_remaining =
+            refresh_token_expiration - current_time;
+
+        const time_t days_remaining =
+            (seconds_remaining + seconds_per_day - 1) /
+            seconds_per_day;
+
+        sp_logger.logg_and_print(
+            "Spotify refresh token will expire in "
+            + std::to_string(days_remaining)
+            + (days_remaining == 1 ? " day." : " days.")
+        );
+    }
+}
+
 /**
  * \brief Checks if the timerate has been reached.
  * \return True if timerate has been reached, false otherwise.
@@ -277,36 +355,95 @@ bool Spotify::check_timerate() {
  * \return True if tokens were refreshed, false otherwise.
  */
 bool Spotify::refresh_tokens() {
-    if (access_token.empty()) {
+    std::lock_guard<mutex> lock(refresh_token_mutex);
+
+    if (
+        !tokens_extracted ||
+        reauthorization_required
+    ) {
         extract_tokens();
+    }
+
+    check_refresh_token_expiration();
+
+    if (reauthorization_required) {
+        sp_logger.logg_and_print(
+            "Spotify reauthorization required - run sp_oauth.exe to clear"
+        );
+        return false;
     }
     if (!check_timerate()) {
         authorization_header = "Bearer " + access_token;
         return true;
     }
-    start_timestamp = get_unix_timestamp();
     Response response = Post(Url {"https://accounts.spotify.com/api/token"},
         Header {{"Content-Type", "application/x-www-form-urlencoded"},
                     {"Authorization", "Basic " + credentials_64}},
         Payload {{"grant_type", "refresh_token"},
                      {"refresh_token", refresh_token}});
+
     if (response.status_code == 200) {
         auto response_json = parse(response.text);
         if (response_json.contains("access_token")) {
             access_token = response_json["access_token"];
+            start_timestamp = get_unix_timestamp();
             ofstream rc(tokens_path);
             if (rc.is_open()) {
                 oss os;
-                os << access_token << "\n"
-                    << refresh_token << "\n"
-                    << to_string(start_timestamp);
+                os << access_token << '\n'
+                    << refresh_token << '\n'
+                    << start_timestamp << '\n'
+                    << refresh_token_expiration;
                 rc << os.str();
                 rc.close();
             }
         }
-        authorization_header = "Authorization: Bearer " + access_token;
+        authorization_header = "Bearer " + access_token;
         sp_logger.logg_and_logg("refresh_tokens() - tokens refreshed");
         return true;
+    }
+    else if (response.status_code == 400) {
+        try {
+            const json response_json = parse(response.text);
+
+            if (
+                response_json.contains("error") &&
+                response_json["error"] == "invalid_grant"
+                ) {
+                reauthorization_required = true;
+                refresh_token_expiration = 0;
+
+                ofstream rc(tokens_path);
+
+                if (rc.is_open()) {
+                    rc << access_token << '\n'
+                        << refresh_token << '\n'
+                        << start_timestamp << '\n'
+                        << refresh_token_expiration;
+                }
+
+                sp_logger.logg_and_print(
+                    "Spotify refresh token is no longer valid. "
+                    "Spotify reauthorization required - run sp_oauth.exe to clear"
+                );
+
+                return false;
+            }
+        }
+        catch (const json::exception& e) {
+            sp_logger.logg_and_print(
+                "Failed to parse Spotify token error response: {}",
+                e.what()
+            );
+        }
+
+        sp_logger.logg_and_print(
+            "Spotify token request failed: Status Code {} - {}",
+            response.status_code,
+            response.text
+        );
+
+        return false;
     }
     else if (response.status_code == 429) {
         sp_logger.logg_and_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
@@ -759,7 +896,7 @@ int Spotify::play_song() {
     auto response = Put(
         Url {"https://api.spotify.com/v1/me/player/play"},
         Header {
-            {"Authorization", "Bearer " + access_token},
+            {"Authorization", authorization_header},
             {"Content-Type", "application/json"},
             {"Content-Length", "0"},
         }

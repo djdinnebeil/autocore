@@ -58,7 +58,11 @@ void sp_song_thread() {
         }
         while (true) {
             sp_playback_state_change = false;
-            if (!ac_spotify.is_playing) {
+            if (ac_spotify.reauthorization_required) {
+                sp_logger.loggnl("Spotify authorization required - ");
+                sleep_time_ms = sleep_timerate_ms;
+            }
+            else if (!ac_spotify.is_playing) {
                 sp_logger.loggnl("Spotify not playing - ");
                 sleep_time_ms = sleep_timerate_ms;
             }

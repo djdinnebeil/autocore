@@ -180,18 +180,54 @@ app/components/<component-name>/
 
 Use the existing component projects as templates when possible.
 
-### 2. Create Symbolic Link for `.vs` Optional
+### 2. (Optional) Create a Symbolic Link for `.vs`
 
-The `.vs` folder for any project can be set as a symbolic link that points to `$(AutoCoreBuildDir)`.
+The `.vs` directory for a project can be replaced with a symbolic link that points to `$(AutoCoreBuildDir)`.
 
 **Command Prompt:**
 
 ```cmd
-cd $(SolutionDir)
-mklink /D .\.vs $(AutoCoreBuildDir)
+cd "$(SolutionDir)"
+mklink /D .\.vs "$(AutoCoreBuildDir)"
 ```
 
-### 3. Configure Visual Studio Project Settings
+> `$(SolutionDir)` and `$(AutoCoreBuildDir)` are Visual Studio macros. Replace them with their resolved paths when running the command manually.
+
+### 3. Add the Auto Core Property Sheet
+
+Open Property Manager in Visual Studio:
+
+```text
+View → Other Windows → Property Manager
+```
+
+In Property Manager:
+
+1. Expand the new project.
+
+2. Expand the configuration and platform that you want to configure.
+
+3. For the production build, select:
+
+   ```text
+   Release | x64
+   ```
+
+4. Right-click the configuration and select:
+
+   ```text
+   Add Existing Property Sheet
+   ```
+
+5. Select the following property sheet:
+
+   ```text
+   app\build\AutoCore.props
+   ```
+
+Repeat these steps for any additional configuration and platform combinations that should use the shared Auto Core settings.
+
+### 4. Configure Visual Studio Project Settings
 
 Set the project output directory:
 
@@ -224,7 +260,7 @@ Linker → General → Additional Library Directories
 Linker → Input   → Additional Dependencies
 ```
 
-### 4. Reference Shared Resources
+### 5. Reference Shared Resources
 
 If your component uses a resource image or manifest, reference the shared resource file:
 
@@ -332,7 +368,7 @@ With the upgrade to C++23 modules, Auto Core branched off into two projects: Aut
 
 ## License
 
-License © 2024 DJ, Daniel
+License © 2026 DJ, Daniel
 
 Anyone is free to use, copy, and distribute Auto Core. This software is expected to be modified and configured by the individual user. Contributions to the Auto Core project can be made through the Visual Core project.
 
