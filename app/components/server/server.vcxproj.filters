@@ -18,9 +18,6 @@
     <ClCompile Include="server_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="server_x.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\base.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -53,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="..\..\core\modules\visual.ixx">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="server_logging.ixx">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

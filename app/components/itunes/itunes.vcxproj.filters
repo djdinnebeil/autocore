@@ -21,13 +21,37 @@
     <ClCompile Include="itunes_c.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="itunes_c.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_config.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_com.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_playback.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_track.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_commands.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="itunes_t.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_t.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itunes_x.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="slash_i.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="slash_i.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\base.ixx">

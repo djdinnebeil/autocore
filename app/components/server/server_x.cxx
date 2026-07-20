@@ -1,13 +1,3 @@
-/**
-\file server.cxx
-\brief This file contains the implementation of the server component using CivetServer.
- 
-The server component initializes and runs a local server based on the configuration
-specified in the server.ini file. This enables local file access through a web browser.
-
-\warning Ensure that the configuration file server.ini is properly formatted
-and located in the config directory.
- */
  /**
  \file server.cxx
  \brief This file contains the implementation of the server component using CivetServer.
@@ -26,7 +16,7 @@ import clipboard;
 import print;
 import utils;
 import keyboard;
-import server_x;
+import server_logging;
 #pragma warning(disable:4251)
 #pragma warning(disable:4275)
 import <CivetServer.h>;
@@ -42,7 +32,7 @@ void run_server() {
     const char* options[] = {
         "document_root", R"(.\server\)",
         "listening_ports", port_number_str.c_str(),
-        NULL
+        nullptr
     };
     string current_datestamp = get_datestamp();
     try {

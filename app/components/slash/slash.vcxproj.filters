@@ -18,6 +18,9 @@
     <ClCompile Include="slash_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="music.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\core\modules\base.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

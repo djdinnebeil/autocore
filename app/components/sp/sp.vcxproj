@@ -157,8 +157,14 @@
     <ClCompile Include="..\..\core\modules\utils.ixx" />
     <ClCompile Include="..\..\core\modules\visual.ixx" />
     <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
+    <ClCompile Include="sp_auth.cxx" />
+    <ClCompile Include="sp_c.cxx" />
     <ClCompile Include="sp_c.ixx" />
+    <ClCompile Include="sp_history.cxx" />
+    <ClCompile Include="sp_playback.cxx" />
+    <ClCompile Include="sp_song.cxx" />
     <ClCompile Include="sp_t.ixx" />
+    <ClCompile Include="sp_windows.cxx" />
     <ClCompile Include="sp_x.cxx" />
     <ClCompile Include="sp_x.ixx" />
   </ItemGroup>

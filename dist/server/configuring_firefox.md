@@ -53,3 +53,5 @@
     .toolbar * {
         visibility: collapse !important;
     }
+
+## Create link to folder

@@ -154,8 +154,8 @@
     <ClCompile Include="..\..\core\modules\utils.ixx" />
     <ClCompile Include="..\..\core\modules\visual.ixx" />
     <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
+    <ClCompile Include="wake_logging.ixx" />
     <ClCompile Include="wake_x.cxx" />
-    <ClCompile Include="wake_x.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />

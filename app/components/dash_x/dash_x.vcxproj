@@ -153,10 +153,16 @@
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="..\..\core\modules\utils.ixx" />
     <ClCompile Include="..\..\core\modules\visual.ixx" />
+    <ClCompile Include="dash_comments.cxx" />
+    <ClCompile Include="dash_config.cxx" />
+    <ClCompile Include="dash_runtime_generation.cxx" />
     <ClCompile Include="dash_x.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dash_x.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

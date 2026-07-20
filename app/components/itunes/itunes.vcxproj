@@ -158,10 +158,18 @@
     <ClCompile Include="..\..\core\modules\visual.ixx" />
     <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
     <ClCompile Include="itunes_c.ixx" />
+    <ClCompile Include="itunes_c.cxx" />
+    <ClCompile Include="itunes_config.cxx" />
+    <ClCompile Include="itunes_com.cxx" />
+    <ClCompile Include="itunes_playback.cxx" />
+    <ClCompile Include="itunes_track.cxx" />
+    <ClCompile Include="itunes_commands.cxx" />
     <ClCompile Include="itunes_t.ixx" />
+    <ClCompile Include="itunes_t.cxx" />
     <ClCompile Include="itunes_x.cxx" />
     <ClCompile Include="itunes_x.ixx" />
     <ClCompile Include="slash_i.ixx" />
+    <ClCompile Include="slash_i.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />

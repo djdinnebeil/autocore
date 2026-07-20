@@ -1,0 +1,88 @@
+/**
+\file sp_windows.cxx
+\brief Implements Spotify window detection and activation.
+*/
+module sp_c;
+
+import visual;
+import thread;
+import sp_x;
+import <json.hpp>;
+import <cpr/cpr.h>;
+import <chrono>;
+
+using std::stoll;
+using namespace cpr;
+
+/**
+ * \brief Callback function to enumerate Spotify windows.
+ * \param hwnd Handle to the window.
+ * \param lParam Application-defined parameter.
+ * \return TRUE to continue enumeration, FALSE to stop.
+ */
+BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
+    const size_t max_length = 15;
+    const int length = GetWindowTextLength(hwnd);
+    if (length != max_length) {
+        return TRUE;
+    }
+    wstring window_title(length, L'\0');
+    if (!GetWindowTextW(hwnd, &window_title[0], length + 1)) {
+        return TRUE;
+    }
+    if (window_title == L"Spotify Premium") {
+        *reinterpret_cast<bool*>(lParam) = true;
+        sp_logger.logg_and_print("spotify window found");
+        spotify_window_hwnd = hwnd;
+        return FALSE;
+    }
+    return TRUE;
+}
+/**
+ * \brief Retrieves the Spotify taskbar position.
+ */
+void Spotify::get_sp_position() {
+    ifstream taskbar_config_file(R"(.\config\taskbar.ini)");
+    string line;
+    while (getline(taskbar_config_file, line)) {
+        size_t found_spotify = line.find("spotify");
+        if (found_spotify != string::npos) {
+            sp_position = stoi(line.substr(0, 1));
+            break;
+        }
+    }
+}
+/**
+ * \brief Activates the Spotify window.
+ */
+void Spotify::activate() {
+    send_winkey(sp_position);
+}
+/**
+ * \brief Checks if the Spotify application is open.
+ * \return True if Spotify is open, false otherwise.
+ */
+bool Spotify::is_spotify_open() {
+    bool spotifyWindowFound = false;
+    EnumWindows(enum_spotify_premium_window, reinterpret_cast<LPARAM>(&spotifyWindowFound));
+    return spotifyWindowFound;
+}
+/**
+ * \brief Starts the Spotify playback thread.
+ * \todo Develop a more responsive display the current song when starting Spotify.
+ */
+void start_playback_sp_thread() {
+    ac_spotify.activate();
+    int total_sleep_time {};
+    int sleep_duration = 500;
+    int time_limit_ms = 10000;
+    int processing_delay = 1500;
+    while (!ac_spotify.is_spotify_open() && total_sleep_time < time_limit_ms) {
+        this_thread::sleep_for(chrono::milliseconds(sleep_duration));
+        total_sleep_time += sleep_duration;
+    }
+    this_thread::sleep_for(chrono::milliseconds(processing_delay));
+    ac_spotify.start_playback_on_desktop();
+    Sleep(1500);
+    ac_spotify.get_current_song();
+}

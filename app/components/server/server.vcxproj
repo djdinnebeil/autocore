@@ -161,8 +161,8 @@
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="..\..\core\modules\utils.ixx" />
     <ClCompile Include="..\..\core\modules\visual.ixx" />
+    <ClCompile Include="server_logging.ixx" />
     <ClCompile Include="server_x.cxx" />
-    <ClCompile Include="server_x.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />

@@ -5,7 +5,7 @@
 This module defines a custom logger for the Spotify component and provides functions
 to update the logger and initialize logging when the component starts.
  */
-export module server_x;
+export module server_logging;
 import base;
 import config;
 import clock;
@@ -14,16 +14,16 @@ import logger_c;
 import print;
 
 /**
- * \brief Custom logger for the Spotify component.
+ * \brief Custom logger for the server component.
  *
  * This logger is used to log messages specific to the Spotify component.
  */
 export Logger server_logger("server");
 
 /**
- * \brief Updates the Spotify logger.
+ * \brief Updates the server logger.
  *
- * This function updates the main log file and the Spotify logger file.
+ * This function updates the main log file and the server logger file.
  */
 export void update_server_logger() {
 	update_main_log_file();
@@ -31,9 +31,9 @@ export void update_server_logger() {
 }
 
 /**
- * \brief Initializes logging for the Spotify component.
+ * \brief Initializes logging for the server component.
  *
- * This function updates the main log file and logs the start of the Spotify component.
+ * This function updates the main log file and logs the start of the server component.
  */
 export void log_init() {
 	update_main_log_file();

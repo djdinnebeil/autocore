@@ -18,9 +18,6 @@
     <ClCompile Include="wake_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="wake_x.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -56,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="..\..\core\modules\visual.ixx">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wake_logging.ixx">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

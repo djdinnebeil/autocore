@@ -156,6 +156,8 @@
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="..\..\core\modules\utils.ixx" />
     <ClCompile Include="..\..\core\modules\visual.ixx" />
+    <ClCompile Include="music.ixx" />
+    <ClCompile Include="path_utils.ixx" />
     <ClCompile Include="slash_x.cxx" />
   </ItemGroup>
   <ItemGroup>
