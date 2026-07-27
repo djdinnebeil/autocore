@@ -9,13 +9,13 @@ during the execution of the provided function.
 module;
 
 #ifdef BUILDING_DLL
-#define DLL_API __declspec(dllexport)
+    #define DLL_API __declspec(dllexport)
 #else
-#define DLL_API
+    #define DLL_API __declspec(dllimport)
 #endif
 
 export module thread;
-import base;
+import std;
 import print;
 import <Windows.h>;
 
@@ -30,14 +30,14 @@ import <Windows.h>;
  * \param func The callable object to execute.
  */
 export template<typename Func>
-DLL_API void run_with_exception_handling(Func func) {
+void run_with_exception_handling(Func func) {
     try {
         func();
     }
-    catch (const exception& e) {
-        print("caught exception: {}", e.what());
+    catch (const std::exception& e) {
+        ac::print("caught exception: {}", e.what());
     }
     catch (...) {
-        print("crash in thread function");
+        ac::print("crash in thread function");
     }
 }

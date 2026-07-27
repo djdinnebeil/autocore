@@ -7,12 +7,12 @@
  * that the program can respond appropriately to system shutdown requests.
  */
 export module end;
-import base;
+import std;
 import config;
 import logger;
 import print;
 import numkey;
-import main;
+import ac_core;
 import runtime;
 import <Windows.h>;
 

@@ -1,5 +1,5 @@
 module server;
-import base;
+import std;
 import journey;
 import visual;
 import <Windows.h>;
@@ -7,25 +7,26 @@ import <string>;
 import <fstream>;
 import <iostream>;
 import <format>;
+
 namespace fs = std::filesystem;
 
 PROCESS_INFORMATION pi_server; // Process information for the server process
 
 void log_server_msg(const std::string& msg, bool end_server_process = false, bool send_to_print = false) {
     std::ofstream server_log_stream;
-    std::string server_log_name = "server_" + get_datestamp() + ".log";
+    std::string server_log_name = "server_" + ac::clock::get_datestamp() + ".log";
     std::string server_log_directory = R"(.\log\server\)";
     std::string server_log_path = server_log_directory + server_log_name;
     server_log_stream.open(server_log_path, std::ios::app);
     server_log_stream << msg << std::endl;
     if (end_server_process) {
-        server_log_stream << "Session ended at " << get_datetime_stamp_for_logger() << "\n" << "***" << std::endl;
+        server_log_stream << "Session ended at " << ac::clock::get_datetime_stamp_for_logger() << "\n" << "***" << std::endl;
     }
     server_log_stream.flush();
     server_log_stream.close();
-    logg(msg);
+    ac::logger::logg(msg);
     if (send_to_print) {
-        print(msg);
+        ac::print(msg);
     }
 }
 

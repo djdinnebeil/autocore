@@ -1,34 +1,36 @@
-import base;
+import std;
 import <Windows.h>;
 
 #include "dash_x.hpp"
 
-string project_path;
-string dash_x_path;
-string main_import_path;
-string dll_import_path;
-string main_src_path;
-string dll_src_path;
-string build_project_cmd;
-string auto_core_exe_path;
-string runtime_map_hardlink_path;
-string runtime_map_src_path;
+namespace fs = std::filesystem;
+
+std::string project_path;
+std::string dash_x_path;
+std::string main_import_path;
+std::string dll_import_path;
+std::string main_src_path;
+std::string dll_src_path;
+std::string build_project_cmd;
+std::string auto_core_exe_path;
+std::string runtime_map_hardlink_path;
+std::string runtime_map_src_path;
 
 void set_project_paths() {
-    ifstream dash_x_file(R"(.\config\dash_x.ini)");
-    string line;
+    std::ifstream dash_x_file(R"(.\config\dash_x.ini)");
+    std::string line;
 
-    getline(dash_x_file, line);
+    std::getline(dash_x_file, line);
     auto open_bracket = line.find('[');
     auto close_bracket = line.find(']');
     project_path = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
 
-    getline(dash_x_file, line);
+    std::getline(dash_x_file, line);
     open_bracket = line.find('[');
     close_bracket = line.find(']');
     build_project_cmd = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
 
-    getline(dash_x_file, line);
+    std::getline(dash_x_file, line);
     open_bracket = line.find('[');
     close_bracket = line.find(']');
     auto_core_exe_path = line.substr(open_bracket + 1, close_bracket - open_bracket - 1);
@@ -55,7 +57,7 @@ void create_hard_link() {
     }
 
     if (ec) {
-        throw runtime_error(
+        throw std::runtime_error(
             "Failed to check existing keymap.ini: " + ec.message());
     }
 

@@ -14,7 +14,7 @@ import <chrono>;
 using std::stoll;
 using namespace cpr;
 
-json parse(const string& s);
+json parse(const std::string& s);
 
 /**
  * \brief Retrieves the current Unix timestamp (seconds since epoch).
@@ -27,11 +27,11 @@ time_t get_unix_timestamp() {
  * \brief Retrieves Spotify credentials.
  */
 void Spotify::get_credentials() {
-    ifstream rc(codes_path);
-    getline(rc, client_id);
-    getline(rc, client_secret);
-    string credentials = client_id + ":" + client_secret;
-    credentials_64 = base64_encode(credentials);
+    std::ifstream rc(codes_path);
+    std::getline(rc, client_id);
+    std::getline(rc, client_secret);
+    std::string credentials = client_id + ":" + client_secret;
+    credentials_64 = ac::utils::base64_encode(credentials);
     rc.close();
 }
 /**
@@ -41,17 +41,17 @@ void Spotify::extract_tokens() {
     get_credentials();
     get_devices();
 
-    ifstream rc(tokens_path);
-    getline(rc, access_token);
-    getline(rc, refresh_token);
+    std::ifstream rc(tokens_path);
+    std::getline(rc, access_token);
+    std::getline(rc, refresh_token);
 
-    string time_str;
+    std::string time_str;
 
-    getline(rc, time_str);
-    start_timestamp = stoll(time_str);
+    std::getline(rc, time_str);
+    start_timestamp = std::stoll(time_str);
 
-    getline(rc, time_str);
-    refresh_token_expiration = stoll(time_str);
+    std::getline(rc, time_str);
+    refresh_token_expiration = std::stoll(time_str);
 
     rc.close();
 
@@ -138,7 +138,7 @@ bool Spotify::check_timerate() {
  * \return True if tokens were refreshed, false otherwise.
  */
 bool Spotify::refresh_tokens() {
-    std::lock_guard<mutex> lock(refresh_token_mutex);
+    std::lock_guard<std::mutex> lock(refresh_token_mutex);
 
     if (
         !tokens_extracted ||
@@ -177,9 +177,9 @@ bool Spotify::refresh_tokens() {
                 refresh_token = response_json["refresh_token"];
             }
             start_timestamp = get_unix_timestamp();
-            ofstream rc(tokens_path);
+            std::ofstream rc(tokens_path);
             if (rc.is_open()) {
-                oss os;
+                std::ostringstream os;
                 os << access_token << '\n'
                     << refresh_token << '\n'
                     << start_timestamp << '\n'
@@ -203,7 +203,7 @@ bool Spotify::refresh_tokens() {
                 reauthorization_required = true;
                 refresh_token_expiration = 0;
 
-                ofstream rc(tokens_path);
+                std::ofstream rc(tokens_path);
 
                 if (rc.is_open()) {
                     rc << access_token << '\n'

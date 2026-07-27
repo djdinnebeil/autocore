@@ -6,7 +6,7 @@
  * It utilizes an external executable to perform the deletion.
  */
 export module slash;
-import base;
+import std;
 import config;
 import logger;
 import print;

@@ -1,5 +1,5 @@
 /**
- * \file main.ixx
+ * \file ac_core.ixx
  * \brief Core support for cross-module communication and integration within the Auto Core framework.
  *
  * This module provides core functionality for managing program state and facilitating
@@ -7,7 +7,7 @@
  * functions for closing the program, activating and deactivating function keys, printing
  * timestamps, and setting focus to the Auto Core window.
  */
-export module main;
+export module ac_core;
 import visual;
 import <Windows.h>;
 import <conio.h>;
@@ -18,24 +18,19 @@ import server;
 import taskbar;
 import taskbar_ps;
 
+export namespace ac::main {
+    bool program_closing = false;
+    HWND program_window;
+    HWND close_window;
+    HHOOK keyboard_hook;
+    DWORD main_thread_id;
+}
+
 export bool primary = true;
-export HWND close_window;
-export HWND program_window;
-export HHOOK keyboard_hook;
-export DWORD main_thread_id;
-export bool program_closing = false;
 
 export {
     void close_program();
     void activate_function_key();
     void deactivate_function_key();
     void set_focus_auto_core();
-    void print_timestamp();
-    void print_datestamp();
-    void print_datestamp_iso();
-    void print_datestamp_iso_with_timestamp();
-    void print_datestamp_iso_with_timestamp_w();
-    void print_today_is_day();
-    void add_brackets_around_clipboard();
-    void send_alt_f12();
 }

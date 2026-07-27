@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\auto_core.cxx">
+    <ClCompile Include="..\src\main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\cloud.cxx">
@@ -48,7 +48,7 @@
     <ClCompile Include="..\src\logger_x.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\main.cxx">
+    <ClCompile Include="..\src\ac_core.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\notepad.cxx">
@@ -90,37 +90,13 @@
     <ClCompile Include="..\src\wake.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\clipboard.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\clock.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\config.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\keyboard.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\logger.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\logger_c.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\print.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\utils.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\modules\auto_core.ixx">
+    <ClCompile Include="..\modules\keymap.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\cloud.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\core.ixx">
+    <ClCompile Include="..\modules\ac_modules.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\crash.ixx">
@@ -153,7 +129,7 @@
     <ClCompile Include="..\modules\logger_x.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\main.ixx">
+    <ClCompile Include="..\modules\ac_core.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\notepad.ixx">
@@ -198,9 +174,6 @@
     <ClCompile Include="..\modules\wake.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\base.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -229,6 +202,42 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\visual.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\clipboard.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\clock.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\config.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\keyboard.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\logger.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\logger_c.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\print.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\utils.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\src\encoding.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\encoding.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_actions.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\ac_actions.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

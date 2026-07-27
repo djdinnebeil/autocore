@@ -39,9 +39,6 @@
     <ClCompile Include="..\src\utils.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\base.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\modules\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -71,6 +68,12 @@
     </ClCompile>
     <ClCompile Include="..\modules\utils.ixx">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\encoding.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\encoding.cxx">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

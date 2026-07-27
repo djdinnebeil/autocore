@@ -1,14 +1,16 @@
-import base;
+import std;
 
 #include "dash_x.hpp"
+
+namespace fs = std::filesystem;
 
 /**
  * \brief Inserts the get_numkey_vk_code function into the runtime file.
  * \param runtime_file The output file stream to write the function to.
  */
-void insert_vk_code(ofstream& runtime_file) {
-    runtime_file << R"(export int get_numkey_vk_code(string_view vk_code_string) {
-    static const unordered_map<string_view, int> numkey_vk_code_map = {
+void insert_vk_code(std::ofstream& runtime_file) {
+    runtime_file << R"(export int get_numkey_vk_code(std::string_view vk_code_string) {
+    static const std::unordered_map<std::string_view, int> numkey_vk_code_map = {
         {"numkey_0", numkey_0},
         {"numkey_1", numkey_1},
         {"numkey_2", numkey_2},
@@ -40,13 +42,13 @@ void insert_vk_code(ofstream& runtime_file) {
  * \brief Inserts the special case handling for the function get_function_by_name.
  * \param runtime_file The output file stream to write the special case handling to.
  */
-void insert_special_case_in_function_by_name(ofstream& runtime_file) {
+void insert_special_case_in_function_by_name(std::ofstream& runtime_file) {
     runtime_file << R"(    // Check for special case "make_print_choice"
     if (function_name.rfind("make_print_choice", 0) == 0) {
         size_t opening_quotation = function_name.find('"');
         size_t closing_quotation = function_name.find("\",");
-        string choice_name = string(function_name.substr(opening_quotation + 1, closing_quotation - opening_quotation - 1));
-        bool bool_value = function_name.find("true", closing_quotation) != string::npos;
+        std::string choice_name = std::string(function_name.substr(opening_quotation + 1, closing_quotation - opening_quotation - 1));
+        bool bool_value = function_name.find("true", closing_quotation) != std::string::npos;
         return make_print_choice(choice_name, bool_value);
     }
 )";
@@ -57,39 +59,39 @@ void insert_special_case_in_function_by_name(ofstream& runtime_file) {
  * \param runtime_file The output file stream to write the functions to.
  * \param filepath The path to the file to process.
  */
-void process_file(ofstream& runtime_file, const string& filepath) {
-    cout << filepath << endl;
-    ifstream file(filepath);
+void process_file(std::ofstream& runtime_file, const std::string& filepath) {
+    std::cout << filepath << std::endl;
+    std::ifstream file(filepath);
 
     if (!file.is_open()) {
-        cerr << "Failed to open file: " << filepath << endl;
+        std::cerr << "Failed to open file: " << filepath << std::endl;
         return;
     }
 
-    string line;
+    std::string line;
 
-    while (getline(file, line)) {
-        if (line.find(R"(* \runtime)") != string::npos) {
-            cout << "Found \\runtime in: " << endl;
-            string function_name;
+    while (std::getline(file, line)) {
+        if (line.find(R"(* \runtime)") != std::string::npos) {
+            std::cout << "Found \\runtime in: " << std::endl;
+            std::string function_name;
 
             do {
-                if (line.find(R"(*/)") != string::npos) {
-                    cout << "Found */" << endl;
-                    string function_line;
-                    getline(file, function_line);
+                if (line.find(R"(*/)") != std::string::npos) {
+                    std::cout << "Found */" << std::endl;
+                    std::string function_line;
+                    std::getline(file, function_line);
 
-                    if (function_line.find("void ") != string::npos) {
+                    if (function_line.find("void ") != std::string::npos) {
                         size_t first_space = function_line.find(' ');
                         size_t parentheses = function_line.find("()");
                         function_name = function_line.substr(
                             first_space + 1,
                             parentheses - first_space - 1);
-                        cout << function_name << endl;
+                        std::cout << function_name << std::endl;
                         break;
                     }
                 }
-            } while (getline(file, line));
+            } while (std::getline(file, line));
 
             if (!function_name.empty()) {
                 runtime_file
@@ -105,10 +107,10 @@ void process_file(ofstream& runtime_file, const string& filepath) {
     file.close();
 }
 
-void process_directory(ofstream& runtime_file, const string& path) {
+void process_directory(std::ofstream& runtime_file, const std::string& path) {
     try {
         if (!fs::is_directory(path)) {
-            cout << "Provided path is not a directory: " << path << endl;
+            std::cout << "Provided path is not a directory: " << path << std::endl;
             return;
         }
 
@@ -119,28 +121,28 @@ void process_directory(ofstream& runtime_file, const string& path) {
         }
     }
     catch (const fs::filesystem_error& e) {
-        cerr << e.what() << endl;
+        std::cerr << e.what() << std::endl;
     }
 }
 
 bool generate_runtime_module() {
-    string module_description_comment = extract_module_description_comment();
-    string vk_code_function_comment =
+    std::string module_description_comment = extract_module_description_comment();
+    std::string vk_code_function_comment =
         extract_function_description_comment("get_numkey_vk_code");
-    string function_by_name_function_comment =
+    std::string function_by_name_function_comment =
         extract_function_description_comment("get_function_by_name");
 
-    ofstream runtime_file(dash_x_path);
+    std::ofstream runtime_file(dash_x_path);
 
     if (!runtime_file.is_open()) {
-        cerr << "Failed to create file: " << dash_x_path << endl;
+        std::cerr << "Failed to create file: " << dash_x_path << std::endl;
         return false;
     }
 
     runtime_file
         << module_description_comment
         << "export module dash_x;\n"
-        << "import core;\n\n"
+        << "import ac_modules;\n\n"
         << vk_code_function_comment;
 
     insert_vk_code(runtime_file);
@@ -148,8 +150,8 @@ bool generate_runtime_module() {
     runtime_file
         << "\n"
         << function_by_name_function_comment
-        << "export function<void()> get_function_by_name(string_view function_name) {\n"
-        << "    static const unordered_map<string_view, function<void()>> function_map = {\n";
+        << "export std::function<void()> get_function_by_name(std::string_view function_name) {\n"
+        << "    static const std::unordered_map<std::string_view, std::function<void()>> function_map = {\n";
 
     process_directory(runtime_file, main_import_path);
     process_directory(runtime_file, dll_import_path);
@@ -170,7 +172,7 @@ bool generate_runtime_module() {
 
 void copy_runtime_module() {
     fs::create_directory("keymap");
-    string destination_path = R"(.\keymap\keymap_commands.ixx)";
+    std::string destination_path = R"(.\keymap\keymap_commands.ixx)";
 
     fs::copy_file(
         dash_x_path,

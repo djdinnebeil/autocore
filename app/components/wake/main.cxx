@@ -1,5 +1,5 @@
 /**
-\file wake.cxx
+\file main.cxx
 \brief Logs system wake events, extending Windows' native logging to offer historical wake event tracking.
 
 By polling system information, this module provides detailed logging of wake events,
@@ -10,7 +10,7 @@ import pipes_x;
 import wake_logging;
 import <Windows.h>;
 
-wstring pipe_name = L"wake_pipe";
+std::wstring pipe_name = L"wake_pipe";
 
 /**
  * \brief Ends the wake component.
@@ -47,6 +47,6 @@ int main() {
     wake_logger.logg_and_logg("wake.exe has ended");
     wake_logger.close_log_file();
     CloseHandle(wake_pipe);
-    close_main_log_file();
+    ac::logger::close_main_log_file();
     return 0;
 }

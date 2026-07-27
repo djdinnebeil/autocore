@@ -4,7 +4,7 @@
  */
 export module music;
 
-import base;
+import std;
 import path_utils;
 
 #pragma warning(disable : 4251)
@@ -19,9 +19,9 @@ namespace {
      * \param filepath The full file path.
      * \return The artist name extracted from the path.
      */
-    wstring extract_artist_from_path(const wstring& filepath) {
+    std::wstring extract_artist_from_path(const std::wstring& filepath) {
         size_t last_backslash_index = filepath.rfind(L'\\');
-        if (last_backslash_index == wstring::npos) {
+        if (last_backslash_index == std::wstring::npos) {
             return L"";
         }
 
@@ -29,7 +29,7 @@ namespace {
             L'\\',
             last_backslash_index - 1
         );
-        if (second_last_backslash_index == wstring::npos) {
+        if (second_last_backslash_index == std::wstring::npos) {
             return L"";
         }
 
@@ -37,7 +37,7 @@ namespace {
             L'\\',
             second_last_backslash_index - 1
         );
-        if (third_last_backslash_index == wstring::npos) {
+        if (third_last_backslash_index == std::wstring::npos) {
             return L"";
         }
 
@@ -52,9 +52,9 @@ namespace {
      * \param filepath The full file path.
      * \return The album name extracted from the path.
      */
-    wstring extract_album_from_path(const wstring& filepath) {
+    std::wstring extract_album_from_path(const std::wstring& filepath) {
         size_t last_backslash_index = filepath.rfind(L'\\');
-        if (last_backslash_index == wstring::npos) {
+        if (last_backslash_index == std::wstring::npos) {
             return L"";
         }
 
@@ -62,7 +62,7 @@ namespace {
             L'\\',
             last_backslash_index - 1
         );
-        if (second_last_backslash_index == wstring::npos) {
+        if (second_last_backslash_index == std::wstring::npos) {
             return L"";
         }
 
@@ -80,15 +80,15 @@ namespace {
  * \param filepath The displayed file path.
  * \return A formatted string containing the music-file metadata.
  */
-export wstring format_music_file(
-    const wstring& recycled_file_path,
-    const wstring& filepath
+export std::wstring format_music_file(
+    const std::wstring& recycled_file_path,
+    const std::wstring& filepath
 ) {
     TagLib::FileRef recycled_file(recycled_file_path.c_str());
-    wstring name;
-    wstring artist;
-    wstring album;
-    wstring duration_string;
+    std::wstring name;
+    std::wstring artist;
+    std::wstring album;
+    std::wstring duration_string;
 
     if (!recycled_file.isNull() && recycled_file.tag()) {
         TagLib::Tag* tag = recycled_file.tag();
@@ -99,12 +99,12 @@ export wstring format_music_file(
         if (recycled_file.audioProperties()) {
             int duration_seconds =
                 recycled_file.audioProperties()->lengthInSeconds();
-            wss duration_stream;
+            std::wostringstream duration_stream;
             duration_stream
                 << (duration_seconds / 60)
                 << L":"
-                << setw(2)
-                << setfill(L'0')
+                << std::setw(2)
+                << std::setfill(L'0')
                 << (duration_seconds % 60);
             duration_string = duration_stream.str();
         }
@@ -126,7 +126,7 @@ export wstring format_music_file(
         duration_string = L"[[00:00]]";
     }
 
-    wss output;
+    std::wostringstream output;
     output
         << L"[" << name << L"] "
         << L"[" << artist << L"] "

@@ -161,10 +161,10 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\modules\base.ixx" />
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
+    <ClCompile Include="..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
     <ClCompile Include="..\..\core\modules\logger_c.ixx" />
@@ -175,14 +175,16 @@
     <ClCompile Include="..\..\core\src\clipboard.cxx" />
     <ClCompile Include="..\..\core\src\clock.cxx" />
     <ClCompile Include="..\..\core\src\config.cxx" />
+    <ClCompile Include="..\..\core\src\encoding.cxx" />
     <ClCompile Include="..\..\core\src\keyboard.cxx" />
     <ClCompile Include="..\..\core\src\logger.cxx" />
     <ClCompile Include="..\..\core\src\logger_c.cxx" />
     <ClCompile Include="..\..\core\src\print.cxx" />
     <ClCompile Include="..\..\core\src\utils.cxx" />
-    <ClCompile Include="..\modules\auto_core.ixx" />
+    <ClCompile Include="..\modules\ac_actions.ixx" />
+    <ClCompile Include="..\modules\keymap.ixx" />
     <ClCompile Include="..\modules\cloud.ixx" />
-    <ClCompile Include="..\modules\core.ixx" />
+    <ClCompile Include="..\modules\ac_modules.ixx" />
     <ClCompile Include="..\modules\crash.ixx" />
     <ClCompile Include="..\modules\dash.ixx" />
     <ClCompile Include="..\modules\dash_x.ixx" />
@@ -193,7 +195,7 @@
     <ClCompile Include="..\modules\link.ixx" />
     <ClCompile Include="..\modules\logger_t.ixx" />
     <ClCompile Include="..\modules\logger_x.ixx" />
-    <ClCompile Include="..\modules\main.ixx" />
+    <ClCompile Include="..\modules\ac_core.ixx" />
     <ClCompile Include="..\modules\notepad.ixx" />
     <ClCompile Include="..\modules\notes.ixx" />
     <ClCompile Include="..\modules\numkey.ixx" />
@@ -208,7 +210,8 @@
     <ClCompile Include="..\modules\taskbar_ps.ixx" />
     <ClCompile Include="..\modules\tasks.ixx" />
     <ClCompile Include="..\modules\wake.ixx" />
-    <ClCompile Include="..\src\auto_core.cxx" />
+    <ClCompile Include="..\src\ac_actions.cxx" />
+    <ClCompile Include="..\src\main.cxx" />
     <ClCompile Include="..\src\cloud.cxx" />
     <ClCompile Include="..\src\crash.cxx" />
     <ClCompile Include="..\src\dash.cxx" />
@@ -219,7 +222,7 @@
     <ClCompile Include="..\src\link.cxx" />
     <ClCompile Include="..\src\logger_t.cxx" />
     <ClCompile Include="..\src\logger_x.cxx" />
-    <ClCompile Include="..\src\main.cxx" />
+    <ClCompile Include="..\src\ac_core.cxx" />
     <ClCompile Include="..\src\notepad.cxx" />
     <ClCompile Include="..\src\notes.cxx" />
     <ClCompile Include="..\src\pipes.cxx" />

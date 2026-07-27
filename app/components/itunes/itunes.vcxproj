@@ -145,10 +145,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\modules\base.ixx" />
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
+    <ClCompile Include="..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
     <ClCompile Include="..\..\core\modules\logger_c.ixx" />
@@ -167,7 +167,7 @@
     <ClCompile Include="itunes_t.ixx" />
     <ClCompile Include="itunes_t.cxx" />
     <ClCompile Include="itunes_x.cxx" />
-    <ClCompile Include="itunes_x.ixx" />
+    <ClCompile Include="main.ixx" />
     <ClCompile Include="slash_i.ixx" />
     <ClCompile Include="slash_i.cxx" />
   </ItemGroup>

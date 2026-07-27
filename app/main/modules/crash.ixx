@@ -6,12 +6,12 @@
  */
 export module crash;
 import visual;
-import main;
+import ac_core;
 import logger_x;
 import <Windows.h>;
 
 export {
     LONG WINAPI unhandled_exception_handler(EXCEPTION_POINTERS* exceptionInfo);
-    void restart_program(const string& error_report);
+    void restart_program(const std::string& error_report);
     void crash_check();
 }

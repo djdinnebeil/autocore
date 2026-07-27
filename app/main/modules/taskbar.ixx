@@ -3,7 +3,7 @@
 \brief Enables quick taskbar access for the first 10 programs in the taskbar using the system shortcut of 'winkey + #'.
 */
 export module taskbar;
-import base;
+import std;
 import config;
 import visual;
 import <Windows.h>;

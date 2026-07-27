@@ -4,6 +4,8 @@ import itunes_c;
 import itunes_x;
 import <Windows.h>;
 
+namespace chrono = std::chrono;
+
 void iTunes_next_song() {
     iTunes_logger.logg_and_logg("iTunes_next_song()");
     ac_iTunes.next_song();
@@ -20,7 +22,7 @@ void iTunes::start_iTunes_thread() {
     const int processing_delay_ms = 252;
     Sleep(350);
     try {
-        unique_lock<mutex> lock(iT_mtx);
+        std::unique_lock<std::mutex> lock(iT_mtx);
         int sleep_time_secs;
         while (true) {
             iT_playback_state_change = false;
@@ -39,17 +41,17 @@ void iTunes::start_iTunes_thread() {
             else {
                 sleep_time_secs = sleep_timerate_secs_pause;
             }
-            iTunes_logger.logg("iTunes sleep time {} seconds at {}", sleep_time_secs, get_timestamp_with_seconds());
+            iTunes_logger.logg("iTunes sleep time {} seconds at {}", sleep_time_secs, ac::clock::get_timestamp_with_seconds());
             if (iT_cv.wait_for(lock, chrono::seconds(sleep_time_secs), [] {return iT_playback_state_change; })) {
                 if (ac_iTunes.end_thread) {
                     break;
                 }
-                iTunes_logger.logg("iTunes_playback_state_change at {}", get_timestamp_with_seconds());
+                iTunes_logger.logg("iTunes_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay_ms);
             }
         }
     }
-    catch (const exception& e) {
+    catch (const std::exception& e) {
         iTunes_logger.logg_and_print("iTunes_song_thread() has crashed: {}", e.what());
     }
     catch (...) {

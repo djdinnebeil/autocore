@@ -35,11 +35,11 @@ bool get_user_queue_thread_started = false; /// \todo refactor the code
  * \brief Retrieves the user's Spotify queue in a separate thread.
  */
 void get_user_sp_queue_thread() {
-    string user_queue = ac_spotify.get_user_queue();
+    std::string user_queue = ac_spotify.get_user_queue();
     sp_logger.logg_and_print(user_queue);
-    set_clipboard_text(str_to_wstr(user_queue) + L"\n\n");
+    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(user_queue) + L"\n\n");
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
     get_user_queue_thread_started = false;
 }
 
@@ -51,7 +51,7 @@ void get_user_sp_queue() {
     sp_logger.logg_and_logg("get_user_sp_queue()");
     if (!get_user_queue_thread_started) {
         get_user_queue_thread_started = true;
-        thread t([=]() {run_with_exception_handling(get_user_sp_queue_thread); });
+        std::thread t([=]() {run_with_exception_handling(get_user_sp_queue_thread); });
         t.detach();
     }
 }
@@ -62,7 +62,7 @@ void get_user_sp_queue() {
 */
 void print_spotify_songs() {
     sp_logger.logg_and_logg("print_spotify_songs()");
-    oss song_text;
+    std::ostringstream song_text;
     ac_spotify.get_current_song();
     if (!ac_spotify.song_history.empty()) {
         for (const auto& song : ac_spotify.song_history) {
@@ -73,11 +73,11 @@ void print_spotify_songs() {
         ac_spotify.song_history.clear();
     }
     song_text << ac_spotify.last_song << '\n';
-    string song_text_str = song_text.str();
+    std::string song_text_str = song_text.str();
     sp_logger.loggnl_and_printnl(song_text_str);
-    set_clipboard_text(str_to_wstr(song_text_str) + L"\n");
+    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(song_text_str) + L"\n");
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
 }
 /**
 * \brief Toggles Spotify play/pause in a separate thread.
@@ -92,7 +92,7 @@ void spotify_play_pause_thread() {
 */
 void spotify_play_pause() {
     sp_logger.logg_and_logg("spotify_play_pause()");
-    thread t(spotify_play_pause_thread);
+    std::thread t(spotify_play_pause_thread);
     t.detach();
 }
 /**

@@ -1,5 +1,5 @@
 module journey;
-import base;
+import std;
 import config;
 import logger;
 import print;
@@ -12,14 +12,14 @@ import <Windows.h>;
  * \param path The path to the executable.
  * \return True if the process was created successfully, false otherwise.
  */
-bool create_process(const wstring& path) {
+bool ac::core::create_process(const std::wstring& path) {
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
     if (!CreateProcessW(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        print("CreateProcess failed - GetLastError = {}", GetLastError());
+        ac::print("CreateProcess failed - GetLastError = {}", GetLastError());
         return false;
     }
     CloseHandle(pi.hProcess);
@@ -42,7 +42,7 @@ void start_journey() {
 
     ZeroMemory(&pi_journey, sizeof(pi_journey));
 
-    std::wstring current_directory = get_executable_directory();
+    std::wstring current_directory = ac::get_executable_directory();
 
     std::wstring journey_app_name =
         L"\"" + current_directory + L"\\auto_core.exe\" child";
@@ -59,7 +59,7 @@ void start_journey() {
         &si_journey,
         &pi_journey))
     {
-        print("CreateProcess for journey.exe failed ({})", GetLastError());
+        ac::print("CreateProcess for journey.exe failed ({})", GetLastError());
         return;
     }
 

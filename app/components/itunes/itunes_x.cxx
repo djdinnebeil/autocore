@@ -1,9 +1,9 @@
 /**
-\file itunes_x.cxx
+\file main.cxx
 \brief Entry point and process-level support for the iTunes component.
 */
-module itunes_x;
 import visual;
+import itunes_x;
 import itunes_c;
 import itunes_t;
 import slash_i;
@@ -12,19 +12,17 @@ import logger_c;
 import pipes_x;
 import <Windows.h>;
 
-Logger iTunes_logger("itunes");
-
 void update_iTunes_logger() {
-    update_main_log_file();
+    ac::logger::update_main_log_file();
     iTunes_logger.update_log_file();
 }
 
 void log_init() {
-    update_main_log_file();
+    ac::logger::update_main_log_file();
     iTunes_logger.logg_and_logg("ac_itunes.exe started");
 }
 
-wstring pipe_name = L"ac_itunes_pipe";
+std::wstring pipe_name = L"ac_itunes_pipe";
 
 void end_iTunes() {
     iTunes_logger.logg("iTunes is shutting down");
@@ -52,12 +50,12 @@ int main() {
         process_pipe_commands(ac_itunes_pipe);
     }
     else {
-        print("Failed to connect to pipe server.");
+        ac::print("Failed to connect to pipe server.");
     }
     ac_iTunes.finalize_com();
     iTunes_logger.logg_and_logg("ac_itunes.exe has ended");
     iTunes_logger.close_log_file();
     CloseHandle(ac_itunes_pipe);
-    close_main_log_file();
+    ac::logger::close_main_log_file();
     return 0;
 }

@@ -1,181 +1,106 @@
-module main;
-import visual;
+/**
+ * \file auto_core.cxx
+ * \brief Main entry point for the Auto Core application.
+ *
+ * This file contains the primary logic for initializing and running the Auto Core application.
+ * It includes functions for setting up the console, initializing core components, creating
+ * named pipe servers for inter-process communication, and starting necessary components.
+ * The main function manages the application lifecycle, including setting up the environment,
+ * entering the message loop, and handling exceptions.
+ *
+ * \author Jose, Star, DJ, Daniel, Tabby
+ */
+import config;
+import ac_modules;
+import keymap;
+import journey;
+import runtime;
+import dash;
+import end;
 import <Windows.h>;
-import <conio.h>;
-import sp;
-import itunes;
-import logger_x;
-import server;
-import taskbar;
-import taskbar_ps;
 
 /**
- * \brief Closes the program.
- *
- * This function performs the necessary cleanup and shutdown operations for the program.
- * It stops the server, sends end signals to iTunes and Spotify, destroys the taskbar window,
- * unhooks the keyboard hook, and posts a quit message to the main thread.
- *
- * \runtime
+ * \brief Initializes the console and sets up exception handling.
  */
-void close_program() {
-    logg("close_program()");
-    program_closing = true;
-    stop_server();
-    send_iTunes_end_signal();
-    send_sp_end_signal();
-    send_wake_end_signal();
-    if (taskbar_ps_hwnd != NULL) {
-        DestroyWindow(taskbar_ps_hwnd);
-    }
-    if (keyboard_hook != NULL) {
-        UnhookWindowsHookEx(keyboard_hook);
-    }
-    PostThreadMessage(main_thread_id, WM_QUIT, 0, 0);
+void auto_init() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetUnhandledExceptionFilter(unhandled_exception_handler);
+    SetConsoleCtrlHandler(console_close_event, TRUE);
+}
+/**
+ * \brief Initializes the core components, sets up keyboard hooks, and configures the program window.
+ */
+void core_init() {
+    ac::main::keyboard_hook = SetWindowsHookEx(WH_KEYBOARD_LL, send_numpad_event, NULL, 0);
+    ac::main::main_thread_id = GetCurrentThreadId();
+    ac::main::program_window = GetConsoleWindow();
+    ac::main::close_window = close_window_hidden_init();
+}
+/**
+ * \brief Creates named pipe servers for inter-process communication.
+ */
+void create_pipe_servers() {
+    create_sp_pipe();
+    create_itunes_pipe();
+    create_wake_pipe();
 }
 
 /**
- * \brief Activates the function key.
- *
- * This function sets the primary flag to false and logs the activation of the function key.
- *
- * \runtime
+ * \brief Starts the components required for the application.
  */
-void activate_function_key() {
-    primary = false;
-    print("Function key activated");
-}
-
-/**
- * \brief Deactivates the function key.
- *
- * This function sets the primary flag to true and logs the deactivation of the function key.
- *
- * \runtime
- */
-void deactivate_function_key() {
-    primary = true;
-    print("Function key deactivated");
-}
-
-/**
- * \brief Prints the current timestamp.
- * 
- * This function prints the current timestamp to the screen.
- * \runtime
- */
-void print_timestamp() {
-    wstring most_recent_clipboard_text = get_clipboard_text();
-    Sleep(50);
-    print_to_screen(get_timestamp());
-    Sleep(100);
-    set_clipboard_text(most_recent_clipboard_text);
-}
-
-/**
- * \brief Prints the current datestamp.
- *
- * This function prints the current datestamp to the screen.
- * \runtime
- */
-void print_datestamp() {
-    print_to_screen(get_datestamp());
-}
-
-/**
- * \brief Prints the current datestamp in ISO 8601 format.
- *
- * This function prints the current datestamp to the screen.
- * \runtime
- */
-void print_datestamp_iso() {
-    print_to_screen(get_datestamp_iso());
-}
-
-/**
- * \brief Prints the current date and time as YYYY-MM-DD – HH:MM
- *
- * This function prints the current date and time to the screen.
- * \runtime
- */
-void print_datestamp_iso_with_timestamp() {
-    print_to_screen(get_datestamp_iso_with_timestamp());
-}
-
-/**
- * \brief Prints the current date and time as YYYY-MM-DD – HH:MM
- *
- * This function prints the current date and time to the screen.
- * \runtime
- */
-void print_datestamp_iso_with_timestamp_w() {
-    print_to_screen_w(str_to_wstr(get_datestamp_iso()) + L" \u2013 " + str_to_wstr(get_timestamp()));
-}
-
-/**
- * \brief Prints the day is today.
- *
- */
-void print_today_is_day() {
-    print("Today is {}", get_day_of_week());
-}
-
-/**
- * \brief Clears the input buffer.
- *
- * This function clears any remaining input in the input buffer.
- */
-void clear_input_buffer() {
-    while (_kbhit()) {
-        int getch = _getch();
-    }
-    cin.clear();
-}
-
-/**
- * \brief Sets focus to the Auto Core window.
- *
- * This function sets the focus to the Auto Core window, clearing the input buffer
- * and activating the Auto Core window if it is not already in focus.
- */
-void set_focus_auto_core() {
-    logg("set_focus_auto_core()");
-    clear_input_buffer();
-    HWND current_window_hwnd = GetForegroundWindow();
-    if (current_window_hwnd != program_window) {
-        taskbar.activate_auto_core();
+void start_components() {
+    start_iTunes_component();
+    start_sp_component();
+    start_wake_component();
+    if (ac::config.start_server) {
+        start_server();
     }
 }
-
-/**
- * \brief Adds brackets around the clipboard text.
- * \runtime
- * This function adds brackets around the current text in the clipboard and pastes it.
- */
-void add_brackets_around_clipboard() {
-    wstring clipboard_item = L"[" + get_clipboard_text() + L"]";
-    print(clipboard_item);
-    set_clipboard_text(clipboard_item);
-    paste_from_clipboard();
+void print_program_ready() {
+    std::string program_start_str = "Program ready";
+    program_start_str += "\nToday is " + ac::clock::get_day_of_week();
+    program_start_str += "\n" + get_task_list();
+    std::cout << program_start_str << std::endl;
+    Sleep(350);
+    ac::logger::logg(program_start_str);
 }
 
 /**
- * \brief Sends keyboard event of 'alt + f12'
+ * \brief The main function of the application.
  *
- * This event launches a terminal window in WebStorm.
- * \runtime
+ * This function initializes the application, sets up the environment, and enters the message loop.
+ *
+ * \return int The exit code of the application.
  */
-void send_alt_f12() {
-    INPUT inputs[4] = {};
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = VK_MENU; // Virtual key code for Alt
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = VK_F12; // Virtual key code for F12
-    inputs[2].type = INPUT_KEYBOARD;
-    inputs[2].ki.wVk = VK_F12;
-    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-    inputs[3].type = INPUT_KEYBOARD;
-    inputs[3].ki.wVk = VK_MENU;
-    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-    SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+int main(int argc, char* argv[]) {
+    if (argc > 1 && strcmp(argv[1], "child") == 0) {
+        auto_init();
+        core_init();
+        log_init();
+        crash_check();
+        create_pipe_servers();
+        start_components();
+        ac::config.runtime_enabled ? set_keymap_from_file() : set_keymap();
+        std::thread taskbar_ps_thread(run_taskbar_ps);
+        taskbar_ps_thread.detach();
+        std::thread program_ready_thread(print_program_ready);
+        program_ready_thread.detach();
+        MSG msg;
+        while (GetMessage(&msg, NULL, 0, 0) > 0) {
+            try {process_numpad_event(msg);}
+            catch (const std::exception& e) {ac::print("caught exception: {}", e.what());}
+            catch (...) {ac::print("uncaught exception");}
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        Sleep(50);
+        return 0;
+    }
+    else {
+        log_start();
+        start_journey();
+        ac::logger::log_end();
+        return 0;
+    }
 }
+ 

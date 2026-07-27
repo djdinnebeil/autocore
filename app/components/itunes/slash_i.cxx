@@ -21,10 +21,10 @@ void iTunes::remove_track() {
 void iTunes::recycle_bin_track() {
     SHFILEOPSTRUCT shFileOp = {0};
     shFileOp.wFunc = FO_DELETE;
-    wstring doubleNullTermPath = track_location + L'\0';
+    std::wstring doubleNullTermPath = track_location + L'\0';
     shFileOp.pFrom = doubleNullTermPath.c_str();
     shFileOp.fFlags = FOF_ALLOWUNDO | FOF_NO_UI;
-    wstring logg_message;
+    std::wstring logg_message;
     if (SHFileOperation(&shFileOp) != 0) {
         logg_message = L"Error - file not moved to the recycle bin: " + track_location;
     }
@@ -35,7 +35,7 @@ void iTunes::recycle_bin_track() {
 }
 
 void iTunes::delete_track() {
-    wstring logg_message;
+    std::wstring logg_message;
     if (!DeleteFile(track_location.c_str())) {
         logg_message = L"Error - file not deleted: " + track_location;
     }

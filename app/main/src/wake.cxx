@@ -4,14 +4,23 @@ import pipes;
 import journey;
 import <Windows.h>;
 
+
+namespace {
+    HANDLE wake_pipe = INVALID_HANDLE_VALUE;
+}
+
+void create_wake_pipe() {
+    wake_pipe = create_pipe_server(L"wake_pipe");
+}
+
 /**
  * \brief Starts the wake component executable.
  *
  * This function launches the wake component executable, `wake.exe`, which is responsible for logging wake events.
  */
 void start_wake_component() {
-    wstring wake_path = LR"(.\wake.exe)";
-    create_process(wake_path);
+    std::wstring wake_path = LR"(.\wake.exe)";
+    ac::core::create_process(wake_path);
 }
 
 /**

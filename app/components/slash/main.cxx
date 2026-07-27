@@ -1,5 +1,5 @@
 /**
- * \file slash_x.cxx
+ * \file main.cxx
  * \brief Reports and deletes Recycle Bin contents.
  *
  * This component scans the Recycle Bin and organizes its contents into files,
@@ -7,7 +7,7 @@
  * The resulting report is copied to the clipboard and displayed before the
  * Recycle Bin is emptied.
  */
-import base;
+import std;
 import config;
 import clipboard;
 import logger;
@@ -25,7 +25,7 @@ import <shlwapi.h>;
 
 namespace {
 
-    bool is_archive_extension(const wstring& extension) {
+    bool is_archive_extension(const std::wstring& extension) {
         return
             extension == L".rar" ||
             extension == L".zip" ||
@@ -36,7 +36,7 @@ namespace {
             extension == L".cab";
     }
 
-    bool is_music_extension(const wstring& extension) {
+    bool is_music_extension(const std::wstring& extension) {
         return extension == L".mp3" || extension == L".m4a";
     }
 
@@ -45,11 +45,11 @@ namespace {
      */
     void report_and_empty_recycle_bin() {
         HRESULT com_result = CoInitialize(NULL);
-        wss recycle_bin_contents;
-        wss recycle_bin_filenames;
-        wss recycle_bin_folders;
-        wss recycle_bin_archive_files;
-        wss music_filenames;
+        std::wostringstream recycle_bin_contents;
+        std::wostringstream recycle_bin_filenames;
+        std::wostringstream recycle_bin_folders;
+        std::wostringstream recycle_bin_archive_files;
+        std::wostringstream music_filenames;
         bool files_detected = false;
         bool folders_detected = false;
         bool archive_files_detected = false;
@@ -84,7 +84,7 @@ namespace {
                     ))) {
                         LPITEMIDLIST item_pidl;
                         while (item_enumerator->Next(1, &item_pidl, NULL) != S_FALSE) {
-                            wstring filepath;
+                            std::wstring filepath;
                             STRRET display_name;
 
                             if (SUCCEEDED(recycle_bin_folder->GetDisplayNameOf(
@@ -115,14 +115,14 @@ namespace {
                                         size_t extension_position =
                                             filepath.find_last_of(L'.');
 
-                                        if (extension_position == wstring::npos) {
+                                        if (extension_position == std::wstring::npos) {
                                             folders_detected = true;
                                             recycle_bin_folders
                                                 << extract_path_filename(filepath)
                                                 << L'\n';
                                         }
                                         else {
-                                            wstring extension =
+                                            std::wstring extension =
                                                 extract_lowercase_extension(filepath);
 
                                             if (is_archive_extension(extension)) {
@@ -140,7 +140,7 @@ namespace {
                                         }
                                     }
                                     else {
-                                        wstring extension =
+                                        std::wstring extension =
                                             extract_lowercase_extension(filepath);
 
                                         if (is_music_extension(extension)) {
@@ -172,7 +172,7 @@ namespace {
                                         }
 
                                         files_detected = true;
-                                        wstring filename = extract_file_stem(filepath);
+                                        std::wstring filename = extract_file_stem(filepath);
                                         if (filename.empty()) {
                                             filename = extract_path_filename(filepath);
                                         }
@@ -200,7 +200,7 @@ namespace {
             SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND
         );
 
-        wss output;
+        std::wostringstream output;
         if (
             files_detected ||
             folders_detected ||
@@ -226,9 +226,9 @@ namespace {
             output << L"\n\n";
         }
 
-        set_clipboard_text(output.str());
-        printnl(output.str());
-        paste_from_clipboard();
+        ac::clipboard::set_clipboard_text(output.str());
+        ac::printnl(output.str());
+        ac::clipboard::paste_from_clipboard();
     }
 
 }
@@ -238,18 +238,18 @@ namespace {
  * \return Exit code of the process.
  */
 int main() {
-    update_main_log_file();
+    ac::logger::update_main_log_file();
 
     try {
         report_and_empty_recycle_bin();
     }
-    catch (const exception& exception) {
-        print("caught exception: {}\n", exception.what());
+    catch (const std::exception& exception) {
+        ac::print("caught exception: {}\n", exception.what());
     }
     catch (...) {
-        print("uncaught exception\n");
+        ac::print("uncaught exception\n");
     }
 
-    close_main_log_file();
+    ac::logger::close_main_log_file();
     return 0;
 }

@@ -15,20 +15,20 @@ using std::stoll;
 using namespace cpr;
 
 /**
- * \brief Parses a JSON string.
- * \param s JSON string to parse.
+ * \brief Parses a JSON std::string.
+ * \param s JSON std::string to parse.
  * \return Parsed JSON object.
  */
-json parse(const string& s) {
+json parse(const std::string& s) {
     return json::parse(s);
 }
 /**
  * \brief Formats the artist name(s).
  * \param artists JSON array of artists.
- * \return Formatted artist name(s) as a string.
+ * \return Formatted artist name(s) as a std::string.
  */
-string Spotify::format_artist_name(const json& artists) {
-    string artist {};
+std::string Spotify::format_artist_name(const json& artists) {
+    std::string artist {};
     if (artists.size() == 1) {
         artist = artists[0]["name"];
     }
@@ -60,7 +60,7 @@ void Spotify::get_current_song() {
     if (!refresh_tokens()) {
         return;
     }
-    string url = "https://api.spotify.com/v1/me/player/currently-playing";
+    std::string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -85,7 +85,7 @@ void Spotify::get_current_song() {
     }
 
     SongMetadata meta = extract_song_metadata(song_details["item"]);
-    string current_song = format_song_title(meta);
+    std::string current_song = format_song_title(meta);
     if (current_song == last_song) {
         return;
     }
@@ -110,38 +110,38 @@ void Spotify::calculate_remaining_song_duration_ms(const json& song_details) {
 /**
  * \brief Formats the song title.
  * \param song_details JSON object containing song details.
- * \return Formatted song title as a string.
+ * \return Formatted song title as a std::string.
  */
-string Spotify::format_song_title(const SongMetadata& meta) {
-    oss output;
-    oss dur;
-    dur << meta.duration_seconds / 60 << ":" << setw(2) << setfill('0') << meta.duration_seconds % 60;
+std::string Spotify::format_song_title(const SongMetadata& meta) {
+    std::ostringstream output;
+    std::ostringstream dur;
+    dur << meta.duration_seconds / 60 << ":" << std::setw(2) << std::setfill('0') << meta.duration_seconds % 60;
     output << '[' << meta.name << "] [" << meta.artist << "] [" << meta.album << "] [" << dur.str() << ']';
     return output.str();
 }
 
-string Spotify::format_song_title_user_queue(const json& song_details) {
-    const string name = song_details["name"];
-    const string artist = format_artist_name(song_details["artists"]);
-    const string album = song_details["album"]["name"];
+std::string Spotify::format_song_title_user_queue(const json& song_details) {
+    const std::string name = song_details["name"];
+    const std::string artist = format_artist_name(song_details["artists"]);
+    const std::string album = song_details["album"]["name"];
     int duration = song_details["duration_ms"] / 1000;
-    oss output;
-    oss dur;
-    dur << duration / 60 << ":" << setw(2) << setfill('0') << duration % 60;
+    std::ostringstream output;
+    std::ostringstream dur;
+    dur << duration / 60 << ":" << std::setw(2) << std::setfill('0') << duration % 60;
     output << '[' << name << "] [" << artist << "] [" << album << "] [" << dur.str() << ']';
     return output.str();
 }
 
 /**
  * \brief Retrieves the user's Spotify queue.
- * \return Formatted user queue as a string.
+ * \return Formatted user queue as a std::string.
  */
-string Spotify::get_user_queue() {
+std::string Spotify::get_user_queue() {
     try {
         if (!refresh_tokens()) {
             return "Unable to refresh tokens";
         }
-        string url = "https://api.spotify.com/v1/me/player/queue";
+        std::string url = "https://api.spotify.com/v1/me/player/queue";
         auto response = Get(
             Url {url},
             Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -151,14 +151,14 @@ string Spotify::get_user_queue() {
             return "";
         }
         json queue_details = parse(response.text);
-        oss output;
-        string current_song;
+        std::ostringstream output;
+        std::string current_song;
         if (!queue_details["currently_playing"].is_null()) {
             current_song = format_song_title_user_queue(queue_details["currently_playing"]);
             song_history_contains(current_song);
         }
         for (const auto& item : queue_details["queue"]) {
-            string song = format_song_title_user_queue(item);
+            std::string song = format_song_title_user_queue(item);
             if (!song_history_contains(song)) {
                 output << song << '\n';
             }
@@ -179,7 +179,7 @@ bool Spotify::download_album_cover() {
     if (!refresh_tokens()) {
         return false;
     }
-    string url = "https://api.spotify.com/v1/me/player/currently-playing";
+    std::string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -189,17 +189,17 @@ bool Spotify::download_album_cover() {
         return "";
     }
     auto song_details = parse(response.text);
-    string album_cover_url;
+    std::string album_cover_url;
     if (!song_details["item"]["album"]["images"].empty()) {
-        album_cover_url = song_details["item"]["album"]["images"][0]["url"].get<string>();
+        album_cover_url = song_details["item"]["album"]["images"][0]["url"].get<std::string>();
     }
     else {
         return false;
     }
     auto album_response = Get(Url {album_cover_url});
-    string filepath = "cover.jpg";
+    std::string filepath = "cover.jpg";
     if (album_response.status_code == 200) {
-        ofstream file(filepath, ios::binary);
+        std::ofstream file(filepath, std::ios::binary);
         file.write(album_response.text.c_str(), album_response.text.size());
         file.close();
         return true;
@@ -213,7 +213,7 @@ bool Spotify::download_album_cover() {
  * \param current_song Song to check.
  * \return True if the song is in the history, false otherwise.
  */
-bool Spotify::song_history_contains(string current_song) {
+bool Spotify::song_history_contains(std::string current_song) {
     for (const auto& song : song_history_array) {
         if (song == current_song) {
             return true;

@@ -13,9 +13,8 @@ import pipes;
 import journey;
 import <Windows.h>;
 
-export HANDLE wake_pipe;
-
 export {
+    void create_wake_pipe();
     void start_wake_component();
     void send_wake_end_signal();
     void send_logg_wake_signal();

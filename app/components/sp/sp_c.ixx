@@ -31,13 +31,13 @@ export {
 }
 
 struct SongMetadata {
-    string name;
-    string artist;
-    string album;
+    std::string name;
+    std::string artist;
+    std::string album;
     int duration_seconds;
 };
 
-string get_datetime_stamp_local();
+std::string get_datetime_stamp_local();
 void track_spotify_history_update_or_insert(const SongMetadata& meta);
 void track_spotify_history(const SongMetadata& meta);
 
@@ -55,16 +55,16 @@ public:
     void play_pause();
     void next_song();
     void prev_song();
-    string get_user_queue();
+    std::string get_user_queue();
     int last_status_code;
-    vector<string> song_history;
-    string last_song;
-    string client_id;
-    string client_secret;
-    string credentials_64;
-    string access_token;
-    string refresh_token;
-    string album_url;
+    std::vector<std::string> song_history;
+    std::string last_song;
+    std::string client_id;
+    std::string client_secret;
+    std::string credentials_64;
+    std::string access_token;
+    std::string refresh_token;
+    std::string album_url;
     int timerate;
     bool check_timerate();
     void extract_tokens();
@@ -72,34 +72,34 @@ public:
     int pause_song();
     int play_song();
     int music_song_count;
-    string tokens_path;
-    string devices_path;
-    string codes_path;
+    std::string tokens_path;
+    std::string devices_path;
+    std::string codes_path;
     int remaining_song_duration_ms;
     bool next_song_clicked;
     bool is_spotify_playing();
-    string desktop_device_id;
-    string mobile_device_id;
+    std::string desktop_device_id;
+    std::string mobile_device_id;
     void switch_player();
-    bool song_history_contains(string song);
+    bool song_history_contains(std::string song);
     int song_history_index = 0;
     int string_array_size = 52;
-    array<string, 52> song_history_array;
+    std::array<std::string, 52> song_history_array;
     void get_devices();
     void get_credentials();
-    string authorization_header;
-    string content_type;
-    string content_length;
+    std::string authorization_header;
+    std::string content_type;
+    std::string content_length;
     bool is_playing;
-    void transfer_playback(string device_id);
-    void post_next_or_prev(string url);
+    void transfer_playback(std::string device_id);
+    void post_next_or_prev(std::string url);
     bool is_spotify_open();
     void start_playback_on_desktop();
     void start_playback_on_mobile();
-    string format_song_title_user_queue(const json& song_details);
+    std::string format_song_title_user_queue(const json& song_details);
     SongMetadata extract_song_metadata(const json& song_details);
-    string format_song_title(const SongMetadata& meta);
-    string format_artist_name(const json& artists);
+    std::string format_song_title(const SongMetadata& meta);
+    std::string format_artist_name(const json& artists);
     void calculate_remaining_song_duration_ms(const json& song_details);
     void update_devices();
     int sp_position;
@@ -110,7 +110,7 @@ public:
     time_t start_timestamp {};
     time_t refresh_token_expiration {};
 
-    mutex refresh_token_mutex;
+    std::mutex refresh_token_mutex;
     bool reauthorization_required = false;
     bool reauthorization_warning_logged  = false;
 

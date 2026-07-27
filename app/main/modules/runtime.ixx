@@ -5,9 +5,9 @@
 export module runtime;
 import visual;
 import numkey;
-import main;
+import ac_core;
 import taskbar;
-import auto_core;
+import keymap;
 import <Windows.h>;
 
 export {

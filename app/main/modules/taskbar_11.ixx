@@ -8,7 +8,7 @@ import visual;
 import taskbar;
 import taskbar_ps;
 import keyboard;
-import main;
+import ac_core;
 import <Windows.h>;
 
 export {

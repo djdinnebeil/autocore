@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\modules\base.ixx" />
     <ClCompile Include="..\modules\clipboard.ixx" />
     <ClCompile Include="..\modules\clock.ixx" />
     <ClCompile Include="..\modules\config.ixx" />
+    <ClCompile Include="..\modules\encoding.ixx" />
     <ClCompile Include="..\modules\keyboard.ixx" />
     <ClCompile Include="..\modules\logger.ixx" />
     <ClCompile Include="..\modules\logger_c.ixx" />
@@ -33,6 +33,7 @@
     <ClCompile Include="..\src\clipboard.cxx" />
     <ClCompile Include="..\src\clock.cxx" />
     <ClCompile Include="..\src\config.cxx" />
+    <ClCompile Include="..\src\encoding.cxx" />
     <ClCompile Include="..\src\keyboard.cxx" />
     <ClCompile Include="..\src\logger.cxx" />
     <ClCompile Include="..\src\logger_c.cxx" />

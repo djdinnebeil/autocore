@@ -8,7 +8,7 @@ import visual;
 import sp_x;
 import <sqlite3.h>;
 
-string get_datetime_stamp_local() {
+std::string get_datetime_stamp_local() {
     SYSTEMTIME st;
     GetLocalTime(&st);
     char buffer[20];  // "YYYY-MM-DD HH:MM:SS" = 19 characters + null
@@ -122,9 +122,9 @@ track_spotify_history_update_or_insert
 */
 void track_spotify_history(const SongMetadata& meta) {
     sp_logger.logg("track_spotify_history() called");
-    static const string db_path = R"(.\star\sp_history.db)";
+    static const std::string db_path = R"(.\star\sp_history.db)";
 
-    const string timestamp = get_datetime_stamp_local();
+    const std::string timestamp = get_datetime_stamp_local();
 
     // Open database
     sqlite3* db = nullptr;

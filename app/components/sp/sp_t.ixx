@@ -7,13 +7,15 @@ import visual;
 import sp_c;
 import sp_x;
 
+namespace chrono = std::chrono;
+
 export {
 	void spotify_next_song();
 	void start_sp_song_thread();
 }
 
-export mutex sp_mtx;
-export condition_variable sp_cv;
+export std::mutex sp_mtx;
+export std::condition_variable sp_cv;
 export bool sp_playback_state_change;
 
 const int sleep_timerate_ms = 15000;
@@ -26,7 +28,7 @@ const int processing_delay = 450;
  * \brief Starts the Spotify song thread.
  */
 void start_sp_song_thread() {
-    thread t(sp_song_thread);
+    std::thread t(sp_song_thread);
     t.detach();
 }
 
@@ -50,7 +52,7 @@ void sp_song_thread() {
     sp_logger.logg_and_logg("sp_thread started");
     Sleep(350);
     try {
-        unique_lock<mutex> lock(sp_mtx);
+        std::unique_lock<std::mutex> lock(sp_mtx);
         int sleep_time_ms;
         ac_spotify.get_current_song();
         if (ac_spotify.remaining_song_duration_ms == 0) {
@@ -76,18 +78,18 @@ void sp_song_thread() {
             else {
                 sleep_time_ms = sleep_timerate_ms;
             }
-            sp_logger.logg("sleep time {} seconds at {}", sleep_time_ms / 1000, get_timestamp_with_seconds());
+            sp_logger.logg("sleep time {} seconds at {}", sleep_time_ms / 1000, ac::clock::get_timestamp_with_seconds());
             if (sp_cv.wait_for(lock, chrono::milliseconds(sleep_time_ms), [] {return sp_playback_state_change; })) {
                 if (ac_spotify.end_thread) {
                     break;
                 }
-                sp_logger.logg("sp_playback_state_change at {}", get_timestamp_with_seconds());
+                sp_logger.logg("sp_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay);
             }
             ac_spotify.get_current_song();
         }
     }
-    catch (const exception& e) {
+    catch (const std::exception& e) {
         sp_logger.logg_and_print("sp_song_thread() has crashed: {}", e.what());
     }
     catch (...) {

@@ -3,9 +3,9 @@ import visual;
 import itunes_x;
 
 iTunes ac_iTunes;
-mutex iT_mtx;
-mutex history_mtx;
-condition_variable iT_cv;
+std::mutex iT_mtx;
+std::mutex history_mtx;
+std::condition_variable iT_cv;
 bool iT_playback_state_change = false;
 
 iTunes::iTunes() {

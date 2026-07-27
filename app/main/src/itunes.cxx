@@ -4,14 +4,23 @@ import pipes;
 import journey;
 import <Windows.h>;
 
+namespace {
+    HANDLE ac_itunes_pipe = INVALID_HANDLE_VALUE;
+}
+
+void create_itunes_pipe() {
+    ac_itunes_pipe = create_pipe_server(L"ac_itunes_pipe");
+}
+
+
 /**
  * \brief Starts the iTunes component.
  *
  * This function starts the iTunes component by creating a new process for the iTunes executable.
  */
 void start_iTunes_component() {
-    wstring itunes_path = LR"(.\ac_itunes.exe)";
-    create_process(itunes_path);
+    std::wstring itunes_path = LR"(.\ac_itunes.exe)";
+    ac::core::create_process(itunes_path);
 }
 
 /**

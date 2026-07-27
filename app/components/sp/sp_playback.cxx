@@ -14,23 +14,23 @@ import <chrono>;
 using std::stoll;
 using namespace cpr;
 
-json parse(const string& s);
+json parse(const std::string& s);
 void start_playback_sp_thread();
 
 /**
  * \brief Retrieves Spotify devices.
  */
 void Spotify::get_devices() {
-    ifstream rc(devices_path);
-    getline(rc, desktop_device_id);
-    getline(rc, mobile_device_id);
+    std::ifstream rc(devices_path);
+    std::getline(rc, desktop_device_id);
+    std::getline(rc, mobile_device_id);
     rc.close();
 }
 /**
  * \brief Updates Spotify devices.
  */
 void Spotify::update_devices() {
-    string url = "https://api.spotify.com/v1/me/player/devices";
+    std::string url = "https://api.spotify.com/v1/me/player/devices";
     auto response = Get(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -39,8 +39,8 @@ void Spotify::update_devices() {
     auto devices = parse(response.text);
     for (const auto& device : devices["devices"]) {
         if (device.contains("name") && device.contains("id")) {
-            string device_name = device["name"].get<string>();
-            string device_id = device["id"].get<string>();
+            std::string device_name = device["name"].get<std::string>();
+            std::string device_id = device["id"].get<std::string>();
 
             if (device_name == "DESKTOP-DNP5C1N" && desktop_device_id != device_id) {
                 desktop_device_id = device_id;
@@ -53,9 +53,9 @@ void Spotify::update_devices() {
         }
     }
     if (device_id_changed) {
-        ofstream rc(devices_path);
+        std::ofstream rc(devices_path);
         if (rc.is_open()) {
-            oss os;
+            std::ostringstream os;
             os << desktop_device_id << "\n" << mobile_device_id;
             rc << os.str();
             rc.close();
@@ -87,12 +87,12 @@ int Spotify::pause_song() {
  * \brief Transfers playback to the specified device.
  * \param device_id The device ID to transfer playback to.
  */
-void Spotify::transfer_playback(string device_id) {
+void Spotify::transfer_playback(std::string device_id) {
     if (!refresh_tokens()) {
         return;
     }
-    string url = "https://api.spotify.com/v1/me/player";
-    string body = format(R"({{"device_ids": ["{}"], "play": true}})", device_id);
+    std::string url = "https://api.spotify.com/v1/me/player";
+    std::string body = format(R"({{"device_ids": ["{}"], "play": true}})", device_id);
     auto response = Put(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}},
@@ -122,7 +122,7 @@ void Spotify::switch_player() {
         return;
     }
     update_devices();
-    string url = "https://api.spotify.com/v1/me/player";
+    std::string url = "https://api.spotify.com/v1/me/player";
     auto response = Get(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -136,7 +136,7 @@ void Spotify::switch_player() {
         return;
     }
     auto playback_details = parse(response.text);
-    string current_device_id = playback_details["device"]["id"];
+    std::string current_device_id = playback_details["device"]["id"];
     if (current_device_id == desktop_device_id) {
         start_playback_on_mobile();
     }
@@ -179,7 +179,7 @@ bool Spotify::is_spotify_playing() {
     if (!refresh_tokens()) {
         return false;
     }
-    string url = "https://api.spotify.com/v1/me/player/currently-playing";
+    std::string url = "https://api.spotify.com/v1/me/player/currently-playing";
     auto response = Get(
         Url {url},
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
@@ -217,7 +217,7 @@ void Spotify::play_pause() {
     }
     else {
         sp_logger.logg_and_logg("starting Spotify");
-        thread t(start_playback_sp_thread);
+        std::thread t(start_playback_sp_thread);
         t.detach();
     }
 }
@@ -225,7 +225,7 @@ void Spotify::play_pause() {
  * \brief Sends a POST request to skip to the next or previous song.
  * \param url URL for the POST request.
  */
-void Spotify::post_next_or_prev(string url) {
+void Spotify::post_next_or_prev(std::string url) {
     if (!refresh_tokens()) {
         return;
     }
@@ -241,13 +241,13 @@ void Spotify::post_next_or_prev(string url) {
  * \brief Skips to the next Spotify song.
  */
 void Spotify::next_song() {
-    string url = "https://api.spotify.com/v1/me/player/next";
+    std::string url = "https://api.spotify.com/v1/me/player/next";
     post_next_or_prev(url);
 }
 /**
  * \brief Skips to the previous Spotify song.
  */
 void Spotify::prev_song() {
-    string url = "https://api.spotify.com/v1/me/player/previous";
+    std::string url = "https://api.spotify.com/v1/me/player/previous";
     post_next_or_prev(url);
 }

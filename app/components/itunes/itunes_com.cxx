@@ -11,7 +11,7 @@ BOOL CALLBACK enum_iTunes_window(HWND hwnd, LPARAM lParam) {
     if (length != max_length) {
         return TRUE;
     }
-    wstring window_title(length, L'\0');
+    std::wstring window_title(length, L'\0');
     if (!GetWindowTextW(hwnd, &window_title[0], length + 1)) {
         return TRUE;
     }
@@ -50,7 +50,7 @@ void iTunes::initialize_com() {
         CoUninitialize();
         return;
     }
-    iTunes_thread = thread(&iTunes::start_iTunes_thread, this);
+    iTunes_thread = std::thread(&iTunes::start_iTunes_thread, this);
     iTunes_thread.detach();
     initialized = true;
 }

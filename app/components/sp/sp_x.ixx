@@ -14,7 +14,7 @@ import logger_c;
  *
  * This logger is used to log messages specific to the Spotify component.
  */
-export Logger sp_logger("sp");
+export ac::Logger sp_logger("sp");
 
 /**
  * \brief Updates the Spotify logger.
@@ -22,7 +22,7 @@ export Logger sp_logger("sp");
  * This function updates the main log file and the Spotify logger file.
  */
 export void update_sp_logger() {
-	update_main_log_file();
+	ac::logger::update_main_log_file();
 	sp_logger.update_log_file();
 }
 
@@ -32,6 +32,6 @@ export void update_sp_logger() {
  * This function updates the main log file and logs the start of the Spotify component.
  */
 export void log_init() {
-	update_main_log_file();
+	ac::logger::update_main_log_file();
 	sp_logger.logg_and_logg("sp_ac.exe started");
 }

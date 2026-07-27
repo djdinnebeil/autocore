@@ -4,12 +4,12 @@
  *
  */
 export module notepad;
-import base;
+import std;
 import config;
 import clipboard;
 import logger;
 import print;
-import main;
+import ac_core;
 import <Windows.h>;
 
 

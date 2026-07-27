@@ -1,11 +1,11 @@
 module tasks;
-import base;
+import std;
 import config;
 import clipboard;
 import logger;
 import print;
 import thread;
-import main;
+import ac_core;
 import <Windows.h>;
 
 /** \runtime */
@@ -14,22 +14,22 @@ void launch_task_list() {
     ShellExecuteW(NULL, L"open", L"notepad.exe", filePath, NULL, SW_SHOWDEFAULT);
 }
 
-string get_task_list() {
-    const string task_list_path = R"(.\link\task_list.rc)";
-    ifstream file(task_list_path, ios::binary | ios::ate);
+std::string get_task_list() {
+    const std::string task_list_path = R"(.\link\task_list.rc)";
+    std::ifstream file(task_list_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        print("error reading file");
+        ac::print("error reading file");
         return "";
     }
-    streamsize size = file.tellg();
+    std::streamsize size = file.tellg();
     if (size == 0) {
-        print_to_screen("Nothing pending today.");
+        ac::print_to_screen("Nothing pending today.");
         return "";
     }
     file.seekg(0);
-    string task_list = "Today's task list:";
-    string line;
-    while (getline(file, line)) {
+    std::string task_list = "Today's task list:";
+    std::string line;
+    while (std::getline(file, line)) {
         if (!line.empty() && line.back() == '\r') {
             line.pop_back();
         }
@@ -46,5 +46,5 @@ string get_task_list() {
  * \runtime
  */
 void print_task_list() {
-    print_to_screen(get_task_list());
+    ac::print_to_screen(get_task_list());
 }

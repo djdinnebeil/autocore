@@ -6,7 +6,7 @@
  * It ensures that the logs for these components are kept up-to-date and properly managed.
  */
 export module logger_x;
-import base;
+import std;
 import config;
 import clock;
 import logger;

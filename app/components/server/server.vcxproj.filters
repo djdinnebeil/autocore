@@ -15,11 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="server_x.cxx">
+    <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\base.ixx">
-      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\clipboard.ixx">
       <Filter>Header Files</Filter>
@@ -53,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="server_logging.ixx">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\encoding.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

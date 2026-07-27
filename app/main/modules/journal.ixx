@@ -10,11 +10,11 @@ export module journal;
 import visual;
 import keyboard;
 import thread;
-import main;
+import ac_core;
 import <Windows.h>;
 
 export {
-    function<void()> make_print_choice(const string& name, bool include_zero);
+    std::function<void()> make_print_choice(const std::string& name, bool include_zero);
     void print_Eric_choice();
     void print_Katrina_choice();
     void print_Lily_choice();

@@ -1,30 +1,31 @@
 /**
-\file auto_core.ixx
-\brief The main module.
+\file keymap.ixx
+\brief The keymap
 */
-export module auto_core;
-export import core;
+export module keymap;
+import ac_modules;
+import ac_actions;
 
 /**
  * \brief Struct to hold primary and secondary function states.
  */
 export struct function_state {
-    function<void()> primary;
-    function<void()> secondary;
+    std::function<void()> primary;
+    std::function<void()> secondary;
 };
 
 /**
  * \brief Unordered map to store function states for numkey events.
  */
-export unordered_map<int, function_state> ac_numkey_event;
+export std::unordered_map<int, function_state> ac_numkey_event;
 
 /**
- * \brief Sets the action map for numkey events.
+ * \brief Sets the hardcoded keymap.
  *
- * This function initializes the `ac_numkey_event` map with various actions
- * associated with numkey events.
+ * This function populates the keymap with the configured primary and
+ * secondary actions for each supported key.
  */
-export void set_action_map() {
+export void set_keymap() {
     ac_numkey_event[numkey_0] = {activate_function_key, deactivate_function_key};
     ac_numkey_event[numkey_1] = {activate_auto_core, close_program};
     ac_numkey_event[numkey_2] = {activate_word, save_file_and_create_new_file};

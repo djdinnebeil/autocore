@@ -7,11 +7,11 @@
  * is enabled.
  */
 export module dash;
-import core;
-import auto_core;
+import ac_modules;
+import keymap;
 import dash_x;
 import <Windows.h>;
 
 export {
-    void parse_and_set_action_map();
+    void set_keymap_from_file();
 }

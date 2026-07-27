@@ -6,6 +6,6 @@ export module itunes_x;
 import logger;
 import logger_c;
 
-export extern Logger iTunes_logger;
+export ac::Logger iTunes_logger("itunes");
 export void update_iTunes_logger();
 export void log_init();

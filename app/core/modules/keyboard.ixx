@@ -5,16 +5,16 @@
 module;
 
 #ifdef BUILDING_DLL
-#define DLL_API __declspec(dllexport)
+    #define DLL_API __declspec(dllexport)
 #else
-#define DLL_API
+    #define DLL_API __declspec(dllimport)
 #endif
 
 export module keyboard;
-import base;
+import std;
 import <Windows.h>;
 
-export {
+export namespace ac::keyboard {
     DLL_API void send_winkey(int position);
     DLL_API void send_winkey_and_number(int number);
     DLL_API void press_and_hold_winkey();

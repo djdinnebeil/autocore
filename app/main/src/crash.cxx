@@ -1,6 +1,6 @@
 module crash;
 import visual;
-import main;
+import ac_core;
 import logger_x;
 import <Windows.h>;
 import <filesystem>;
@@ -21,7 +21,7 @@ std::string crash_folder = R"(.\crash\)";
  */
 void crash_check() {
     if (std::filesystem::exists(crash_log)) {
-        print("Crash detected --- press any key to continue");
+        ac::print("Crash detected --- press any key to continue");
         std::cin.get(); // Pause and wait for user input
     }
 }
@@ -37,8 +37,8 @@ void restart_program(const std::string& error_report) {
     // Log the crash information
     std::ofstream log_crash(crash_log, std::ios_base::app);
     if (log_crash.is_open()) {
-        std::string crash_report = std::format("{}\ncrash at {} {}", error_report, get_timestamp_with_seconds(), get_datestamp());
-        logg(crash_report);
+        std::string crash_report = std::format("{}\ncrash at {} {}", error_report, ac::clock::get_timestamp_with_seconds(), ac::clock::get_datestamp());
+        ac::logger::logg(crash_report);
         log_crash << crash_report;
         log_crash.close();
     }
@@ -53,8 +53,8 @@ void restart_program(const std::string& error_report) {
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         close_program();
-        logg("restarting auto_core.exe at {}", get_datetime_stamp_with_seconds());
-        log_end();
+        ac::logger::logg("restarting auto_core.exe at {}", ac::clock::get_datetime_stamp_with_seconds());
+        ac::logger::log_end();
         ExitProcess(1);
     }
 }
@@ -67,12 +67,12 @@ void restart_program(const std::string& error_report) {
  * \return The generated crash dump file name.
  */
 std::string get_crash_name() {
-    std::string crash_name = "bandicoot_" + get_datestamp();
+    std::string crash_name = "bandicoot_" + ac::clock::get_datestamp();
     std::string crash_path = crash_folder + crash_name + ".dmp";
     int counter = 0;
     while (std::filesystem::exists(crash_path)) {
         counter++;
-        crash_name = "bandicoot_" + get_datestamp() + "_" + std::to_string(counter);
+        crash_name = "bandicoot_" + ac::clock::get_datestamp() + "_" + std::to_string(counter);
         crash_path = crash_folder + crash_name + ".dmp";
     }
     return crash_name;

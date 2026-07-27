@@ -1,5 +1,5 @@
 /**
-\file sp.cxx
+\file main.cxx
 \brief Entry point for the Spotify component of Auto Core.
 
 This file initializes the Spotify component, sets up the command map for handling
@@ -14,7 +14,7 @@ import pipes_x;
 import <Windows.h>;
 
 // Pipe name for Spotify communication
-wstring pipe_name = L"ac_sp_pipe";
+std::wstring pipe_name = L"ac_sp_pipe";
 
 /**
  * \brief Ends the Spotify process and performs necessary cleanup.
@@ -62,6 +62,6 @@ int main() {
     sp_logger.logg_and_logg("sp_ac.exe has ended");
     sp_logger.close_log_file();
     CloseHandle(ac_sp_pipe);
-    close_main_log_file();
+    ac::logger::close_main_log_file();
     return 0;
 }

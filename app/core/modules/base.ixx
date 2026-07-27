@@ -57,9 +57,9 @@ export {
     using std::wcout;
     using std::getline;
 
-    // String Utilities
+    // std::string Utilities
     using std::string;
-    using std::wstring;
+    using std::std::wstring;
     using std::string_view;
     using std::to_string;
     using std::stoi;

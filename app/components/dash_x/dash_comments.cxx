@@ -1,4 +1,4 @@
-import base;
+import std;
 
 #include "dash_x.hpp"
 
@@ -6,25 +6,25 @@ import base;
  * \brief Extracts the module description comment from the dash_x.ixx file.
  * \return The module description comment as a string.
  */
-string extract_module_description_comment() {
-    string description;
-    ifstream file(dash_x_path);
+std::string extract_module_description_comment() {
+    std::string description;
+    std::ifstream file(dash_x_path);
 
     if (!file.is_open()) {
-        cerr << "Failed to open file: " << dash_x_path << endl;
+        std::cerr << "Failed to open file: " << dash_x_path << std::endl;
         return "";
     }
 
-    string line;
-    getline(file, line);
+    std::string line;
+    std::getline(file, line);
 
     if (line.starts_with("/*")) {
         description += line + "\n";
 
-        while (getline(file, line)) {
+        while (std::getline(file, line)) {
             description += line + "\n";
 
-            if (line.find("*/") != string::npos) {
+            if (line.find("*/") != std::string::npos) {
                 break;
             }
         }
@@ -39,34 +39,34 @@ string extract_module_description_comment() {
  * \param function_name The name of the function to extract the comment for.
  * \return The function description comment as a string.
  */
-string extract_function_description_comment(const string& function_name) {
-    ifstream file(dash_x_path);
+std::string extract_function_description_comment(const std::string& function_name) {
+    std::ifstream file(dash_x_path);
 
     if (!file.is_open()) {
-        cerr << "Failed to open file: " << dash_x_path << endl;
+        std::cerr << "Failed to open file: " << dash_x_path << std::endl;
         return "";
     }
 
-    string line;
-    string comment;
-    getline(file, line);
+    std::string line;
+    std::string comment;
+    std::getline(file, line);
 
-    while (getline(file, line)) {
+    while (std::getline(file, line)) {
         comment = "";
 
-        if (line.find("/*") != string::npos) {
+        if (line.find("/*") != std::string::npos) {
             comment += line + "\n";
 
             while (getline(file, line)) {
                 comment += line + "\n";
 
-                if (line.find("*/") != string::npos) {
+                if (line.find("*/") != std::string::npos) {
                     getline(file, line);
                     break;
                 }
             }
 
-            if (line.find(function_name) != string::npos) {
+            if (line.find(function_name) != std::string::npos) {
                 file.close();
                 return comment;
             }

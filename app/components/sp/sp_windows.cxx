@@ -12,7 +12,10 @@ import <cpr/cpr.h>;
 import <chrono>;
 
 using std::stoll;
+
 using namespace cpr;
+namespace this_thread = std::this_thread;
+namespace chrono = std::chrono;
 
 /**
  * \brief Callback function to enumerate Spotify windows.
@@ -26,7 +29,7 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
     if (length != max_length) {
         return TRUE;
     }
-    wstring window_title(length, L'\0');
+    std::wstring window_title(length, L'\0');
     if (!GetWindowTextW(hwnd, &window_title[0], length + 1)) {
         return TRUE;
     }
@@ -42,11 +45,11 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
  * \brief Retrieves the Spotify taskbar position.
  */
 void Spotify::get_sp_position() {
-    ifstream taskbar_config_file(R"(.\config\taskbar.ini)");
-    string line;
-    while (getline(taskbar_config_file, line)) {
+    std::ifstream taskbar_config_file(R"(.\config\taskbar.ini)");
+    std::string line;
+    while (std::getline(taskbar_config_file, line)) {
         size_t found_spotify = line.find("spotify");
-        if (found_spotify != string::npos) {
+        if (found_spotify != std::string::npos) {
             sp_position = stoi(line.substr(0, 1));
             break;
         }
@@ -56,7 +59,7 @@ void Spotify::get_sp_position() {
  * \brief Activates the Spotify window.
  */
 void Spotify::activate() {
-    send_winkey(sp_position);
+    ac::keyboard::send_winkey(sp_position);
 }
 /**
  * \brief Checks if the Spotify application is open.

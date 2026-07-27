@@ -1,10 +1,10 @@
 module end;
-import base;
+import std;
 import config;
 import logger;
 import print;
 import numkey;
-import main;
+import ac_core;
 import runtime;
 import <Windows.h>;
 
@@ -23,13 +23,13 @@ import <Windows.h>;
 LRESULT CALLBACK close_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_QUERYENDSESSION:
-        logg("close_procedure() - WM_QUERYENDSESSION");
+        ac::logger::logg("close_procedure() - WM_QUERYENDSESSION");
         return TRUE;
     case WM_ENDSESSION:
         if (wParam == TRUE) {
-            logg("close_procedure() - WM_ENDSESSION");
+            ac::logger::logg("close_procedure() - WM_ENDSESSION");
             primary = false;
-            PostThreadMessage(main_thread_id, ac_numkey_1, 0, numkey_1);
+            PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             close_program();
             return TRUE;
         }
@@ -81,25 +81,25 @@ HWND close_window_hidden_init() {
  * \return TRUE if the event was handled, FALSE otherwise.
  */
 BOOL WINAPI console_close_event(DWORD dwType) {
-    if (!program_closing) {
+    if (!ac::main::program_closing) {
         switch (dwType) {
         case CTRL_CLOSE_EVENT:
-            logg("console_close_event() - CTRL_CLOSE_EVENT");
+            ac::logger::logg("console_close_event() - CTRL_CLOSE_EVENT");
             primary = false;
-            PostThreadMessage(main_thread_id, ac_numkey_1, 0, numkey_1);
+            PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         case CTRL_BREAK_EVENT:
-            logg("console_close_event() - CTRL_BREAK_EVENT");
+            ac::logger::logg("console_close_event() - CTRL_BREAK_EVENT");
             primary = false;
-            PostThreadMessage(main_thread_id, ac_numkey_1, 0, numkey_1);
+            PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         case CTRL_C_EVENT:
-            logg("console_close_event() - CTRL_C_EVENT");
+            ac::logger::logg("console_close_event() - CTRL_C_EVENT");
             primary = false;
-            PostThreadMessage(main_thread_id, ac_numkey_1, 0, numkey_1);
+            PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         default:
-            logg("console_close_event() - default");
+            ac::logger::logg("console_close_event() - default");
             break;
         }
     }

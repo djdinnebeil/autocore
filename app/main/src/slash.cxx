@@ -1,5 +1,5 @@
 module slash;
-import base;
+import std;
 import config;
 import logger;
 import print;
@@ -14,7 +14,7 @@ import <Windows.h>;
  *
  * \param exe_path The path to the slash executable.
  */
-void call_slash_exe(const wstring& exe_path) {
+void call_slash_exe(const std::wstring& exe_path) {
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
@@ -24,7 +24,7 @@ void call_slash_exe(const wstring& exe_path) {
 
     // Create the slash process
     if (!CreateProcessW(NULL, szCmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        print("error with slash module - {}", GetLastError());
+        ac::print("error with slash module - {}", GetLastError());
     }
     else {
         // Wait for the process to complete
@@ -44,6 +44,6 @@ void call_slash_exe(const wstring& exe_path) {
  * \runtime
  */
 void retrieve_and_delete_recycle_bin() {
-    logg("retrieve_and_delete_recycle_bin()");
+    ac::logger::logg("retrieve_and_delete_recycle_bin()");
     call_slash_exe(LR"(.\slash.exe)");
 }

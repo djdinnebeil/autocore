@@ -2,11 +2,11 @@ module journal;
 import visual;
 import keyboard;
 import thread;
-import main;
+import ac_core;
 import <Windows.h>;
 
 int upper_choice;
-string choice_selector;
+std::string choice_selector;
 
 /**
  * \brief Generates a random number within a specified range.
@@ -16,8 +16,8 @@ string choice_selector;
  * \return A random number within the specified range.
  */
 int get_random_number(int range_low, int range_high) {
-    static mt19937 engine {random_device{}()};
-    uniform_int_distribution<int> dist(range_low, range_high);
+    static std::mt19937 engine {std::random_device{}()};
+    std::uniform_int_distribution<int> dist(range_low, range_high);
     return dist(engine);
 }
 
@@ -30,16 +30,16 @@ int get_random_number(int range_low, int range_high) {
 void set_number_of_choices() {
     HWND currentWindowHandle = GetForegroundWindow();
     set_focus_auto_core();
-    string choice_selection;
-    string choice_number_str;
-    printnl("Enter number of choices: ");
-    getline(cin, choice_number_str);
+    std::string choice_selection;
+    std::string choice_number_str;
+    ac::printnl("Enter number of choices: ");
+    std::getline(std::cin, choice_number_str);
     if (choice_number_str.empty()) {
         upper_choice = 2;
-        logg("");
+        ac::logger::logg("");
     }
     else {
-        logg("{}", choice_number_str);
+        ac::logger::logg("{}", choice_number_str);
         try {
             int choice_number = stoi(choice_number_str);
             if (choice_number >= 2) {
@@ -64,7 +64,7 @@ void set_number_of_choices() {
 void thread_print_choice_with_name() {
     set_number_of_choices();
     int random_choice_number = get_random_number(1, upper_choice);
-    print_to_screen(format("{} selects {}.", choice_selector, random_choice_number));
+    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -75,7 +75,7 @@ void thread_print_choice_with_name() {
 void thread_print_choice_with_zero() {
     set_number_of_choices();
     int random_choice_number = get_random_number(0, upper_choice);
-    print_to_screen(format("{} selects {}.", choice_selector, random_choice_number));
+    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -89,7 +89,7 @@ void thread_print_choice_with_custom(int lower_bound) {
         upper_choice = lower_bound + 1;
     }
     int random_choice_number = get_random_number(lower_bound, upper_choice);
-    print_to_screen(format("{} selects {}.", choice_selector, random_choice_number));
+    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -103,14 +103,14 @@ void thread_print_choice_for_jose() {
     int random_choice_number_2 = get_random_number(0, upper_choice);
     int random_choice_number_3 = get_random_number(0, upper_choice);
 
-    string random_choice_str_1 = format("{} selects {}.\n", choice_selector, random_choice_number_1);
-    string random_choice_str_2 = format("{} selects {}.\n", choice_selector, random_choice_number_2);
-    string random_choice_str_3 = format("{} selects {}.", choice_selector, random_choice_number_3);
+    std::string random_choice_str_1 = std::format("{} selects {}.\n", choice_selector, random_choice_number_1);
+    std::string random_choice_str_2 = std::format("{} selects {}.\n", choice_selector, random_choice_number_2);
+    std::string random_choice_str_3 = std::format("{} selects {}.", choice_selector, random_choice_number_3);
 
-    string choices_str = random_choice_str_1 + random_choice_str_2 + random_choice_str_3;
+    std::string choices_str = random_choice_str_1 + random_choice_str_2 + random_choice_str_3;
         
      
-    print_to_screen(format("{}", choices_str));
+    ac::print_to_screen(std::format("{}", choices_str));
 }
 
 
@@ -120,15 +120,15 @@ void thread_print_choice_for_jose() {
  * \param name The name associated with the choice.
  * \param include_zero Indicates if the range should include zero.
  */
-void print_choice(const string& name, bool include_zero) {
-    logg("print_choice()");
+void print_choice(const std::string& name, bool include_zero) {
+    ac::logger::logg("print_choice()");
     choice_selector = name;
     if (include_zero) {
-        thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+        std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
         t.detach();
     }
     else {
-        thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+        std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
         t.detach();
     }
 }
@@ -142,88 +142,88 @@ void print_choice(const string& name, bool include_zero) {
  * 
  * \runtime
  */
-function<void()> make_print_choice(const string& name, bool include_zero = false) {
+std::function<void()> make_print_choice(const std::string& name, bool include_zero = false) {
     return [=]() {print_choice(name, include_zero); };
 }
 
 /** \runtime */
 void print_Tabby_choice() {
-    logg("print_Tabby_choice()");
+    ac::logger::logg("print_Tabby_choice()");
     choice_selector = "Tabby";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
     t.detach();
 }
 
 /** \runtime */
 void print_Eric_choice() {
-    logg("print_Eric_choice()");
+    ac::logger::logg("print_Eric_choice()");
     choice_selector = "Eric";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
     t.detach();
 }
 
 /** \runtime */
 void print_Katrina_choice() {
-    logg("print_Katrina_choice()");
+    ac::logger::logg("print_Katrina_choice()");
     choice_selector = "Katrina";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
     t.detach();
 }
 
 /** \runtime */
 void print_Lily_choice() {
-    logg("print_Lily_choice()");
+    ac::logger::logg("print_Lily_choice()");
     choice_selector = "Lily";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
     t.detach();
 }
 
 /** \runtime */
 void print_Star_choice() {
-    logg("print_Star_choice()");
+    ac::logger::logg("print_Star_choice()");
     choice_selector = "Star";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
     t.detach();
 }
 
 /** \runtime */
 void print_Luna_choice() {
-    logg("print_Luna_choice()");
+    ac::logger::logg("print_Luna_choice()");
     choice_selector = "Luna";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
     t.detach();
 }
 
 /** \runtime */
 void print_Daniel_choice() {
-    logg("print_Daniel_choice()");
+    ac::logger::logg("print_Daniel_choice()");
     choice_selector = "Daniel";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
     t.detach();
 }
 
 /** \runtime */
 void print_Jose_choice() {
-    logg("print_Jose_choice()");
+    ac::logger::logg("print_Jose_choice()");
     choice_selector = "Jose";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
     t.detach();
 }
 
 /** \runtime */
 void print_Jose_choices() {
-    logg("print_Jose_choices()");
+    ac::logger::logg("print_Jose_choices()");
     choice_selector = "Jose";
-    thread t([=]() {run_with_exception_handling(thread_print_choice_for_jose); });
+    std::thread t([=]() {run_with_exception_handling(thread_print_choice_for_jose); });
     t.detach();
 }
 
 
 /** \runtime */
 void print_James_choice() {
-    logg("print_James_choice()");
+    ac::logger::logg("print_James_choice()");
     choice_selector = "James";
-    thread t([=]() {
+    std::thread t([=]() {
         run_with_exception_handling([=]() {
             thread_print_choice_with_custom(3);
             });
@@ -233,9 +233,9 @@ void print_James_choice() {
 
 /** \runtime */
 void print_Jace_choice() {
-    logg("print_Jace_choice()");
+    ac::logger::logg("print_Jace_choice()");
     choice_selector = "Jace";
-    thread t([=]() {
+    std::thread t([=]() {
         run_with_exception_handling([=]() {
             thread_print_choice_with_custom(3);
             });
@@ -245,9 +245,9 @@ void print_Jace_choice() {
 
 /** \runtime */
 void print_Tyler_choice() {
-    logg("print_Tyler_choice()");
+    ac::logger::logg("print_Tyler_choice()");
     choice_selector = "Tyler";
-    thread t([=]() {
+    std::thread t([=]() {
         run_with_exception_handling([=]() {
             thread_print_choice_with_custom(5);
             });
@@ -257,9 +257,9 @@ void print_Tyler_choice() {
 
 /** \runtime */
 void print_Gin_choice() {
-    logg("print_Gin_choice()");
+    ac::logger::logg("print_Gin_choice()");
     choice_selector = "Gin";
-    thread t([=]() {
+    std::thread t([=]() {
         run_with_exception_handling([=]() {
             thread_print_choice_with_custom(15);
             });
@@ -269,10 +269,10 @@ void print_Gin_choice() {
 
 /** \runtime */
 void print_one_is_selected() {
-    print_to_screen("1 is selected.");
+    ac::print_to_screen("1 is selected.");
 }
 
 /** \runtime */
 void print_two_is_selected() {
-    print_to_screen("2 is selected.");
+    ac::print_to_screen("2 is selected.");
 }

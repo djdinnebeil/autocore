@@ -1,8 +1,16 @@
 module sp;
-import base;
+import std;
 import pipes;
 import journey;
 import <Windows.h>;
+
+namespace {
+    HANDLE ac_sp_pipe = INVALID_HANDLE_VALUE;
+}
+
+void create_sp_pipe() {
+    ac_sp_pipe = create_pipe_server(L"ac_sp_pipe");
+}
 
 /**
  * \brief Starts the Spotify component executable.
@@ -10,8 +18,8 @@ import <Windows.h>;
  * This function launches the Spotify component executable, `sp_ac.exe`, which is responsible for handling Spotify-related tasks.
  */
 void start_sp_component() {
-    wstring sp_path = LR"(.\sp_ac.exe)";
-    create_process(sp_path);
+    std::wstring sp_path = LR"(.\sp_ac.exe)";
+    ac::core::create_process(sp_path);
 }
 
 /**

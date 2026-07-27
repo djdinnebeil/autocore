@@ -1,20 +1,18 @@
 /**
- * \file core.ixx
+ * \file modules.ixx
  * \brief This module centralizes main program imports. 
 */
-export module core;
+export module ac_modules;
 
-export import base;
 export import config;
 export import logger;
 export import visual;
-export import main;
+export import ac_core;
 export import journal;
 export import link;
 export import tasks;
 export import slash;
 export import numkey;
-export import taskbar;
 export import itunes;
 export import sp;
 export import star;
@@ -24,6 +22,7 @@ export import taskbar_11;
 export import wake;
 export import notes;
 export import notepad;
+export import ac_actions;
 
 export import pipes;
 export import cloud;
@@ -37,8 +36,3 @@ export import thread;
 export import logger_c;
 export import logger_x;
 export import logger_t;
-
-/**
- * \brief Placeholder structure to provide symmetry in Visual Studio. This can safely be removed.
- */
-struct ide_placeholder {};

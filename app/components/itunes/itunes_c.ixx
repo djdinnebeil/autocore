@@ -9,11 +9,11 @@ import <comdef.h>;
 import <atlbase.h>;
 
 struct TrackInfo {
-    wstring name;
-    wstring artist;
-    wstring album;
+    std::wstring name;
+    std::wstring artist;
+    std::wstring album;
     int duration;
-    wstring location;
+    std::wstring location;
 };
 
 export class iTunes {
@@ -26,13 +26,13 @@ public:
     void stop_song();
     void initialize_com();
     void finalize_com();
-    vector<wstring> song_history;
-    wstring last_retrieved_song;
-    wstring get_current_track();
+    std::vector<std::wstring> song_history;
+    std::wstring last_retrieved_song;
+    std::wstring get_current_track();
     TrackInfo current_track;
     bool initialized;
     bool is_playing();
-    wstring track_location;
+    std::wstring track_location;
     HRESULT hr;
     CComPtr<IDispatch> iTunes_app = nullptr;
     CComPtr<IDispatch> p_current_track = nullptr;
@@ -41,7 +41,7 @@ public:
     int get_current_playback_position();
     int remaining_song_duration;
     bool end_thread;
-    thread iTunes_thread;
+    std::thread iTunes_thread;
     void start_iTunes_thread();
     void remove_track();
     void recycle_bin_track();
@@ -52,9 +52,9 @@ public:
 };
 
 export extern iTunes ac_iTunes;
-export extern mutex iT_mtx;
-export extern mutex history_mtx;
-export extern condition_variable iT_cv;
+export extern std::mutex iT_mtx;
+export extern std::mutex history_mtx;
+export extern std::condition_variable iT_cv;
 export extern bool iT_playback_state_change;
 
 export {
@@ -63,5 +63,5 @@ export {
     void iTunes_play_pause();
     void iTunes_prev_song();
     void iTunes_stop_song();
-    string replace_tabs_with_brackets(const string& input);
+    std::string replace_tabs_with_brackets(const std::string& input);
 }

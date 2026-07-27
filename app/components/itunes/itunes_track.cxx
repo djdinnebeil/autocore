@@ -13,7 +13,7 @@ TrackInfo iTunes::get_track_info() {
     DISPID dispid;
     struct PropertyInfo {
         const wchar_t* name;
-        wstring& value;
+        std::wstring& value;
     };
     PropertyInfo properties[] = {
         {L"Name", info.name},
@@ -50,7 +50,7 @@ TrackInfo iTunes::get_track_info() {
     return info;
 }
 
-wstring iTunes::get_current_track() {
+std::wstring iTunes::get_current_track() {
     if (!initialized) {
         initialize_com();
     }
@@ -71,12 +71,12 @@ wstring iTunes::get_current_track() {
     else if (playback_position == -1) {
         remaining_song_duration = -1;
     }
-    wss dur;
-    dur << duration / 60 << ':' << setw(2) << setfill(L'0') << duration % 60;
-    wss ws;
+    std::wostringstream dur;
+    dur << duration / 60 << ':' << std::setw(2) << std::setfill(L'0') << duration % 60;
+    std::wostringstream ws;
     ws << '[' << curr_song.name << "] [" << curr_song.artist << "] [" << curr_song.album << "] [" << dur.str() << ']';
     track_location = curr_song.location;
-    wstring current_song = ws.str();
+    std::wstring current_song = ws.str();
     {
         scoped_lock lock(history_mtx);
         if (last_retrieved_song != current_song) {

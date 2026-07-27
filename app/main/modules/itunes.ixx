@@ -12,9 +12,8 @@ import pipes;
 import journey;
 import <Windows.h>;
 
-export HANDLE ac_itunes_pipe;
-
 export {
+    void create_itunes_pipe();
     void start_iTunes_component();
     void print_iTunes_songs();
     void print_next_up_song_list();

@@ -1,9 +1,9 @@
 module runtime;
 import visual;
 import numkey;
-import main;
+import ac_core;
 import taskbar;
-import auto_core;
+import keymap;
 import <Windows.h>;
 
 /**
@@ -31,66 +31,66 @@ LRESULT CALLBACK send_numpad_event(int nCode, WPARAM wParam, LPARAM lParam) {
             special_key_event = true;
         }
         if (vk_code >= numkey_0 && vk_code <= numkey_slash || special_key_event) {
-            logg("vk_code = {}", vk_code);
+            ac::logger::logg("vk_code = {}", vk_code);
             if (vk_code == numkey_0) {
-                PostThreadMessage(main_thread_id, ac_numkey_0, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_0, 1, vk_code);
             }
             else if (vk_code == numkey_1) {
-                PostThreadMessage(main_thread_id, ac_numkey_1, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 1, vk_code);
             }
             else if (vk_code == numkey_2) {
-                PostThreadMessage(main_thread_id, ac_numkey_2, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_2, 1, vk_code);
             }
             else if (vk_code == numkey_3) {
-                PostThreadMessage(main_thread_id, ac_numkey_3, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_3, 1, vk_code);
             }
             else if (vk_code == numkey_4) {
-                PostThreadMessage(main_thread_id, ac_numkey_4, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_4, 1, vk_code);
             }
             else if (vk_code == numkey_5) {
-                PostThreadMessage(main_thread_id, ac_numkey_5, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_5, 1, vk_code);
             }
             else if (vk_code == numkey_6) {
-                PostThreadMessage(main_thread_id, ac_numkey_6, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_6, 1, vk_code);
             }
             else if (vk_code == numkey_7) {
-                PostThreadMessage(main_thread_id, ac_numkey_7, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_7, 1, vk_code);
             }
             else if (vk_code == numkey_8) {
-                PostThreadMessage(main_thread_id, ac_numkey_8, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_8, 1, vk_code);
             }
             else if (vk_code == numkey_9) {
-                PostThreadMessage(main_thread_id, ac_numkey_9, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_9, 1, vk_code);
             }
             else if (vk_code == numkey_star) {
-                PostThreadMessage(main_thread_id, ac_numkey_star, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_star, 1, vk_code);
             }
             else if (vk_code == numkey_plus) {
-                PostThreadMessage(main_thread_id, ac_numkey_plus, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_plus, 1, vk_code);
             }
             else if (vk_code == numkey_enter) {
-                PostThreadMessage(main_thread_id, ac_numkey_enter, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_enter, 1, vk_code);
             }
             else if (vk_code == numkey_dash) {
-                PostThreadMessage(main_thread_id, ac_numkey_dash, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_dash, 1, vk_code);
             }
             else if (vk_code == numkey_dot) {
-                PostThreadMessage(main_thread_id, ac_numkey_dot, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_dot, 1, vk_code);
             }
             else if (vk_code == numkey_slash) {
-                PostThreadMessage(main_thread_id, ac_numkey_slash, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_slash, 1, vk_code);
             }
             else if (vk_code == play_pause_key) {
-                PostThreadMessage(main_thread_id, ac_numkey_play_pause, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_play_pause, 1, vk_code);
             }
             else if (vk_code == calculator_key) {
-                PostThreadMessage(main_thread_id, ac_numkey_calc_key, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_calc_key, 1, vk_code);
             }
             else if (vk_code == mail_key) {
-                PostThreadMessage(main_thread_id, ac_numkey_mail_key, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_mail_key, 1, vk_code);
             }
             else if (vk_code == home_page_key) {
-                PostThreadMessage(main_thread_id, ac_numkey_home_page, 1, vk_code);
+                PostThreadMessage(ac::main::main_thread_id, ac_numkey_home_page, 1, vk_code);
             }
             return 1;
         }

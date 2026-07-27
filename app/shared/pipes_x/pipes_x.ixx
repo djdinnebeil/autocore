@@ -1,16 +1,16 @@
 export module pipes_x;
-import base;
+import std;
 import config;
 import logger;
 import print;
 import utils;
 import <Windows.h>;
 
-export unordered_map<int, function<void()>> command_map;
+export std::unordered_map<int, std::function<void()>> command_map;
 export bool end_process;
 
 export {
-    HANDLE connect_to_pipe_server(const wstring& pipe_name);
+    HANDLE connect_to_pipe_server(const std::wstring& pipe_name);
     void process_pipe_commands(HANDLE h_pipe);
 }
 
@@ -22,13 +22,13 @@ export {
  * \param pipe_name The name of the pipe.
  * \return The handle to the connected pipe server, or NULL if connection failed.
  */
-HANDLE connect_to_pipe_server(const wstring& pipe_name) {
+HANDLE connect_to_pipe_server(const std::wstring& pipe_name) {
     HANDLE h_pipe = CreateFile(
         (LR"(\\.\pipe\)" + pipe_name).c_str(),
         GENERIC_READ | GENERIC_WRITE,
         0, NULL, OPEN_EXISTING, 0, NULL);
     if (h_pipe == INVALID_HANDLE_VALUE) {
-        print("Failed to connect to pipe '{}'. Error: {}", pipe_name, GetLastError());
+        ac::print("Failed to connect to pipe '{}'. Error: {}", pipe_name, GetLastError());
         return NULL;
     }
     return h_pipe;
@@ -53,11 +53,11 @@ void process_pipe_commands(HANDLE h_pipe) {
                 action->second();
             }
             else {
-                print("Invalid command received.");
+                ac::print("Invalid command received.");
             }
         }
         else {
-            print("Failed to read command. Error: {}", GetLastError());
+            ac::print("Failed to read command. Error: {}", GetLastError());
             break;
         }
         if (end_process) {

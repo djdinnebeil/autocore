@@ -7,7 +7,7 @@
  * It also initializes the logging system.
  */
 export module logger_t;
-import base;
+import std;
 import config;
 import clock;
 import logger;

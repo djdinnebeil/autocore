@@ -7,19 +7,19 @@ using std::scoped_lock;
 
 void print_next_up_song_list() {
     iTunes_logger.logg_and_logg("print_next_up_song_list()");
-    auto next_up_list = wstr_to_str(get_clipboard_text());
-    iss list_stream(next_up_list);
-    oss formatted_list;
-    string item;
+    auto next_up_list = ac::utils::wstr_to_str(ac::clipboard::get_clipboard_text());
+    std::istringstream list_stream(next_up_list);
+    std::ostringstream formatted_list;
+    std::string item;
     while (getline(list_stream, item, '\n')) {
         auto formatted_item = replace_tabs_with_brackets(item);
         formatted_list << formatted_item << "\n";
     }
     auto formatted_str = formatted_list.str();
     iTunes_logger.loggnl_and_printnl(formatted_str);
-    set_clipboard_text(str_to_wstr(formatted_str));
+    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(formatted_str));
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
 }
 
 void iTunes_play_pause() {
@@ -39,15 +39,15 @@ void iTunes_stop_song() {
     ac_iTunes.stop_song();
     ac_iTunes.play_pause();
     ac_iTunes.play_pause();
-    wstring current_track = ac_iTunes.get_current_track() + L"\n\n";
-    set_clipboard_text(current_track.c_str());
+    std::wstring current_track = ac_iTunes.get_current_track() + L"\n\n";
+    ac::clipboard::set_clipboard_text(current_track.c_str());
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
 }
 
 void print_iTunes_songs() {
     iTunes_logger.logg_and_logg("print_iTunes_songs()");
-    wss song_text;
+    std::wostringstream song_text;
     ac_iTunes.get_current_track();
     {
         scoped_lock lock(history_mtx);
@@ -65,13 +65,13 @@ void print_iTunes_songs() {
         }
     }
     song_text << L"\n";
-    set_clipboard_text(song_text.str());
+    ac::clipboard::set_clipboard_text(song_text.str());
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
 }
 
-string replace_tabs_with_brackets(const string& input) {
-    oss output;
+std::string replace_tabs_with_brackets(const std::string& input) {
+    std::ostringstream output;
     output << '[';
     int tab_number = 0;
     for (char ch : input) {

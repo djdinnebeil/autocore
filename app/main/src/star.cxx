@@ -1,4 +1,3 @@
-
 module star;
 import visual;
 import cloud;
@@ -40,15 +39,15 @@ void create_new_file() {
     SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
 }
 
-wstring get_window_title() {
+std::wstring get_window_title() {
     HWND current_window_hwnd = GetForegroundWindow();
     int length = GetWindowTextLength(current_window_hwnd);
     if (length == 0) {
-        return wstring();
+        return std::wstring();
     }
 
     // Allocate buffer of appropriate size
-    wstring title(length, '\0');
+    std::wstring title(length, '\0');
     GetWindowTextW(current_window_hwnd, &title[0], length + 1); // +1 to include null terminator
     return title;
 }
@@ -57,12 +56,12 @@ wstring get_window_title() {
  * \runtime
  */
 void save_file_and_create_new_file() {
-    wstring current_window_title = get_window_title();
+    std::wstring current_window_title = get_window_title();
     save_file();
     Sleep(50);
     create_new_file();
     Sleep(300);
-    wstring new_file_window_title = get_window_title();
+    std::wstring new_file_window_title = get_window_title();
     if (new_file_window_title != L"" && (new_file_window_title != current_window_title)) {
         print_episode_title();
     }
@@ -73,14 +72,14 @@ void save_file_and_create_new_file() {
  *
  * This function reads the star name from the star.ini configuration file.
  *
- * \return The star name as a string.
+ * \return The star name as a std::string.
  */
-string get_star_name() {
-    logg("get_star_name()");
-    ifstream star_rc(R"(.\config\star.ini)");
-    string line;
-    getline(star_rc, line);
-    logg(line);
+std::string get_star_name() {
+    ac::logger::logg("get_star_name()");
+    std::ifstream star_rc(R"(.\config\star.ini)");
+    std::string line;
+    std::getline(star_rc, line);
+    ac::logger::logg(line);
     return line;
 }
 
@@ -89,15 +88,15 @@ string get_star_name() {
  *
  * This function reads the database path from the star.ini configuration file.
  *
- * \return The database path as a string.
+ * \return The database path as a std::string.
  */
-string get_database_path() {
-    logg("get_database_path()");
-    ifstream star_rc(R"(.\config\star.ini)");
-    string line;
-    getline(star_rc, line);  // Skip the star name line
-    getline(star_rc, line);  // Read the database path line
-    logg(line);
+std::string get_database_path() {
+    ac::logger::logg("get_database_path()");
+    std::ifstream star_rc(R"(.\config\star.ini)");
+    std::string line;
+    std::getline(star_rc, line);  // Skip the star name line
+    std::getline(star_rc, line);  // Read the database path line
+    ac::logger::logg(line);
     return line;
 }
 
@@ -110,7 +109,7 @@ string get_database_path() {
  * \return The current episode number, or -1 if an error occurs.
  */
 int get_episode_number() {
-    static string db_path = get_database_path();
+    static std::string db_path = get_database_path();
     sqlite3* db;
     sqlite3_stmt* selectStmt;
     sqlite3_stmt* updateStmt;
@@ -153,16 +152,16 @@ int get_episode_number() {
  * \brief Generates the episode title.
  *
  * This function generates the episode title using the star name and episode number,
- * updates the title in the cloud, and returns the formatted title string.
+ * updates the title in the cloud, and returns the formatted title std::string.
  *
- * \return The formatted episode title as a string.
+ * \return The formatted episode title as a std::string.
  */
-string get_episode_title() {
-    static string star_name = get_star_name();
-    string star_and_number = format("{} {}", star_name, get_episode_number());
+std::string get_episode_title() {
+    static std::string star_name = get_star_name();
+    std::string star_and_number = std::format("{} {}", star_name, get_episode_number());
     update_string_in_firebase(star_and_number);
-    oss s;
-    s << star_and_number << '\n' << get_datestamp() << "\n\n" << get_timestamp();
+    std::ostringstream s;
+    s << star_and_number << '\n' << ac::clock::get_datestamp() << "\n\n" << ac::clock::get_timestamp();
     return s.str();
 }
 
@@ -174,14 +173,14 @@ string get_episode_title() {
  * \runtime
  */
 void print_episode_title() {
-    wstring most_recent_clipboard_text = get_clipboard_text();
-    wstring episode_title = str_to_wstr(get_episode_title());
-    print(episode_title);
-    set_clipboard_text(episode_title + L"\n\n");
+    std::wstring most_recent_clipboard_text = ac::clipboard::get_clipboard_text();
+    std::wstring episode_title = ac::utils::str_to_wstr(get_episode_title());
+    ac::print(episode_title);
+    ac::clipboard::set_clipboard_text(episode_title + L"\n\n");
     Sleep(50);
-    paste_from_clipboard();
+    ac::clipboard::paste_from_clipboard();
     Sleep(100);
     save_file();
     Sleep(100);
-    set_clipboard_text(most_recent_clipboard_text);
+    ac::clipboard::set_clipboard_text(most_recent_clipboard_text);
 }

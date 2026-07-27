@@ -1,5 +1,5 @@
 module logger_x;
-import base;
+import std;
 import config;
 import clock;
 import logger;
