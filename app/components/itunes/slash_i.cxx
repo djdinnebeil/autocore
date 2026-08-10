@@ -1,5 +1,5 @@
 module slash_i;
-import visual;
+import std;
 import itunes_c;
 import itunes_x;
 import <Windows.h>;
@@ -31,7 +31,7 @@ void iTunes::recycle_bin_track() {
     else {
         logg_message = L"File moved to the recycle bin: " + track_location;
     }
-    iTunes_logger.logg_and_logg(logg_message);
+    itunes_component.logg_and_logg(logg_message);
 }
 
 void iTunes::delete_track() {
@@ -42,11 +42,11 @@ void iTunes::delete_track() {
     else {
         logg_message = L"File deleted: " + track_location;
     }
-    iTunes_logger.logg_and_logg(logg_message);
+    itunes_component.logg_and_logg(logg_message);
 }
 
 void remove_iTunes_song() {
-    iTunes_logger.logg_and_logg("remove_iTunes_song()");
+    itunes_component.logg_and_logg("remove_iTunes_song()");
     ac_iTunes.get_current_track();
     if (ac_iTunes.p_current_track) {
         ac_iTunes.remove_track();

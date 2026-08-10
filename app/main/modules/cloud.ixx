@@ -7,10 +7,8 @@ This module facilitates interactions with a Google Cloud server, specifically a 
 Strings retrieved from Firebase have quotation marks added, and strings sent to Firebase must have quotation marks added.
 */
 export module cloud;
+
 import std;
-import config;
-import visual;
-import <cpr/cpr.h>;
 
 export {
     void get_string_from_firebase();

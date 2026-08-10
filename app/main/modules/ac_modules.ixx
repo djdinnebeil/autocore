@@ -5,9 +5,8 @@
 export module ac_modules;
 
 export import config;
-export import logger;
-export import visual;
-export import ac_core;
+export import ac_component;
+export import ac_main;
 export import journal;
 export import link;
 export import tasks;
@@ -27,12 +26,12 @@ export import ac_actions;
 export import pipes;
 export import cloud;
 export import print;
-export import utils;
+export import encoding;
 export import server;
 export import crash;
 export import keyboard;
 export import thread;
 
-export import logger_c;
+export import logger;
 export import logger_x;
 export import logger_t;

@@ -7,10 +7,6 @@
  * the iTunes component, playing/pausing music, navigating songs, and updating logs.
  */
 export module itunes;
-import visual;
-import pipes;
-import journey;
-import <Windows.h>;
 
 export {
     void create_itunes_pipe();

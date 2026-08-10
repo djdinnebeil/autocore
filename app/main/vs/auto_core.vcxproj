@@ -128,14 +128,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions); AC_DIRECT_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
-      <AdditionalIncludeDirectories>$(AutoCoreLibDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AutoCoreLibDir);$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
@@ -163,24 +163,31 @@
   <ItemGroup>
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
+    <ClCompile Include="..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
-    <ClCompile Include="..\..\core\modules\logger_c.ixx" />
+    <ClCompile Include="..\..\core\modules\logger_x.ixx" />
+    <ClCompile Include="..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\core\modules\print.ixx" />
+    <ClCompile Include="..\..\core\modules\session.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\..\core\modules\utils.ixx" />
-    <ClCompile Include="..\..\core\modules\visual.ixx" />
     <ClCompile Include="..\..\core\src\clipboard.cxx" />
     <ClCompile Include="..\..\core\src\clock.cxx" />
+    <ClCompile Include="..\..\core\src\component.cxx" />
     <ClCompile Include="..\..\core\src\config.cxx" />
     <ClCompile Include="..\..\core\src\encoding.cxx" />
+    <ClCompile Include="..\..\core\src\error.cxx" />
     <ClCompile Include="..\..\core\src\keyboard.cxx" />
     <ClCompile Include="..\..\core\src\logger.cxx" />
-    <ClCompile Include="..\..\core\src\logger_c.cxx" />
+    <ClCompile Include="..\..\core\src\logger_x.cxx" />
+    <ClCompile Include="..\..\core\src\paths.cxx" />
+    <ClCompile Include="..\..\core\src\pipes.cxx" />
     <ClCompile Include="..\..\core\src\print.cxx" />
-    <ClCompile Include="..\..\core\src\utils.cxx" />
+    <ClCompile Include="..\..\core\src\session.cxx" />
     <ClCompile Include="..\modules\ac_actions.ixx" />
     <ClCompile Include="..\modules\keymap.ixx" />
     <ClCompile Include="..\modules\cloud.ixx" />
@@ -193,13 +200,12 @@
     <ClCompile Include="..\modules\journal.ixx" />
     <ClCompile Include="..\modules\journey.ixx" />
     <ClCompile Include="..\modules\link.ixx" />
+    <ClCompile Include="..\modules\ac_component.ixx" />
     <ClCompile Include="..\modules\logger_t.ixx" />
-    <ClCompile Include="..\modules\logger_x.ixx" />
-    <ClCompile Include="..\modules\ac_core.ixx" />
+    <ClCompile Include="..\modules\ac_main.ixx" />
     <ClCompile Include="..\modules\notepad.ixx" />
     <ClCompile Include="..\modules\notes.ixx" />
     <ClCompile Include="..\modules\numkey.ixx" />
-    <ClCompile Include="..\modules\pipes.ixx" />
     <ClCompile Include="..\modules\runtime.ixx" />
     <ClCompile Include="..\modules\server.ixx" />
     <ClCompile Include="..\modules\slash.ixx" />
@@ -221,11 +227,9 @@
     <ClCompile Include="..\src\journey.cxx" />
     <ClCompile Include="..\src\link.cxx" />
     <ClCompile Include="..\src\logger_t.cxx" />
-    <ClCompile Include="..\src\logger_x.cxx" />
-    <ClCompile Include="..\src\ac_core.cxx" />
+    <ClCompile Include="..\src\ac_main.cxx" />
     <ClCompile Include="..\src\notepad.cxx" />
     <ClCompile Include="..\src\notes.cxx" />
-    <ClCompile Include="..\src\pipes.cxx" />
     <ClCompile Include="..\src\runtime.cxx" />
     <ClCompile Include="..\src\server.cxx" />
     <ClCompile Include="..\src\slash.cxx" />

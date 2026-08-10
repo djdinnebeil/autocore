@@ -3,7 +3,8 @@
 \brief Declarations for iTunes integration.
 */
 export module itunes_c;
-import visual;
+
+import std;
 import <Windows.h>;
 import <comdef.h>;
 import <atlbase.h>;

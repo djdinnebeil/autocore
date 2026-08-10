@@ -138,10 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\include\base.ixx" />
-    <ClCompile Include="..\..\utils\print_b.ixx" />
-    <ClCompile Include="..\..\utils\print_t.ixx" />
-    <ClCompile Include="enum_windows.cxx" />
+    <ClCompile Include="main.cxx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

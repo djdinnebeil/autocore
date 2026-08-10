@@ -1,25 +1,54 @@
 /**
-\file clipboard.ixx
-\brief Facilitates clipboard interactions for std::string handling within the Auto Core system.
-
-Auto Core streamlines text insertion by utilizing the system clipboard and the 'ctrl + v' paste shortcut to send text to the active textbox.
-*/
+ * \file clipboard.ixx
+ * \brief Provides Unicode text operations for the Windows clipboard.
+ *
+ * Auto Core uses the clipboard and the Ctrl+V shortcut to insert text
+ * into the active input field.
+ */
 module;
 
-#ifdef BUILDING_DLL
-	#define DLL_API __declspec(dllexport)
-#else
-	#define DLL_API __declspec(dllimport)
-#endif
+#include "ac_api.hpp"
 
 export module clipboard;
+
 import std;
-import config;
-import logger;
-import <Windows.h>;
 
 export namespace ac::clipboard {
-	DLL_API void set_clipboard_text(const std::wstring& text);
-	DLL_API std::wstring get_clipboard_text();
-	DLL_API void paste_from_clipboard();
+
+    enum class Error {
+        open_failed,
+        empty_failed,
+        text_too_large,
+        allocation_failed,
+        lock_failed,
+        unicode_text_unavailable,
+        get_data_failed,
+        set_data_failed,
+        paste_failed
+    };
+
+    [[nodiscard]]
+    AC_API std::string_view error_message(Error error) noexcept;
+
+    [[nodiscard]]
+    AC_API std::expected<void, Error>
+        set_clipboard_text(std::wstring_view text);
+
+    [[nodiscard]]
+    AC_API std::expected<std::wstring, Error>
+        get_clipboard_text();
+
+    using ClipboardTextSnapshot = std::optional<std::wstring>;
+
+    [[nodiscard]]
+    AC_API std::expected<ClipboardTextSnapshot, Error>
+        capture_clipboard_text();
+
+    [[nodiscard]]
+    AC_API std::expected<void, Error>
+        restore_clipboard_text(const ClipboardTextSnapshot& snapshot);
+
+    [[nodiscard]]
+    AC_API std::expected<void, Error>
+        paste_from_clipboard();
 }

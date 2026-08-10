@@ -1,7 +1,12 @@
 module server;
+
 import std;
-import journey;
-import visual;
+import clock;
+import config;
+import ac_component;
+import print;
+import session;
+
 import <Windows.h>;
 import <string>;
 import <fstream>;
@@ -14,19 +19,18 @@ PROCESS_INFORMATION pi_server; // Process information for the server process
 
 void log_server_msg(const std::string& msg, bool end_server_process = false, bool send_to_print = false) {
     std::ofstream server_log_stream;
-    std::string server_log_name = "server_" + ac::clock::get_datestamp() + ".log";
-    std::string server_log_directory = R"(.\log\server\)";
-    std::string server_log_path = server_log_directory + server_log_name;
+    std::string server_log_name = ac::clock::get_date_iso() + "_server.log";
+    std::string server_log_path = std::string {ac::config::logger_directory()} + "server\\" + server_log_name;
     server_log_stream.open(server_log_path, std::ios::app);
     server_log_stream << msg << std::endl;
     if (end_server_process) {
-        server_log_stream << "Session ended at " << ac::clock::get_datetime_stamp_for_logger() << "\n" << "***" << std::endl;
+        server_log_stream << "Session ended at " << ac::session::make_datetime() << "\n" << "***" << std::endl;
     }
     server_log_stream.flush();
     server_log_stream.close();
-    ac::logger::logg(msg);
+    auto_core.logg_and_logg(msg);
     if (send_to_print) {
-        ac::print(msg);
+        auto_core.print(msg);
     }
 }
 

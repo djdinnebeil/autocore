@@ -7,9 +7,9 @@ export module notepad;
 import std;
 import config;
 import clipboard;
-import logger;
+import ac_component;
 import print;
-import ac_core;
+import ac_main;
 import <Windows.h>;
 
 

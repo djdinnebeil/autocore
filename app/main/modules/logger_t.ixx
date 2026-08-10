@@ -7,15 +7,9 @@
  * It also initializes the logging system.
  */
 export module logger_t;
-import std;
-import config;
-import clock;
-import logger;
-import logger_c;
-import logger_x;
-import <Windows.h>;
 
 export {
     void log_init();
-    void log_start();
+    void update_log_components();
+    void start_logger_component();
 }

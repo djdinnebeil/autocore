@@ -1,7 +1,9 @@
 module wake;
-import visual;
+
+import std;
 import pipes;
 import journey;
+import ac_component;
 import <Windows.h>;
 
 
@@ -10,7 +12,7 @@ namespace {
 }
 
 void create_wake_pipe() {
-    wake_pipe = create_pipe_server(L"wake_pipe");
+    wake_pipe = ac::pipes::create_pipe_server(L"wake_pipe", auto_core);
 }
 
 /**
@@ -20,7 +22,7 @@ void create_wake_pipe() {
  */
 void start_wake_component() {
     std::wstring wake_path = LR"(.\wake.exe)";
-    ac::core::create_process(wake_path);
+    ac::main::create_process(wake_path);
 }
 
 /**
@@ -29,7 +31,7 @@ void start_wake_component() {
  * This function sends a command to the wake component to gracefully shut down and terminate the process.
  */
 void send_wake_end_signal() {
-    send_pipe_command(wake_pipe, 0);
+    ac::pipes::send_pipe_command(wake_pipe, 0);
 }
 
 /**
@@ -38,7 +40,7 @@ void send_wake_end_signal() {
  * This function sends a command to log the last wake event.
  */
 void send_logg_wake_signal() {
-    send_pipe_command(wake_pipe, 1);
+    ac::pipes::send_pipe_command(wake_pipe, 1);
 }
 
 /**
@@ -47,5 +49,5 @@ void send_logg_wake_signal() {
  * This function sends a command to the wake component to update the log file with the latest information.
  */
 void update_wake_logger() {
-    send_pipe_command(wake_pipe, 2);
+    ac::pipes::send_pipe_command(wake_pipe, 2);
 }

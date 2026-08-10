@@ -8,10 +8,6 @@
  * through named pipes.
  */
 export module wake;
-import visual;
-import pipes;
-import journey;
-import <Windows.h>;
 
 export {
     void create_wake_pipe();

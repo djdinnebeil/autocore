@@ -3,7 +3,10 @@
 \brief Provides thread management and playback control for Spotify.
 */
 export module sp_t;
-import visual;
+
+import std;
+import clock;
+
 import sp_c;
 import sp_x;
 
@@ -37,7 +40,7 @@ void start_sp_song_thread() {
  * \runtime
  */
 void spotify_next_song() {
-    sp_logger.logg_and_logg("spotify_next_song()");
+    sp_component.logg_and_logg("spotify_next_song()");
     ac_spotify.next_song();
     sp_playback_state_change = true;
     sp_cv.notify_one();
@@ -49,7 +52,7 @@ void spotify_next_song() {
  * the sleep time based on the song's remaining duration and playback state.
  */
 void sp_song_thread() {
-    sp_logger.logg_and_logg("sp_thread started");
+    sp_component.logg_and_logg("sp_thread started");
     Sleep(350);
     try {
         std::unique_lock<std::mutex> lock(sp_mtx);
@@ -61,15 +64,15 @@ void sp_song_thread() {
         while (true) {
             sp_playback_state_change = false;
             if (ac_spotify.reauthorization_required) {
-                sp_logger.loggnl("Spotify authorization required - ");
+                sp_component.loggnl("Spotify authorization required - ");
                 sleep_time_ms = sleep_timerate_ms;
             }
             else if (!ac_spotify.is_playing) {
-                sp_logger.loggnl("Spotify not playing - ");
+                sp_component.loggnl("Spotify not playing - ");
                 sleep_time_ms = sleep_timerate_ms;
             }
             else if (ac_spotify.last_status_code == speed_boost_code) {
-                sp_logger.logg_and_print("speed boost!");
+                sp_component.logg_and_print("speed boost!");
                 sleep_time_ms = speed_boost_ms;
             }
             else if (ac_spotify.remaining_song_duration_ms < sleep_timerate_ms) {
@@ -78,21 +81,21 @@ void sp_song_thread() {
             else {
                 sleep_time_ms = sleep_timerate_ms;
             }
-            sp_logger.logg("sleep time {} seconds at {}", sleep_time_ms / 1000, ac::clock::get_timestamp_with_seconds());
+            sp_component.logg("sleep time {} seconds at {}", sleep_time_ms / 1000, ac::clock::get_timestamp_with_seconds());
             if (sp_cv.wait_for(lock, chrono::milliseconds(sleep_time_ms), [] {return sp_playback_state_change; })) {
                 if (ac_spotify.end_thread) {
                     break;
                 }
-                sp_logger.logg("sp_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
+                sp_component.logg("sp_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay);
             }
             ac_spotify.get_current_song();
         }
     }
     catch (const std::exception& e) {
-        sp_logger.logg_and_print("sp_song_thread() has crashed: {}", e.what());
+        sp_component.logg_and_print("sp_song_thread() has crashed: {}", e.what());
     }
     catch (...) {
-        sp_logger.logg_and_print("sp_song_thread() has crashed due to an unknown exception");
+        sp_component.logg_and_print("sp_song_thread() has crashed due to an unknown exception");
     }
 }

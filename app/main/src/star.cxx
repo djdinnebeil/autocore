@@ -1,5 +1,13 @@
 module star;
-import visual;
+
+import std;
+
+import clipboard;
+import clock;
+import encoding;
+import ac_component;
+import print;
+
 import cloud;
 import <sqlite3.h>;
 import <Windows.h>;
@@ -53,7 +61,7 @@ std::wstring get_window_title() {
 }
 
 /**
- * \runtime
+ * \keymap_command
  */
 void save_file_and_create_new_file() {
     std::wstring current_window_title = get_window_title();
@@ -75,11 +83,11 @@ void save_file_and_create_new_file() {
  * \return The star name as a std::string.
  */
 std::string get_star_name() {
-    ac::logger::logg("get_star_name()");
+    auto_core.logg_and_logg("get_star_name()");
     std::ifstream star_rc(R"(.\config\star.ini)");
     std::string line;
     std::getline(star_rc, line);
-    ac::logger::logg(line);
+    auto_core.logg_and_logg(line);
     return line;
 }
 
@@ -91,12 +99,12 @@ std::string get_star_name() {
  * \return The database path as a std::string.
  */
 std::string get_database_path() {
-    ac::logger::logg("get_database_path()");
+    auto_core.logg_and_logg("get_database_path()");
     std::ifstream star_rc(R"(.\config\star.ini)");
     std::string line;
     std::getline(star_rc, line);  // Skip the star name line
     std::getline(star_rc, line);  // Read the database path line
-    ac::logger::logg(line);
+    auto_core.logg_and_logg(line);
     return line;
 }
 
@@ -154,14 +162,14 @@ int get_episode_number() {
  * This function generates the episode title using the star name and episode number,
  * updates the title in the cloud, and returns the formatted title std::string.
  *
- * \return The formatted episode title as a std::string.
+ * \return The formatted episode title as a std::string.01
  */
 std::string get_episode_title() {
     static std::string star_name = get_star_name();
     std::string star_and_number = std::format("{} {}", star_name, get_episode_number());
     update_string_in_firebase(star_and_number);
     std::ostringstream s;
-    s << star_and_number << '\n' << ac::clock::get_datestamp() << "\n\n" << ac::clock::get_timestamp();
+    s << star_and_number << '\n' << ac::clock::get_date_compact() << "\n\n" << ac::clock::get_extended_timestamp();
     return s.str();
 }
 
@@ -170,17 +178,60 @@ std::string get_episode_title() {
  *
  * This function prints the generated episode title to the screen and saves the file.
  *
- * \runtime
+ * \keymap_command
  */
 void print_episode_title() {
-    std::wstring most_recent_clipboard_text = ac::clipboard::get_clipboard_text();
-    std::wstring episode_title = ac::utils::str_to_wstr(get_episode_title());
-    ac::print(episode_title);
-    ac::clipboard::set_clipboard_text(episode_title + L"\n\n");
+    auto previous_clipboard =
+        ac::clipboard::capture_clipboard_text();
+
+    if (!previous_clipboard) {
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(previous_clipboard.error())
+        );
+        return;
+    }
+
+    std::wstring episode_title =
+        ac::encoding::to_utf16(get_episode_title());
+
+    auto_core.print(episode_title);
+
+    if (auto result =
+        ac::clipboard::set_clipboard_text(episode_title + L"\n\n");
+        !result) {
+
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+        return;
+    }
+
     Sleep(50);
-    ac::clipboard::paste_from_clipboard();
+
+    if (auto result = ac::clipboard::paste_from_clipboard();
+        !result) {
+
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+        return;
+    }
+
     Sleep(100);
+
     save_file();
+
     Sleep(100);
-    ac::clipboard::set_clipboard_text(most_recent_clipboard_text);
+
+    if (auto result = ac::clipboard::restore_clipboard_text(
+        *previous_clipboard
+    ); !result) {
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+    }
 }

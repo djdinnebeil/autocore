@@ -5,9 +5,12 @@
 By polling system information, this module provides detailed logging of wake events,
 aiding in the analysis of system behavior and Auto Core's interaction with the host machine.
 */
-import visual;
-import pipes_x;
+import std;
+import logger;
+import logger_x;
+import pipes;
 import wake_logging;
+
 import <Windows.h>;
 
 std::wstring pipe_name = L"wake_pipe";
@@ -16,8 +19,8 @@ std::wstring pipe_name = L"wake_pipe";
  * \brief Ends the wake component.
  */
 void end_wake() {
-    wake_logger.logg("wake_logger is shutting down");
-    end_process = true;
+    wake_component.logg("wake.exe is shutting down");
+    ac::pipes::end_process = true;
 }
 
 /**
@@ -27,26 +30,26 @@ void end_wake() {
  * specific commands for the iTunes component.
  */
 void set_command_map() {
+    using ac::pipes::command_map;
     command_map[0] = {[]() {  end_wake(); }};
     command_map[1] = {log_last_wake};
-    command_map[2] = {update_wake_logger};
+    command_map[2] = {update_wake_component};
 }
 
 int main() {
     log_init();
     log_last_wake();
     set_command_map();
-    HANDLE wake_pipe = connect_to_pipe_server(pipe_name);
+    HANDLE wake_pipe = ac::pipes::connect_to_pipe_server(pipe_name, wake_component);
     if (wake_pipe != NULL) {
-        wake_logger.logg_and_logg("connected to pipe '{}' server", pipe_name);
-        process_pipe_commands(wake_pipe);
+        wake_component.logg_and_logg("connected to pipe '{}' server", pipe_name);
+        ac::pipes::process_pipe_commands(wake_pipe, wake_component);
     }
     else {
-        wake_logger.logg_and_print("Failed to connect to pipe server.");
+        wake_component.logg_and_print("Failed to connect to pipe server.");
     }
-    wake_logger.logg_and_logg("wake.exe has ended");
-    wake_logger.close_log_file();
+    wake_component.logg_and_logg("wake.exe has ended");
+    ac::logger::close_logger_connection();
     CloseHandle(wake_pipe);
-    ac::logger::close_main_log_file();
     return 0;
 }

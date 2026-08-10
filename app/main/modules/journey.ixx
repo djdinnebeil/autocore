@@ -5,12 +5,11 @@
  * This module includes functions for creating processes and starting a specific journey process.
  */
 export module journey;
+
 import std;
-import print;
-import <Windows.h>;
 
 export void start_journey();
 
-export namespace ac::core {
+export namespace ac::main {
 	bool create_process(const std::wstring& path);
 }

@@ -4,12 +4,6 @@
 */
 
 export module taskbar_11;
-import visual;
-import taskbar;
-import taskbar_ps;
-import keyboard;
-import ac_core;
-import <Windows.h>;
 
 export {
     void activate_wordpad();

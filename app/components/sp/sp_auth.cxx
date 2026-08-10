@@ -4,9 +4,10 @@
 */
 module sp_c;
 
-import visual;
+import std;
 import thread;
 import sp_x;
+
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
@@ -15,6 +16,51 @@ using std::stoll;
 using namespace cpr;
 
 json parse(const std::string& s);
+
+/**
+ * \brief Encodes a std::string in Base64 format.
+ *
+ * \param input The std::string to encode.
+ * \return The Base64-encoded std::string.
+ */
+std::string base64_encode(const std::string& input) {
+    constexpr std::string_view base64_characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+
+    std::string output;
+    int value = 0;
+    int bit_count = -6;
+
+    for (const std::uint8_t character : input) {
+        value = (value << 8) + character;
+        bit_count += 8;
+
+        while (bit_count >= 0) {
+            output.push_back(
+                base64_characters[(value >> bit_count) & 0x3F]
+            );
+
+            bit_count -= 6;
+        }
+    }
+
+    if (bit_count > -6) {
+        output.push_back(
+            base64_characters[
+                ((value << 8) >> (bit_count + 8)) & 0x3F
+            ]
+        );
+    }
+
+    while (output.size() % 4 != 0) {
+        output.push_back('=');
+    }
+
+    return output;
+}
+
 
 /**
  * \brief Retrieves the current Unix timestamp (seconds since epoch).
@@ -31,7 +77,7 @@ void Spotify::get_credentials() {
     std::getline(rc, client_id);
     std::getline(rc, client_secret);
     std::string credentials = client_id + ":" + client_secret;
-    credentials_64 = ac::utils::base64_encode(credentials);
+    credentials_64 = base64_encode(credentials);
     rc.close();
 }
 /**
@@ -71,7 +117,7 @@ void Spotify::check_refresh_token_expiration() {
     if (refresh_token_expiration <= 0) {
         reauthorization_required = true;
 
-        sp_logger.logg_and_print(
+        sp_component.logg_and_print(
             "Spotify refresh-token expiration is missing or invalid."
         );
 
@@ -83,7 +129,7 @@ void Spotify::check_refresh_token_expiration() {
     if (current_time >= refresh_token_expiration) {
         reauthorization_required = true;
 
-        sp_logger.logg_and_print(
+        sp_component.logg_and_print(
             "Spotify refresh token has expired."
         );
 
@@ -109,7 +155,7 @@ void Spotify::check_refresh_token_expiration() {
             (seconds_remaining + seconds_per_day - 1) /
             seconds_per_day;
 
-        sp_logger.logg_and_print(
+        sp_component.logg_and_print(
             "Spotify refresh token will expire in "
             + std::to_string(days_remaining)
             + (days_remaining == 1 ? " day." : " days.")
@@ -126,7 +172,7 @@ bool Spotify::check_timerate() {
 
     // Handle case where system time went backward
     if (current_time < start_timestamp) {
-        sp_logger.logg("Warning: System time appears to have gone backward. Forcing token refresh.");
+        sp_component.logg("Warning: System time appears to have gone backward. Forcing token refresh.");
         return true;
     }
 
@@ -150,7 +196,7 @@ bool Spotify::refresh_tokens() {
     check_refresh_token_expiration();
 
     if (reauthorization_required) {
-        sp_logger.logg_and_print(
+        sp_component.logg_and_print(
             "Spotify reauthorization required - run sp_oauth.exe to clear"
         );
         return false;
@@ -189,7 +235,7 @@ bool Spotify::refresh_tokens() {
             }
         }
         authorization_header = "Bearer " + access_token;
-        sp_logger.logg_and_logg("refresh_tokens() - tokens refreshed");
+        sp_component.logg_and_logg("refresh_tokens() - tokens refreshed");
         return true;
     }
     else if (response.status_code == 400) {
@@ -212,7 +258,7 @@ bool Spotify::refresh_tokens() {
                         << refresh_token_expiration;
                 }
 
-                sp_logger.logg_and_print(
+                sp_component.logg_and_print(
                     "Spotify refresh token is no longer valid. "
                     "Spotify reauthorization required - run sp_oauth.exe to clear"
                 );
@@ -221,13 +267,13 @@ bool Spotify::refresh_tokens() {
             }
         }
         catch (const json::exception& e) {
-            sp_logger.logg_and_print(
+            sp_component.logg_and_print(
                 "Failed to parse Spotify token error response: {}",
                 e.what()
             );
         }
 
-        sp_logger.logg_and_print(
+        sp_component.logg_and_print(
             "Spotify token request failed: Status Code {} - {}",
             response.status_code,
             response.text
@@ -236,11 +282,11 @@ bool Spotify::refresh_tokens() {
         return false;
     }
     else if (response.status_code == 429) {
-        sp_logger.logg_and_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
         return false;
     }
     else {
-        sp_logger.logg_and_print("Error: \nStatus Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: \nStatus Code {} - {}", response.status_code, response.text);
         return false;
     }
 }

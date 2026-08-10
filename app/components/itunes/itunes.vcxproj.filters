@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="itunes_x.cxx">
+    <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itunes_c.ixx">
@@ -45,7 +45,7 @@
     <ClCompile Include="itunes_t.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.ixx">
+    <ClCompile Include="itunes_x.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="slash_i.ixx">
@@ -69,25 +69,31 @@
     <ClCompile Include="..\..\core\modules\logger.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger_c.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\print.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\thread.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\utils.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\visual.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\encoding.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\component.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\error.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\paths.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\pipes.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\session.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\logger_x.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

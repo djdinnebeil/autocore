@@ -1,6 +1,11 @@
 module notepad;
-import visual;
-import utils;
+
+import std;
+
+import encoding;
+import ac_component;
+import print;
+import clipboard;
 import thread;
 
 import <algorithm>;
@@ -24,8 +29,8 @@ std::wstring set_openai_api_key() {
     std::string line;
     std::getline(openai_api_key_file, line);
     openai_api_key_file.close();
-    ac::logger::logg("openai_api_key set");
-    std::wstring openai_api_key = ac::utils::str_to_wstr(line);
+    auto_core.logg_and_logg("openai_api_key set");
+    std::wstring openai_api_key = ac::encoding::to_utf16(line);
     return openai_api_key;
 }
 
@@ -34,21 +39,21 @@ std::wstring set_openai_api_key() {
  *
  * This function prints the openai api key.
  *
- * \runtime
+ * \keymap_command
  */
 void print_openai_api_key() {
     static std::wstring openai_api_key = set_openai_api_key();
     ac::clipboard::set_clipboard_text(openai_api_key);
     ac::clipboard::paste_from_clipboard();
-    ac::print("openai_api_key inserted");
+    auto_core.print("openai_api_key inserted");
 }
 
 std::wstring get_api_key() {
-    ac::logger::logg("get_api_keys()");
+    auto_core.logg_and_logg("get_api_keys()");
     const std::string api_keys_path = R"(.\notepad\api_keys.txt)";
     std::ifstream file(api_keys_path);
     if (!file.is_open()) {
-        ac::print("error reading file");
+        auto_core.print("error reading file");
         return L"";
     }
     std::vector<std::string> api_key_names;
@@ -57,7 +62,7 @@ std::wstring get_api_key() {
     std::string line;
 
     while (std::getline(file, line)) {
-        size_t delimiter_pos = line.find('=');
+        std::size_t delimiter_pos = line.find('=');
         if (delimiter_pos != std::string::npos) {
             std::string name = line.substr(0, delimiter_pos);
             std::string value = line.substr(delimiter_pos + 1);
@@ -69,18 +74,18 @@ std::wstring get_api_key() {
     file.close();
     std::ostringstream api_key_prompt;
     api_key_prompt << "Enter the number:\n";
-    for (size_t i = 0; i < api_key_names.size(); ++i) {
+    for (std::size_t i = 0; i < api_key_names.size(); ++i) {
         std::string name = api_key_names[i];
         api_key_prompt << format("{}. for {}\n", i + 1, name);
     }
     api_key_prompt << "> ";
-    ac::printnl(api_key_prompt.str());
+    auto_core.printnl(api_key_prompt.str());
 
     std::string selection_str;
     int selection;
     while (true) {
         std::getline(std::cin, selection_str);
-        ac::logger::logg("{}", selection_str);
+        auto_core.logg_and_logg("{}", selection_str);
         try {
             if (selection_str.empty() ) {
                 selection_str = std::to_string(api_key_values.size());
@@ -90,18 +95,18 @@ std::wstring get_api_key() {
                 return L"##### \U00002705 Answer:";
             }
             else if (selection > api_key_values.size()) {
-                ac::printnl("Incorrect input\nEnter again: ");
+                auto_core.printnl("Incorrect input\nEnter again: ");
             }
             else {
                 print("{} inserted", to_lower(api_key_names[selection - 1]));
-                return ac::utils::str_to_wstr(api_key_values[selection - 1]);
+                return ac::encoding::to_utf16(api_key_values[selection - 1]);
             }
         }
         catch (const std::invalid_argument&) {
-            ac::printnl("Incorrect input\nEnter again: ");
+            auto_core.printnl("Incorrect input\nEnter again: ");
         }
     }
-    ac::logger::logg("end of get_api_keys()");
+    auto_core.logg_and_logg("end of get_api_keys()");
 }
 
 /**
@@ -111,28 +116,66 @@ std::wstring get_api_key() {
  * to avoid blocking the main thread.
  */
 void threaded_print_api_key() {
-    std::wstring most_recent_clipboard_text = ac::clipboard::get_clipboard_text();
+    auto previous_clipboard =
+        ac::clipboard::capture_clipboard_text();
+
+    if (!previous_clipboard) {
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(previous_clipboard.error())
+        );
+        return;
+    }
+
     HWND current_window_handle = GetForegroundWindow();
+
     set_focus_auto_core();
+
     std::wstring api_key = get_api_key();
-    //wss ws;
-    //ws << api_key.c_str();
-    //set_clipboard_text(ws.str());
-    ac::clipboard::set_clipboard_text(api_key);
+
+    if (auto result =
+        ac::clipboard::set_clipboard_text(api_key);
+        !result) {
+
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+        return;
+    }
+
     SetForegroundWindow(current_window_handle);
-    ac::clipboard::paste_from_clipboard();
+
+    if (auto result = ac::clipboard::paste_from_clipboard();
+        !result) {
+
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+        return;
+    }
+
     Sleep(100);
-    ac::clipboard::set_clipboard_text(most_recent_clipboard_text);
+
+    if (auto result = ac::clipboard::restore_clipboard_text(
+        *previous_clipboard
+    ); !result) {
+        auto_core.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+    }
 }
 
 /**
  * \brief Prints the selected API key.
  *
  * Initiates the process of retrieving and printing an api key message in a separate thread.
- * \runtime
+ * \keymap_command
  */
 void print_api_key() {
-    ac::logger::logg("print_api_key()");
-    std::thread t([=]() {run_with_exception_handling(threaded_print_api_key); });
+    auto_core.logg_and_logg("print_api_key()");
+    std::thread t([=]() {ac::thread::run_with_exception_handling(threaded_print_api_key, auto_core); });
     t.detach();
 }

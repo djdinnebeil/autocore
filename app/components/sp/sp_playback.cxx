@@ -4,7 +4,7 @@
 */
 module sp_c;
 
-import visual;
+import std;
 import thread;
 import sp_x;
 import <json.hpp>;
@@ -79,7 +79,7 @@ int Spotify::pause_song() {
             {"Content-Length", "0"}
         });
     if (response.status_code != 204) {
-        sp_logger.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
     }
     return response.status_code;
 }
@@ -99,7 +99,7 @@ void Spotify::transfer_playback(std::string device_id) {
         Body {body}
     );
     if (response.status_code != 204) {
-        sp_logger.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
     }
 }
 /**
@@ -132,7 +132,7 @@ void Spotify::switch_player() {
         return;
     }
     if (response.status_code != 200) {
-        sp_logger.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
         return;
     }
     auto playback_details = parse(response.text);
@@ -144,7 +144,7 @@ void Spotify::switch_player() {
         start_playback_on_desktop();
     }
     else {
-        sp_logger.logg_and_print("Device not added");
+        sp_component.logg_and_print("Device not added");
     }
 }
 /**
@@ -164,10 +164,10 @@ int Spotify::play_song() {
         }
     );
     if (response.status_code == 404) {
-        sp_logger.logg_and_print("no active device");
+        sp_component.logg_and_print("no active device");
     }
     else if (response.status_code != 204) {
-        sp_logger.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("Error: Status Code {} - {}", response.status_code, response.text);
     }
     return response.status_code;
 }
@@ -199,24 +199,24 @@ bool Spotify::is_spotify_playing() {
  */
 void Spotify::play_pause() {
     if (!refresh_tokens()) {
-        sp_logger.logg_and_print("tokens not refreshed in Spotify::play_pause()");
+        sp_component.logg_and_print("tokens not refreshed in Spotify::play_pause()");
         return;
     }
     if (is_spotify_playing()) {
-        sp_logger.logg_and_logg("is_spotify_playing() == true");
+        sp_component.logg_and_logg("is_spotify_playing() == true");
         pause_song();
         return;
     }
     if (play_song() == 204) {
-        sp_logger.logg_and_logg("play_song() == 204");
+        sp_component.logg_and_logg("play_song() == 204");
         return;
     }
     if (is_spotify_open()) {
-        sp_logger.logg_and_logg("is_spotify_open() == true");
+        sp_component.logg_and_logg("is_spotify_open() == true");
         start_playback_on_desktop();
     }
     else {
-        sp_logger.logg_and_logg("starting Spotify");
+        sp_component.logg_and_logg("starting Spotify");
         std::thread t(start_playback_sp_thread);
         t.detach();
     }
@@ -234,7 +234,7 @@ void Spotify::post_next_or_prev(std::string url) {
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 204) {
-        sp_logger.logg_and_print("post_next_or_prev() - Error: Status Code {} - {}", response.status_code, response.text);
+        sp_component.logg_and_print("post_next_or_prev() - Error: Status Code {} - {}", response.status_code, response.text);
     }
 }
 /**

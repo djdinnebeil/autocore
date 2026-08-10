@@ -21,24 +21,31 @@
   <ItemGroup>
     <ClCompile Include="..\modules\clipboard.ixx" />
     <ClCompile Include="..\modules\clock.ixx" />
+    <ClCompile Include="..\modules\component.ixx" />
     <ClCompile Include="..\modules\config.ixx" />
     <ClCompile Include="..\modules\encoding.ixx" />
+    <ClCompile Include="..\modules\error.ixx" />
     <ClCompile Include="..\modules\keyboard.ixx" />
     <ClCompile Include="..\modules\logger.ixx" />
-    <ClCompile Include="..\modules\logger_c.ixx" />
+    <ClCompile Include="..\modules\logger_x.ixx" />
+    <ClCompile Include="..\modules\paths.ixx" />
+    <ClCompile Include="..\modules\pipes.ixx" />
     <ClCompile Include="..\modules\print.ixx" />
+    <ClCompile Include="..\modules\session.ixx" />
     <ClCompile Include="..\modules\thread.ixx" />
-    <ClCompile Include="..\modules\utils.ixx" />
-    <ClCompile Include="..\modules\visual.ixx" />
     <ClCompile Include="..\src\clipboard.cxx" />
     <ClCompile Include="..\src\clock.cxx" />
+    <ClCompile Include="..\src\component.cxx" />
     <ClCompile Include="..\src\config.cxx" />
     <ClCompile Include="..\src\encoding.cxx" />
+    <ClCompile Include="..\src\error.cxx" />
     <ClCompile Include="..\src\keyboard.cxx" />
     <ClCompile Include="..\src\logger.cxx" />
-    <ClCompile Include="..\src\logger_c.cxx" />
+    <ClCompile Include="..\src\logger_x.cxx" />
+    <ClCompile Include="..\src\paths.cxx" />
+    <ClCompile Include="..\src\pipes.cxx" />
     <ClCompile Include="..\src\print.cxx" />
-    <ClCompile Include="..\src\utils.cxx" />
+    <ClCompile Include="..\src\session.cxx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -153,7 +160,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BUILDING_DLL;NDEBUG;AUTOCOREDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AC_BUILD_DLL;NDEBUG;AUTOCOREDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -162,6 +169,7 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

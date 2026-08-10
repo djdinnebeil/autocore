@@ -4,9 +4,11 @@
 */
 module sp_c;
 
-import visual;
+import std;
+import keyboard;
 import thread;
 import sp_x;
+
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
@@ -14,6 +16,7 @@ import <chrono>;
 using std::stoll;
 
 using namespace cpr;
+
 namespace this_thread = std::this_thread;
 namespace chrono = std::chrono;
 
@@ -35,7 +38,7 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
     }
     if (window_title == L"Spotify Premium") {
         *reinterpret_cast<bool*>(lParam) = true;
-        sp_logger.logg_and_print("spotify window found");
+        sp_component.logg_and_print("spotify window found");
         spotify_window_hwnd = hwnd;
         return FALSE;
     }

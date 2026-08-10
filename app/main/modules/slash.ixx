@@ -6,12 +6,5 @@
  * It utilizes an external executable to perform the deletion.
  */
 export module slash;
-import std;
-import config;
-import logger;
-import print;
-import clipboard;
-import utils;
-import <Windows.h>;
 
 export void retrieve_and_delete_recycle_bin();

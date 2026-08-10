@@ -1,38 +1,55 @@
 module clock;
+
 import std;
 import config;
-import utils;
 import <Windows.h>;
 
 namespace ac::clock {
+
     /**
      * \brief Retrieves the local system time.
      * \return The current local system time as SYSTEMTIME.
      */
-    SYSTEMTIME get_local_time() {
-        SYSTEMTIME st;
+    static SYSTEMTIME get_local_time() noexcept {
+        SYSTEMTIME st {};
         GetLocalTime(&st);
         return st;
     }
 
     /**
-     * \brief Formats the hour value based on the end of day and converts it to a std::string.
-     * \param hour The hour value to format.
-     * \return The formatted hour as a std::string.
+     * \brief Formats a local-system hour in 24-hour format.
+     * \param hour The hour from 0 through 23.
+     * \return The formatted hour in "HH" format.
      */
-    static std::string format_hour(int hour) {
-        std::ostringstream hour_str;
-        if (hour < config.end_of_day) {
-            hour += 24;
+    static std::string format_hour(const int hour) {
+        return std::format("{:02}", hour);
+    }
+
+    /**
+     * \brief Formats an hour using the configured extended-day boundary.
+     * \param hour The local-system hour from 0 through 23.
+     * \return The formatted extended hour.
+     */
+    static std::string format_extended_hour(const int hour) {
+        if (hour < 0 || hour > 23) {
+            throw std::out_of_range(
+                std::format("Invalid hour: {}. Expected 0 through 23.", hour)
+            );
         }
-        else if (hour < 10) {
-            hour_str << '0';
+
+        if (hour < config::end_of_day()) {
+            return std::format("{}", hour + 24);
         }
-        else if (hour >= 13 && hour < 22) {
-            hour -= 12;
+
+        if (hour >= 13 && hour < 22) {
+            return std::format("{}", hour - 12);
         }
-        hour_str << hour;
-        return hour_str.str();
+
+        if (hour < 10) {
+            return std::format("{:02}", hour);
+        }
+
+        return std::format("{}", hour);
     }
 
     /**
@@ -41,12 +58,7 @@ namespace ac::clock {
      * \return The formatted minutes as a std::string.
      */
     static std::string format_minutes(int minutes) {
-        std::ostringstream minutes_str;
-        if (minutes < 10) {
-            minutes_str << '0';
-        }
-        minutes_str << minutes;
-        return minutes_str.str();
+        return std::format("{:02}", minutes);
     }
 
     /**
@@ -55,24 +67,70 @@ namespace ac::clock {
      * \return The formatted seconds as a std::string.
      */
     static std::string format_seconds(int seconds) {
-        std::ostringstream seconds_str;
-        if (seconds < 10) {
-            seconds_str << '0';
-        }
-        seconds_str << seconds;
-        return seconds_str.str();
+        return std::format("{:02}", seconds);
     }
 
+    static std::string format_timestamp(const SYSTEMTIME& st) {
+        std::ostringstream timestamp;
+        timestamp << format_hour(st.wHour) << ':'
+            << format_minutes(st.wMinute);
+
+        return timestamp.str();
+    }
+
+    static std::string format_extended_timestamp(
+        const SYSTEMTIME& st
+    ) {
+        std::ostringstream timestamp;
+        timestamp << format_extended_hour(st.wHour) << ':'
+            << format_minutes(st.wMinute);
+
+        return timestamp.str();
+    }
+
+    static std::string format_timestamp_with_seconds(const SYSTEMTIME& st) {
+        std::ostringstream timestamp;
+        timestamp << format_hour(st.wHour) << ':'
+            << format_minutes(st.wMinute) << ':'
+            << format_seconds(st.wSecond);
+
+        return timestamp.str();
+    }
+
+    static std::string format_date_iso(const SYSTEMTIME& st) {
+        std::ostringstream date;
+        date << std::setfill('0')
+            << std::setw(4) << st.wYear << '-'
+            << std::setw(2) << st.wMonth << '-'
+            << std::setw(2) << st.wDay;
+
+        return date.str();
+    }
+
+    /**
+     * \brief Retrieves the current local date and timestamp.
+     *
+     * Both values are generated from the same local system-time snapshot.
+     *
+     * \return The current ISO date, timestamp without seconds, and timestamp with seconds.
+     */
+    DateTime get_local_datetime() {
+        const SYSTEMTIME st = get_local_time();
+
+        return {
+            .date_iso = format_date_iso(st),
+            .timestamp = format_timestamp(st),
+            .timestamp_with_seconds =
+                format_timestamp_with_seconds(st)
+        };
+    }
     /**
      * \brief Retrieves the current timestamp in "HH:MM" format.
      * \return The current timestamp as a std::string.
      */
     std::string get_timestamp() {
-        SYSTEMTIME st = get_local_time();
-        std::ostringstream timestamp;
-        timestamp << format_hour(st.wHour) << ':'
-            << format_minutes(st.wMinute);
-        return timestamp.str();
+        const SYSTEMTIME st = get_local_time();
+        return format_timestamp(st);
     }
 
     /**
@@ -80,85 +138,45 @@ namespace ac::clock {
      * \return The current timestamp with seconds as a std::string.
      */
     std::string get_timestamp_with_seconds() {
-        SYSTEMTIME st = get_local_time();
-        std::ostringstream timestamp;
-        timestamp << format_hour(st.wHour) << ':'
-            << format_minutes(st.wMinute) << ':'
-            << format_seconds(st.wSecond);
-        return timestamp.str();
+        const SYSTEMTIME st = get_local_time();
+        return format_timestamp_with_seconds(st);
     }
 
     /**
-     * \brief Retrieves the current datestamp in "MM-DD-YY" format.
-     * \return The current datestamp as a std::string.
+     * \brief Retrieves the current extended timestamp in "HH:MM" format.
+     *
+     * Hours before the configured end of day are represented as hours
+     * beyond 23, such as "24:30".
+     *
+     * \return The current extended timestamp.
      */
-    std::string get_datestamp() {
-        SYSTEMTIME st = get_local_time();
-        std::ostringstream datestamp;
-        datestamp << st.wMonth << '-'
+    std::string get_extended_timestamp() {
+        const SYSTEMTIME st = get_local_time();
+        return format_extended_timestamp(st);
+    }
+
+    /**
+     * \brief Retrieves the current local date in compact format.
+     * \return The current date in "M-D-YY" format.
+     */
+    std::string get_date_compact() {
+        const SYSTEMTIME st = get_local_time();
+
+        std::ostringstream date;
+        date << st.wMonth << '-'
             << st.wDay << '-'
             << st.wYear % 100;
-        return datestamp.str();
+
+        return date.str();
     }
 
     /**
-     * \brief Returns the current local date in ISO 8601 format ("YYYY-MM-DD").
-     * \return The current local date as a formatted std::string.
+     * \brief Retrieves the current local date in ISO format.
+     * \return The current date in "YYYY-MM-DD" format.
      */
-    std::string get_datestamp_iso() {
-        SYSTEMTIME st = get_local_time();
-        std::ostringstream datestamp;
-        datestamp << std::setw(4) << std::setfill('0') << st.wYear << '-'
-            << std::setw(2) << std::setfill('0') << st.wMonth << '-'
-            << std::setw(2) << std::setfill('0') << st.wDay;
-        return datestamp.str();
-    }
-
-
-    /**
-     * \brief Returns the current local date as YYYY-MM-DD – HH:MM
-     * \return The current local date and time as a formatted std::string.
-     */
-    std::string get_datestamp_iso_with_timestamp() {
-        return get_datestamp_iso() + " - " + get_timestamp();
-    }
-
-    /**
-     * \brief Retrieves the current datetime stamp with seconds in "HH:MM:SS on MM-DD-YY" format.
-     * \return The current datetime stamp with seconds as a std::string.
-     */
-    std::string get_datetime_stamp_with_seconds() {
-        std::ostringstream datetime_stamp;
-        datetime_stamp << get_timestamp_with_seconds() << " on " << get_datestamp();
-        return datetime_stamp.str();
-    }
-
-    /**
-     * \brief Retrieves the current datetime stamp for logging purposes in "MM-DD-YY at HH:MM:SS" format.
-     * \return The current datetime stamp for logger as a std::string.
-     */
-    std::string get_datetime_stamp_for_logger() {
-        std::ostringstream datetime_stamp;
-        datetime_stamp << get_datestamp() << " at " << get_timestamp_with_seconds();
-        return datetime_stamp.str();
-    }
-
-    /**
-     * \brief Retrieves the current time in minutes since midnight.
-     * \return The current time in minutes as an integer.
-     */
-    int get_minutes_stamp() {
-        SYSTEMTIME st = get_local_time();
-        return st.wHour * 60 + st.wMinute;
-    }
-
-    /**
-     * \brief Retrieves the current seconds value.
-     * \return The current seconds as an integer.
-     */
-    int get_current_seconds() {
-        SYSTEMTIME st = get_local_time();
-        return st.wSecond;
+    std::string get_date_iso() {
+        const SYSTEMTIME st = get_local_time();
+        return format_date_iso(st);
     }
 
     /**
@@ -166,9 +184,18 @@ namespace ac::clock {
      * \return The current day of the week as a std::string.
      */
     std::string get_day_of_week() {
-        SYSTEMTIME st = get_local_time();
-        GetLocalTime(&st);
-        const char* days_of_week[7] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        const SYSTEMTIME st = get_local_time();
+
+        const char* days_of_week[7] = {
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+        };
+
         return days_of_week[st.wDayOfWeek];
     }
 }

@@ -128,8 +128,7 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,15 +143,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
+    <ClCompile Include="..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
-    <ClCompile Include="..\..\core\modules\logger_c.ixx" />
+    <ClCompile Include="..\..\core\modules\logger_x.ixx" />
+    <ClCompile Include="..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\core\modules\print.ixx" />
+    <ClCompile Include="..\..\core\modules\session.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\..\core\modules\utils.ixx" />
-    <ClCompile Include="..\..\core\modules\visual.ixx" />
     <ClCompile Include="dash_comments.cxx" />
     <ClCompile Include="dash_config.cxx" />
     <ClCompile Include="dash_runtime_generation.cxx" />

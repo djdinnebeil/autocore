@@ -33,19 +33,10 @@
     <ClCompile Include="..\..\core\modules\logger.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger_c.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\print.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\thread.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\utils.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\visual.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="dash_comments.cxx">
@@ -58,6 +49,24 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\encoding.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\component.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\error.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\paths.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\pipes.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\session.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\logger_x.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

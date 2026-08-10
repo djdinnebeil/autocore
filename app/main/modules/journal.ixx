@@ -7,11 +7,8 @@
  * choices for various names, which can be used to inspire journaling entries.
  */
 export module journal;
-import visual;
-import keyboard;
-import thread;
-import ac_core;
-import <Windows.h>;
+
+import std;
 
 export {
     std::function<void()> make_print_choice(const std::string& name, bool include_zero);

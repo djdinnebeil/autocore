@@ -1,7 +1,11 @@
 module taskbar;
+
 import std;
 import config;
-import visual;
+import keyboard;
+import ac_component;
+import print;
+
 import notes;
 import <Windows.h>;
 
@@ -84,230 +88,275 @@ BOOL CALLBACK enum_firefox_windows(HWND hwnd, LPARAM lParam) {
 
 void Taskbar::switch_windows(int keycode) {
     if (switch_keycode == keycode) {
-        ac::keyboard::send_winkey_and_number(switch_position);
-        ac::logger::logg("cycle window");
+        ac::keyboard::send_number_to_winkey(switch_position);
+        auto_core.logg_and_logg("cycle window");
     }
     else {
         ac::keyboard::release_winkey();
-        ac::logger::logg("window selected");
+        auto_core.logg_and_logg("window selected");
         switch_set = false;
         if (winkey_locked) {
-            ac::print("winkey unlocked");
+            auto_core.print("winkey unlocked");
             winkey_locked = false;
         }
     }
 }
 
+std::optional<int> get_taskbar_position(
+    const std::string_view name
+) {
+    const auto position =
+        ac::config::taskbar_position(name);
+
+    if (!position) {
+        auto_core.print(
+            "Taskbar position '{}' is not configured.",
+            name
+        );
+
+        return std::nullopt;
+    }
+
+    if (*position < 0 || *position > 9) {
+        auto_core.print(
+            "Invalid taskbar position for '{}': {}. "
+            "Expected 0 through 9.",
+            name,
+            *position
+        );
+
+        return std::nullopt;
+    }
+
+    return position;
+}
+
+void Taskbar::activate_position_single(const std::string_view name) {
+    const auto position = get_taskbar_position(name);
+
+    if (!position) {
+        return;
+    }
+
+    ac::keyboard::send_winkey(*position);
+}
+
+void Taskbar::activate_position_multiple(
+    const std::string_view name,
+    int& window_count,
+    const WNDENUMPROC enum_windows
+) {
+    const auto position = get_taskbar_position(name);
+
+    if (!position) {
+        return;
+    }
+
+    window_count = 0;
+
+    if (!EnumWindows(
+        enum_windows,
+        reinterpret_cast<LPARAM>(&window_count)
+    )) {
+        auto_core.print(
+            "Unable to enumerate windows for '{}'. Error: {}.",
+            name,
+            GetLastError()
+        );
+
+        return;
+    }
+
+    if (window_count < 2) {
+        ac::keyboard::send_winkey(*position);
+        return;
+    }
+
+    auto_core.logg_and_logg(
+        "Multiple windows detected for '{}': {}",
+        name,
+        window_count
+    );
+
+    ac::keyboard::press_and_hold_winkey();
+
+    switch_set = true;
+    switch_position = *position;
+
+    ac::keyboard::send_number_to_winkey(*position);
+}
+
 void Taskbar::activate_auto_core() {
-    ac::keyboard::send_winkey(ac::config.taskbar_position["auto_core"]);
+    activate_position_single("auto_core");
 }
 
 void Taskbar::activate_folder() {
-    folder_windows = 0;
-    EnumWindows(enum_folder_windows, 0);
-    if (folder_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["folder"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["folder"]);
-        switch_position = ac::config.taskbar_position["folder"];
-    }
+    activate_position_multiple(
+        "folder",
+        folder_windows,
+        enum_folder_windows
+    );
 }
 
 void Taskbar::activate_word() {
-    word_windows = 0;
-    EnumWindows(enum_word_windows, 0);
-    if (word_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["word"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["word"]);
-        switch_position = ac::config.taskbar_position["word"];
-    }
+    activate_position_multiple(
+        "word",
+        word_windows,
+        enum_word_windows
+    );
 }
 
 void Taskbar::activate_vs_code() {
-    vs_code_windows = 0;
-    EnumWindows(enum_vs_code_windows, 0);
-    if (vs_code_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["vs_code"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["vs_code"]);
-        switch_position = ac::config.taskbar_position["vs_code"];
-    }
+    activate_position_multiple(
+        "vs_code",
+        vs_code_windows,
+        enum_vs_code_windows
+    );
 }
 
 void Taskbar::activate_iTunes() {
-    ac::keyboard::send_winkey(ac::config.taskbar_position["itunes"]);
+    activate_position_single("itunes");
 }
 
 void Taskbar::activate_chrome() {
-    chrome_windows = 0;
-    EnumWindows(enum_chrome_windows, 0);
-    if (chrome_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["chrome"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["chrome"]);
-        switch_position = ac::config.taskbar_position["chrome"];
-    }
+    activate_position_multiple(
+        "chrome",
+        chrome_windows,
+        enum_chrome_windows
+    );
 }
 
 void Taskbar::activate_visual() {
-    visual_windows = 0;
-    EnumWindows(enum_visual_windows, 0);
-    if (visual_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["visual"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["visual"]);
-        switch_position = ac::config.taskbar_position["visual"];
-    }
+    activate_position_multiple(
+        "visual",
+        visual_windows,
+        enum_visual_windows
+    );
 }
 
 void Taskbar::activate_discord() {
-    ac::keyboard::send_winkey(ac::config.taskbar_position["discord"]);
+    activate_position_single("discord");
 }
 
 void Taskbar::activate_firefox() {
-    firefox_windows = 0;
-    EnumWindows(enum_firefox_windows, 0);
-    if (firefox_windows < 2) {
-        ac::keyboard::send_winkey(ac::config.taskbar_position["firefox"]);
-    }
-    else {
-        ac::logger::logg("multiple windows detected");
-        ac::keyboard::press_and_hold_winkey();
-        switch_set = true;
-        ac::keyboard::send_winkey_and_number(ac::config.taskbar_position["firefox"]);
-        switch_position = ac::config.taskbar_position["firefox"];
-    }
+    activate_position_multiple(
+        "firefox",
+        firefox_windows,
+        enum_firefox_windows
+    );
 }
 
 void Taskbar::activate_spotify() {
-    ac::keyboard::send_winkey(ac::config.taskbar_position["spotify"]);
+    activate_position_single("spotify");
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_auto_core() {
-    ac::logger::logg("activate_auto_core()");
+    auto_core.logg_and_logg("activate_auto_core()");
     taskbar.activate_auto_core();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_folder() {
-    ac::logger::logg("activate_folder()");
+    auto_core.logg_and_logg("activate_folder()");
     taskbar.activate_folder();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_word() {
-    ac::logger::logg("activate_word()");
+    auto_core.logg_and_logg("activate_word()");
     taskbar.activate_word();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_vs_code() {
-    ac::logger::logg("activate_vs_code()");
+    auto_core.logg_and_logg("activate_vs_code()");
     taskbar.activate_vs_code();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_iTunes() {
-    ac::logger::logg("activate_iTunes()");
+    auto_core.logg_and_logg("activate_iTunes()");
     taskbar.activate_iTunes();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_chrome() {
-    ac::logger::logg("activate_chrome()");
+    auto_core.logg_and_logg("activate_chrome()");
     taskbar.activate_chrome();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_visual() {
-    ac::logger::logg("activate_visual()");
+    auto_core.logg_and_logg("activate_visual()");
     taskbar.activate_visual();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_discord() {
-    ac::logger::logg("activate_discord()");
+    auto_core.logg_and_logg("activate_discord()");
     taskbar.activate_discord();
 }
 
-bool isWindowClassFirefox() {
-    const int buffer_size = 1024;
-    WCHAR window_title[buffer_size];
-    WCHAR className[buffer_size];
+bool is_firefox_window_class(const std::wstring_view class_name) {
+    return class_name == L"MozillaWindowClass" ||
+        class_name.starts_with(L"Mozilla_firefox_");
+}
 
-    HWND hwnd = GetForegroundWindow();
-    if (hwnd == NULL) {
+bool is_foreground_window_firefox() {
+    const HWND hwnd = GetForegroundWindow();
+
+    if (hwnd == nullptr) {
         return false;
     }
 
-    if (GetWindowTextW(hwnd, window_title, buffer_size) > 0 && IsWindowVisible(hwnd)) {
-        GetClassNameW(hwnd, className, buffer_size);
-        std::wstring wTitle(window_title);
-        std::wstring wClass(className);
+    std::array<wchar_t, 256> class_name {};
 
-        if (wClass == L"MozillaWindowClass") {
-            return true;
-        }
+    const int class_length = GetClassNameW(
+        hwnd,
+        class_name.data(),
+        static_cast<int>(class_name.size())
+    );
+
+    if (class_length <= 0) {
+        return false;
     }
-    return false;
+
+    return is_firefox_window_class(
+        std::wstring_view {
+            class_name.data(),
+            static_cast<std::size_t>(class_length)
+        }
+    );
 }
 
-/** \runtime */
-void refresh_page() {
-    BYTE keys[] = {VK_CONTROL, 'R'};
-    ac::keyboard::send_key_combination(keys, 2);
-}
-
-
-/** \runtime */
+/** \keymap_command */
 void refresh_firefox() {
-    ac::logger::logg("activate_firefox()");
-    if (isWindowClassFirefox()) {
+    auto_core.logg_and_logg("refresh_firefox()");
+    if (is_foreground_window_firefox()) {
         start_reddit_new_tab();
-        //refresh_page();
     }
     else {
         activate_firefox();
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void start_reddit_new_tab() {
+    auto_core.logg_and_logg("start_reddit_new_tab()");
     std::wstring url = L"https://www.reddit.com";
     std::wstring firefox_path = LR"(C:\Program Files\Mozilla Firefox\firefox.exe)";
     ShellExecuteW(0, 0, firefox_path.c_str(), url.c_str(), 0, SW_SHOW);
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_firefox() {
-    ac::logger::logg("activate_firefox()");
+    auto_core.logg_and_logg("activate_firefox()");
     taskbar.activate_firefox();
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_spotify() {
-    ac::logger::logg("activate_spotify()");
+    auto_core.logg_and_logg("activate_spotify()");
     taskbar.activate_spotify();
 }

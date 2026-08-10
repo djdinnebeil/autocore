@@ -1,9 +1,13 @@
 module taskbar_11;
-import visual;
+
+import std;
+import ac_component;
+import print;
+
 import taskbar;
 import taskbar_ps;
-import keyboard;
-import ac_core;
+import ac_main;
+
 import <Windows.h>;
 
 int wordpad_windows;
@@ -114,12 +118,12 @@ BOOL CALLBACK enum_ps_in_visual_key_windows(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_wordpad() {
     wordpad_windows = 0;
     EnumWindows(enum_wordpad_windows, 0);
     if (!wordpad_windows) {
-        ac::logger::logg("activate_wordpad() - launch new");
+        auto_core.logg_and_logg("activate_wordpad() - launch new");
         send_ctrl_alt_x();
     }
     else if (wordpad_windows == 1) {
@@ -127,37 +131,37 @@ void activate_wordpad() {
         if (IsIconic(wordpad_hwnd)) {
             ShowWindow(wordpad_hwnd, SW_RESTORE);
             SetForegroundWindow(wordpad_hwnd);
-            ac::logger::logg("activate_wordpad() - restore");
+            auto_core.logg_and_logg("activate_wordpad() - restore");
         }
         else if (current_window == wordpad_hwnd) {
             ShowWindow(wordpad_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_wordpad() - minimize");
+            auto_core.logg_and_logg("activate_wordpad() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_wordpad() - switch into focus");
+            auto_core.logg_and_logg("activate_wordpad() - switch into focus");
             SetForegroundWindow(wordpad_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_wordpad() - set focus");
+            auto_core.logg_and_logg("activate_wordpad() - set focus");
             SetForegroundWindow(wordpad_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_wordpad() - multiple windows detected");
+        auto_core.logg_and_logg("activate_wordpad() - multiple windows detected");
         SetForegroundWindow(wordpad_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_notepad() {
     notepad_windows = 0;
     EnumWindows(enum_notepad_windows, 0);
     if (!notepad_windows) {
-        ac::logger::logg("activate_notepad() - launch new");
+        auto_core.logg_and_logg("activate_notepad() - launch new");
         send_ctrl_alt_n();
     }
     else if (notepad_windows == 1) {
@@ -165,37 +169,37 @@ void activate_notepad() {
         if (IsIconic(notepad_hwnd)) {
             ShowWindow(notepad_hwnd, SW_RESTORE);
             SetForegroundWindow(notepad_hwnd);
-            ac::logger::logg("activate_notepad() - restore");
+            auto_core.logg_and_logg("activate_notepad() - restore");
         }
         else if (current_window == notepad_hwnd) {
             ShowWindow(notepad_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_notepad() - minimize");
+            auto_core.logg_and_logg("activate_notepad() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_notepad() - switch into focus");
+            auto_core.logg_and_logg("activate_notepad() - switch into focus");
             SetForegroundWindow(notepad_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_notepad() - set focus");
+            auto_core.logg_and_logg("activate_notepad() - set focus");
             SetForegroundWindow(notepad_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_notepad() - multiple windows detected");
+        auto_core.logg_and_logg("activate_notepad() - multiple windows detected");
         SetForegroundWindow(notepad_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_gitbash() {
     gitbash_windows = 0;
     EnumWindows(enum_gitbash_windows, 0);
     if (!gitbash_windows) {
-        ac::logger::logg("activate_gitbash() - launch new");
+        auto_core.logg_and_logg("activate_gitbash() - launch new");
         send_ctrl_alt_r();
     }
     else if (gitbash_windows == 1) {
@@ -203,37 +207,37 @@ void activate_gitbash() {
         if (IsIconic(gitbash_hwnd)) {
             ShowWindow(gitbash_hwnd, SW_RESTORE);
             SetForegroundWindow(gitbash_hwnd);
-            ac::logger::logg("activate_gitbash() - restore");
+            auto_core.logg_and_logg("activate_gitbash() - restore");
         }
         else if (current_window == gitbash_hwnd) {
             ShowWindow(gitbash_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_gitbash() - minimize");
+            auto_core.logg_and_logg("activate_gitbash() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_gitbash() - switch into focus");
+            auto_core.logg_and_logg("activate_gitbash() - switch into focus");
             SetForegroundWindow(gitbash_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_gitbash() - set focus");
+            auto_core.logg_and_logg("activate_gitbash() - set focus");
             SetForegroundWindow(gitbash_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_gitbash() - multiple windows detected");
+        auto_core.logg_and_logg("activate_gitbash() - multiple windows detected");
         SetForegroundWindow(gitbash_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_powershell() {
     powershell_windows = 0;
     EnumWindows(enum_powershell_windows, 0);
     if (!powershell_windows) {
-        ac::logger::logg("activate_powershell() - launch new");
+        auto_core.logg_and_logg("activate_powershell() - launch new");
         send_ctrl_alt_p();
     }
     else if (powershell_windows == 1) {
@@ -241,37 +245,37 @@ void activate_powershell() {
         if (IsIconic(powershell_hwnd)) {
             ShowWindow(powershell_hwnd, SW_RESTORE);
             SetForegroundWindow(powershell_hwnd);
-            ac::logger::logg("activate_powershell() - restore");
+            auto_core.logg_and_logg("activate_powershell() - restore");
         }
         else if (current_window == powershell_hwnd) {
             ShowWindow(powershell_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_powershell() - minimize");
+            auto_core.logg_and_logg("activate_powershell() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_powershell() - switch into focus");
+            auto_core.logg_and_logg("activate_powershell() - switch into focus");
             SetForegroundWindow(powershell_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_powershell() - set focus");
+            auto_core.logg_and_logg("activate_powershell() - set focus");
             SetForegroundWindow(powershell_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_powershell() - multiple windows detected");
+        auto_core.logg_and_logg("activate_powershell() - multiple windows detected");
         SetForegroundWindow(powershell_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_ps_in_visual_key() {
     ps_in_visual_key_windows = 0;
     EnumWindows(enum_ps_in_visual_key_windows, 0);
     if (!ps_in_visual_key_windows) {
-        ac::logger::logg("activate_ps_in_visual_key() - launch new");
+        auto_core.logg_and_logg("activate_ps_in_visual_key() - launch new");
         send_ctrl_alt_t();
     }
     else if (ps_in_visual_key_windows == 1) {
@@ -279,37 +283,37 @@ void activate_ps_in_visual_key() {
         if (IsIconic(ps_in_visual_key_hwnd)) {
             ShowWindow(ps_in_visual_key_hwnd, SW_RESTORE);
             SetForegroundWindow(ps_in_visual_key_hwnd);
-            ac::logger::logg("activate_ps_in_visual_key() - restore");
+            auto_core.logg_and_logg("activate_ps_in_visual_key() - restore");
         }
         else if (current_window == ps_in_visual_key_hwnd) {
             ShowWindow(ps_in_visual_key_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_ps_in_visual_key() - minimize");
+            auto_core.logg_and_logg("activate_ps_in_visual_key() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_ps_in_visual_key() - switch into focus");
+            auto_core.logg_and_logg("activate_ps_in_visual_key() - switch into focus");
             SetForegroundWindow(ps_in_visual_key_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_ps_in_visual_key() - set focus");
+            auto_core.logg_and_logg("activate_ps_in_visual_key() - set focus");
             SetForegroundWindow(ps_in_visual_key_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_ps_in_visual_key() - multiple windows detected");
+        auto_core.logg_and_logg("activate_ps_in_visual_key() - multiple windows detected");
         SetForegroundWindow(ps_in_visual_key_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_webstorm() {
     webstorm_windows = 0;
     EnumWindows(enum_webstorm_windows, 0);
     if (!webstorm_windows) {
-        ac::logger::logg("activate_webstorm() - launch new");
+        auto_core.logg_and_logg("activate_webstorm() - launch new");
         send_ctrl_alt_l();
     }
     else if (webstorm_windows == 1) {
@@ -317,64 +321,64 @@ void activate_webstorm() {
         if (IsIconic(webstorm_hwnd)) {
             ShowWindow(webstorm_hwnd, SW_RESTORE);
             SetForegroundWindow(webstorm_hwnd);
-            ac::logger::logg("activate_webstorm() - restore");
+            auto_core.logg_and_logg("activate_webstorm() - restore");
         }
         else if (current_window == webstorm_hwnd) {
             ShowWindow(webstorm_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_webstorm() - minimize");
+            auto_core.logg_and_logg("activate_webstorm() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_webstorm() - switch into focus");
+            auto_core.logg_and_logg("activate_webstorm() - switch into focus");
             SetForegroundWindow(webstorm_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_webstorm() - set focus");
+            auto_core.logg_and_logg("activate_webstorm() - set focus");
             SetForegroundWindow(webstorm_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_webstorm() - multiple windows detected");
+        auto_core.logg_and_logg("activate_webstorm() - multiple windows detected");
         SetForegroundWindow(webstorm_hwnd);
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void activate_zoom() {
     zoom_windows = 0;
     EnumWindows(enum_zoom_windows, 0);
     if (!zoom_windows) {
-        ac::print("activate_zoom() - launch new - not implemented"); 
+        auto_core.print("activate_zoom() - launch new - not implemented"); 
     }
     else if (zoom_windows == 1) {
         HWND current_window = GetForegroundWindow();
         if (IsIconic(zoom_window_hwnd)) {
             ShowWindow(zoom_window_hwnd, SW_RESTORE);
             SetForegroundWindow(zoom_window_hwnd);
-            ac::logger::logg("activate_zoom() - restore");
+            auto_core.logg_and_logg("activate_zoom() - restore");
         }
         else if (current_window == zoom_window_hwnd) {
             ShowWindow(zoom_window_hwnd, SW_MINIMIZE);
-            ac::logger::logg("activate_zoom() - minimize");
+            auto_core.logg_and_logg("activate_zoom() - minimize");
         }
         else if (current_window != ac::main::program_window) {
             activate_auto_core();
             Sleep(50);
-            ac::logger::logg("activate_zoom() - switch into focus");
+            auto_core.logg_and_logg("activate_zoom() - switch into focus");
             SetForegroundWindow(zoom_window_hwnd);
         }
         else if (current_window == ac::main::program_window) {
-            ac::logger::logg("activate_zoom() - set focus");
+            auto_core.logg_and_logg("activate_zoom() - set focus");
             SetForegroundWindow(zoom_window_hwnd);
         }
     }
     else {
         activate_auto_core();
         Sleep(50);
-        ac::logger::logg("activate_zoom() - multiple windows detected");
+        auto_core.logg_and_logg("activate_zoom() - multiple windows detected");
         SetForegroundWindow(zoom_window_hwnd);
     }
 }

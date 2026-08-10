@@ -12,10 +12,6 @@ The main functions include:
 - Sending an end signal to gracefully terminate the Spotify component.
 */
 export module sp;
-import std;
-import pipes;
-import journey;
-import <Windows.h>;
 
 export {
     void create_sp_pipe();

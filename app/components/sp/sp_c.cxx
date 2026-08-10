@@ -4,9 +4,13 @@
 */
 module sp_c;
 
-import visual;
+import std;
+
+import clipboard;
+import encoding;
 import thread;
 import sp_x;
+
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
@@ -36,8 +40,8 @@ bool get_user_queue_thread_started = false; /// \todo refactor the code
  */
 void get_user_sp_queue_thread() {
     std::string user_queue = ac_spotify.get_user_queue();
-    sp_logger.logg_and_print(user_queue);
-    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(user_queue) + L"\n\n");
+    sp_component.logg_and_print(user_queue);
+    ac::clipboard::set_clipboard_text(ac::encoding::to_utf16(user_queue) + L"\n\n");
     Sleep(50);
     ac::clipboard::paste_from_clipboard();
     get_user_queue_thread_started = false;
@@ -48,10 +52,10 @@ void get_user_sp_queue_thread() {
 * \runtime
 */
 void get_user_sp_queue() {
-    sp_logger.logg_and_logg("get_user_sp_queue()");
+    sp_component.logg_and_logg("get_user_sp_queue()");
     if (!get_user_queue_thread_started) {
         get_user_queue_thread_started = true;
-        std::thread t([=]() {run_with_exception_handling(get_user_sp_queue_thread); });
+        std::thread t([=]() {ac::thread::run_with_exception_handling(get_user_sp_queue_thread, sp_component); });
         t.detach();
     }
 }
@@ -61,7 +65,7 @@ void get_user_sp_queue() {
 * \runtime
 */
 void print_spotify_songs() {
-    sp_logger.logg_and_logg("print_spotify_songs()");
+    sp_component.logg_and_logg("print_spotify_songs()");
     std::ostringstream song_text;
     ac_spotify.get_current_song();
     if (!ac_spotify.song_history.empty()) {
@@ -74,8 +78,8 @@ void print_spotify_songs() {
     }
     song_text << ac_spotify.last_song << '\n';
     std::string song_text_str = song_text.str();
-    sp_logger.loggnl_and_printnl(song_text_str);
-    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(song_text_str) + L"\n");
+    sp_component.loggnl_and_printnl(song_text_str);
+    ac::clipboard::set_clipboard_text(ac::encoding::to_utf16(song_text_str) + L"\n");
     Sleep(50);
     ac::clipboard::paste_from_clipboard();
 }
@@ -91,7 +95,7 @@ void spotify_play_pause_thread() {
 * \runtime
 */
 void spotify_play_pause() {
-    sp_logger.logg_and_logg("spotify_play_pause()");
+    sp_component.logg_and_logg("spotify_play_pause()");
     std::thread t(spotify_play_pause_thread);
     t.detach();
 }
@@ -107,7 +111,7 @@ void spotify_prev_song() {
 * \runtime
 */
 void sp_switch_player() {
-    sp_logger.logg_and_logg("sp_switch_player()");
+    sp_component.logg_and_logg("sp_switch_player()");
     ac_spotify.switch_player();
 }
 /**

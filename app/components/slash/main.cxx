@@ -8,13 +8,16 @@
  * Recycle Bin is emptied.
  */
 import std;
-import config;
 import clipboard;
 import logger;
+import logger_x;
+import print;
+import component;
+import pipes;
+
 import music;
 import path_utils;
-import print;
-import utils;
+
 import <atlbase.h>;
 import <shlobj.h>;
 import <shlwapi.h>;
@@ -22,6 +25,9 @@ import <shlwapi.h>;
 #pragma comment(lib, "Shell32.lib")
 #pragma comment(lib, "Ole32.lib")
 #pragma comment(lib, "Shlwapi.lib")
+
+
+ac::Component slash("slash");
 
 namespace {
 
@@ -227,7 +233,7 @@ namespace {
         }
 
         ac::clipboard::set_clipboard_text(output.str());
-        ac::printnl(output.str());
+        slash.printnl(output.str());
         ac::clipboard::paste_from_clipboard();
     }
 
@@ -238,18 +244,16 @@ namespace {
  * \return Exit code of the process.
  */
 int main() {
-    ac::logger::update_main_log_file();
-
+    ac::logger::connect_to_logger(slash);
     try {
         report_and_empty_recycle_bin();
     }
     catch (const std::exception& exception) {
-        ac::print("caught exception: {}\n", exception.what());
+        slash.print("caught exception: {}\n", exception.what());
     }
     catch (...) {
-        ac::print("uncaught exception\n");
+        slash.print("uncaught exception\n");
     }
-
-    ac::logger::close_main_log_file();
+    ac::logger::close_logger_connection();
     return 0;
 }

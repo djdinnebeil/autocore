@@ -3,7 +3,7 @@
 \brief A module for additional taskbar support.
 */
 export module taskbar_ps;
-import visual;
+
 import <Windows.h>;
 
 export extern HWND taskbar_ps_hwnd;

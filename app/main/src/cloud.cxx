@@ -1,7 +1,11 @@
 module cloud;
+
 import std;
+
 import config;
-import visual;
+import ac_component;
+import print;
+
 import <cpr/cpr.h>;
 
 std::string firebase_url = "https://auto-core-cloud-default-rtdb.firebaseio.com/star.json";
@@ -16,7 +20,11 @@ std::string firebase_url = "https://auto-core-cloud-default-rtdb.firebaseio.com/
  */
 std::string remove_first_and_last_quotation_mark(const std::string& input) {
     if (!input.empty() && input[0] == '"' && input[input.length() - 1] == '"') {
-        return ac::utils::remove_first_and_last_char(input);
+        if (input.size() <= 2) {
+            return {};
+        }
+
+        return input.substr(1, input.size() - 2);
     }
     return input;
 }
@@ -42,10 +50,10 @@ std::string append_first_and_last_quotation_mark(const std::string& input) {
 void get_string_from_firebase() {
     auto response = cpr::Get(cpr::Url {firebase_url});
     if (response.status_code != cpr::status::HTTP_OK) {
-        ac::print("HTTP GET Request failed with status: {}", response.status_code);
+        auto_core.print("HTTP GET Request failed with status: {}", response.status_code);
     }
     else {
-        ac::logger::logg("Retrieved data: {}", remove_first_and_last_quotation_mark(response.text));
+        auto_core.logg_and_logg("Retrieved data: {}", remove_first_and_last_quotation_mark(response.text));
     }
 }
 
@@ -62,9 +70,9 @@ void update_string_in_firebase(const std::string& value) {
         cpr::Body {value_with_quotes},
         cpr::Header {{"Content-Type", "application/json"}});
     if (response.status_code != cpr::status::HTTP_OK) {
-        ac::print("HTTP PUT Request failed with status: {}", response.status_code);
+        auto_core.print("HTTP PUT Request failed with status: {}", response.status_code);
     }
     else {
-        ac::logger::logg("Updated data: {}", remove_first_and_last_quotation_mark(response.text));
+        auto_core.logg_and_logg("Updated data: {}", remove_first_and_last_quotation_mark(response.text));
     }
 }

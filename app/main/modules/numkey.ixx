@@ -12,8 +12,6 @@ behavior within Auto Core. To differentiate it, we check for the LLKHF_EXTENDED 
 the numpad enter key press but not for the main keyboard enter key press.
 */
 export module numkey;
-import visual;
-import <Windows.h>;
 
 export {
     const int enter_key_vk = 13;

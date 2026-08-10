@@ -6,28 +6,30 @@ This module defines a custom logger for the Spotify component and provides funct
 to update the logger and initialize logging when the component starts.
  */
 export module server_logging;
+
 import std;
-import config;
-import clock;
 import logger;
-import logger_c;
+import logger_x;
+import component;
 import print;
+
+import pipes;
+import <Windows.h>;
 
 /**
  * \brief Custom logger for the server component.
  *
  * This logger is used to log messages specific to the Spotify component.
  */
-export ac::Logger server_logger("server");
+export ac::Component server_component("server");
 
 /**
  * \brief Updates the server logger.
  *
  * This function updates the main log file and the server logger file.
  */
-export void update_server_logger() {
-	ac::logger::update_main_log_file();
-	server_logger.update_log_file();
+export void update_server_component() {
+	server_component.update_log_file();
 }
 
 /**
@@ -36,6 +38,6 @@ export void update_server_logger() {
  * This function updates the main log file and logs the start of the server component.
  */
 export void log_init() {
-	ac::logger::update_main_log_file();
-	server_logger.logg_and_logg("server.exe started");
+	ac::logger::connect_to_logger(server_component);
+	server_component.logg_and_logg("server.exe started");
 }

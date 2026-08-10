@@ -1,41 +1,85 @@
 module itunes_c;
-import visual;
+
+import std;
+import clipboard;
+import encoding;
+
 import itunes_x;
 import <Windows.h>;
 
 using std::scoped_lock;
 
 void print_next_up_song_list() {
-    iTunes_logger.logg_and_logg("print_next_up_song_list()");
-    auto next_up_list = ac::utils::wstr_to_str(ac::clipboard::get_clipboard_text());
+    itunes_component.logg_and_logg("print_next_up_song_list()");
+
+    auto clipboard_result = ac::clipboard::get_clipboard_text();
+
+    if (!clipboard_result) {
+        itunes_component.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(clipboard_result.error())
+        );
+        return;
+    }
+
+    auto next_up_list =
+        ac::encoding::to_utf8(*clipboard_result);
+
     std::istringstream list_stream(next_up_list);
     std::ostringstream formatted_list;
+
     std::string item;
-    while (getline(list_stream, item, '\n')) {
-        auto formatted_item = replace_tabs_with_brackets(item);
-        formatted_list << formatted_item << "\n";
+
+    while (std::getline(list_stream, item, '\n')) {
+        auto formatted_item =
+            replace_tabs_with_brackets(item);
+
+        formatted_list << formatted_item << '\n';
     }
+
     auto formatted_str = formatted_list.str();
-    iTunes_logger.loggnl_and_printnl(formatted_str);
-    ac::clipboard::set_clipboard_text(ac::utils::str_to_wstr(formatted_str));
+
+    itunes_component.loggnl_and_printnl(formatted_str);
+
+    if (auto result =
+        ac::clipboard::set_clipboard_text(
+            ac::encoding::to_utf16(formatted_str)
+        );
+        !result) {
+
+        itunes_component.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+        return;
+    }
+
     Sleep(50);
-    ac::clipboard::paste_from_clipboard();
+
+    if (auto result = ac::clipboard::paste_from_clipboard();
+        !result) {
+
+        itunes_component.logg_and_print(
+            "Clipboard error: {}",
+            ac::clipboard::error_message(result.error())
+        );
+    }
 }
 
 void iTunes_play_pause() {
-    iTunes_logger.logg_and_logg("iTunes_play_pause()");
+    itunes_component.logg_and_logg("iTunes_play_pause()");
     ac_iTunes.play_pause();
     ac_iTunes.get_current_track();
 }
 
 void iTunes_prev_song() {
-    iTunes_logger.logg_and_logg("iTunes_prev_song()");
+    itunes_component.logg_and_logg("iTunes_prev_song()");
     ac_iTunes.prev_song();
     ac_iTunes.get_current_track();
 }
 
 void iTunes_stop_song() {
-    iTunes_logger.logg_and_logg("iTunes_stop_song()");
+    itunes_component.logg_and_logg("iTunes_stop_song()");
     ac_iTunes.stop_song();
     ac_iTunes.play_pause();
     ac_iTunes.play_pause();
@@ -46,7 +90,7 @@ void iTunes_stop_song() {
 }
 
 void print_iTunes_songs() {
-    iTunes_logger.logg_and_logg("print_iTunes_songs()");
+    itunes_component.logg_and_logg("print_iTunes_songs()");
     std::wostringstream song_text;
     ac_iTunes.get_current_track();
     {
@@ -56,7 +100,7 @@ void print_iTunes_songs() {
                 song_text << song << L"\n";
             }
             if (ac_iTunes.song_history.size() != 1) {
-                iTunes_logger.loggnl_and_printnl(song_text.str());
+                itunes_component.loggnl_and_printnl(song_text.str());
             }
             ac_iTunes.song_history.clear();
         }

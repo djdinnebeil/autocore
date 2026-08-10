@@ -6,10 +6,6 @@ This module provides functionality for managing journaling documents, including 
 episode titles, saving files, and interacting with a SQLite database.
 */
 export module star;
-import visual;
-import cloud;
-import <sqlite3.h>;
-import <Windows.h>;
 
 export {
     void print_episode_title();

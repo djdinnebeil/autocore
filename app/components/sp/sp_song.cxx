@@ -4,7 +4,7 @@
 */
 module sp_c;
 
-import visual;
+import std;
 import thread;
 import sp_x;
 import <json.hpp>;
@@ -56,7 +56,7 @@ SongMetadata Spotify::extract_song_metadata(const json& song_details) {
  * \brief Retrieves the current Spotify song.
  */
 void Spotify::get_current_song() {
-    sp_logger.logg("get_current_song()");
+    sp_component.logg("get_current_song()");
     if (!refresh_tokens()) {
         return;
     }
@@ -68,18 +68,18 @@ void Spotify::get_current_song() {
     last_status_code = 1;
     if (response.status_code != 200) {
         if (response.status_code == 204) {
-            sp_logger.logg("{} status code", response.status_code);
+            sp_component.logg("{} status code", response.status_code);
             is_playing = false;
         }
         else {
-            sp_logger.logg_and_print("{} status code", response.status_code);
+            sp_component.logg_and_print("{} status code", response.status_code);
         }
         return;
     }
     auto song_details = parse(response.text);
     is_playing = song_details["is_playing"];
     if (!song_details["item"].contains("name")) {
-        sp_logger.logg_and_logg("djai++ is talking");
+        sp_component.logg_and_logg("djai++ is talking");
         last_status_code = 15;
         return;
     }
@@ -90,8 +90,8 @@ void Spotify::get_current_song() {
         return;
     }
     calculate_remaining_song_duration_ms(song_details);
-    sp_logger.loggnl_and_loggnl("now playing: ");
-    sp_logger.logg_and_print(current_song);
+    sp_component.loggnl_and_loggnl("now playing: ");
+    sp_component.logg_and_print(current_song);
     last_song = current_song;
     song_history.push_back(current_song);
     track_spotify_history(meta);
@@ -147,7 +147,7 @@ std::string Spotify::get_user_queue() {
             Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
         );
         if (response.status_code != 200) {
-            sp_logger.logg_and_print("Failed to retrieve queue");
+            sp_component.logg_and_print("Failed to retrieve queue");
             return "";
         }
         json queue_details = parse(response.text);
@@ -167,7 +167,7 @@ std::string Spotify::get_user_queue() {
         return output.str();
     }
     catch (...) {
-        sp_logger.logg_and_print("An exception occurred in get_user_queue");
+        sp_component.logg_and_print("An exception occurred in get_user_queue");
         return "";
     }
 }
@@ -185,7 +185,7 @@ bool Spotify::download_album_cover() {
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 200) {
-        sp_logger.logg_and_print("Failed to retrieve song");
+        sp_component.logg_and_print("Failed to retrieve song");
         return "";
     }
     auto song_details = parse(response.text);

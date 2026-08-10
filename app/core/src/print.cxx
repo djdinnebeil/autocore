@@ -1,71 +1,84 @@
 module print;
 
 import std;
-import config;
-import logger;
+
 import clipboard;
-import <Windows.h>;
+import encoding;
+import logger;
+
+namespace {
+
+    void paste_text(const std::wstring& msg) {
+        std::wstring clipboard_text = msg + L"\n\n";
+
+        ac::clipboard::set_clipboard_text(clipboard_text);
+        ac::clipboard::paste_from_clipboard();
+    }
+
+}
 
 namespace ac {
 
     void print(const std::string& msg) {
-        std::cout << msg << std::endl;
-        main_log_stream << msg << std::endl;
+        std::cout << msg << '\n';
+        std::cout.flush();
     }
 
     void printnl(const std::string& msg) {
         std::cout << msg;
-        main_log_stream << msg;
+        std::cout.flush();
     }
 
     void print(const std::wstring& msg) {
-        std::cout << ac::encoding::to_utf8(msg) << std::endl;
-        main_log_stream << ac::encoding::to_utf8(msg) << std::endl;
+        print(ac::encoding::to_utf8(msg));
     }
 
     void printnl(const std::wstring& msg) {
-        std::cout << ac::encoding::to_utf8(msg);
-        main_log_stream << ac::encoding::to_utf8(msg);
+        printnl(ac::encoding::to_utf8(msg));
     }
 
-    void print(char msg) {
-        std::cout << ac::encoding::to_utf8(msg) << std::endl;
-        main_log_stream << ac::encoding::to_utf8(msg) << std::endl;
+    void print(const char msg) {
+        print(std::string(1, msg));
     }
 
-    void printnl(char msg) {
-        std::cout << ac::encoding::to_utf8(msg);
-        main_log_stream << ac::encoding::to_utf8(msg);
+    void printnl(const char msg) {
+        printnl(std::string(1, msg));
     }
 
-    void print(wchar_t msg) {
-        std::cout << ac::encoding::to_utf8(msg) << std::endl;
-        main_log_stream << ac::encoding::to_utf8(msg) << std::endl;
+    void print(const wchar_t msg) {
+        print(ac::encoding::to_utf8(msg));
     }
 
-    void printnl(wchar_t msg) {
-        std::cout << ac::encoding::to_utf8(msg);
-        main_log_stream << ac::encoding::to_utf8(msg);
+    void printnl(const wchar_t msg) {
+        printnl(ac::encoding::to_utf8(msg));
     }
 
-    void print_to_screen(const std::string& msg) {
+    void insert_text(const std::string& msg) {
+        try {
+            paste_text(ac::encoding::to_utf16(msg));
+        }
+        catch (const std::exception& exception) {
+            ac::print(
+                "Unable to convert text for insertion: {}",
+                exception.what()
+            );
+
+            paste_text(L""); // Send the completion signal.
+        }
+    }
+
+    void insert_text(const std::wstring& msg) {
+        paste_text(msg);
+    }
+
+    void print_and_insert(const std::string& msg) {
         print(msg);
-
-        std::wostringstream ws;
-        ws << msg.c_str() << L"\n\n";
-
-        ac::clipboard::set_clipboard_text(ws.str());
-        ac::clipboard::paste_from_clipboard();
+        insert_text(msg);
     }
 
-    void print_to_screen_w(const std::wstring& msg) {
+    void print_and_insert(const std::wstring& msg) {
         print(msg);
-
-        std::wostringstream ws;
-        ws << msg << L"\n\n";
-
-        ac::clipboard::set_clipboard_text(ws.str());
-        ac::clipboard::paste_from_clipboard();
+        insert_text(msg);
     }
 
 }

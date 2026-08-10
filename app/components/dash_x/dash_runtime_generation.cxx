@@ -5,11 +5,11 @@ import std;
 namespace fs = std::filesystem;
 
 /**
- * \brief Inserts the get_numkey_vk_code function into the runtime file.
- * \param runtime_file The output file stream to write the function to.
+ * \brief Inserts the get_numkey_vk_code function into the keymap command registry file.
+ * \param keymap_file The output file stream to write the function to.
  */
-void insert_vk_code(std::ofstream& runtime_file) {
-    runtime_file << R"(export int get_numkey_vk_code(std::string_view vk_code_string) {
+void insert_vk_code(std::ofstream& keymap_file) {
+    keymap_file << R"(export int get_numkey_vk_code(std::string_view vk_code_string) {
     static const std::unordered_map<std::string_view, int> numkey_vk_code_map = {
         {"numkey_0", numkey_0},
         {"numkey_1", numkey_1},
@@ -40,10 +40,10 @@ void insert_vk_code(std::ofstream& runtime_file) {
 
 /**
  * \brief Inserts the special case handling for the function get_function_by_name.
- * \param runtime_file The output file stream to write the special case handling to.
+ * \param keymap_file The output file stream to write the special case handling to.
  */
-void insert_special_case_in_function_by_name(std::ofstream& runtime_file) {
-    runtime_file << R"(    // Check for special case "make_print_choice"
+void insert_special_case_in_function_by_name(std::ofstream& keymap_file) {
+    keymap_file << R"(    // Check for special case "make_print_choice"
     if (function_name.rfind("make_print_choice", 0) == 0) {
         size_t opening_quotation = function_name.find('"');
         size_t closing_quotation = function_name.find("\",");
@@ -55,11 +55,11 @@ void insert_special_case_in_function_by_name(std::ofstream& runtime_file) {
 }
 
 /**
- * \brief Processes a file to extract functions marked with \runtime and inserts them into the runtime file.
- * \param runtime_file The output file stream to write the functions to.
+ * \brief Processes a file to extract functions marked with \keymap_command and inserts them into the keymap file.
+ * \param keymap_file The output file stream to write the functions to.
  * \param filepath The path to the file to process.
  */
-void process_file(std::ofstream& runtime_file, const std::string& filepath) {
+void process_file(std::ofstream& keymap_file, const std::string& filepath) {
     std::cout << filepath << std::endl;
     std::ifstream file(filepath);
 
@@ -71,8 +71,8 @@ void process_file(std::ofstream& runtime_file, const std::string& filepath) {
     std::string line;
 
     while (std::getline(file, line)) {
-        if (line.find(R"(* \runtime)") != std::string::npos) {
-            std::cout << "Found \\runtime in: " << std::endl;
+        if (line.find(R"(* \keymap_command)") != std::string::npos) {
+            std::cout << "Found \\keymap_command in: " << std::endl;
             std::string function_name;
 
             do {
@@ -94,7 +94,7 @@ void process_file(std::ofstream& runtime_file, const std::string& filepath) {
             } while (std::getline(file, line));
 
             if (!function_name.empty()) {
-                runtime_file
+                keymap_file
                     << "        {\""
                     << function_name
                     << "\", &"
@@ -107,7 +107,7 @@ void process_file(std::ofstream& runtime_file, const std::string& filepath) {
     file.close();
 }
 
-void process_directory(std::ofstream& runtime_file, const std::string& path) {
+void process_directory(std::ofstream& keymap_file, const std::string& path) {
     try {
         if (!fs::is_directory(path)) {
             std::cout << "Provided path is not a directory: " << path << std::endl;
@@ -116,7 +116,7 @@ void process_directory(std::ofstream& runtime_file, const std::string& path) {
 
         for (const auto& entry : fs::directory_iterator(path)) {
             if (entry.is_regular_file()) {
-                process_file(runtime_file, entry.path().string());
+                process_file(keymap_file, entry.path().string());
             }
         }
     }
@@ -125,52 +125,53 @@ void process_directory(std::ofstream& runtime_file, const std::string& path) {
     }
 }
 
-bool generate_runtime_module() {
+bool generate_keymap_command_registry_module() {
     std::string module_description_comment = extract_module_description_comment();
     std::string vk_code_function_comment =
         extract_function_description_comment("get_numkey_vk_code");
     std::string function_by_name_function_comment =
         extract_function_description_comment("get_function_by_name");
 
-    std::ofstream runtime_file(dash_x_path);
+    std::ofstream keymap_file(dash_x_path);
 
-    if (!runtime_file.is_open()) {
+    if (!keymap_file.is_open()) {
         std::cerr << "Failed to create file: " << dash_x_path << std::endl;
         return false;
     }
 
-    runtime_file
+    keymap_file
         << module_description_comment
-        << "export module dash_x;\n"
+        << "export module dash_x;\n\n"
+        << "import std;\n"
         << "import ac_modules;\n\n"
         << vk_code_function_comment;
 
-    insert_vk_code(runtime_file);
+    insert_vk_code(keymap_file);
 
-    runtime_file
+    keymap_file
         << "\n"
         << function_by_name_function_comment
         << "export std::function<void()> get_function_by_name(std::string_view function_name) {\n"
         << "    static const std::unordered_map<std::string_view, std::function<void()>> function_map = {\n";
 
-    process_directory(runtime_file, main_import_path);
-    process_directory(runtime_file, dll_import_path);
-    process_directory(runtime_file, main_src_path);
-    process_directory(runtime_file, dll_src_path);
+    process_directory(keymap_file, main_import_path);
+    process_directory(keymap_file, dll_import_path);
+    process_directory(keymap_file, main_src_path);
+    process_directory(keymap_file, dll_src_path);
 
-    runtime_file << "    };\n";
-    insert_special_case_in_function_by_name(runtime_file);
-    runtime_file
+    keymap_file << "    };\n";
+    insert_special_case_in_function_by_name(keymap_file);
+    keymap_file
         << "    // Lookup the function in the map\n"
         << "    auto it = function_map.find(function_name);\n"
         << "    return (it != function_map.end()) ? it->second : nullptr;\n"
         << "}\n";
 
-    runtime_file.close();
+    keymap_file.close();
     return true;
 }
 
-void copy_runtime_module() {
+void copy_keymap_command_registry_module() {
     fs::create_directory("keymap");
     std::string destination_path = R"(.\keymap\keymap_commands.ixx)";
 

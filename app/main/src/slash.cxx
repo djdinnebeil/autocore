@@ -1,10 +1,9 @@
 module slash;
+
 import std;
-import config;
-import logger;
+import ac_component;
 import print;
-import clipboard;
-import utils;
+
 import <Windows.h>;
 
 /**
@@ -24,7 +23,7 @@ void call_slash_exe(const std::wstring& exe_path) {
 
     // Create the slash process
     if (!CreateProcessW(NULL, szCmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        ac::print("error with slash module - {}", GetLastError());
+        auto_core.print("error with slash module - {}", GetLastError());
     }
     else {
         // Wait for the process to complete
@@ -41,9 +40,9 @@ void call_slash_exe(const std::wstring& exe_path) {
  *
  * This function logs the action, then calls the external slash executable to empty the Recycle Bin.
  *
- * \runtime
+ * \keymap_command
  */
 void retrieve_and_delete_recycle_bin() {
-    ac::logger::logg("retrieve_and_delete_recycle_bin()");
+    auto_core.logg_and_logg("retrieve_and_delete_recycle_bin()");
     call_slash_exe(LR"(.\slash.exe)");
 }

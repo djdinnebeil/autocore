@@ -1,7 +1,10 @@
 module itunes;
-import visual;
+
+import std;
 import pipes;
 import journey;
+import ac_component;
+
 import <Windows.h>;
 
 namespace {
@@ -9,9 +12,8 @@ namespace {
 }
 
 void create_itunes_pipe() {
-    ac_itunes_pipe = create_pipe_server(L"ac_itunes_pipe");
+    ac_itunes_pipe = ac::pipes::create_pipe_server(L"ac_itunes_pipe", auto_core);
 }
-
 
 /**
  * \brief Starts the iTunes component.
@@ -20,7 +22,7 @@ void create_itunes_pipe() {
  */
 void start_iTunes_component() {
     std::wstring itunes_path = LR"(.\ac_itunes.exe)";
-    ac::core::create_process(itunes_path);
+    ac::main::create_process(itunes_path);
 }
 
 /**
@@ -28,10 +30,10 @@ void start_iTunes_component() {
  *
  * This function sends a command to the iTunes pipe to print the list of iTunes songs.
  *
- * \runtime
+ * \keymap_command
  */
 void print_iTunes_songs() {
-    send_pipe_command(ac_itunes_pipe, 3);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 3);
 }
 
 /**
@@ -39,10 +41,10 @@ void print_iTunes_songs() {
  *
  * This function sends a command to the iTunes pipe to play the next song in iTunes.
  *
- * \runtime
+ * \keymap_command
  */
 void iTunes_next_song() {
-    send_pipe_command(ac_itunes_pipe, 2);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 2);
 }
 
 /**
@@ -50,10 +52,10 @@ void iTunes_next_song() {
  *
  * This function sends a command to the iTunes pipe to print the list of upcoming songs.
  *
- * \runtime
+ * \keymap_command
  */
 void print_next_up_song_list() {
-    send_pipe_command(ac_itunes_pipe, 4);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 4);
 }
 
 /**
@@ -61,10 +63,10 @@ void print_next_up_song_list() {
  *
  * This function sends a command to the iTunes pipe to play or pause the current iTunes song.
  *
- * \runtime
+ * \keymap_command
  */
 void iTunes_play_pause() {
-    send_pipe_command(ac_itunes_pipe, 1);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 1);
 }
 
 /**
@@ -73,7 +75,7 @@ void iTunes_play_pause() {
  * This function sends a command to the iTunes pipe to play the previous song in iTunes.
  */
 void iTunes_prev_song() {
-    send_pipe_command(ac_itunes_pipe, 6);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 6);
 }
 
 /**
@@ -81,10 +83,10 @@ void iTunes_prev_song() {
  *
  * This function sends a command to the iTunes pipe to stop the current next up.
  *
- * \runtime
+ * \keymap_command
  */
 void iTunes_stop_song() {
-    send_pipe_command(ac_itunes_pipe, 7);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 7);
 }
 
 
@@ -94,7 +96,7 @@ void iTunes_stop_song() {
  * This function sends a command to the iTunes pipe to update the iTunes logger.
  */
 void update_iTunes_logger() {
-    send_pipe_command(ac_itunes_pipe, 5);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 5);
 }
 
 /**
@@ -103,7 +105,7 @@ void update_iTunes_logger() {
  * This function sends a command to the iTunes pipe to end the iTunes component.
  */
 void send_iTunes_end_signal() {
-    send_pipe_command(ac_itunes_pipe, 0);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 0);
 }
 
 /**
@@ -111,8 +113,8 @@ void send_iTunes_end_signal() {
  *
  * This function sends a command to the iTunes pipe to remove a song from iTunes.
  *
- * \runtime
+ * \keymap_command
  */
 void remove_iTunes_song() {
-    send_pipe_command(ac_itunes_pipe, 9);
+    ac::pipes::send_pipe_command(ac_itunes_pipe, 9);
 }

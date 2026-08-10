@@ -1,9 +1,12 @@
 module runtime;
-import visual;
-import numkey;
-import ac_core;
-import taskbar;
+
+import ac_main;
+
 import keymap;
+import ac_component;
+import numkey;
+import taskbar;
+
 import <Windows.h>;
 
 /**
@@ -31,7 +34,7 @@ LRESULT CALLBACK send_numpad_event(int nCode, WPARAM wParam, LPARAM lParam) {
             special_key_event = true;
         }
         if (vk_code >= numkey_0 && vk_code <= numkey_slash || special_key_event) {
-            ac::logger::logg("vk_code = {}", vk_code);
+            auto_core.logg_and_logg("vk_code = {}", vk_code);
             if (vk_code == numkey_0) {
                 PostThreadMessage(ac::main::main_thread_id, ac_numkey_0, 1, vk_code);
             }

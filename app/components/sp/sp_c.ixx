@@ -9,7 +9,8 @@ switching playback devices.
 
  */
 export module sp_c;
-import visual;
+
+import std;
 import thread;
 import sp_x;
 import <json.hpp>;

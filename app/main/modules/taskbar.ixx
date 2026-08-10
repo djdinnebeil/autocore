@@ -3,9 +3,8 @@
 \brief Enables quick taskbar access for the first 10 programs in the taskbar using the system shortcut of 'winkey + #'.
 */
 export module taskbar;
+
 import std;
-import config;
-import visual;
 import <Windows.h>;
 
 export {
@@ -20,7 +19,6 @@ export {
     void activate_visual();
     void activate_firefox();
     void refresh_firefox();
-    void refresh_page();
     void start_reddit_new_tab();
 }
 
@@ -30,6 +28,12 @@ public:
     int switch_keycode;
     bool switch_set;
     void switch_windows(int keycode);
+    void activate_position_single(const std::string_view name);
+    void activate_position_multiple(
+        std::string_view name,
+        int& window_count,
+        WNDENUMPROC enum_windows
+    );
     void activate_auto_core();
     void activate_folder();
     void activate_word();

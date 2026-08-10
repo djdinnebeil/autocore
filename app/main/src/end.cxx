@@ -1,11 +1,12 @@
 module end;
+
 import std;
-import config;
-import logger;
-import print;
+import ac_component;
 import numkey;
-import ac_core;
+
+import ac_main;
 import runtime;
+
 import <Windows.h>;
 
 /**
@@ -23,11 +24,11 @@ import <Windows.h>;
 LRESULT CALLBACK close_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_QUERYENDSESSION:
-        ac::logger::logg("close_procedure() - WM_QUERYENDSESSION");
+        auto_core.logg_and_logg("close_procedure() - WM_QUERYENDSESSION");
         return TRUE;
     case WM_ENDSESSION:
         if (wParam == TRUE) {
-            ac::logger::logg("close_procedure() - WM_ENDSESSION");
+            auto_core.logg_and_logg("close_procedure() - WM_ENDSESSION");
             primary = false;
             PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             close_program();
@@ -84,22 +85,22 @@ BOOL WINAPI console_close_event(DWORD dwType) {
     if (!ac::main::program_closing) {
         switch (dwType) {
         case CTRL_CLOSE_EVENT:
-            ac::logger::logg("console_close_event() - CTRL_CLOSE_EVENT");
+            auto_core.logg_and_logg("console_close_event() - CTRL_CLOSE_EVENT");
             primary = false;
             PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         case CTRL_BREAK_EVENT:
-            ac::logger::logg("console_close_event() - CTRL_BREAK_EVENT");
+            auto_core.logg_and_logg("console_close_event() - CTRL_BREAK_EVENT");
             primary = false;
             PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         case CTRL_C_EVENT:
-            ac::logger::logg("console_close_event() - CTRL_C_EVENT");
+            auto_core.logg_and_logg("console_close_event() - CTRL_C_EVENT");
             primary = false;
             PostThreadMessage(ac::main::main_thread_id, ac_numkey_1, 0, numkey_1);
             return TRUE;
         default:
-            ac::logger::logg("console_close_event() - default");
+            auto_core.logg_and_logg("console_close_event() - default");
             break;
         }
     }

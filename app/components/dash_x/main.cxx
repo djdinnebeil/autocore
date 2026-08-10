@@ -1,26 +1,28 @@
 /**
-\file main.cxx
-\brief Generates the dash_x.ixx runtime configuration module for Auto Core.
-
-The dash component reads its configured project paths, regenerates the runtime
-function map, copies the generated module into the local keymap directory,
-creates the keymap hard link when needed, and optionally rebuilds Auto Core.
+* \file main.cxx
+* \brief Generates the Auto Core keymap command registry.
+*
+* The dash component reads the configured project paths, scans for functions
+* marked with \keymap_command, generates dash_x.ixx, copies the generated module
+* into the keymap directory, creates the required hard link when needed, and
+* optionally rebuilds Auto Core.
 */
 import std;
-import logger;
-import print;
+
 import <cstdlib>;
 
 #include "dash_x.hpp"
 
 int main(int argc, char* argv[]) {
+
+    std::cout << "Does this show";
     set_project_paths();
 
-    if (!generate_runtime_module()) {
+    if (!generate_keymap_command_registry_module()) {
         return 1;
     }
 
-    copy_runtime_module();
+    copy_keymap_command_registry_module();
     create_hard_link();
 
     if (argc < 2) {

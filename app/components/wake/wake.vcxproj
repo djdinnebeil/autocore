@@ -129,7 +129,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(AutoCoreLibDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AutoCoreLibDir);$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,16 +144,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
+    <ClCompile Include="..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
-    <ClCompile Include="..\..\core\modules\logger_c.ixx" />
+    <ClCompile Include="..\..\core\modules\logger_x.ixx" />
+    <ClCompile Include="..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\core\modules\print.ixx" />
+    <ClCompile Include="..\..\core\modules\session.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\..\core\modules\utils.ixx" />
-    <ClCompile Include="..\..\core\modules\visual.ixx" />
-    <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
     <ClCompile Include="wake_logging.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>

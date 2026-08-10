@@ -1,8 +1,12 @@
 module journal;
-import visual;
+
+import std;
 import keyboard;
+import ac_component;
+import print;
 import thread;
-import ac_core;
+
+import ac_main;
 import <Windows.h>;
 
 int upper_choice;
@@ -32,14 +36,14 @@ void set_number_of_choices() {
     set_focus_auto_core();
     std::string choice_selection;
     std::string choice_number_str;
-    ac::printnl("Enter number of choices: ");
+    auto_core.printnl("Enter number of choices: ");
     std::getline(std::cin, choice_number_str);
     if (choice_number_str.empty()) {
         upper_choice = 2;
-        ac::logger::logg("");
+        auto_core.logg_and_logg("");
     }
     else {
-        ac::logger::logg("{}", choice_number_str);
+        auto_core.logg_and_logg("{}", choice_number_str);
         try {
             int choice_number = stoi(choice_number_str);
             if (choice_number >= 2) {
@@ -64,7 +68,7 @@ void set_number_of_choices() {
 void thread_print_choice_with_name() {
     set_number_of_choices();
     int random_choice_number = get_random_number(1, upper_choice);
-    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
+    auto_core.print_and_insert(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -75,7 +79,7 @@ void thread_print_choice_with_name() {
 void thread_print_choice_with_zero() {
     set_number_of_choices();
     int random_choice_number = get_random_number(0, upper_choice);
-    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
+    auto_core.print_and_insert(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -89,7 +93,7 @@ void thread_print_choice_with_custom(int lower_bound) {
         upper_choice = lower_bound + 1;
     }
     int random_choice_number = get_random_number(lower_bound, upper_choice);
-    ac::print_to_screen(std::format("{} selects {}.", choice_selector, random_choice_number));
+    auto_core.print_and_insert(std::format("{} selects {}.", choice_selector, random_choice_number));
 }
 
 /**
@@ -110,7 +114,7 @@ void thread_print_choice_for_jose() {
     std::string choices_str = random_choice_str_1 + random_choice_str_2 + random_choice_str_3;
         
      
-    ac::print_to_screen(std::format("{}", choices_str));
+    auto_core.print_and_insert(std::format("{}", choices_str));
 }
 
 
@@ -121,14 +125,14 @@ void thread_print_choice_for_jose() {
  * \param include_zero Indicates if the range should include zero.
  */
 void print_choice(const std::string& name, bool include_zero) {
-    ac::logger::logg("print_choice()");
+    auto_core.logg_and_logg("print_choice()");
     choice_selector = name;
     if (include_zero) {
-        std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+        std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
         t.detach();
     }
     else {
-        std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+        std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_name, auto_core); });
         t.detach();
     }
 }
@@ -140,139 +144,139 @@ void print_choice(const std::string& name, bool include_zero) {
  * \param include_zero Indicates if the range should include zero.
  * \return A function that prints the random choice.
  * 
- * \runtime
+ * \keymap_command
  */
 std::function<void()> make_print_choice(const std::string& name, bool include_zero = false) {
     return [=]() {print_choice(name, include_zero); };
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Tabby_choice() {
-    ac::logger::logg("print_Tabby_choice()");
+    auto_core.logg_and_logg("print_Tabby_choice()");
     choice_selector = "Tabby";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Eric_choice() {
-    ac::logger::logg("print_Eric_choice()");
+    auto_core.logg_and_logg("print_Eric_choice()");
     choice_selector = "Eric";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Katrina_choice() {
-    ac::logger::logg("print_Katrina_choice()");
+    auto_core.logg_and_logg("print_Katrina_choice()");
     choice_selector = "Katrina";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Lily_choice() {
-    ac::logger::logg("print_Lily_choice()");
+    auto_core.logg_and_logg("print_Lily_choice()");
     choice_selector = "Lily";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_name, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Star_choice() {
-    ac::logger::logg("print_Star_choice()");
+    auto_core.logg_and_logg("print_Star_choice()");
     choice_selector = "Star";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Luna_choice() {
-    ac::logger::logg("print_Luna_choice()");
+    auto_core.logg_and_logg("print_Luna_choice()");
     choice_selector = "Luna";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_name, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Daniel_choice() {
-    ac::logger::logg("print_Daniel_choice()");
+    auto_core.logg_and_logg("print_Daniel_choice()");
     choice_selector = "Daniel";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_name); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_name, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Jose_choice() {
-    ac::logger::logg("print_Jose_choice()");
+    auto_core.logg_and_logg("print_Jose_choice()");
     choice_selector = "Jose";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_with_zero); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_with_zero, auto_core); });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Jose_choices() {
-    ac::logger::logg("print_Jose_choices()");
+    auto_core.logg_and_logg("print_Jose_choices()");
     choice_selector = "Jose";
-    std::thread t([=]() {run_with_exception_handling(thread_print_choice_for_jose); });
+    std::thread t([=]() {ac::thread::run_with_exception_handling(thread_print_choice_for_jose, auto_core); });
     t.detach();
 }
 
 
-/** \runtime */
+/** \keymap_command */
 void print_James_choice() {
-    ac::logger::logg("print_James_choice()");
+    auto_core.logg_and_logg("print_James_choice()");
     choice_selector = "James";
     std::thread t([=]() {
-        run_with_exception_handling([=]() {
+        ac::thread::run_with_exception_handling([=]() {
             thread_print_choice_with_custom(3);
-            });
+            }, auto_core);
         });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Jace_choice() {
-    ac::logger::logg("print_Jace_choice()");
+    auto_core.logg_and_logg("print_Jace_choice()");
     choice_selector = "Jace";
     std::thread t([=]() {
-        run_with_exception_handling([=]() {
+        ac::thread::run_with_exception_handling([=]() {
             thread_print_choice_with_custom(3);
-            });
+            }, auto_core);
         });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Tyler_choice() {
-    ac::logger::logg("print_Tyler_choice()");
+    auto_core.logg_and_logg("print_Tyler_choice()");
     choice_selector = "Tyler";
     std::thread t([=]() {
-        run_with_exception_handling([=]() {
+        ac::thread::run_with_exception_handling([=]() {
             thread_print_choice_with_custom(5);
-            });
+            }, auto_core);
         });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_Gin_choice() {
-    ac::logger::logg("print_Gin_choice()");
+    auto_core.logg_and_logg("print_Gin_choice()");
     choice_selector = "Gin";
     std::thread t([=]() {
-        run_with_exception_handling([=]() {
+        ac::thread::run_with_exception_handling([=]() {
             thread_print_choice_with_custom(15);
-            });
+            }, auto_core);
         });
     t.detach();
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_one_is_selected() {
-    ac::print_to_screen("1 is selected.");
+    auto_core.print_and_insert("1 is selected.");
 }
 
-/** \runtime */
+/** \keymap_command */
 void print_two_is_selected() {
-    ac::print_to_screen("2 is selected.");
+    auto_core.print_and_insert("2 is selected.");
 }

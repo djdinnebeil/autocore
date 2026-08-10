@@ -5,9 +5,8 @@
  * This module includes functions to handle unhandled exceptions, restart the program, and check for crash logs.
  */
 export module crash;
-import visual;
-import ac_core;
-import logger_x;
+
+import std;
 import <Windows.h>;
 
 export {

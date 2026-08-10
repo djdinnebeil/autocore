@@ -1,69 +1,80 @@
 module taskbar_ps;
-import visual;
+
+import std;
+import keyboard;
+import ac_component;
+import print;
+
 import <Windows.h>;
 
 HWND taskbar_ps_hwnd;
 
+namespace {
+    void send_ctrl_alt(const BYTE key) {
+        const BYTE keys[] = {
+            VK_CONTROL,
+            VK_MENU,
+            key
+        };
+
+        if (!ac::keyboard::send_key_combination(keys)) {
+            auto_core.print("Invalid key combination for Ctrl+Alt+value");
+       }
+    }
+}
+
 void send_ctrl_alt_n() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'N'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('N');
 }
 
 void send_ctrl_alt_p() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'P'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('P');
 }
-
 
 void send_ctrl_alt_r() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'R'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('R');
 }
 
-
 void send_ctrl_alt_x() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'X'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('X');
 }
 
 void send_ctrl_alt_t() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'T'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('T');
 }
 
 void send_ctrl_alt_l() {
-    BYTE keys[3] = {VK_CONTROL, VK_MENU, 'L'};
-    ac::keyboard::send_key_combination(keys, 3);
+    send_ctrl_alt('L');
 }
 
 void launch_notepad() {
     ShellExecuteW(NULL, L"open", L"notepad.exe", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching Notepad");
+    auto_core.print("Launching Notepad");
 }
 
 void launch_powershell() {
     ShellExecuteW(NULL, L"open", L"powershell.exe", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching PowerShell");
+    auto_core.print("Launching PowerShell");
 }
 
 void launch_ps_in_visual_key() {
     ShellExecuteW(NULL, L"open", LR"(C:\DJ\My Folder\Visual Key\powershell.exe.lnk)", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching PowerShell in Visual Key");
+    auto_core.print("Launching PowerShell in Visual Key");
 }
 
 void launch_webstorm() {
     ShellExecuteW(NULL, L"open", LR"(C:\DJ\My Folder\Visual Key\WebStorm.lnk)", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching WebStorm");
+    auto_core.print("Launching WebStorm");
 }
 
 void launch_gitbash() {
     ShellExecuteW(NULL, L"open", LR"(C:\DJ\My Folder\Visual Key\gitbash.exe.lnk)", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching Git Bash");
+    auto_core.print("Launching Git Bash");
 }
 
 void launch_wordpad() {
     ShellExecuteW(NULL, L"open", L"wordpad.exe", NULL, NULL, SW_SHOWDEFAULT);
-    ac::print("Launching WordPad");
+    auto_core.print("Launching WordPad");
 }
 
 LRESULT CALLBACK register_hotkey_proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -75,10 +86,10 @@ LRESULT CALLBACK register_hotkey_proc(HWND hwnd, UINT message, WPARAM wParam, LP
             !RegisterHotKey(hwnd, 4, MOD_CONTROL | MOD_ALT, 'X') ||
             !RegisterHotKey(hwnd, 5, MOD_CONTROL | MOD_ALT, 'T') ||
             !RegisterHotKey(hwnd, 6, MOD_CONTROL | MOD_ALT, 'L')) {
-            ac::print("Failed to register one or more hotkeys.");
+            auto_core.print("Failed to register one or more hotkeys.");
         }
         else {
-            ac::logger::logg("All hotkeys registered successfully.");
+            auto_core.logg_and_logg("All hotkeys registered successfully.");
         }
         break;
     case WM_HOTKEY:
@@ -94,7 +105,7 @@ LRESULT CALLBACK register_hotkey_proc(HWND hwnd, UINT message, WPARAM wParam, LP
 
         default: hotkey_name = "Unknown"; break;
         }
-        ac::logger::logg("{} hotkey triggered", hotkey_name);
+        auto_core.logg_and_logg("{} hotkey triggered", hotkey_name);
         switch (wParam) {
         case 1: launch_notepad(); break;
         case 2: launch_powershell(); break;
@@ -112,7 +123,7 @@ LRESULT CALLBACK register_hotkey_proc(HWND hwnd, UINT message, WPARAM wParam, LP
         UnregisterHotKey(hwnd, 4);
         UnregisterHotKey(hwnd, 5);
         UnregisterHotKey(hwnd, 6);
-        ac::logger::logg("All hotkeys unregistered.");
+        auto_core.logg_and_logg("All hotkeys unregistered.");
         PostQuitMessage(0);
         break;
     default:
@@ -128,7 +139,7 @@ void run_taskbar_ps() {
     wc.lpszClassName = L"TaskbarPSClass";
 
     if (!RegisterClassW(&wc)) {
-        ac::print("Failed to register window class.");
+        auto_core.print("Failed to register window class.");
         return;
     }
 
@@ -139,12 +150,12 @@ void run_taskbar_ps() {
     );
 
     if (!taskbar_ps_hwnd) {
-        ac::print("Failed to create the hotkey window.");
+        auto_core.print("Failed to create the hotkey window.");
         return;
     }
 
     ShowWindow(taskbar_ps_hwnd, SW_HIDE);
-    ac::logger::logg("Hidden hotkey window created and shown.");
+    auto_core.logg_and_logg("Hidden hotkey window created and shown.");
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
@@ -152,5 +163,5 @@ void run_taskbar_ps() {
         DispatchMessage(&msg);
     }
 
-    ac::logger::logg("Message loop exited.");
+    auto_core.logg_and_logg("Message loop exited.");
 }

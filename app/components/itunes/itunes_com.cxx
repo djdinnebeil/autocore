@@ -1,5 +1,5 @@
 module itunes_c;
-import visual;
+import std;
 import itunes_x;
 import <Windows.h>;
 import <comdef.h>;
@@ -34,19 +34,19 @@ void iTunes::initialize_com() {
     }
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr)) {
-        iTunes_logger.logg_and_print("Failed to initialize COM library.");
+        itunes_component.logg_and_print("Failed to initialize COM library.");
         return;
     }
     CLSID clsid;
     hr = CLSIDFromProgID(L"iTunes.Application", &clsid);
     if (FAILED(hr)) {
-        iTunes_logger.logg_and_print("Failed to get CLSID from ProgID.");
+        itunes_component.logg_and_print("Failed to get CLSID from ProgID.");
         CoUninitialize();
         return;
     }
     hr = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, IID_IDispatch, (void**)&iTunes_app);
     if (FAILED(hr)) {
-        iTunes_logger.logg_and_print("Failed to create iTunes COM instance.");
+        itunes_component.logg_and_print("Failed to create iTunes COM instance.");
         CoUninitialize();
         return;
     }
@@ -73,7 +73,7 @@ void iTunes::finalize_com() {
     }
     CoUninitialize();
     initialized = false;
-    iTunes_logger.logg("end of iTunes::finalize_com()");
+    itunes_component.logg("end of iTunes::finalize_com()");
 }
 
 CComPtr<IDispatch> iTunes::get_current_track_com_object() {

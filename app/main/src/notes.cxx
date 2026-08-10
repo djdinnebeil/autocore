@@ -1,9 +1,10 @@
 module notes;
+
 import std;
-import logger;
+import ac_component;
 import clock;
 import print;
-import ac_core;
+import ac_main;
 import taskbar;
 import taskbar_11;
 import journey;
@@ -39,11 +40,11 @@ void open_in_notepad(const std::string& filepath) {
     system(command.c_str());
 }
 
-/** \runtime */
+/** \keymap_command */
 void create_new_note_in_vs_code() {
     vs_code_notes_windows = 0;
     EnumWindows(enum_vs_code_notes_windows, 0);
-    std::string filepath = R"(C:\DJ\My Folder\Visual Key\)" + ac::clock::get_datestamp() + ".txt";
+    std::string filepath = R"(C:\DJ\My Folder\Visual Key\)" + ac::clock::get_date_iso() + ".txt";
     if (fs::exists(filepath) && !vs_code_notes_windows) {
         open_in_vs_code(filepath);
     }
@@ -62,16 +63,16 @@ void create_new_note_in_vs_code() {
             open_in_vs_code(filepath);
         }
         else {
-            ac::print("Error opening the file.");
+            auto_core.print("Error opening the file.");
         }
     }
 }
 
-/** \runtime */
+/** \keymap_command */
 void create_new_note_in_notepad() {
     notepad_notes_windows = 0;
     EnumWindows(enum_vs_code_notes_windows, 0);
-    std::string filepath = R"(C:\DJ\My Folder\Auto Sun\)" + ac::clock::get_datestamp() + ".txt";
+    std::string filepath = R"(C:\DJ\My Folder\Auto Sun\)" + ac::clock::get_date_iso() + ".txt";
     if (fs::exists(filepath) && !notepad_notes_windows) {
         open_in_notepad(filepath);
     }
@@ -90,7 +91,7 @@ void create_new_note_in_notepad() {
             open_in_notepad(filepath);
         }
         else {
-            ac::print("Error opening the file.");
+            auto_core.print("Error opening the file.");
         }
     }
 }

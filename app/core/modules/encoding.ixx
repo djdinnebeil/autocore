@@ -2,22 +2,16 @@
  * \file encoding.ixx
  * \brief Provides text encoding conversion utilities.
  */
-
 module;
 
-#if defined(BUILDING_DLL)
-    #define DLL_API __declspec(dllexport)
-#else
-    #define DLL_API __declspec(dllimport)
-#endif
+#include "ac_api.hpp"
 
 export module encoding;
 
 import std;
 
 export namespace ac::encoding {
-
-    DLL_API std::string to_utf8(const std::wstring& text);
-    DLL_API std::string to_utf8(wchar_t character);
-
+    AC_API std::string to_utf8(wchar_t character);
+    AC_API std::string to_utf8(std::wstring_view text);
+    AC_API std::wstring to_utf16(std::string_view text);
 }

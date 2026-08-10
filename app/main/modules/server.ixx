@@ -6,10 +6,6 @@
  * facilitating web-based access to local files. It also logs server-related events.
  */
 export module server;
-import std;
-import journey;
-import visual;
-import <Windows.h>;
 
 export {
     void start_server();

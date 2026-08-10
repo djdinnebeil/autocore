@@ -133,6 +133,7 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <EnableModules>false</EnableModules>
       <BuildStlModules>false</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,16 +148,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\core\modules\config.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
+    <ClCompile Include="..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\logger.ixx" />
-    <ClCompile Include="..\..\core\modules\logger_c.ixx" />
+    <ClCompile Include="..\..\core\modules\logger_x.ixx" />
+    <ClCompile Include="..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\core\modules\print.ixx" />
+    <ClCompile Include="..\..\core\modules\session.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\..\core\modules\utils.ixx" />
-    <ClCompile Include="..\..\core\modules\visual.ixx" />
-    <ClCompile Include="..\..\shared\pipes_x\pipes_x.ixx" />
     <ClCompile Include="itunes_c.ixx" />
     <ClCompile Include="itunes_c.cxx" />
     <ClCompile Include="itunes_config.cxx" />
@@ -166,8 +169,8 @@
     <ClCompile Include="itunes_commands.cxx" />
     <ClCompile Include="itunes_t.ixx" />
     <ClCompile Include="itunes_t.cxx" />
-    <ClCompile Include="itunes_x.cxx" />
-    <ClCompile Include="main.ixx" />
+    <ClCompile Include="main.cxx" />
+    <ClCompile Include="itunes_x.ixx" />
     <ClCompile Include="slash_i.ixx" />
     <ClCompile Include="slash_i.cxx" />
   </ItemGroup>

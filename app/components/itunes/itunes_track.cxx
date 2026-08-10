@@ -1,8 +1,11 @@
 module itunes_c;
-import visual;
+import std;
 import itunes_x;
 import <Windows.h>;
 import <comdef.h>;
+
+import logger_x;
+import encoding;
 
 using std::scoped_lock;
 
@@ -31,7 +34,7 @@ TrackInfo iTunes::get_track_info() {
                 prop.value = V_BSTR(&varResult);
             }
             else {
-                iTunes_logger.logg_and_logg("iTunes error with V_BSTR in get_track_info");
+                itunes_component.logg_and_logg("iTunes error with V_BSTR in get_track_info");
                 prop.value = L"";
             }
         }
@@ -80,8 +83,8 @@ std::wstring iTunes::get_current_track() {
     {
         scoped_lock lock(history_mtx);
         if (last_retrieved_song != current_song) {
-            iTunes_logger.loggnl_and_loggnl("current song: ");
-            iTunes_logger.logg_and_print(current_song);
+            itunes_component.loggnl_and_loggnl("current song: ");
+            itunes_component.logg_and_print(current_song);
             song_history.push_back(current_song);
         }
         last_retrieved_song = current_song;

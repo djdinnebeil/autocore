@@ -1,29 +1,30 @@
 /**
  * \file clock.ixx
- * \brief Offers clock and timing functionalities, including timestamping and timers.
+ * \brief Provides local date and time retrieval and formatting.
  */
 module;
 
-#ifdef BUILDING_DLL
-    #define DLL_API __declspec(dllexport)
-#else
-    #define DLL_API __declspec(dllimport)
-#endif
+#include "ac_api.hpp"
 
 export module clock;
+
 import std;
-import config;
-import <Windows.h>;
 
 export namespace ac::clock {
-    DLL_API int get_minutes_stamp();
-    DLL_API int get_current_seconds();
-    DLL_API std::string get_timestamp();
-    DLL_API std::string get_datestamp();
-    DLL_API std::string get_datestamp_iso();
-    DLL_API std::string get_datestamp_iso_with_timestamp();
-    DLL_API std::string get_timestamp_with_seconds();
-    DLL_API std::string get_datetime_stamp_with_seconds();
-    DLL_API std::string get_datetime_stamp_for_logger();
-    DLL_API std::string get_day_of_week();
+    struct DateTime {
+        std::string date_iso;
+        std::string timestamp;
+        std::string timestamp_with_seconds;
+    };
+
+    AC_API DateTime get_local_datetime();
+
+    AC_API std::string get_timestamp();
+    AC_API std::string get_timestamp_with_seconds();
+    AC_API std::string get_extended_timestamp();
+
+    AC_API std::string get_date_iso();
+    AC_API std::string get_date_compact();
+    
+    AC_API std::string get_day_of_week();
 }

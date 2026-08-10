@@ -1,7 +1,14 @@
 module crash;
-import visual;
-import ac_core;
-import logger_x;
+
+import std;
+
+import clock;
+import config;
+import ac_component;
+import print;
+import ac_main;
+import session;
+
 import <Windows.h>;
 import <filesystem>;
 import <fstream>;
@@ -21,7 +28,7 @@ std::string crash_folder = R"(.\crash\)";
  */
 void crash_check() {
     if (std::filesystem::exists(crash_log)) {
-        ac::print("Crash detected --- press any key to continue");
+        auto_core.print("Crash detected --- press any key to continue");
         std::cin.get(); // Pause and wait for user input
     }
 }
@@ -34,29 +41,65 @@ void crash_check() {
  * \param error_report The error report to log.
  */
 void restart_program(const std::string& error_report) {
-    // Log the crash information
-    std::ofstream log_crash(crash_log, std::ios_base::app);
+    std::ofstream log_crash(
+        crash_log,
+        std::ios::app
+    );
+
     if (log_crash.is_open()) {
-        std::string crash_report = std::format("{}\ncrash at {} {}", error_report, ac::clock::get_timestamp_with_seconds(), ac::clock::get_datestamp());
-        ac::logger::logg(crash_report);
-        log_crash << crash_report;
-        log_crash.close();
+        const std::string crash_report = std::format(
+            "{}\nProgram crash on {}",
+            error_report,
+            ac::session::make_datetime()
+        );
+
+        auto_core.logg_and_logg(crash_report);
+        log_crash << crash_report << '\n';
     }
-    // Restart the program
-    std::wstring restart_cmd = L"auto_core.exe";
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-    if (CreateProcessW(NULL, restart_cmd.data(), NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        close_program();
-        ac::logger::logg("restarting auto_core.exe at {}", ac::clock::get_datetime_stamp_with_seconds());
-        ac::logger::log_end();
-        ExitProcess(1);
+
+    STARTUPINFOW startup_info {};
+    startup_info.cb = sizeof(startup_info);
+
+    PROCESS_INFORMATION process_info {};
+
+    const std::wstring_view executable_directory =
+        ac::config::executable_directory();
+
+    std::wstring restart_command = std::format(
+        L"\"{}\\auto_core.exe\"",
+        executable_directory
+    );
+
+    if (!CreateProcessW(
+        nullptr,
+        restart_command.data(),
+        nullptr,
+        nullptr,
+        FALSE,
+        CREATE_NEW_CONSOLE,
+        nullptr,
+        nullptr,
+        &startup_info,
+        &process_info
+    )) {
+        auto_core.logg_and_logg(
+            "Unable to restart auto_core.exe. Error: {}",
+            GetLastError()
+        );
+
+        return;
     }
+
+    CloseHandle(process_info.hProcess);
+    CloseHandle(process_info.hThread);
+
+    auto_core.logg_and_logg(
+        "Restarting auto_core.exe at {}",
+        ac::clock::get_timestamp_with_seconds()
+    );
+
+    close_program();
+    ExitProcess(1);
 }
 
 /**
@@ -67,12 +110,12 @@ void restart_program(const std::string& error_report) {
  * \return The generated crash dump file name.
  */
 std::string get_crash_name() {
-    std::string crash_name = "bandicoot_" + ac::clock::get_datestamp();
+    std::string crash_name = ac::clock::get_date_iso() + "_crash";
     std::string crash_path = crash_folder + crash_name + ".dmp";
     int counter = 0;
     while (std::filesystem::exists(crash_path)) {
         counter++;
-        crash_name = "bandicoot_" + ac::clock::get_datestamp() + "_" + std::to_string(counter);
+        crash_name = ac::clock::get_date_iso() + "_crash_" + std::to_string(counter);
         crash_path = crash_folder + crash_name + ".dmp";
     }
     return crash_name;

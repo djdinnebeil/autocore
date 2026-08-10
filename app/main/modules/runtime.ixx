@@ -3,11 +3,7 @@
  * \brief This module contains runtime maps and configurations if enabled.
  */
 export module runtime;
-import visual;
-import numkey;
-import ac_core;
-import taskbar;
-import keymap;
+
 import <Windows.h>;
 
 export {
