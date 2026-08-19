@@ -1,0 +1,5 @@
+﻿sp_get_queue
+sp_next_song
+sp_play_pause
+sp_print_songs
+sp_switch_player

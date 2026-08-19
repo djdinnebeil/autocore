@@ -159,6 +159,7 @@
     <ClCompile Include="..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\shared\protocols\itunes_protocol.ixx" />
+    <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="itunes_c.ixx" />
     <ClCompile Include="itunes_c.cxx" />
@@ -167,6 +168,8 @@
     <ClCompile Include="itunes_playback.cxx" />
     <ClCompile Include="itunes_track.cxx" />
     <ClCompile Include="itunes_commands.cxx" />
+    <ClCompile Include="itunes_registry.ixx" />
+    <ClCompile Include="itunes_registry.cxx" />
     <ClCompile Include="itunes_t.ixx" />
     <ClCompile Include="itunes_t.cxx" />
     <ClCompile Include="main.cxx" />
@@ -174,6 +177,20 @@
     <ClCompile Include="slash_i.ixx" />
     <ClCompile Include="slash_i.cxx" />
   </ItemGroup>
+  <ItemGroup>
+    <ItunesKeymapCommand Include="itunes_next_song" />
+    <ItunesKeymapCommand Include="itunes_play_pause" />
+    <ItunesKeymapCommand Include="itunes_print_next_up" />
+    <ItunesKeymapCommand Include="itunes_print_songs" />
+    <ItunesKeymapCommand Include="itunes_remove_song" />
+    <ItunesKeymapCommand Include="itunes_stop_song" />
+  </ItemGroup>
+  <Target Name="GenerateItunesKeymapCommands" AfterTargets="Build"
+          Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <WriteLinesToFile File="$(TargetDir)itunes.keymap_commands.txt"
+                      Lines="@(ItunesKeymapCommand)" Overwrite="true"
+                      Encoding="UTF-8" />
+  </Target>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />
   </ItemGroup>

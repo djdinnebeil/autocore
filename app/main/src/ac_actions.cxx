@@ -5,7 +5,6 @@ import std;
 import auto_core.clipboard;
 import auto_core.clock;
 import auto_core.encoding;
-import journal_clock;
 import ac_main;
 
 import <Windows.h>;
@@ -26,12 +25,6 @@ void print_timestamp() {
     * This function prints the extended timestamp to the screen.
     * \keymap_command
     */
-void print_extended_timestamp() {
-    auto_core.print_and_insert(
-        journal_clock::get_extended_timestamp()
-    );
-}
-
 /**
     * \brief Prints the current date in ISO format YYYY-MM-DD
     *
@@ -195,7 +188,6 @@ void ac_actions::runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
     registry.add("print_timestamp", &::print_timestamp);
-    registry.add("print_extended_timestamp", &::print_extended_timestamp);
     registry.add("print_date_iso", &::print_date_iso);
     registry.add("print_date_compact", &::print_date_compact);
     registry.add("print_date_iso_with_timestamp", &::print_date_iso_with_timestamp);

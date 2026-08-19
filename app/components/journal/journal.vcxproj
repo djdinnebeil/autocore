@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{aa9921f2-da8c-4073-b616-7cd536be5b9f}</ProjectGuid>
-    <RootNamespace>sp</RootNamespace>
+    <ProjectGuid>{fa201def-c37e-4214-92eb-c47b1422ffde}</ProjectGuid>
+    <RootNamespace>journal</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -74,10 +74,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(AutoCoreDistDir)</OutDir>
     <IntDir>$(AutoCoreBuildDir)$(TargetName)\</IntDir>
-    <TargetName>sp_ac</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <TargetName>journal</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -102,8 +99,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -129,64 +124,49 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(AutoCoreLibDir);$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
-      <EnableModules>true</EnableModules>
-      <BuildStlModules>true</BuildStlModules>
-      <Optimization>MaxSpeed</Optimization>
+      <EnableModules>false</EnableModules>
+      <BuildStlModules>false</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreLibDir);$(AutoCoreMacroDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(AutoCoreLibDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcurl.lib;cpr.lib;sqlite3.lib;civetweb.lib;civetweb-cpp.lib;auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;libcurl.lib;cpr.lib;sqlite3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(TargetPath)" --generate-keymap-command-registry "$(TargetDir)journal.keymap_commands.txt"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\core\modules\component.ixx" />
-    <ClCompile Include="..\..\core\modules\ini.ixx" />
-    <ClCompile Include="..\..\core\modules\logging_config.ixx" />
+    <ClCompile Include="..\..\core\modules\console.ixx" />
+    <ClCompile Include="..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\core\modules\formatting.ixx" />
-    <ClCompile Include="..\..\core\modules\keyboard.ixx" />
+    <ClCompile Include="..\..\core\modules\ini.ixx" />
+    <ClCompile Include="..\..\core\modules\logging_config.ixx" />
     <ClCompile Include="..\..\core\modules\log_protocol.ixx" />
     <ClCompile Include="..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\core\modules\pipes.ixx" />
-    <ClCompile Include="..\..\shared\protocols\spotify_protocol.ixx" />
-    <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="sp_auth.cxx" />
-    <ClCompile Include="sp_c.cxx" />
-    <ClCompile Include="sp_c.ixx" />
-    <ClCompile Include="sp_history.cxx" />
-    <ClCompile Include="sp_playback.cxx" />
-    <ClCompile Include="sp_song.cxx" />
-    <ClCompile Include="sp_t.ixx" />
-    <ClCompile Include="sp_windows.cxx" />
-    <ClCompile Include="sp_registry.ixx" />
-    <ClCompile Include="sp_registry.cxx" />
+    <ClCompile Include="..\..\shared\command_registry.ixx" />
+    <ClCompile Include="..\..\shared\protocols\journal_protocol.ixx" />
+    <ClCompile Include="journal_clock.ixx" />
+    <ClCompile Include="journal_clock.cxx" />
+    <ClCompile Include="journal_commands.ixx" />
+    <ClCompile Include="journal_commands.cxx" />
+    <ClCompile Include="journal_component.ixx" />
+    <ClCompile Include="cloud.ixx" />
+    <ClCompile Include="cloud.cxx" />
+    <ClCompile Include="star.ixx" />
+    <ClCompile Include="star.cxx" />
     <ClCompile Include="main.cxx" />
-    <ClCompile Include="sp_x.ixx" />
   </ItemGroup>
-  <ItemGroup>
-    <SpotifyKeymapCommand Include="sp_get_queue" />
-    <SpotifyKeymapCommand Include="sp_next_song" />
-    <SpotifyKeymapCommand Include="sp_play_pause" />
-    <SpotifyKeymapCommand Include="sp_print_songs" />
-    <SpotifyKeymapCommand Include="sp_switch_player" />
-  </ItemGroup>
-  <Target Name="GenerateSpotifyKeymapCommands" AfterTargets="Build"
-          Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <WriteLinesToFile File="$(TargetDir)spotify.keymap_commands.txt"
-                      Lines="@(SpotifyKeymapCommand)" Overwrite="true"
-                      Encoding="UTF-8" />
-  </Target>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />
   </ItemGroup>

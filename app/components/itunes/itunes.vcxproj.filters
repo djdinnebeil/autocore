@@ -63,6 +63,9 @@
     <ClCompile Include="..\..\core\modules\ini.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="itunes_registry.ixx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="itunes_registry.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\shared\command_registry.ixx"><Filter>Header Files</Filter></ClCompile>
     <ClCompile Include="..\..\core\modules\logging_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

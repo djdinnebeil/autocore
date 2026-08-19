@@ -1,0 +1,20 @@
+make_print_choice("", false)
+print_Daniel_choice
+print_Eric_choice
+print_Gianna_choice
+print_Gin_choice
+print_Jace_choice
+print_James_choice
+print_Jose_choice
+print_Jose_choices
+print_Katrina_choice
+print_Lily_choice
+print_Luna_choice
+print_Star_choice
+print_Tabby_choice
+print_Tyler_choice
+print_episode_title
+print_extended_timestamp
+print_one_is_selected
+print_two_is_selected
+save_file_and_create_new_file

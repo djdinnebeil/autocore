@@ -12,6 +12,16 @@ import <Windows.h>;
 
 namespace {
     ac::pipes::Pipe ac_sp_pipe;
+    std::mutex sp_pipe_mutex;
+
+    void invoke_named(std::string_view name) {
+        const std::scoped_lock lock {sp_pipe_mutex};
+        if (const auto header = ac::pipes::send_pipe_command(ac_sp_pipe,
+                ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::invoke_named)); !header) return;
+        if (const auto payload = ac::pipes::send_string(ac_sp_pipe, name); !payload) {
+            auto_core.logg_and_print("Failed to send Spotify command. Error: {}", payload.error().system_error);
+        }
+    }
 
     void send_command(ac::pipes::Pipe& pipe, ac::protocol::spotify::Command command) {
         if (const auto result = ac::pipes::send_pipe_command(
@@ -148,9 +158,22 @@ void update_sp_logger() {
 void sp::runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
-    registry.add("get_user_sp_queue", &::get_user_sp_queue);
-    registry.add("print_spotify_songs", &::print_spotify_songs);
-    registry.add("spotify_play_pause", &::spotify_play_pause);
-    registry.add("spotify_next_song", &::spotify_next_song);
-    registry.add("sp_switch_player", &::sp_switch_player);
+    std::unordered_set<std::string> names;
+    std::ifstream input(ac::paths::executable_directory() / ac::protocol::spotify::manifest_filename);
+    std::string name;
+    while (std::getline(input, name)) {
+        if (!name.empty() && name.back() == '\r') name.pop_back();
+        if (name.starts_with("\xEF\xBB\xBF")) name.erase(0, 3);
+        if (!name.empty()) names.insert(name);
+    }
+    if (!input.is_open()) for (const auto command : sp::commands::all) names.emplace(command.name);
+    for (const auto& value : names) registry.add(value, [value] { invoke_named(value); });
+    registry.add("get_user_sp_queue", [] { invoke_named(sp::commands::get_queue.name); });
+    registry.add("print_spotify_songs", [] { invoke_named(sp::commands::print_songs.name); });
+    registry.add("spotify_play_pause", [] { invoke_named(sp::commands::play_pause.name); });
+    registry.add("spotify_next_song", [] { invoke_named(sp::commands::next_song.name); });
+}
+
+std::function<void()> sp_command(ac::protocol::spotify::CommandName command) {
+    return [name = std::string {command.name}] { invoke_named(name); };
 }

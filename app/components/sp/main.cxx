@@ -12,6 +12,8 @@ import sp_c;
 import sp_t;
 import auto_core.pipes;
 import spotify_protocol;
+import command_registry;
+import sp_registry;
 import <Windows.h>;
 
 // Pipe name for Spotify communication
@@ -27,7 +29,8 @@ void end_sp() {
 /**
  * \brief Sets up the command map for pipe communication.
  */
-void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
+void set_commands(ac::pipes::CommandDispatcher& dispatcher, ac::pipes::Pipe& pipe,
+    const command_registry::Registry& registry, bool& protocol_failed) {
     dispatcher.set_command(ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::shutdown), [&dispatcher]() {
         end_sp();
         dispatcher.request_stop();
@@ -39,6 +42,13 @@ void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
     dispatcher.set_command(ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::update_component), update_sp_component);
     dispatcher.set_command(ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::switch_player), sp_switch_player);
     dispatcher.set_command(ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::download_album_cover), download_album_cover);
+    dispatcher.set_command(ac::protocol::spotify::to_wire(ac::protocol::spotify::Command::invoke_named),
+        [&dispatcher, &pipe, &registry, &protocol_failed] {
+            const auto name = ac::pipes::read_string(pipe);
+            if (!name) { protocol_failed = true; dispatcher.request_stop(); return; }
+            if (auto action = registry.resolve(*name)) action();
+            else sp_component.logg_and_print("Unknown Spotify command: {}", *name);
+        });
 }
 
 /**
@@ -50,6 +60,7 @@ void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
  */
 int main(const int argument_count, char* arguments[]) {
     log_init();
+    const auto registry = create_sp_command_registry();
 
     for (int index = 1; index + 1 < argument_count; ++index) {
         if (std::string_view {arguments[index]} !=
@@ -70,8 +81,6 @@ int main(const int argument_count, char* arguments[]) {
         break;
     }
 
-    ac::pipes::CommandDispatcher dispatcher;
-    set_commands(dispatcher);
     start_sp_song_thread();
 
     ac::pipes::Pipe ac_sp_pipe;
@@ -81,6 +90,9 @@ int main(const int argument_count, char* arguments[]) {
 
     if (connection) {
         ac_sp_pipe = std::move(*connection);
+        ac::pipes::CommandDispatcher dispatcher;
+        bool protocol_failed = false;
+        set_commands(dispatcher, ac_sp_pipe, registry, protocol_failed);
         if (const auto result = dispatcher.process(ac_sp_pipe);
             !result) {
             sp_component.logg_and_print(
@@ -88,6 +100,7 @@ int main(const int argument_count, char* arguments[]) {
                 result.error().system_error
             );
         }
+        if (protocol_failed) return 1;
     }
     else {
         sp_component.logg_and_print(

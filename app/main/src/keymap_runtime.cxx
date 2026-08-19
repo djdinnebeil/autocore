@@ -6,6 +6,7 @@ import auto_core.ini;
 import command_registry;
 import ac_modules;
 import keymap;
+import keymap_hardcoded;
 import ac_main;
 import auto_core.paths;
 
@@ -23,7 +24,6 @@ static command_registry::Registry create_runtime_command_registry() {
     notes::runtime_commands::register_with(registry);
     slash::runtime_commands::register_with(registry);
     sp::runtime_commands::register_with(registry);
-    star::runtime_commands::register_with(registry);
     taskbar_runtime_commands::register_with(registry);
     taskbar_11::runtime_commands::register_with(registry);
     tasks::runtime_commands::register_with(registry);

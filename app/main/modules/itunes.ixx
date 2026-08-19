@@ -8,7 +8,9 @@
  */
 export module itunes;
 
+export import itunes_protocol;
 export import command_registry;
+import std;
 
 export namespace itunes::runtime_commands {
     void register_with(command_registry::Registry& registry);
@@ -26,4 +28,5 @@ export {
     void update_iTunes_logger();
     void send_iTunes_end_signal();
     void remove_iTunes_song();
+    std::function<void()> itunes_command(ac::protocol::itunes::CommandName command);
 }

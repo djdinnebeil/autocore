@@ -13,7 +13,9 @@ The main functions include:
 */
 export module sp;
 
+export import spotify_protocol;
 export import command_registry;
+import std;
 
 export namespace sp::runtime_commands {
     void register_with(command_registry::Registry& registry);
@@ -31,4 +33,5 @@ export {
     void spotify_next_song();
     void send_sp_end_signal();
     void update_sp_logger();
+    std::function<void()> sp_command(ac::protocol::spotify::CommandName command);
 }

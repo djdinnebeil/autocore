@@ -84,8 +84,17 @@
     <ClCompile Include="..\..\shared\protocols\spotify_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\shared\command_registry.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp_registry.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp_registry.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\core\modules\log_protocol.ixx">
-      <Filter>modules</Filter>
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

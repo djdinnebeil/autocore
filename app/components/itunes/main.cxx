@@ -10,6 +10,8 @@ import itunes_x;
 import itunes_c;
 import itunes_t;
 import slash_i;
+import command_registry;
+import itunes_registry;
 
 import <Windows.h>;
 
@@ -26,7 +28,8 @@ void end_iTunes() {
     itunes_component.logg("iTunes is shutting down");
 }
 
-void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
+void set_commands(ac::pipes::CommandDispatcher& dispatcher, ac::pipes::Pipe& pipe,
+    const command_registry::Registry& registry, bool& protocol_failed) {
     dispatcher.set_command(ac::protocol::itunes::to_wire(ac::protocol::itunes::Command::shutdown), [&dispatcher]() {
         end_iTunes();
         dispatcher.request_stop();
@@ -39,12 +42,23 @@ void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
     dispatcher.set_command(ac::protocol::itunes::to_wire(ac::protocol::itunes::Command::previous_song), iTunes_prev_song);
     dispatcher.set_command(ac::protocol::itunes::to_wire(ac::protocol::itunes::Command::stop_song), iTunes_stop_song);
     dispatcher.set_command(ac::protocol::itunes::to_wire(ac::protocol::itunes::Command::remove_song), remove_iTunes_song);
+    dispatcher.set_command(ac::protocol::itunes::to_wire(ac::protocol::itunes::Command::invoke_named),
+        [&dispatcher, &pipe, &registry, &protocol_failed] {
+            const auto name = ac::pipes::read_string(pipe);
+            if (!name) { protocol_failed = true; dispatcher.request_stop(); return; }
+            if (auto action = registry.resolve(*name)) action();
+            else itunes_component.logg_and_print("Unknown iTunes command: {}", *name);
+        });
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    const auto registry = create_itunes_command_registry();
+    if (argc == 3 && std::string_view {argv[1]} == "--generate-keymap-command-registry") {
+        std::ofstream output(argv[2], std::ios::binary | std::ios::trunc);
+        for (const auto& value : registry.autocomplete_values()) output << value << '\n';
+        return output ? 0 : 1;
+    }
     log_init();
-    ac::pipes::CommandDispatcher dispatcher;
-    set_commands(dispatcher);
     ac::pipes::Pipe ac_itunes_pipe;
     auto connection = ac::pipes::connect_to_pipe_server(
         std::wstring { ac::protocol::itunes::pipe_name }
@@ -52,6 +66,9 @@ int main() {
 
     if (connection) {
         ac_itunes_pipe = std::move(*connection);
+        ac::pipes::CommandDispatcher dispatcher;
+        bool protocol_failed = false;
+        set_commands(dispatcher, ac_itunes_pipe, registry, protocol_failed);
         if (const auto result = dispatcher.process(ac_itunes_pipe);
             !result) {
             itunes_component.logg_and_print(
@@ -59,6 +76,7 @@ int main() {
                 result.error().system_error
             );
         }
+        if (protocol_failed) return 1;
     }
     else {
         itunes_component.logg_and_print(

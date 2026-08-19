@@ -45,6 +45,7 @@ void core_init() {
  * \brief Creates named pipe servers for inter-process communication.
  */
 void create_pipe_servers() {
+    create_journal_pipe();
     create_sp_pipe();
     create_itunes_pipe();
     create_wake_pipe();
@@ -54,6 +55,7 @@ void create_pipe_servers() {
  * \brief Starts the components required for the application.
  */
 void start_components() {
+    start_journal_component();
     start_iTunes_component();
     start_sp_component();
     start_wake_component();
@@ -82,6 +84,7 @@ int main() {
     crash_check();
     create_pipe_servers();
     start_components();
+    wait_for_journal_ready();
     initialize_keymap();
     std::thread taskbar_ps_thread(run_taskbar_ps);
     taskbar_ps_thread.detach();

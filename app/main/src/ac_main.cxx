@@ -7,6 +7,7 @@ import <Windows.h>;
 
 import sp;
 import itunes;
+import journal;
 import wake;
 import server;
 import taskbar_ps;
@@ -28,6 +29,7 @@ void close_program() {
     stop_server();
     send_iTunes_end_signal();
     send_sp_end_signal();
+    send_journal_end_signal();
     send_wake_end_signal();
     if (taskbar_ps_hwnd != NULL) {
         DestroyWindow(taskbar_ps_hwnd);

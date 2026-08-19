@@ -18,9 +18,6 @@
     <ClCompile Include="..\src\main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\cloud.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\crash.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,9 +63,6 @@
     <ClCompile Include="..\src\sp.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\star.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\taskbar.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,7 +81,7 @@
     <ClCompile Include="..\modules\keymap.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\cloud.ixx">
+    <ClCompile Include="..\modules\keymap_hardcoded.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\ac_modules.ixx">
@@ -99,7 +93,10 @@
     <ClCompile Include="..\modules\keymap_runtime.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\command_registry.ixx">
+    <ClCompile Include="..\..\shared\command_registry.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\protocols\journal_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\end.ixx">
@@ -142,9 +139,6 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\sp.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\modules\star.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\taskbar.ixx">
@@ -192,13 +186,7 @@
     <ClCompile Include="..\modules\app_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\journal_clock.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\app_config.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\journal_clock.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\error.ixx">

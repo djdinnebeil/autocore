@@ -304,9 +304,7 @@ void Taskbar::activate_position_multiple(
 }
 
 void Taskbar::activate_auto_core() {
-    if (auto result = ac::console::activate(); !result) {
-        activate_position_single("auto_core");
-    }
+    activate_position_single("auto_core");
 }
 
 void Taskbar::activate_folder() {

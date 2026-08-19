@@ -14,7 +14,6 @@ export import slash;
 export import numkey;
 export import itunes;
 export import sp;
-export import star;
 export import taskbar;
 export import taskbar_ps;
 export import taskbar_11;
@@ -24,7 +23,6 @@ export import notepad;
 export import ac_actions;
 
 export import auto_core.pipes;
-export import cloud;
 export import auto_core.encoding;
 export import server;
 export import crash;

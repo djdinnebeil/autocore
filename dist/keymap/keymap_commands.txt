@@ -26,10 +26,17 @@ get_user_sp_queue
 iTunes_next_song
 iTunes_play_pause
 iTunes_stop_song
+itunes_next_song
+itunes_play_pause
+itunes_print_next_up
+itunes_print_songs
+itunes_remove_song
+itunes_stop_song
 launch_task_list
 make_print_choice("", false)
 print_Daniel_choice
 print_Eric_choice
+print_Gianna_choice
 print_Gin_choice
 print_Jace_choice
 print_James_choice
@@ -66,6 +73,10 @@ retrieve_and_delete_recycle_bin
 save_file_and_create_new_file
 send_alt_f12
 send_crash_command
+sp_get_queue
+sp_next_song
+sp_play_pause
+sp_print_songs
 sp_switch_player
 spotify_next_song
 spotify_play_pause

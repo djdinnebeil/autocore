@@ -8,7 +8,6 @@ export namespace ac_actions::runtime_commands {
 
 export {
     void print_timestamp();
-    void print_extended_timestamp();
     void print_date_iso();
     void print_date_compact();
     void print_date_iso_with_timestamp();
