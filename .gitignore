@@ -21,7 +21,9 @@ x86/
 Thumbs.db
 Desktop.ini
 
-# Editor/IDE settings
+# Editor/IDE settings and per-user Visual Studio state
+.vs/
+*.vcxproj.user
 .vscode/
 .idea/
 

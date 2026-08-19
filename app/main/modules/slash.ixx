@@ -7,4 +7,10 @@
  */
 export module slash;
 
+export import command_registry;
+
+export namespace slash::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export void retrieve_and_delete_recycle_bin();

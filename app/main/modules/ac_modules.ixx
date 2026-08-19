@@ -4,8 +4,8 @@
 */
 export module ac_modules;
 
-export import config;
-export import ac_component;
+export import auto_core.ini;
+export import auto_core.logging.config;
 export import ac_main;
 export import journal;
 export import link;
@@ -23,15 +23,12 @@ export import notes;
 export import notepad;
 export import ac_actions;
 
-export import pipes;
+export import auto_core.pipes;
 export import cloud;
-export import print;
-export import encoding;
+export import auto_core.encoding;
 export import server;
 export import crash;
-export import keyboard;
-export import thread;
+export import auto_core.keyboard;
+export import auto_core.thread;
 
-export import logger;
-export import logger_x;
-export import logger_t;
+export import logger_init;

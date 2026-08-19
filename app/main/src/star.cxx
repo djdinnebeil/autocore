@@ -2,11 +2,13 @@ module star;
 
 import std;
 
-import clipboard;
-import clock;
-import encoding;
-import ac_component;
-import print;
+import auto_core.clipboard;
+import auto_core.clock;
+import auto_core.encoding;
+import auto_core.ini;
+import ac_main;
+import auto_core.paths;
+import journal_clock;
 
 import cloud;
 import <sqlite3.h>;
@@ -82,13 +84,27 @@ void save_file_and_create_new_file() {
  *
  * \return The star name as a std::string.
  */
+std::optional<std::string> get_star_setting(
+    const std::string_view expected_name
+) {
+    const auto document = ac::ini::read(
+        ac::paths::config_directory() / "star.ini"
+    );
+    if (document) {
+        if (const auto value = document->find("star", expected_name)) {
+            return std::string {*value};
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::string get_star_name() {
     auto_core.logg_and_logg("get_star_name()");
-    std::ifstream star_rc(R"(.\config\star.ini)");
-    std::string line;
-    std::getline(star_rc, line);
-    auto_core.logg_and_logg(line);
-    return line;
+    const std::string value =
+        get_star_setting("journal_name").value_or("");
+    auto_core.logg_and_logg(value);
+    return value;
 }
 
 /**
@@ -100,12 +116,10 @@ std::string get_star_name() {
  */
 std::string get_database_path() {
     auto_core.logg_and_logg("get_database_path()");
-    std::ifstream star_rc(R"(.\config\star.ini)");
-    std::string line;
-    std::getline(star_rc, line);  // Skip the star name line
-    std::getline(star_rc, line);  // Read the database path line
-    auto_core.logg_and_logg(line);
-    return line;
+    const std::string value =
+        get_star_setting("database_path").value_or("");
+    auto_core.logg_and_logg(value);
+    return value;
 }
 
 /**
@@ -169,7 +183,8 @@ std::string get_episode_title() {
     std::string star_and_number = std::format("{} {}", star_name, get_episode_number());
     update_string_in_firebase(star_and_number);
     std::ostringstream s;
-    s << star_and_number << '\n' << ac::clock::get_date_compact() << "\n\n" << ac::clock::get_extended_timestamp();
+    s << star_and_number << '\n' << ac::clock::get_date_compact()
+        << "\n\n" << journal_clock::get_extended_timestamp();
     return s.str();
 }
 
@@ -181,57 +196,21 @@ std::string get_episode_title() {
  * \keymap_command
  */
 void print_episode_title() {
-    auto previous_clipboard =
-        ac::clipboard::capture_clipboard_text();
-
-    if (!previous_clipboard) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(previous_clipboard.error())
-        );
-        return;
-    }
-
     std::wstring episode_title =
         ac::encoding::to_utf16(get_episode_title());
 
     auto_core.print(episode_title);
 
-    if (auto result =
-        ac::clipboard::set_clipboard_text(episode_title + L"\n\n");
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-        return;
-    }
-
-    Sleep(50);
-
-    if (auto result = ac::clipboard::paste_from_clipboard();
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-        return;
-    }
-
-    Sleep(100);
+    auto_core.insert_text_preserving_clipboard_text(
+        episode_title + L"\n\n"
+    );
 
     save_file();
+}
 
-    Sleep(100);
-
-    if (auto result = ac::clipboard::restore_clipboard_text(
-        *previous_clipboard
-    ); !result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
+void star::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("save_file_and_create_new_file", &::save_file_and_create_new_file);
+    registry.add("print_episode_title", &::print_episode_title);
 }

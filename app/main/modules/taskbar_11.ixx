@@ -5,6 +5,12 @@
 
 export module taskbar_11;
 
+export import command_registry;
+
+export namespace taskbar_11::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
     void activate_wordpad();
     void activate_notepad();

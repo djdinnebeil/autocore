@@ -1,20 +1,43 @@
 module tasks;
 
 import std;
-import print;
-import ac_component;
+import auto_core.paths;
+import ac_main;
 
 import <Windows.h>;
 
 /** \keymap_command */
 void launch_task_list() {
-    LPCWSTR filePath = LR"(.\link\task_list.rc)";
-    ShellExecuteW(NULL, L"open", L"notepad.exe", filePath, NULL, SW_SHOWDEFAULT);
+    const std::filesystem::path task_list_path =
+        ac::paths::link_directory() / "task_list.rc";
+
+    const HINSTANCE result = ShellExecuteW(
+        nullptr,
+        L"open",
+        L"notepad.exe",
+        task_list_path.c_str(),
+        ac::paths::link_directory().c_str(),
+        SW_SHOWDEFAULT
+    );
+
+    if (reinterpret_cast<std::intptr_t>(result) <= 32) {
+        auto_core.logg_and_print(
+            "Unable to open task list '{}'. ShellExecute error: {}",
+            task_list_path,
+            reinterpret_cast<std::intptr_t>(result)
+        );
+    }
 }
 
 std::string get_task_list() {
-    const std::string task_list_path = R"(.\link\task_list.rc)";
-    std::ifstream file(task_list_path, std::ios::binary | std::ios::ate);
+    const std::filesystem::path task_list_path =
+        ac::paths::link_directory() / "task_list.rc";
+
+    std::ifstream file(
+        task_list_path,
+        std::ios::binary | std::ios::ate
+    );
+
     if (!file.is_open()) {
         auto_core.print("error reading file");
         return "";
@@ -45,4 +68,11 @@ std::string get_task_list() {
  */
 void print_task_list() {
     auto_core.print_and_insert(get_task_list());
+}
+
+void tasks::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("launch_task_list", &::launch_task_list);
+    registry.add("print_task_list", &::print_task_list);
 }

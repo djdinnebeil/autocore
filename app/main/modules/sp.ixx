@@ -13,6 +13,12 @@ The main functions include:
 */
 export module sp;
 
+export import command_registry;
+
+export namespace sp::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
     void create_sp_pipe();
     void start_sp_component();

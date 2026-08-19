@@ -4,10 +4,17 @@
 */
 export module taskbar;
 
+export import command_registry;
 import std;
 import <Windows.h>;
 
+export namespace taskbar_runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
+    void initialize_taskbar();
+    std::optional<int> taskbar_position(std::string_view program);
     void activate_auto_core();
     void activate_folder();
     void activate_word();
@@ -24,6 +31,10 @@ export {
 
 export class Taskbar {
 public:
+    void load_config();
+    [[nodiscard]] std::optional<int> position(
+        std::string_view program
+    ) const;
     int switch_position;
     int switch_keycode;
     bool switch_set;
@@ -51,6 +62,9 @@ public:
     int visual_windows = 0;
     int firefox_windows = 0;
     bool winkey_locked;
+
+private:
+    std::unordered_map<std::string, int> positions_;
 };
 
 export Taskbar taskbar;

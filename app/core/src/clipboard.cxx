@@ -1,7 +1,7 @@
-module clipboard;
+module auto_core.clipboard;
 
 import std;
-import keyboard;
+import auto_core.keyboard;
 import <Windows.h>;
 
 namespace {
@@ -107,10 +107,318 @@ namespace {
         void* data_;
     };
 
+    std::expected<std::wstring, ac::clipboard::Error>
+        read_legacy_clipboard_text(
+            const UINT format,
+            const UINT code_page
+        ) {
+        const HGLOBAL memory = static_cast<HGLOBAL>(
+            GetClipboardData(format)
+        );
+
+        if (memory == nullptr) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        const SIZE_T memory_size = GlobalSize(memory);
+        GlobalLockGuard locked_memory {memory};
+
+        if (!locked_memory) {
+            return std::unexpected(ac::clipboard::Error::lock_failed);
+        }
+
+        const auto* begin = static_cast<const char*>(locked_memory.get());
+        const auto* end = begin + memory_size;
+        const auto* terminator = std::find(begin, end, '\0');
+
+        if (terminator == end) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        const auto legacy_size = terminator - begin;
+
+        if (legacy_size > (std::numeric_limits<int>::max)()) {
+            return std::unexpected(
+                ac::clipboard::Error::text_too_large
+            );
+        }
+
+        const auto input_size = static_cast<int>(legacy_size);
+
+        if (input_size == 0) {
+            return std::wstring {};
+        }
+
+        const int output_size = MultiByteToWideChar(
+            code_page,
+            0,
+            begin,
+            input_size,
+            nullptr,
+            0
+        );
+
+        if (output_size == 0) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        std::wstring result(
+            static_cast<std::size_t>(output_size),
+            L'\0'
+        );
+
+        if (MultiByteToWideChar(
+            code_page,
+            0,
+            begin,
+            input_size,
+            result.data(),
+            output_size
+        ) == 0) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        return result;
+    }
+
+    struct DropFilesHeader {
+        DWORD file_offset;
+        POINT drop_point;
+        BOOL non_client_area;
+        BOOL wide_characters;
+    };
+
+    std::expected<std::wstring, ac::clipboard::Error>
+        read_file_drop_paths() {
+        const HGLOBAL memory = static_cast<HGLOBAL>(
+            GetClipboardData(CF_HDROP)
+        );
+
+        if (memory == nullptr) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        const SIZE_T memory_size = GlobalSize(memory);
+        GlobalLockGuard locked_memory {memory};
+
+        if (!locked_memory) {
+            return std::unexpected(ac::clipboard::Error::lock_failed);
+        }
+
+        if (memory_size < sizeof(DropFilesHeader)) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        const auto* bytes =
+            static_cast<const std::byte*>(locked_memory.get());
+        const auto* header =
+            reinterpret_cast<const DropFilesHeader*>(bytes);
+
+        if (header->file_offset >= memory_size) {
+            return std::unexpected(
+                ac::clipboard::Error::get_data_failed
+            );
+        }
+
+        std::wstring paths;
+
+        if (header->wide_characters) {
+            if (
+                header->file_offset % alignof(wchar_t) != 0 ||
+                (memory_size - header->file_offset) < sizeof(wchar_t)
+            ) {
+                return std::unexpected(
+                    ac::clipboard::Error::get_data_failed
+                );
+            }
+
+            const auto* current = reinterpret_cast<const wchar_t*>(
+                bytes + header->file_offset
+            );
+            const auto* end = current +
+                ((memory_size - header->file_offset) / sizeof(wchar_t));
+
+            while (current < end && *current != L'\0') {
+                const auto* terminator = std::find(current, end, L'\0');
+
+                if (terminator == end) {
+                    return std::unexpected(
+                        ac::clipboard::Error::get_data_failed
+                    );
+                }
+
+                if (!paths.empty()) {
+                    paths += L'\n';
+                }
+
+                paths.append(current, terminator);
+                current = terminator + 1;
+            }
+        }
+        else {
+            const auto* current = reinterpret_cast<const char*>(
+                bytes + header->file_offset
+            );
+            const auto* end = reinterpret_cast<const char*>(
+                bytes + memory_size
+            );
+
+            while (current < end && *current != '\0') {
+                const auto* terminator = std::find(current, end, '\0');
+
+                if (terminator == end) {
+                    return std::unexpected(
+                        ac::clipboard::Error::get_data_failed
+                    );
+                }
+
+                const auto path_size = terminator - current;
+
+                if (path_size > (std::numeric_limits<int>::max)()) {
+                    return std::unexpected(
+                        ac::clipboard::Error::text_too_large
+                    );
+                }
+
+                const int input_size = static_cast<int>(path_size);
+                const int output_size = MultiByteToWideChar(
+                    CP_ACP,
+                    0,
+                    current,
+                    input_size,
+                    nullptr,
+                    0
+                );
+
+                if (output_size == 0) {
+                    return std::unexpected(
+                        ac::clipboard::Error::get_data_failed
+                    );
+                }
+
+                std::wstring path(
+                    static_cast<std::size_t>(output_size),
+                    L'\0'
+                );
+
+                if (MultiByteToWideChar(
+                    CP_ACP,
+                    0,
+                    current,
+                    input_size,
+                    path.data(),
+                    output_size
+                ) == 0) {
+                    return std::unexpected(
+                        ac::clipboard::Error::get_data_failed
+                    );
+                }
+
+                if (!paths.empty()) {
+                    paths += L'\n';
+                }
+
+                paths += path;
+                current = terminator + 1;
+            }
+        }
+
+        return paths;
+    }
+
 }
 
 
 namespace ac::clipboard {
+
+    std::expected<ClipboardTextRepresentation, Error>
+        capture_clipboard_text_representation() {
+        auto unicode_text = get_clipboard_text();
+
+        if (unicode_text) {
+            return ClipboardTextRepresentation {
+                .kind = ClipboardTextKind::unicode_text,
+                .text = std::move(*unicode_text)
+            };
+        }
+
+        if (unicode_text.error() != Error::unicode_text_unavailable) {
+            return std::unexpected(unicode_text.error());
+        }
+
+        ClipboardSession clipboard;
+
+        if (!clipboard.is_open()) {
+            return std::unexpected(Error::open_failed);
+        }
+
+        if (CountClipboardFormats() == 0) {
+            return ClipboardTextRepresentation {
+                .kind = ClipboardTextKind::empty,
+                .text = {}
+            };
+        }
+
+        if (IsClipboardFormatAvailable(CF_TEXT)) {
+            auto legacy_text =
+                read_legacy_clipboard_text(CF_TEXT, CP_ACP);
+
+            if (!legacy_text) {
+                return std::unexpected(legacy_text.error());
+            }
+
+            return ClipboardTextRepresentation {
+                .kind = ClipboardTextKind::unicode_text,
+                .text = std::move(*legacy_text)
+            };
+        }
+
+        if (IsClipboardFormatAvailable(CF_OEMTEXT)) {
+            auto legacy_text =
+                read_legacy_clipboard_text(CF_OEMTEXT, CP_OEMCP);
+
+            if (!legacy_text) {
+                return std::unexpected(legacy_text.error());
+            }
+
+            return ClipboardTextRepresentation {
+                .kind = ClipboardTextKind::unicode_text,
+                .text = std::move(*legacy_text)
+            };
+        }
+
+        if (IsClipboardFormatAvailable(CF_HDROP)) {
+            auto paths = read_file_drop_paths();
+
+            if (!paths) {
+                return std::unexpected(paths.error());
+            }
+
+            if (!paths->empty()) {
+                return ClipboardTextRepresentation {
+                    .kind = ClipboardTextKind::file_paths,
+                    .text = std::move(*paths)
+                };
+            }
+        }
+
+        return ClipboardTextRepresentation {
+            .kind = ClipboardTextKind::unsupported,
+            .text = {}
+        };
+    }
 
     std::string_view error_message(Error error) noexcept {
         switch (error) {
@@ -153,17 +461,6 @@ namespace ac::clipboard {
      */
     std::expected<void, Error>
         set_clipboard_text(std::wstring_view text) {
-
-        ClipboardSession clipboard;
-
-        if (!clipboard.is_open()) {
-            return std::unexpected(Error::open_failed);
-        }
-
-        if (!EmptyClipboard()) {
-            return std::unexpected(Error::empty_failed);
-        }
-
         constexpr std::size_t wchar_size = sizeof(wchar_t);
 
         if (text.size() >
@@ -180,22 +477,34 @@ namespace ac::clipboard {
             return std::unexpected(Error::allocation_failed);
         }
 
-        GlobalLockGuard locked_memory {clipboard_memory.get()};
+        {
+            GlobalLockGuard locked_memory {clipboard_memory.get()};
 
-        if (!locked_memory) {
-            return std::unexpected(Error::lock_failed);
+            if (!locked_memory) {
+                return std::unexpected(Error::lock_failed);
+            }
+
+            std::memcpy(
+                locked_memory.get(),
+                text.data(),
+                text.size() * wchar_size
+            );
+
+            auto* destination =
+                static_cast<wchar_t*>(locked_memory.get());
+
+            destination[text.size()] = L'\0';
         }
 
-        std::memcpy(
-            locked_memory.get(),
-            text.data(),
-            text.size() * wchar_size
-        );
+        ClipboardSession clipboard;
 
-        auto* destination =
-            static_cast<wchar_t*>(locked_memory.get());
+        if (!clipboard.is_open()) {
+            return std::unexpected(Error::open_failed);
+        }
 
-        destination[text.size()] = L'\0';
+        if (!EmptyClipboard()) {
+            return std::unexpected(Error::empty_failed);
+        }
 
         if (SetClipboardData(
             CF_UNICODETEXT,
@@ -280,6 +589,16 @@ namespace ac::clipboard {
         restore_clipboard_text(const ClipboardTextSnapshot& snapshot) {
 
         if (!snapshot) {
+            ClipboardSession clipboard;
+
+            if (!clipboard.is_open()) {
+                return std::unexpected(Error::open_failed);
+            }
+
+            if (!EmptyClipboard()) {
+                return std::unexpected(Error::empty_failed);
+            }
+
             return {};
         }
 

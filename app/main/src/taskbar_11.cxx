@@ -1,12 +1,10 @@
 module taskbar_11;
 
 import std;
-import ac_component;
-import print;
-
-import taskbar;
-import taskbar_ps;
 import ac_main;
+import auto_core.console;
+
+import taskbar_ps;
 
 import <Windows.h>;
 
@@ -36,6 +34,18 @@ BOOL CALLBACK enum_zoom_windows(HWND hwnd, LPARAM lParam) {
         }
     }
     return TRUE;
+}
+
+void taskbar_11::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("activate_wordpad", &::activate_wordpad);
+    registry.add("activate_notepad", &::activate_notepad);
+    registry.add("activate_gitbash", &::activate_gitbash);
+    registry.add("activate_powershell", &::activate_powershell);
+    registry.add("activate_ps_in_visual_key", &::activate_ps_in_visual_key);
+    registry.add("activate_webstorm", &::activate_webstorm);
+    registry.add("activate_zoom", &::activate_zoom);
 }
 
 BOOL CALLBACK enum_webstorm_windows(HWND hwnd, LPARAM lParam) {
@@ -118,267 +128,153 @@ BOOL CALLBACK enum_ps_in_visual_key_windows(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
+namespace {
+
+    template<typename LaunchAction>
+    void activate_detected_window(
+        const std::string_view name,
+        int& window_count,
+        HWND& target_window,
+        const WNDENUMPROC enumerate,
+        LaunchAction&& launch
+    ) {
+        window_count = 0;
+        target_window = nullptr;
+        (void)EnumWindows(enumerate, 0);
+
+        if (window_count == 0 || target_window == nullptr) {
+            auto_core.logg_and_logg(
+                "activate_{}() - launch new",
+                name
+            );
+            std::invoke(std::forward<LaunchAction>(launch));
+            return;
+        }
+
+        if (
+            GetForegroundWindow() == target_window &&
+            !IsIconic(target_window)
+        ) {
+            (void)ShowWindow(target_window, SW_MINIMIZE);
+            auto_core.logg_and_logg(
+                "activate_{}() - minimize",
+                name
+            );
+            return;
+        }
+
+        const bool was_minimized = IsIconic(target_window) != FALSE;
+        const auto result = ac::console::activate_window(target_window);
+
+        if (!result) {
+            auto_core.logg_and_print(
+                "Unable to activate {}: {}",
+                name,
+                ac::console::error_message(result.error())
+            );
+            return;
+        }
+
+        if (window_count > 1) {
+            auto_core.logg_and_logg(
+                "activate_{}() - multiple windows detected: {}",
+                name,
+                window_count
+            );
+        }
+        else if (was_minimized) {
+            auto_core.logg_and_logg(
+                "activate_{}() - restore",
+                name
+            );
+        }
+        else {
+            auto_core.logg_and_logg(
+                "activate_{}() - set focus",
+                name
+            );
+        }
+    }
+
+}
+
 /** \keymap_command */
 void activate_wordpad() {
-    wordpad_windows = 0;
-    EnumWindows(enum_wordpad_windows, 0);
-    if (!wordpad_windows) {
-        auto_core.logg_and_logg("activate_wordpad() - launch new");
-        send_ctrl_alt_x();
-    }
-    else if (wordpad_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(wordpad_hwnd)) {
-            ShowWindow(wordpad_hwnd, SW_RESTORE);
-            SetForegroundWindow(wordpad_hwnd);
-            auto_core.logg_and_logg("activate_wordpad() - restore");
-        }
-        else if (current_window == wordpad_hwnd) {
-            ShowWindow(wordpad_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_wordpad() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_wordpad() - switch into focus");
-            SetForegroundWindow(wordpad_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_wordpad() - set focus");
-            SetForegroundWindow(wordpad_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_wordpad() - multiple windows detected");
-        SetForegroundWindow(wordpad_hwnd);
-    }
+    activate_detected_window(
+        "wordpad",
+        wordpad_windows,
+        wordpad_hwnd,
+        enum_wordpad_windows,
+        &send_ctrl_alt_x
+    );
 }
 
 /** \keymap_command */
 void activate_notepad() {
-    notepad_windows = 0;
-    EnumWindows(enum_notepad_windows, 0);
-    if (!notepad_windows) {
-        auto_core.logg_and_logg("activate_notepad() - launch new");
-        send_ctrl_alt_n();
-    }
-    else if (notepad_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(notepad_hwnd)) {
-            ShowWindow(notepad_hwnd, SW_RESTORE);
-            SetForegroundWindow(notepad_hwnd);
-            auto_core.logg_and_logg("activate_notepad() - restore");
-        }
-        else if (current_window == notepad_hwnd) {
-            ShowWindow(notepad_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_notepad() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_notepad() - switch into focus");
-            SetForegroundWindow(notepad_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_notepad() - set focus");
-            SetForegroundWindow(notepad_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_notepad() - multiple windows detected");
-        SetForegroundWindow(notepad_hwnd);
-    }
+    activate_detected_window(
+        "notepad",
+        notepad_windows,
+        notepad_hwnd,
+        enum_notepad_windows,
+        &send_ctrl_alt_n
+    );
 }
 
 /** \keymap_command */
 void activate_gitbash() {
-    gitbash_windows = 0;
-    EnumWindows(enum_gitbash_windows, 0);
-    if (!gitbash_windows) {
-        auto_core.logg_and_logg("activate_gitbash() - launch new");
-        send_ctrl_alt_r();
-    }
-    else if (gitbash_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(gitbash_hwnd)) {
-            ShowWindow(gitbash_hwnd, SW_RESTORE);
-            SetForegroundWindow(gitbash_hwnd);
-            auto_core.logg_and_logg("activate_gitbash() - restore");
-        }
-        else if (current_window == gitbash_hwnd) {
-            ShowWindow(gitbash_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_gitbash() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_gitbash() - switch into focus");
-            SetForegroundWindow(gitbash_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_gitbash() - set focus");
-            SetForegroundWindow(gitbash_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_gitbash() - multiple windows detected");
-        SetForegroundWindow(gitbash_hwnd);
-    }
+    activate_detected_window(
+        "gitbash",
+        gitbash_windows,
+        gitbash_hwnd,
+        enum_gitbash_windows,
+        &send_ctrl_alt_r
+    );
 }
 
 /** \keymap_command */
 void activate_powershell() {
-    powershell_windows = 0;
-    EnumWindows(enum_powershell_windows, 0);
-    if (!powershell_windows) {
-        auto_core.logg_and_logg("activate_powershell() - launch new");
-        send_ctrl_alt_p();
-    }
-    else if (powershell_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(powershell_hwnd)) {
-            ShowWindow(powershell_hwnd, SW_RESTORE);
-            SetForegroundWindow(powershell_hwnd);
-            auto_core.logg_and_logg("activate_powershell() - restore");
-        }
-        else if (current_window == powershell_hwnd) {
-            ShowWindow(powershell_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_powershell() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_powershell() - switch into focus");
-            SetForegroundWindow(powershell_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_powershell() - set focus");
-            SetForegroundWindow(powershell_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_powershell() - multiple windows detected");
-        SetForegroundWindow(powershell_hwnd);
-    }
+    activate_detected_window(
+        "powershell",
+        powershell_windows,
+        powershell_hwnd,
+        enum_powershell_windows,
+        &send_ctrl_alt_p
+    );
 }
 
 /** \keymap_command */
 void activate_ps_in_visual_key() {
-    ps_in_visual_key_windows = 0;
-    EnumWindows(enum_ps_in_visual_key_windows, 0);
-    if (!ps_in_visual_key_windows) {
-        auto_core.logg_and_logg("activate_ps_in_visual_key() - launch new");
-        send_ctrl_alt_t();
-    }
-    else if (ps_in_visual_key_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(ps_in_visual_key_hwnd)) {
-            ShowWindow(ps_in_visual_key_hwnd, SW_RESTORE);
-            SetForegroundWindow(ps_in_visual_key_hwnd);
-            auto_core.logg_and_logg("activate_ps_in_visual_key() - restore");
-        }
-        else if (current_window == ps_in_visual_key_hwnd) {
-            ShowWindow(ps_in_visual_key_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_ps_in_visual_key() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_ps_in_visual_key() - switch into focus");
-            SetForegroundWindow(ps_in_visual_key_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_ps_in_visual_key() - set focus");
-            SetForegroundWindow(ps_in_visual_key_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_ps_in_visual_key() - multiple windows detected");
-        SetForegroundWindow(ps_in_visual_key_hwnd);
-    }
+    activate_detected_window(
+        "ps_in_visual_key",
+        ps_in_visual_key_windows,
+        ps_in_visual_key_hwnd,
+        enum_ps_in_visual_key_windows,
+        &send_ctrl_alt_t
+    );
 }
 
 /** \keymap_command */
 void activate_webstorm() {
-    webstorm_windows = 0;
-    EnumWindows(enum_webstorm_windows, 0);
-    if (!webstorm_windows) {
-        auto_core.logg_and_logg("activate_webstorm() - launch new");
-        send_ctrl_alt_l();
-    }
-    else if (webstorm_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(webstorm_hwnd)) {
-            ShowWindow(webstorm_hwnd, SW_RESTORE);
-            SetForegroundWindow(webstorm_hwnd);
-            auto_core.logg_and_logg("activate_webstorm() - restore");
-        }
-        else if (current_window == webstorm_hwnd) {
-            ShowWindow(webstorm_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_webstorm() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_webstorm() - switch into focus");
-            SetForegroundWindow(webstorm_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_webstorm() - set focus");
-            SetForegroundWindow(webstorm_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_webstorm() - multiple windows detected");
-        SetForegroundWindow(webstorm_hwnd);
-    }
+    activate_detected_window(
+        "webstorm",
+        webstorm_windows,
+        webstorm_hwnd,
+        enum_webstorm_windows,
+        &send_ctrl_alt_l
+    );
 }
 
 /** \keymap_command */
 void activate_zoom() {
-    zoom_windows = 0;
-    EnumWindows(enum_zoom_windows, 0);
-    if (!zoom_windows) {
-        auto_core.print("activate_zoom() - launch new - not implemented"); 
-    }
-    else if (zoom_windows == 1) {
-        HWND current_window = GetForegroundWindow();
-        if (IsIconic(zoom_window_hwnd)) {
-            ShowWindow(zoom_window_hwnd, SW_RESTORE);
-            SetForegroundWindow(zoom_window_hwnd);
-            auto_core.logg_and_logg("activate_zoom() - restore");
+    activate_detected_window(
+        "zoom",
+        zoom_windows,
+        zoom_window_hwnd,
+        enum_zoom_windows,
+        []() {
+            auto_core.print(
+                "activate_zoom() - launch new - not implemented"
+            );
         }
-        else if (current_window == zoom_window_hwnd) {
-            ShowWindow(zoom_window_hwnd, SW_MINIMIZE);
-            auto_core.logg_and_logg("activate_zoom() - minimize");
-        }
-        else if (current_window != ac::main::program_window) {
-            activate_auto_core();
-            Sleep(50);
-            auto_core.logg_and_logg("activate_zoom() - switch into focus");
-            SetForegroundWindow(zoom_window_hwnd);
-        }
-        else if (current_window == ac::main::program_window) {
-            auto_core.logg_and_logg("activate_zoom() - set focus");
-            SetForegroundWindow(zoom_window_hwnd);
-        }
-    }
-    else {
-        activate_auto_core();
-        Sleep(50);
-        auto_core.logg_and_logg("activate_zoom() - multiple windows detected");
-        SetForegroundWindow(zoom_window_hwnd);
-    }
+    );
 }

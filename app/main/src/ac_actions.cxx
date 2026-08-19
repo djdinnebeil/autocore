@@ -2,11 +2,11 @@ module ac_actions;
 
 import std;
 
-import clipboard;
-import clock;
-import encoding;
-import print;
-import ac_component;
+import auto_core.clipboard;
+import auto_core.clock;
+import auto_core.encoding;
+import journal_clock;
+import ac_main;
 
 import <Windows.h>;
 
@@ -17,31 +17,7 @@ import <Windows.h>;
     * \keymap_command
     */
 void print_timestamp() {
-    auto previous_clipboard =
-        ac::clipboard::capture_clipboard_text();
-
-    if (!previous_clipboard) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(previous_clipboard.error())
-        );
-        return;
-    }
-
-    Sleep(50);
-
     auto_core.print_and_insert(ac::clock::get_timestamp());
-
-    Sleep(100);
-
-    if (auto result = ac::clipboard::restore_clipboard_text(
-        *previous_clipboard
-    ); !result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
 }
 
 /**
@@ -51,33 +27,9 @@ void print_timestamp() {
     * \keymap_command
     */
 void print_extended_timestamp() {
-    auto previous_clipboard =
-        ac::clipboard::capture_clipboard_text();
-
-    if (!previous_clipboard) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(previous_clipboard.error())
-        );
-        return;
-    }
-
-    Sleep(50);
-
     auto_core.print_and_insert(
-        ac::clock::get_extended_timestamp()
+        journal_clock::get_extended_timestamp()
     );
-
-    Sleep(100);
-
-    if (auto result = ac::clipboard::restore_clipboard_text(
-        *previous_clipboard
-    ); !result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
 }
 
 /**
@@ -101,7 +53,7 @@ void print_date_compact() {
 }
 
 /**
-    * \brief Prints the current date and time as YYYY-MM-DD – HH:MM
+    * \brief Prints the current date and time as YYYY-MM-DD ï¿½ HH:MM
     *
     * This function prints the current date and time to the screen.
     * \keymap_command
@@ -113,7 +65,7 @@ void print_date_iso_with_timestamp() {
 }
 
 /**
-    * \brief Prints the current date and time as YYYY-MM-DD – HH:MM
+    * \brief Prints the current date and time as YYYY-MM-DD ï¿½ HH:MM
     *
     * This function prints the current date and time to the screen.
     * \keymap_command
@@ -137,41 +89,18 @@ void print_today_is_day() {
  * This function adds brackets around the current text in the clipboard and pastes it.
  */
 void add_brackets_around_clipboard() {
-    auto clipboard_result = ac::clipboard::get_clipboard_text();
+    auto clipboard_text = auto_core.get_clipboard_text();
 
-    if (!clipboard_result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(clipboard_result.error())
-        );
+    if (!clipboard_text) {
         return;
     }
 
     std::wstring clipboard_item =
-        L"[" + *clipboard_result + L"]";
+        L"[" + *clipboard_text + L"]";
 
-    auto_core.print(clipboard_item);
-
-    if (auto result =
-        ac::clipboard::set_clipboard_text(clipboard_item);
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-
-        return;
-    }
-
-    if (auto result = ac::clipboard::paste_from_clipboard();
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
+    auto_core.print_and_insert_text_replacing_clipboard(
+        clipboard_item
+    );
 }
 /**
     * \brief Sends keyboard event of 'alt + f12'
@@ -196,14 +125,12 @@ void send_alt_f12() {
 
 /** \keymap_command */
 void print_and_insert_special_utf8() {
-    auto_core.print_and_insert(std::string {"Testing std1::string: café — Auto Core"});
-
+    auto_core.print_and_insert(std::string {"Testing std1::string: cafâ€”â€”Auto Core"});
 }
 
 /** \keymap_command */
 void print_and_insert_special_utf16() {
-    auto_core.print_and_insert(std::wstring {L"Testing std2::wstring: café — Auto Core"});
-
+    auto_core.print_and_insert(std::wstring {L"Testing std2::wstring: cafâ€”â€”Auto Core"});
 }
 
 /** \keymap_command */
@@ -211,10 +138,73 @@ void print_and_insert_testing() {
     print_and_insert_special_utf8();
     Sleep(100); 
     print_and_insert_special_utf16();
+}
 
+/** \keymap_command */
+void encoding_test() {
+    auto_core.print("Entering encoding_test");
+
+    const std::wstring original =
+        L"Testing UTF-16: caf\u00e9\u2014Auto Core \U0001f600";
+
+    const std::string utf8 = ac::encoding::to_utf8(original);
+    const std::wstring round_trip = ac::encoding::to_utf16(utf8);
+
+    auto_core.print(
+        "UTF-16 -> UTF-8 -> UTF-16: {}",
+        round_trip == original ? "PASS" : "FAIL"
+    );
+
+    auto_core.print(round_trip);
+
+    std::string invalid_utf8{
+        static_cast<char>(0xC3),
+        static_cast<char>(0x28)
+    };
+
+    try {
+        auto result = ac::encoding::to_utf16(invalid_utf8);
+        std::cout << "Conversion succeeded unexpectedly\n";
+    }
+    catch (const std::exception& e) {
+        std::cout << "Conversion failed: " << e.what() << '\n';
+    }
+
+    std::string user_like_input{
+    'c',
+    'a',
+    'f',
+    static_cast<char>(0xE9)
+};
+
+    try {
+        auto result = ac::encoding::to_utf16(user_like_input);
+        std::cout << "Conversion succeeded\n";
+    }
+    catch (const std::exception& e) {
+        std::cout << "Conversion failed: " << e.what() << '\n';
+    }
 }
 
 /** \keymap_command */
 void send_crash_command() {
     *(int*)0 = 0;
+}
+
+void ac_actions::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("print_timestamp", &::print_timestamp);
+    registry.add("print_extended_timestamp", &::print_extended_timestamp);
+    registry.add("print_date_iso", &::print_date_iso);
+    registry.add("print_date_compact", &::print_date_compact);
+    registry.add("print_date_iso_with_timestamp", &::print_date_iso_with_timestamp);
+    registry.add("print_date_iso_with_timestamp_w", &::print_date_iso_with_timestamp_w);
+    registry.add("add_brackets_around_clipboard", &::add_brackets_around_clipboard);
+    registry.add("send_alt_f12", &::send_alt_f12);
+    registry.add("print_and_insert_special_utf8", &::print_and_insert_special_utf8);
+    registry.add("print_and_insert_special_utf16", &::print_and_insert_special_utf16);
+    registry.add("print_and_insert_testing", &::print_and_insert_testing);
+    registry.add("encoding_test", &::encoding_test);
+    registry.add("send_crash_command", &::send_crash_command);
 }

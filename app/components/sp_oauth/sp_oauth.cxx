@@ -198,12 +198,32 @@ namespace {
         const SpotifyAuthorizationSession& session,
         std::string& error_message
     ) {
+        const std::filesystem::path token_directory =
+            config.token_path.parent_path();
+
+        if (!token_directory.empty()) {
+            std::error_code error;
+
+            std::filesystem::create_directories(
+                token_directory,
+                error
+            );
+
+            if (error) {
+                error_message =
+                    "Unable to create token directory: " +
+                    error.message();
+
+                return false;
+            }
+        }
+
         std::ofstream output_file(config.token_path);
 
         if (!output_file.is_open()) {
             error_message =
-                "Unable to open token file: "
-                + config.token_path.string();
+                "Unable to open token file: " +
+                config.token_path.string();
 
             return false;
         }

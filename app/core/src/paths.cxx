@@ -1,4 +1,4 @@
-module paths;
+module auto_core.paths;
 
 import std;
 import <Windows.h>;
@@ -15,7 +15,9 @@ namespace ac::paths {
                     static_cast<std::size_t>(
                         (std::numeric_limits<DWORD>::max)()
                         )) {
-                    return L".";
+                    throw std::length_error(
+                        "Executable path exceeds the Win32 path length limit"
+                    );
                 }
 
                 const DWORD size = static_cast<DWORD>(
@@ -29,7 +31,11 @@ namespace ac::paths {
                 );
 
                 if (length == 0) {
-                    return L".";
+                    throw std::system_error(
+                        static_cast<int>(GetLastError()),
+                        std::system_category(),
+                        "GetModuleFileNameW failed"
+                    );
                 }
 
                 if (length < size) {
@@ -41,7 +47,9 @@ namespace ac::paths {
 
                 if (buffer.size() >
                     (std::numeric_limits<DWORD>::max)() / 2) {
-                    return L".";
+                    throw std::length_error(
+                        "Executable path exceeds the Win32 path length limit"
+                    );
                 }
 
                 buffer.resize(buffer.size() * 2);
@@ -51,7 +59,7 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
-        executable_directory() noexcept {
+        executable_directory() {
         static const std::filesystem::path directory =
             get_executable_directory();
 
@@ -59,7 +67,7 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
-        config_directory() noexcept {
+        config_directory() {
         static const std::filesystem::path directory =
             executable_directory() / "config";
 
@@ -67,7 +75,71 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
-        error_log_directory() noexcept {
+        keymap_directory() {
+        static const std::filesystem::path directory =
+            executable_directory() / "keymap";
+
+        return directory;
+    }
+
+    const std::filesystem::path&
+        keymap_file() {
+        static const std::filesystem::path file =
+            keymap_directory() / "keymap.ini";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        keymap_settings_file() {
+        static const std::filesystem::path file =
+            keymap_directory() / "keymap_settings.ini";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        keymap_commands_file() {
+        static const std::filesystem::path file =
+            keymap_directory() / "keymap_commands.txt";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        notepad_directory() {
+        static const std::filesystem::path directory =
+            executable_directory() / "notepad";
+
+        return directory;
+    }
+
+    const std::filesystem::path&
+        star_directory() {
+        static const std::filesystem::path directory =
+            executable_directory() / "star";
+
+        return directory;
+    }
+
+    const std::filesystem::path&
+        link_directory() {
+        static const std::filesystem::path directory =
+            executable_directory() / "link";
+
+        return directory;
+    }
+
+    const std::filesystem::path&
+        log_directory() {
+        static const std::filesystem::path directory =
+            executable_directory() / "logs";
+
+        return directory;
+    }
+
+    const std::filesystem::path&
+        error_log_directory() {
         static const std::filesystem::path directory =
             executable_directory() / "errors";
 

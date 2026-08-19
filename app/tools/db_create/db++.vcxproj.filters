@@ -15,13 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\modules\base.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\utils\print_b.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="db++.cxx">
+    <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

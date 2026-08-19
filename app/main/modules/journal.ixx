@@ -8,7 +8,12 @@
  */
 export module journal;
 
+export import command_registry;
 import std;
+
+export namespace journal::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
 
 export {
     std::function<void()> make_print_choice(const std::string& name, bool include_zero);

@@ -4,14 +4,16 @@
  *
  */
 export module notepad;
+export import command_registry;
 import std;
-import config;
-import clipboard;
-import ac_component;
-import print;
+import auto_core.clipboard;
+import ac_main;
 import ac_main;
 import <Windows.h>;
 
+export namespace notepad::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
 
 export {
 	void print_openai_api_key();

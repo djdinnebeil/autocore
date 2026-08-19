@@ -1,9 +1,8 @@
 module notes;
 
 import std;
-import ac_component;
-import clock;
-import print;
+import ac_main;
+import auto_core.clock;
 import ac_main;
 import taskbar;
 import taskbar_11;
@@ -94,4 +93,11 @@ void create_new_note_in_notepad() {
             auto_core.print("Error opening the file.");
         }
     }
+}
+
+void notes::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("create_new_note_in_vs_code", &::create_new_note_in_vs_code);
+    registry.add("create_new_note_in_notepad", &::create_new_note_in_notepad);
 }

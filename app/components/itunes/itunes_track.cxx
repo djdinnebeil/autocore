@@ -4,8 +4,7 @@ import itunes_x;
 import <Windows.h>;
 import <comdef.h>;
 
-import logger_x;
-import encoding;
+import auto_core.encoding;
 
 using std::scoped_lock;
 

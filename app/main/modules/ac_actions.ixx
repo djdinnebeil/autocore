@@ -1,5 +1,11 @@
 export module ac_actions;
 
+export import command_registry;
+
+export namespace ac_actions::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
     void print_timestamp();
     void print_extended_timestamp();
@@ -13,5 +19,6 @@ export {
     void print_and_insert_special_utf8();
     void print_and_insert_special_utf16();
     void print_and_insert_testing();
+    void encoding_test();
     void send_crash_command();
 }

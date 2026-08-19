@@ -10,11 +10,10 @@ module;
 
 #include "ac_api.hpp"
 
-export module thread;
+export module auto_core.thread;
 
 import std;
-import print;
-import component;
+import auto_core.component;
 
 export namespace ac::thread {
 
@@ -27,6 +26,7 @@ export namespace ac::thread {
      *
      * \tparam Func The callable type.
      * \param func The callable to invoke.
+     * \param component The component used to report escaped exceptions.
      */
     template<typename Func>
     void run_with_exception_handling(Func&& func, ac::Component& component) {
@@ -41,4 +41,4 @@ export namespace ac::thread {
         }
     }
 
-}
+} // namespace ac::thread

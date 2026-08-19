@@ -18,11 +18,17 @@
     <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sp_oauth.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sp_oauth.cxx">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp_oauth_paths.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp_oauth_paths.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp_oauth.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

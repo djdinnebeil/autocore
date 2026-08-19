@@ -5,7 +5,7 @@
 export module sp_t;
 
 import std;
-import clock;
+import auto_core.clock;
 
 import sp_c;
 import sp_x;

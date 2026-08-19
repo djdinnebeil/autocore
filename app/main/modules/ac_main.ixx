@@ -9,11 +9,18 @@
  */
 export module ac_main;
 
+export import command_registry;
+import auto_core.component;
 import <Windows.h>;
+
+export namespace ac_main::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
+export extern ac::Component auto_core;
 
 export namespace ac::main {
     bool program_closing = false;
-    HWND program_window;
     HWND close_window;
     HHOOK keyboard_hook;
     DWORD main_thread_id;

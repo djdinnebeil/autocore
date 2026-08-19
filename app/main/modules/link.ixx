@@ -7,6 +7,12 @@
  */
 export module link;
 
+export import command_registry;
+
+export namespace link::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
     void print_gpt_message();
 }

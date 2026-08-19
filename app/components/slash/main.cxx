@@ -8,12 +8,8 @@
  * Recycle Bin is emptied.
  */
 import std;
-import clipboard;
-import logger;
-import logger_x;
-import print;
-import component;
-import pipes;
+import auto_core.component;
+import auto_core.pipes;
 
 import music;
 import path_utils;
@@ -232,9 +228,9 @@ namespace {
             output << L"\n\n";
         }
 
-        ac::clipboard::set_clipboard_text(output.str());
-        slash.printnl(output.str());
-        ac::clipboard::paste_from_clipboard();
+        slash.printnl_and_insert_text_replacing_clipboard(
+            output.str()
+        );
     }
 
 }
@@ -244,7 +240,7 @@ namespace {
  * \return Exit code of the process.
  */
 int main() {
-    ac::logger::connect_to_logger(slash);
+    slash.connect_to_logger();
     try {
         report_and_empty_recycle_bin();
     }
@@ -254,6 +250,5 @@ int main() {
     catch (...) {
         slash.print("uncaught exception\n");
     }
-    ac::logger::close_logger_connection();
     return 0;
 }

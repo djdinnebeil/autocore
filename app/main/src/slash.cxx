@@ -1,48 +1,78 @@
 module slash;
 
 import std;
-import ac_component;
-import print;
+import ac_main;
+import auto_core.paths;
 
 import <Windows.h>;
 
-/**
- * \brief Calls the external slash executable.
- *
- * This function starts the external slash executable, waits for it to complete, and handles errors if the process creation fails.
- *
- * \param exe_path The path to the slash executable.
- */
-void call_slash_exe(const std::wstring& exe_path) {
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-    LPWSTR szCmdline = _wcsdup(exe_path.c_str());
+void call_slash_exe(
+    const std::filesystem::path& executable_path
+) {
+    STARTUPINFOW startup_info {};
+    startup_info.cb = sizeof(startup_info);
 
-    // Create the slash process
-    if (!CreateProcessW(NULL, szCmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        auto_core.print("error with slash module - {}", GetLastError());
+    PROCESS_INFORMATION process_info {};
+
+    if (!CreateProcessW(
+        executable_path.c_str(),
+        nullptr,
+        nullptr,
+        nullptr,
+        FALSE,
+        0,
+        nullptr,
+        executable_path.parent_path().c_str(),
+        &startup_info,
+        &process_info
+    )) {
+        const DWORD error = GetLastError();
+
+        auto_core.print(
+            "Unable to start '{}'. Error: {}",
+            executable_path,
+            error
+        );
+
+        return;
     }
-    else {
-        // Wait for the process to complete
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+
+    const DWORD wait_result = WaitForSingleObject(
+        process_info.hProcess,
+        INFINITE
+    );
+
+    if (wait_result == WAIT_FAILED) {
+        const DWORD error = GetLastError();
+
+        auto_core.print(
+            "Unable to wait for '{}'. Error: {}",
+            executable_path,
+            error
+        );
     }
-    free(szCmdline);
+
+    CloseHandle(process_info.hThread);
+    CloseHandle(process_info.hProcess);
 }
 
-
 /**
- * \brief Retrieves and deletes the contents of the Recycle Bin.
- *
- * This function logs the action, then calls the external slash executable to empty the Recycle Bin.
- *
+ * \brief Prints and deletes the contents of the Recycle Bin.
  * \keymap_command
  */
 void retrieve_and_delete_recycle_bin() {
-    auto_core.logg_and_logg("retrieve_and_delete_recycle_bin()");
-    call_slash_exe(LR"(.\slash.exe)");
+    auto_core.logg_and_logg(
+        "retrieve_and_delete_recycle_bin()"
+    );
+
+    const std::filesystem::path slash_path =
+        ac::paths::executable_directory() / "slash.exe";
+
+    call_slash_exe(slash_path);
+}
+
+void slash::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("retrieve_and_delete_recycle_bin", &::retrieve_and_delete_recycle_bin);
 }

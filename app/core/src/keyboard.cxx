@@ -1,7 +1,7 @@
-module keyboard;
+module auto_core.keyboard;
 
 import std;
-import error;
+import auto_core.error;
 import <Windows.h>;
 
 namespace ac::keyboard {

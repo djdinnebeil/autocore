@@ -6,6 +6,7 @@ module sp_c;
 
 import std;
 import sp_x;
+import auto_core.paths;
 import <sqlite3.h>;
 
 std::string get_datetime_stamp_local() {
@@ -26,14 +27,26 @@ track_spotify_history_update_or_insert
 */
 void track_spotify_history_update_or_insert(const SongMetadata& meta) {
     sp_component.logg("track_spotify_history_update_or_insert() called");
-    static const std::string db_path = R"(.\star\sp_history.db)";
+
+    static const std::filesystem::path db_path =
+        ac::paths::star_directory() / "sp_history.db";
+    
     const std::string timestamp = get_datetime_stamp_local();
 
     sqlite3* db = nullptr;
     sqlite3_stmt* stmt = nullptr;
 
-    if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
-        sp_component.logg("Error opening database: {}", sqlite3_errmsg(db));
+    if (sqlite3_open16(db_path.c_str(), &db) != SQLITE_OK) {
+        sp_component.logg(
+            "Error opening database '{}': {}",
+            db_path,
+            db != nullptr ? sqlite3_errmsg(db) : "unknown SQLite error"
+        );
+
+        if (db != nullptr) {
+            sqlite3_close(db);
+        }
+
         return;
     }
 
@@ -122,16 +135,26 @@ track_spotify_history_update_or_insert
 */
 void track_spotify_history(const SongMetadata& meta) {
     sp_component.logg("track_spotify_history() called");
-    static const std::string db_path = R"(.\star\sp_history.db)";
+
+    static const std::filesystem::path db_path =
+        ac::paths::star_directory() / "sp_history.db";
 
     const std::string timestamp = get_datetime_stamp_local();
 
-    // Open database
     sqlite3* db = nullptr;
     sqlite3_stmt* stmt = nullptr;
 
-    if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
-        sp_component.logg("Error opening database: {}", sqlite3_errmsg(db));
+    if (sqlite3_open16(db_path.c_str(), &db) != SQLITE_OK) {
+        sp_component.logg(
+            "Error opening database '{}': {}",
+            db_path,
+            db != nullptr ? sqlite3_errmsg(db) : "unknown SQLite error"
+        );
+
+        if (db != nullptr) {
+            sqlite3_close(db);
+        }
+
         return;
     }
 

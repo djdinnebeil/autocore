@@ -8,6 +8,12 @@
  */
 export module itunes;
 
+export import command_registry;
+
+export namespace itunes::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
+
 export {
     void create_itunes_pipe();
     void start_iTunes_component();

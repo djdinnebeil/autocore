@@ -1,35 +1,15 @@
 import std;
-import component;
-import pipes;
+import auto_core.pipes;
+import auto_core.logging.protocol;
+import logger_state;
+import log_init;
 import main_log;
 
 import <Windows.h>;
 
-ac::Component logger_component {"logger"};
-
 namespace {
     std::atomic_bool logger_shutdown_requested = false;
     std::atomic_uint active_logger_connections = 0;
-}
-
-void log_init() {
-    logger_component.logg_and_logg("logger.exe started");
-}
-
-void update_logger_component() {
-    update_main_log_file();
-    logger_component.update_log_file();
-}
-
-void end_logger() {
-    logger_component.logg("logger.exe is shutting down");
-    ac::pipes::end_process = true;
-}
-
-void set_command_map() {
-    using ac::pipes::command_map;
-    command_map[0] = {[]() {  end_logger(); }};
-    command_map[1] = {update_logger_component};
 }
 
 namespace {
@@ -62,19 +42,21 @@ namespace {
     }
 
 
-    void process_logger_connection(
-        HANDLE logger_pipe,
-        ac::Component& logger_component
-    ) {
+    void process_logger_connection(ac::pipes::Pipe logger_pipe) {
         while (true) {
-            auto event =
-                ac::pipes::read_log_event(logger_pipe);
+            const auto data = ac::pipes::read_string(logger_pipe);
 
-            if (!event) {
+            if (!data) {
                 break;
             }
 
-            if (event->type == ac::pipes::LogEventType::shutdown) {
+            const auto event = ac::logging::decode(*data);
+            if (!event) {
+                logger_component.logg("Invalid logger protocol message");
+                break;
+            }
+
+            if (event->type == ac::logging::EventType::shutdown) {
                 logger_shutdown_requested.store(true);
                 wake_logger_server();
                 break;
@@ -83,8 +65,7 @@ namespace {
             write_to_main_log(*event);
         }
 
-        DisconnectNamedPipe(logger_pipe);
-        CloseHandle(logger_pipe);
+        DisconnectNamedPipe(logger_pipe.native_handle());
         active_logger_connections.fetch_sub(1);
     }
 
@@ -93,20 +74,21 @@ namespace {
 
 int main() {
     log_init();
-    set_command_map();
-
-    update_main_log_file();
 
     while (!logger_shutdown_requested.load()) {
-        HANDLE logger_pipe =
-            ac::pipes::create_pipe_server(
-                std::wstring {logger_pipe_name},
-                logger_component
-            );
+        auto pipe_result = ac::pipes::create_pipe_server(
+            std::wstring {logger_pipe_name}
+        );
 
-        if (logger_pipe == INVALID_HANDLE_VALUE) {
+        if (!pipe_result) {
+            logger_component.logg_and_print(
+                "Failed to create logger pipe. Error: {}",
+                pipe_result.error().system_error
+            );
             return 1;
         }
+
+        ac::pipes::Pipe logger_pipe = std::move(*pipe_result);
 
         logger_component.logg(
             "Waiting for logger client connection..."
@@ -114,7 +96,7 @@ int main() {
 
         const BOOL connected =
             ConnectNamedPipe(
-                logger_pipe,
+                logger_pipe.native_handle(),
                 nullptr
             );
 
@@ -122,19 +104,26 @@ int main() {
             const DWORD error = GetLastError();
 
             if (error != ERROR_PIPE_CONNECTED) {
-                logger_component.logg_and_print(
-                    "Failed to connect logger client. Error: {}",
-                    error
-                );
 
-                CloseHandle(logger_pipe);
+                std::string error_msg = std::format("Failed to connect logger client. Error: {}", error);
+
+                logger_component.logg(error_msg);
+                std::cerr << error_msg << std::endl;
+
+                const ac::logging::Event connection_error {
+                    .component = "logger",
+                    .message = error_msg,
+                    .newline = true
+                 };
+
+                write_to_main_log(connection_error);
+
                 continue;
             }
         }
 
         if (logger_shutdown_requested.load()) {
-            DisconnectNamedPipe(logger_pipe);
-            CloseHandle(logger_pipe);
+            DisconnectNamedPipe(logger_pipe.native_handle());
             break;
         }
 
@@ -145,8 +134,7 @@ int main() {
         active_logger_connections.fetch_add(1);
         std::thread(
             process_logger_connection,
-            logger_pipe,
-            std::ref(logger_component)
+            std::move(logger_pipe)
         ).detach();
     }
 
@@ -161,11 +149,12 @@ int main() {
         Sleep(10);
     }
 
-    const ac::pipes::LogEvent terminated_event {
+    const ac::logging::Event terminated_event {
         .component = "logger",
         .message = "logger.exe has now terminated\n***",
         .newline = true
     };
+    logger_component.logg("logger.exe has now terminated");
     write_to_main_log(terminated_event);
     return 0;
 }

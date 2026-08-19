@@ -7,11 +7,9 @@ to update the logger and initialize logging when the component starts.
  */
 export module sp_x;
 
-import logger;
-import logger_x;
-import component;
+import auto_core.component;
 
-import pipes;
+import auto_core.pipes;
 import <Windows.h>;
 
 /**
@@ -36,6 +34,6 @@ export void update_sp_component() {
  * This function updates the main log file and logs the start of the Spotify component.
  */
 export void log_init() {
-	ac::logger::connect_to_logger(sp_component);
+	sp_component.connect_to_logger();
 	sp_component.logg_and_logg("sp_ac.exe started");
 }

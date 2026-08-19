@@ -3,7 +3,7 @@ module runtime;
 import ac_main;
 
 import keymap;
-import ac_component;
+import ac_main;
 import numkey;
 import taskbar;
 

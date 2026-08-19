@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\modules\clock.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{426CDEA2-700B-40C6-90E8-BA2DE7E18691}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party">
+      <UniqueIdentifier>{A8457174-4062-4B84-AD92-A8DB9B793CF0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\logging_config_detail.hpp">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\clock_formatting.hpp">
+      <Filter>Tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\modules\encoding.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\error.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\formatting.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\ini.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\log_protocol.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\paths.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\pipes.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\logging_config_detail.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\clock_formatting.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\clock_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\encoding_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\error_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\formatting_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\ini_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\logging_config_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\log_protocol_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\paths_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\pipes_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\catch2\catch_amalgamated.cpp">
+      <Filter>Third Party</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-module encoding;
+module auto_core.encoding;
 
 import std;
 import <Windows.h>;
@@ -85,7 +85,7 @@ namespace ac::encoding {
         }
 
         const int input_size = static_cast<int>(text.size());
-        constexpr DWORD conversion_flags = 0; // Use the default Windows UTF-8 conversion behavior.
+        constexpr DWORD conversion_flags = MB_ERR_INVALID_CHARS;
 
         const int output_size = MultiByteToWideChar(
             CP_UTF8,

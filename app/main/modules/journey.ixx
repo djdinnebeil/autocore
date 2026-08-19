@@ -8,8 +8,11 @@ export module journey;
 
 import std;
 
-export void start_journey();
-
 export namespace ac::main {
-	bool create_process(const std::wstring& path);
+
+    bool create_process(
+        const std::filesystem::path& executable_path,
+        std::wstring_view arguments = {}
+    );
+
 }

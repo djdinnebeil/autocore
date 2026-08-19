@@ -1,61 +1,31 @@
 module itunes_c;
+
 import std;
+import auto_core.ini;
+import auto_core.paths;
 
 void iTunes::set_config() {
-    std::ifstream itunes_file(R"(.\config\itunes.ini)");
+    const std::filesystem::path itunes_config_path =
+        ac::paths::config_directory() / "itunes.ini";
 
-    if (!itunes_file) {
+    const auto document = ac::ini::read(itunes_config_path);
+    if (!document) {
         return;
     }
 
-    const auto read_bracket_value =
-        [](std::istream& input) -> std::optional<std::string> {
-        std::string line;
-
-        if (!std::getline(input, line)) {
-            return std::nullopt;
-        }
-
-        const std::size_t open_bracket =
-            line.find('[');
-
-        if (open_bracket == std::string::npos) {
-            return std::nullopt;
-        }
-
-        const std::size_t close_bracket =
-            line.find(']', open_bracket + 1);
-
-        if (close_bracket == std::string::npos) {
-            return std::nullopt;
-        }
-
-        return line.substr(
-            open_bracket + 1,
-            close_bracket - open_bracket - 1
-        );
-        };
-
-    if (const auto value = read_bracket_value(itunes_file)) {
+    if (const auto value = document->find("itunes", "start_automatically")) {
         auto_start = *value == "true";
     }
 
-    if (const auto value = read_bracket_value(itunes_file)) {
-        try {
-            std::size_t parsed_length = 0;
-
-            const int parsed_tab_end =
-                std::stoi(*value, &parsed_length);
-
-            if (parsed_length == value->size()) {
-                tab_end = parsed_tab_end;
-            }
-        }
-        catch (const std::invalid_argument&) {
-            // Keep the existing/default tab_end value.
-        }
-        catch (const std::out_of_range&) {
-            // Keep the existing/default tab_end value.
+    if (const auto value = document->find("itunes", "tab_end")) {
+        int parsed_tab_end {};
+        const auto [end, error] = std::from_chars(
+            value->data(),
+            value->data() + value->size(),
+            parsed_tab_end
+        );
+        if (error == std::errc {} && end == value->data() + value->size()) {
+            tab_end = parsed_tab_end;
         }
     }
 }

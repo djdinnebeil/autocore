@@ -5,7 +5,7 @@
 module sp_c;
 
 import std;
-import thread;
+import auto_core.thread;
 import sp_x;
 import <json.hpp>;
 import <cpr/cpr.h>;

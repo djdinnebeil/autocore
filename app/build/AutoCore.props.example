@@ -11,8 +11,6 @@
     <AutoCoreDistDir>C:\Path\To\Auto-Core\dist\</AutoCoreDistDir>
     <AutoCoreSymbolsDir>C:\Path\To\Auto-Core\dist\symbols\</AutoCoreSymbolsDir>
 
-    <!-- Command used to launch the dash_x component. -->
-    <AutoCoreDashXCmd>"C:\Path\To\Auto-Core\dist\dash_x.exe"</AutoCoreDashXCmd>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,10 +34,6 @@
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
 
-    <BuildMacro Include="AutoCoreDashXCmd">
-      <Value>$(AutoCoreDashXCmd)</Value>
-      <EnvironmentVariable>true</EnvironmentVariable>
-    </BuildMacro>
   </ItemGroup>
 
 </Project>

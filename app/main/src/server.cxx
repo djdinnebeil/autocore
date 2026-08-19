@@ -1,71 +1,86 @@
 module server;
 
 import std;
-import clock;
-import config;
-import ac_component;
-import print;
-import session;
+import ac_main;
+import auto_core.paths;
 
 import <Windows.h>;
-import <string>;
-import <fstream>;
-import <iostream>;
-import <format>;
-
-namespace fs = std::filesystem;
 
 PROCESS_INFORMATION pi_server; // Process information for the server process
 
-void log_server_msg(const std::string& msg, bool end_server_process = false, bool send_to_print = false) {
-    std::ofstream server_log_stream;
-    std::string server_log_name = ac::clock::get_date_iso() + "_server.log";
-    std::string server_log_path = std::string {ac::config::logger_directory()} + "server\\" + server_log_name;
-    server_log_stream.open(server_log_path, std::ios::app);
-    server_log_stream << msg << std::endl;
-    if (end_server_process) {
-        server_log_stream << "Session ended at " << ac::session::make_datetime() << "\n" << "***" << std::endl;
-    }
-    server_log_stream.flush();
-    server_log_stream.close();
-    auto_core.logg_and_logg(msg);
-    if (send_to_print) {
-        auto_core.print(msg);
-    }
-}
-
 void start_server() {
-    std::wstring server_path = LR"(.\server.exe)";
+    if (pi_server.hProcess != nullptr) {
+        auto_core.logg_and_print(
+            "Server component is already running"
+        );
 
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-
-    if (!CreateProcessW(server_path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-        log_server_msg("server start failed", false, true);
+        return;
     }
-    else {
-        pi_server = pi; // Store the process information globally
-        log_server_msg("server started successfully", false);
+
+    const std::filesystem::path server_path =
+        ac::paths::executable_directory() / "server.exe";
+
+    STARTUPINFOW startup_info {};
+    startup_info.cb = sizeof(startup_info);
+
+    PROCESS_INFORMATION process_info {};
+
+    if (!CreateProcessW(
+        server_path.c_str(),
+        nullptr,
+        nullptr,
+        nullptr,
+        FALSE,
+        0,
+        nullptr,
+        server_path.parent_path().c_str(),
+        &startup_info,
+        &process_info
+    )) {
+        const DWORD error = GetLastError();
+
+        auto_core.logg_and_print(
+            "Unable to start server component '{}'. Error: {}",
+            server_path,
+            error
+        );
+
+        return;
     }
+
+    CloseHandle(process_info.hThread);
+    process_info.hThread = nullptr;
+
+    pi_server = process_info;
+
+    auto_core.logg_and_logg(
+        "Server component process started"
+    );
 }
 
 void stop_server() {
-    if (pi_server.hProcess) {
-        if (TerminateProcess(pi_server.hProcess, 0)) {
-            log_server_msg("server process terminated", true);
-        }
-        else {
-            DWORD error = GetLastError();
-            log_server_msg(std::format("Failed to terminate server process - GetLastError() = {}", error));
-        }
-        CloseHandle(pi_server.hProcess);
-        CloseHandle(pi_server.hThread);
+    if (pi_server.hProcess == nullptr) {
+        auto_core.logg_and_logg(
+            "Server component is not running"
+        );
+
+        return;
+    }
+
+    if (!TerminateProcess(pi_server.hProcess, 0)) {
+        const DWORD error = GetLastError();
+
+        auto_core.logg_and_print(
+            "Unable to terminate server component. Error: {}",
+            error
+        );
     }
     else {
-        log_server_msg("No server process to terminate");
+        auto_core.logg_and_logg(
+            "Server component terminated during Auto Core shutdown"
+        );
     }
+
+    CloseHandle(pi_server.hProcess);
+    pi_server = {};
 }

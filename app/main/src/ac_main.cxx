@@ -1,19 +1,17 @@
 module ac_main;
 
 import std;
-
-import ac_component;
+import auto_core.console;
 
 import <Windows.h>;
-import <conio.h>;
 
-import print;
 import sp;
 import itunes;
 import wake;
 import server;
-import taskbar;
 import taskbar_ps;
+
+ac::Component auto_core {"auto_core"};
 
 /**
     * \brief Closes the program.
@@ -64,19 +62,6 @@ void deactivate_function_key() {
     auto_core.print("Function key deactivated");
 }
 
-
-/**
-    * \brief Clears the input buffer.
-    *
-    * This function clears any remaining input in the input buffer.
-    */
-void clear_input_buffer() {
-    while (_kbhit()) {
-        int getch = _getch();
-    }
-    std::cin.clear();
-}
-
 /**
     * \brief Sets focus to the Auto Core window.
     *
@@ -85,9 +70,18 @@ void clear_input_buffer() {
     */
 void set_focus_auto_core() {
     auto_core.logg_and_logg("set_focus_auto_core()");
-    clear_input_buffer();
-    HWND current_window_hwnd = GetForegroundWindow();
-    if (current_window_hwnd != ac::main::program_window) {
-        taskbar.activate_auto_core();
+
+    if (auto result = ac::console::focus_for_prompt(); !result) {
+        auto_core.logg_and_print(
+            ac::console::error_message(result.error())
+        );
     }
+}
+
+void ac_main::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("close_program", &::close_program);
+    registry.add("activate_function_key", &::activate_function_key);
+    registry.add("deactivate_function_key", &::deactivate_function_key);
 }

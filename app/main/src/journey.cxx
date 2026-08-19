@@ -2,9 +2,7 @@ module journey;
 
 import std;
 
-import config;
-import ac_component;
-import print;
+import ac_main;
 
 import <Windows.h>;
 
@@ -14,27 +12,43 @@ import <Windows.h>;
  * \param path The path to the executable.
  * \return True if the process was created successfully, false otherwise.
  */
-bool ac::main::create_process(const std::wstring& path) {
+bool ac::main::create_process(
+    const std::filesystem::path& executable_path,
+    const std::wstring_view arguments
+) {
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
 
     PROCESS_INFORMATION process_info {};
 
+    const std::filesystem::path working_directory =
+        executable_path.parent_path();
+
+    std::wstring command_line =
+        L"\"" + executable_path.wstring() + L"\"";
+
+    if (!arguments.empty()) {
+        command_line += L' ';
+        command_line += arguments;
+    }
+
     if (!CreateProcessW(
-        path.c_str(),
-        nullptr,
+        executable_path.c_str(),
+        command_line.data(),
         nullptr,
         nullptr,
         FALSE,
         0,
         nullptr,
-        nullptr,
+        working_directory.c_str(),
         &startup_info,
-        &process_info)) {
+        &process_info
+    )) {
         const DWORD error = GetLastError();
 
         auto_core.print(
-            "CreateProcess failed - GetLastError = {}",
+            "Unable to start '{}'. GetLastError = {}",
+            executable_path,
             error
         );
 
@@ -46,4 +60,3 @@ bool ac::main::create_process(const std::wstring& path) {
 
     return true;
 }
-

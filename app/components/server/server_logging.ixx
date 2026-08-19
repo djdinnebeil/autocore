@@ -8,12 +8,9 @@ to update the logger and initialize logging when the component starts.
 export module server_logging;
 
 import std;
-import logger;
-import logger_x;
-import component;
-import print;
+import auto_core.component;
 
-import pipes;
+import auto_core.pipes;
 import <Windows.h>;
 
 /**
@@ -38,6 +35,6 @@ export void update_server_component() {
  * This function updates the main log file and logs the start of the server component.
  */
 export void log_init() {
-	ac::logger::connect_to_logger(server_component);
+	server_component.connect_to_logger();
 	server_component.logg_and_logg("server.exe started");
 }

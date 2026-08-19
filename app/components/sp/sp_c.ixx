@@ -11,7 +11,7 @@ switching playback devices.
 export module sp_c;
 
 import std;
-import thread;
+import auto_core.thread;
 import sp_x;
 import <json.hpp>;
 import <cpr/cpr.h>;
@@ -73,9 +73,6 @@ public:
     int pause_song();
     int play_song();
     int music_song_count;
-    std::string tokens_path;
-    std::string devices_path;
-    std::string codes_path;
     int remaining_song_duration_ms;
     bool next_song_clicked;
     bool is_spotify_playing();
@@ -103,8 +100,8 @@ public:
     std::string format_artist_name(const json& artists);
     void calculate_remaining_song_duration_ms(const json& song_details);
     void update_devices();
-    int sp_position;
-    void get_sp_position();
+    int sp_position = -1;
+    void set_taskbar_position(int position);
     void activate();
     bool end_thread;
 
@@ -117,6 +114,10 @@ public:
 
     bool tokens_extracted = false;
     void check_refresh_token_expiration();
+
+    std::filesystem::path tokens_path;
+    std::filesystem::path devices_path;
+    std::filesystem::path codes_path;
 };
 
 export extern Spotify ac_spotify;

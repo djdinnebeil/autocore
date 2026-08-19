@@ -1,18 +1,45 @@
 module sp;
 
 import std;
-import pipes;
+import auto_core.pipes;
 import journey;
-import ac_component;
+import ac_main;
+import auto_core.paths;
+import spotify_protocol;
+import taskbar;
 
 import <Windows.h>;
 
 namespace {
-    HANDLE ac_sp_pipe = INVALID_HANDLE_VALUE;
+    ac::pipes::Pipe ac_sp_pipe;
+
+    void send_command(ac::pipes::Pipe& pipe, ac::protocol::spotify::Command command) {
+        if (const auto result = ac::pipes::send_pipe_command(
+                pipe,
+                ac::protocol::spotify::to_wire(command)
+            );
+            !result) {
+            auto_core.logg_and_print(
+                "Failed to send Spotify command. Error: {}",
+                result.error().system_error
+            );
+        }
+    }
 }
 
 void create_sp_pipe() {
-    ac_sp_pipe = ac::pipes::create_pipe_server(L"ac_sp_pipe", auto_core);
+    auto result = ac::pipes::create_pipe_server(
+        std::wstring { ac::protocol::spotify::pipe_name }
+    );
+    if (!result) {
+        auto_core.logg_and_print(
+            "Failed to create Spotify pipe. Error: {}",
+            result.error().system_error
+        );
+        return;
+    }
+
+    ac_sp_pipe = std::move(*result);
 }
 
 /**
@@ -21,8 +48,24 @@ void create_sp_pipe() {
  * This function launches the Spotify component executable, `sp_ac.exe`, which is responsible for handling Spotify-related tasks.
  */
 void start_sp_component() {
-    std::wstring sp_path = LR"(.\sp_ac.exe)";
-    ac::main::create_process(sp_path);
+    const std::filesystem::path sp_path =
+        ac::paths::executable_directory() / "sp_ac.exe";
+
+    std::wstring arguments;
+
+    if (const auto position = taskbar_position("spotify")) {
+        arguments = std::format(
+            L"--taskbar-position {}",
+            *position
+        );
+    }
+    else {
+        auto_core.logg_and_print(
+            "Spotify taskbar position is not configured."
+        );
+    }
+
+    ac::main::create_process(sp_path, arguments);
 }
 
 /**
@@ -32,7 +75,7 @@ void start_sp_component() {
  * \keymap_command
  */
 void get_user_sp_queue() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 4);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::get_queue);
 }
 
 /**
@@ -42,7 +85,7 @@ void get_user_sp_queue() {
  * \keymap_command
  */
 void print_spotify_songs() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 3);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::print_songs);
 }
 
 /**
@@ -52,7 +95,7 @@ void print_spotify_songs() {
  * \keymap_command
  */
 void spotify_play_pause() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 1);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::play_pause);
 }
 
 /**
@@ -62,7 +105,7 @@ void spotify_play_pause() {
  * \keymap_command
  */
 void spotify_next_song() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 2);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::next_song);
 }
 
 /**
@@ -72,7 +115,7 @@ void spotify_next_song() {
  * \keymap_command
  */
 void sp_switch_player() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 6);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::switch_player);
 }
 
 /**
@@ -81,7 +124,7 @@ void sp_switch_player() {
  * This function sends a command to the Spotify component to download the album cover of the currently playing song.
  */
 void download_album_cover() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 8);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::download_album_cover);
 }
 
 /**
@@ -90,7 +133,7 @@ void download_album_cover() {
  * This function sends a command to the Spotify component to gracefully shut down and terminate the process.
  */
 void send_sp_end_signal() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 0);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::shutdown);
 }
 
 /**
@@ -99,5 +142,15 @@ void send_sp_end_signal() {
  * This function sends a command to the Spotify component to update the log file with the latest information.
  */
 void update_sp_logger() {
-    ac::pipes::send_pipe_command(ac_sp_pipe, 5);
+    send_command(ac_sp_pipe, ac::protocol::spotify::Command::update_component);
+}
+
+void sp::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("get_user_sp_queue", &::get_user_sp_queue);
+    registry.add("print_spotify_songs", &::print_spotify_songs);
+    registry.add("spotify_play_pause", &::spotify_play_pause);
+    registry.add("spotify_next_song", &::spotify_next_song);
+    registry.add("sp_switch_player", &::sp_switch_player);
 }

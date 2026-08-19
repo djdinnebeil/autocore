@@ -148,6 +148,8 @@
     <ClCompile Include="main.cxx" />
     <ClCompile Include="sp_oauth.cxx" />
     <ClCompile Include="sp_oauth.ixx" />
+    <ClCompile Include="sp_oauth_paths.cxx" />
+    <ClCompile Include="sp_oauth_paths.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc" />

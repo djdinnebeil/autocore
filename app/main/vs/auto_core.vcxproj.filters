@@ -24,7 +24,7 @@
     <ClCompile Include="..\src\crash.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\dash.cxx">
+    <ClCompile Include="..\src\keymap_runtime.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\end.cxx">
@@ -42,7 +42,7 @@
     <ClCompile Include="..\src\link.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\logger_t.cxx">
+    <ClCompile Include="..\src\logger_init.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ac_main.cxx">
@@ -96,10 +96,10 @@
     <ClCompile Include="..\modules\crash.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\dash.ixx">
+    <ClCompile Include="..\modules\keymap_runtime.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\dash_x.ixx">
+    <ClCompile Include="..\modules\command_registry.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\end.ixx">
@@ -117,7 +117,7 @@
     <ClCompile Include="..\modules\link.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\logger_t.ixx">
+    <ClCompile Include="..\modules\logger_init.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\ac_main.ixx">
@@ -168,41 +168,17 @@
     <ClCompile Include="..\..\core\modules\clock.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\config.ixx">
+    <ClCompile Include="..\..\core\modules\ini.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\logging_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\keyboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\print.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\thread.ixx">
       <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\clipboard.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\clock.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\config.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\keyboard.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\logger.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\print.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\src\encoding.cxx">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\encoding.ixx">
       <Filter>Header Files</Filter>
@@ -213,43 +189,46 @@
     <ClCompile Include="..\modules\ac_actions.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\session.ixx">
+    <ClCompile Include="..\modules\app_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\session.cxx">
+    <ClCompile Include="..\modules\journal_clock.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\app_config.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\journal_clock.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\error.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\error.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\paths.ixx">
+    <ClCompile Include="..\..\core\modules\formatting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\paths.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\modules\ac_component.ixx">
+    <ClCompile Include="..\..\core\modules\paths.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\pipes.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\pipes.cxx">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\shared\protocols\itunes_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\protocols\spotify_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\protocols\wake_protocol.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\component.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\component.cxx">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\core\modules\console.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\src\logger_x.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger_x.ixx">
+    <ClCompile Include="..\..\core\modules\log_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

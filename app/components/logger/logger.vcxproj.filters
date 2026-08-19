@@ -18,6 +18,18 @@
     <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="log_init.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="log_init.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="logger_state.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="logger_state.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\core\modules\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -27,7 +39,10 @@
     <ClCompile Include="..\..\core\modules\component.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\config.ixx">
+    <ClCompile Include="..\..\core\modules\ini.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\logging_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\encoding.ixx">
@@ -36,10 +51,10 @@
     <ClCompile Include="..\..\core\modules\error.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\keyboard.ixx">
+    <ClCompile Include="..\..\core\modules\formatting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger.ixx">
+    <ClCompile Include="..\..\core\modules\keyboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\modules\paths.ixx">
@@ -48,17 +63,11 @@
     <ClCompile Include="..\..\core\modules\pipes.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\print.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\core\modules\session.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\core\modules\thread.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\modules\logger_x.ixx">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\..\core\modules\log_protocol.ixx">
+      <Filter>modules</Filter>
     </ClCompile>
     <ClCompile Include="main_log.cxx">
       <Filter>Source Files</Filter>

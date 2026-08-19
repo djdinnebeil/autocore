@@ -2,20 +2,22 @@ module link;
 
 import std;
 
-import config;
-import clipboard;
-import ac_component;
-import print;
-import thread;
-import encoding;
-
+import auto_core.clipboard;
+import auto_core.console;
 import ac_main;
+import auto_core.thread;
+import auto_core.encoding;
+import auto_core.paths;
+
 import <Windows.h>;
 
 bool dash_selected = false;
 
 std::string read_file_to_string() {
-    std::ifstream file(R"(.\link\my_study.txt)");
+    std::ifstream file(
+        ac::paths::link_directory() / "my_study.txt"
+    );
+
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file ");
     }
@@ -67,8 +69,9 @@ std::string format_dash_prompt(const std::string& str) {
  */
 std::string get_gpt_message() {
     auto_core.logg_and_logg("get_gpt_message()");
-    const std::string gpt_path_prompts = R"(.\link\gpt_prompts.rc)";
-    std::ifstream file(gpt_path_prompts);
+    const std::filesystem::path gpt_prompts_path =
+        ac::paths::link_directory() / "gpt_prompts.rc";
+    std::ifstream file(gpt_prompts_path);
     if (!file.is_open()) {
         auto_core.print("error reading file");
         return "";
@@ -136,22 +139,16 @@ std::string get_gpt_message() {
  * to avoid blocking the main thread.
  */
 void threaded_print_gpt_message() {
-    auto previous_clipboard =
-        ac::clipboard::capture_clipboard_text();
+    dash_selected = false;
 
-    if (!previous_clipboard) {
+    const auto target_window = ac::console::focus_for_prompt();
+
+    if (!target_window) {
         auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(previous_clipboard.error())
+            ac::console::error_message(target_window.error())
         );
         return;
     }
-
-    dash_selected = false;
-
-    HWND current_window_handle = GetForegroundWindow();
-
-    set_focus_auto_core();
 
     std::string gpt_message = get_gpt_message();
 
@@ -160,41 +157,10 @@ void threaded_print_gpt_message() {
     std::wstring clipboard_text =
         ac::encoding::to_utf16(gpt_message);
 
-    if (auto result =
-        ac::clipboard::set_clipboard_text(clipboard_text);
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-
-        return;
-    }
-
-    SetForegroundWindow(current_window_handle);
-
-    if (auto result = ac::clipboard::paste_from_clipboard();
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-
-        return;
-    }
-
-    Sleep(100);
-
-    if (auto result = ac::clipboard::restore_clipboard_text(
-        *previous_clipboard
-    ); !result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
+    auto_core.insert_text_preserving_clipboard_text(
+        *target_window,
+        clipboard_text
+    );
 }
 
 /**
@@ -207,4 +173,10 @@ void print_gpt_message() {
     auto_core.logg_and_logg("print_gpt_message()");
     std::thread t([=]() {ac::thread::run_with_exception_handling(threaded_print_gpt_message, auto_core); });
     t.detach();
+}
+
+void link::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("print_gpt_message", &::print_gpt_message);
 }

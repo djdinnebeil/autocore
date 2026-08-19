@@ -16,7 +16,7 @@ Auto Core also includes component-based automation outside the keyboard layer, i
 - [Project Folder Structure](#project-folder-structure)
 - [Runtime Configuration](#runtime-configuration)
 - [Keymap Commands](#keymap-commands)
-- [Tagging Runtime Functions](#tagging-runtime-functions)
+- [Registering Runtime Commands](#registering-runtime-commands)
 - [Adding a New Component](#adding-a-new-component)
 - [Spotify Component](#spotify-component)
 - [Runtime Performance](#runtime-performance)
@@ -47,17 +47,18 @@ Auto Core also includes component-based automation outside the keyboard layer, i
 
 Auto Core uses a modular component architecture that separates the main system controller from specialized component executables.
 
-The main application, shared runtime code, and component projects are separated by responsibility. Components that need to communicate with the main application use named pipes, with IPC support provided through the shared `pipes_x.ixx` module.
+The main application, core DLL, shared protocols, and component projects are separated by responsibility. Components that need to communicate with the main application use named pipes, with IPC support provided by the `auto_core.pipes` module.
 
 ### Components
 
 | Component | Purpose | Executable | Notes |
 | --- | --- | --- | --- |
-| `dash_x` | Runtime mapping and developer overlay | `dash_x.exe` | Supports IntelliSense-assisted runtime mapping |
 | `itunes` | iTunes controller | `itunes.exe` | Uses COM |
+| `logger` | Central component logger | `logger.exe` | Receives component log events over named pipes |
 | `server` | Local file server | `server.exe` | Simple HTTP server |
 | `slash` | Recycle bin utility | `slash.exe` | Prints deleted items |
 | `sp` | Spotify controller | `sp.exe` | Stores play history |
+| `sp_oauth` | Spotify authorization helper | `sp_oauth.exe` | Handles the OAuth authorization flow |
 | `wake` | System wake tracker | `wake.exe` | Logs resume timestamps |
 
 ### Component Naming Conventions
@@ -70,7 +71,7 @@ Auto Core uses suffixes to distinguish component scripts, component classes, and
 | `_c` | Component class |
 | `_t` | Component thread |
 
-For example, the main application may use `sp.cxx`, while the Spotify component uses `sp_x.cxx`.
+For example, the main application uses `sp.cxx`, while the Spotify component exports its interface from `sp_x.ixx`.
 
 ---
 
@@ -122,11 +123,10 @@ Runtime configuration files belong in `dist/config`. These files control runtime
 | File | Purpose |
 | --- | --- |
 | `app.ini` | Controls the program title. |
-| `clock.ini` | Defines `end_of_day`, such as `00:59` or `24:59`. |
-| `itunes.ini` | Defines the number of tabs to copy from iTunes. |
-| `keymap.ini` | Stores runtime key mappings used when runtime configuration is enabled. If runtime mapping is disabled, mappings are hardcoded and this file is ignored. |
-| `logger.ini` | Enables enhanced debugging by forwarding log statements to the console window. |
-| `runtime.ini` | Controls whether runtime configuration is enabled and selects logging behavior. |
+| `itunes.ini` | Controls whether iTunes starts automatically and the final tab copied when reading track data. |
+| `journal.ini` | Defines the journal day-rollover hour. |
+| `keymap_mode.ini` | Selects the compiled or runtime keymap. |
+| `logger.ini` | Enables logging, controls console forwarding, and optionally selects the log directory. |
 | `server.ini` | Stores local web server settings, such as the port number. |
 | `star.ini` | Stores journal-related settings. |
 | `taskbar.ini` | Lists the first 10 programs pinned to the user’s taskbar. |
@@ -135,34 +135,35 @@ Runtime configuration files belong in `dist/config`. These files control runtime
 
 ## Keymap Commands
 
-The `keymap` folder acts as a convenience layer for modifying runtime mappings.
+The `keymap` folder contains the runtime keymap workspace. Auto Core creates missing workspace files from compiled defaults.
 
 | File | Purpose |
 | --- | --- |
-| `keymap_commands.ixx` | A hard link to `dash_x.ixx`. Contains functions tagged with `\runtime`. When opened in VS Code, this makes runtime functions globally accessible for IntelliSense autocomplete. |
-| `keymap.ini` | A hard link to `dist/config/keymap.ini`. Contains the active key-to-function mappings defined by the user. |
+| `keymap_commands.txt` | Generated list of registered command expressions for editor autocomplete. |
+| `keymap.ini` | Active key-to-command mappings used in runtime mode. |
+| `keymap_settings.ini` | Controls runtime keymap settings such as trace logging. |
 
-This setup enables VS Code autocomplete for user-defined runtime functions while still linking directly to the active runtime mapping file.
+Set `mode = runtime` in `dist/config/keymap_mode.ini` to use `keymap.ini`. Otherwise, Auto Core uses the compiled keymap.
 
 ---
 
 ## Shared Folder
 
-The `shared` folder contains source code for the Auto Core shared runtime library and component-shared modules.
+The `shared` folder contains protocols shared by the main application and component executables. Reusable runtime facilities such as paths, logging, and named pipes are provided by the core DLL under `app/core`.
 
 | Folder or Module | Purpose |
 | --- | --- |
-| `pipes_x` | Contains the pipe module used by components that need IPC. |
+| `wake_protocol.ixx` | Defines wake-component messages. |
+| `spotify_protocol.ixx` | Defines Spotify-component messages. |
+| `itunes_protocol.ixx` | Defines iTunes-component messages. |
 
 ---
 
-## Tagging Runtime Functions
+## Registering Runtime Commands
 
-To make a function available for runtime configuration, tag it with `\runtime`.
+To make a function available to the runtime keymap, register it with the appropriate `runtime_commands::register_with` function. Auto Core refreshes `dist/keymap/keymap_commands.txt` from the command registry when it starts in runtime mode.
 
-After tagging the function, run `dash_x.exe` to update the runtime function list. This ensures the new function is recognized and available for use in `keymap.ini`.
-
-Runtime configuration must be enabled in `dist/config/runtime.ini` for runtime mappings to take effect.
+Runtime key mapping must be selected in `dist/config/keymap_mode.ini` for mappings in `dist/keymap/keymap.ini` to take effect.
 
 ---
 
@@ -250,7 +251,7 @@ $(AutoCoreLibDir)
 Add the Auto Core DLL import library dependency:
 
 ```text
-auto_core_dll.lib
+auto_core.lib
 ```
 
 In Visual Studio, this corresponds to:
@@ -265,7 +266,7 @@ Linker → Input   → Additional Dependencies
 If your component uses a resource image or manifest, reference the shared resource file:
 
 ```text
-.\app\resources\resource.rc
+..\..\resources\resource.rc
 ```
 
 ---
@@ -282,27 +283,7 @@ The Spotify component uses an upsert-style workflow to process listening history
 
 ## Runtime Performance
 
-The runtime behavior of Auto Core can be adjusted by modifying `dist/config/runtime.ini`. There are four available levels, each providing a tradeoff between observability and performance.
-
-| Runtime Mode | Description | Required Settings |
-| --- | --- | --- |
-| `debug` | Enables full runtime debugging. | `runtime_enabled=true`, `runtime_debugger=true` |
-| `buffer` | Enables buffered logging for runtime events. | `runtime_enabled=true`, `runtime_logger=true` |
-| `silence` | Disables logging but keeps runtime mapping active. | `runtime_enabled=true`, `runtime_logger=false` |
-| `disabled` | Disables runtime mapping entirely. All mappings must be hardcoded. | `runtime_enabled=false` |
-
-### Performance Benchmarks
-
-Benchmarks as of April 13, 2025:
-
-| Runtime Mode | Average Time per Call |
-| --- | ---: |
-| `debug` | 230–250 µs |
-| `buffer` | 105–130 µs |
-| `silence` | 75–95 µs |
-| `disabled` | 0.20–0.35 µs |
-
-These benchmarks represent the overhead added by runtime configuration handling. Disabling runtime yields the highest performance and is recommended for production builds where configurability is not needed.
+Auto Core supports compiled and runtime keymaps. The compiled keymap is the default. Runtime mode loads command mappings from `dist/keymap/keymap.ini`; optional trace logging is controlled by `dist/keymap/keymap_settings.ini`.
 
 ---
 

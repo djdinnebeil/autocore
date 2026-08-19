@@ -22,30 +22,43 @@
     <ClCompile Include="..\modules\clipboard.ixx" />
     <ClCompile Include="..\modules\clock.ixx" />
     <ClCompile Include="..\modules\component.ixx" />
-    <ClCompile Include="..\modules\config.ixx" />
+    <ClCompile Include="..\modules\component_logger.ixx" />
+    <ClCompile Include="..\modules\console.ixx" />
+    <ClCompile Include="..\modules\console_writer.ixx" />
     <ClCompile Include="..\modules\encoding.ixx" />
     <ClCompile Include="..\modules\error.ixx" />
+    <ClCompile Include="..\modules\formatting.ixx" />
+    <ClCompile Include="..\modules\ini.ixx" />
     <ClCompile Include="..\modules\keyboard.ixx" />
-    <ClCompile Include="..\modules\logger.ixx" />
-    <ClCompile Include="..\modules\logger_x.ixx" />
+    <ClCompile Include="..\modules\log_protocol.ixx" />
+    <ClCompile Include="..\modules\logging_config.ixx" />
+    <ClCompile Include="..\modules\main_log_client.ixx" />
     <ClCompile Include="..\modules\paths.ixx" />
     <ClCompile Include="..\modules\pipes.ixx" />
-    <ClCompile Include="..\modules\print.ixx" />
-    <ClCompile Include="..\modules\session.ixx" />
     <ClCompile Include="..\modules\thread.ixx" />
+    <ClCompile Include="..\modules\text_inserter.ixx" />
     <ClCompile Include="..\src\clipboard.cxx" />
     <ClCompile Include="..\src\clock.cxx" />
+    <ClCompile Include="..\src\clock_formatting.cxx" />
     <ClCompile Include="..\src\component.cxx" />
-    <ClCompile Include="..\src\config.cxx" />
+    <ClCompile Include="..\src\component_logger.cxx" />
+    <ClCompile Include="..\src\console.cxx" />
+    <ClCompile Include="..\src\console_writer.cxx" />
     <ClCompile Include="..\src\encoding.cxx" />
     <ClCompile Include="..\src\error.cxx" />
     <ClCompile Include="..\src\keyboard.cxx" />
-    <ClCompile Include="..\src\logger.cxx" />
-    <ClCompile Include="..\src\logger_x.cxx" />
+    <ClCompile Include="..\src\ini.cxx" />
+    <ClCompile Include="..\src\log_protocol.cxx" />
+    <ClCompile Include="..\src\logging_config.cxx" />
+    <ClCompile Include="..\src\logging_config_detail.cxx" />
+    <ClCompile Include="..\src\main_log_client.cxx" />
     <ClCompile Include="..\src\paths.cxx" />
     <ClCompile Include="..\src\pipes.cxx" />
-    <ClCompile Include="..\src\print.cxx" />
-    <ClCompile Include="..\src\session.cxx" />
+    <ClCompile Include="..\src\text_inserter.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\clock_formatting.hpp" />
+    <ClInclude Include="..\src\logging_config_detail.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

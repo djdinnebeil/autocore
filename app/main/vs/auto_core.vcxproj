@@ -128,7 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions); AC_DIRECT_BUILD</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -146,7 +146,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(AutoCoreLibDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcurl.lib;cpr.lib;sqlite3.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;libcurl.lib;cpr.lib;sqlite3.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -156,52 +156,40 @@
       <Command>
       </Command>
     </CustomBuildStep>
-    <PreBuildEvent>
-      <Command>$(AutoCoreDashXCmd)</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\core\modules\clipboard.ixx" />
     <ClCompile Include="..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\core\modules\component.ixx" />
-    <ClCompile Include="..\..\core\modules\config.ixx" />
+    <ClCompile Include="..\..\core\modules\console.ixx" />
+    <ClCompile Include="..\..\core\modules\ini.ixx" />
+    <ClCompile Include="..\..\core\modules\logging_config.ixx" />
     <ClCompile Include="..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\core\modules\error.ixx" />
+    <ClCompile Include="..\..\core\modules\formatting.ixx" />
     <ClCompile Include="..\..\core\modules\keyboard.ixx" />
-    <ClCompile Include="..\..\core\modules\logger.ixx" />
-    <ClCompile Include="..\..\core\modules\logger_x.ixx" />
+    <ClCompile Include="..\..\core\modules\log_protocol.ixx" />
     <ClCompile Include="..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\core\modules\pipes.ixx" />
-    <ClCompile Include="..\..\core\modules\print.ixx" />
-    <ClCompile Include="..\..\core\modules\session.ixx" />
+    <ClCompile Include="..\..\shared\protocols\itunes_protocol.ixx" />
+    <ClCompile Include="..\..\shared\protocols\spotify_protocol.ixx" />
+    <ClCompile Include="..\..\shared\protocols\wake_protocol.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\..\core\src\clipboard.cxx" />
-    <ClCompile Include="..\..\core\src\clock.cxx" />
-    <ClCompile Include="..\..\core\src\component.cxx" />
-    <ClCompile Include="..\..\core\src\config.cxx" />
-    <ClCompile Include="..\..\core\src\encoding.cxx" />
-    <ClCompile Include="..\..\core\src\error.cxx" />
-    <ClCompile Include="..\..\core\src\keyboard.cxx" />
-    <ClCompile Include="..\..\core\src\logger.cxx" />
-    <ClCompile Include="..\..\core\src\logger_x.cxx" />
-    <ClCompile Include="..\..\core\src\paths.cxx" />
-    <ClCompile Include="..\..\core\src\pipes.cxx" />
-    <ClCompile Include="..\..\core\src\print.cxx" />
-    <ClCompile Include="..\..\core\src\session.cxx" />
     <ClCompile Include="..\modules\ac_actions.ixx" />
+    <ClCompile Include="..\modules\app_config.ixx" />
     <ClCompile Include="..\modules\keymap.ixx" />
     <ClCompile Include="..\modules\cloud.ixx" />
     <ClCompile Include="..\modules\ac_modules.ixx" />
     <ClCompile Include="..\modules\crash.ixx" />
-    <ClCompile Include="..\modules\dash.ixx" />
-    <ClCompile Include="..\modules\dash_x.ixx" />
+    <ClCompile Include="..\modules\keymap_runtime.ixx" />
+    <ClCompile Include="..\modules\command_registry.ixx" />
     <ClCompile Include="..\modules\end.ixx" />
     <ClCompile Include="..\modules\itunes.ixx" />
     <ClCompile Include="..\modules\journal.ixx" />
+    <ClCompile Include="..\modules\journal_clock.ixx" />
     <ClCompile Include="..\modules\journey.ixx" />
     <ClCompile Include="..\modules\link.ixx" />
-    <ClCompile Include="..\modules\ac_component.ixx" />
-    <ClCompile Include="..\modules\logger_t.ixx" />
+    <ClCompile Include="..\modules\logger_init.ixx" />
     <ClCompile Include="..\modules\ac_main.ixx" />
     <ClCompile Include="..\modules\notepad.ixx" />
     <ClCompile Include="..\modules\notes.ixx" />
@@ -217,16 +205,18 @@
     <ClCompile Include="..\modules\tasks.ixx" />
     <ClCompile Include="..\modules\wake.ixx" />
     <ClCompile Include="..\src\ac_actions.cxx" />
+    <ClCompile Include="..\src\app_config.cxx" />
     <ClCompile Include="..\src\main.cxx" />
     <ClCompile Include="..\src\cloud.cxx" />
     <ClCompile Include="..\src\crash.cxx" />
-    <ClCompile Include="..\src\dash.cxx" />
+    <ClCompile Include="..\src\keymap_runtime.cxx" />
     <ClCompile Include="..\src\end.cxx" />
     <ClCompile Include="..\src\itunes.cxx" />
     <ClCompile Include="..\src\journal.cxx" />
+    <ClCompile Include="..\src\journal_clock.cxx" />
     <ClCompile Include="..\src\journey.cxx" />
     <ClCompile Include="..\src\link.cxx" />
-    <ClCompile Include="..\src\logger_t.cxx" />
+    <ClCompile Include="..\src\logger_init.cxx" />
     <ClCompile Include="..\src\ac_main.cxx" />
     <ClCompile Include="..\src\notepad.cxx" />
     <ClCompile Include="..\src\notes.cxx" />

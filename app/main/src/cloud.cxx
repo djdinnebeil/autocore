@@ -2,9 +2,7 @@ module cloud;
 
 import std;
 
-import config;
-import ac_component;
-import print;
+import ac_main;
 
 import <cpr/cpr.h>;
 

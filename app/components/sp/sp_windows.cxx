@@ -5,8 +5,8 @@
 module sp_c;
 
 import std;
-import keyboard;
-import thread;
+import auto_core.keyboard;
+import auto_core.thread;
 import sp_x;
 
 import <json.hpp>;
@@ -44,24 +44,22 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
     }
     return TRUE;
 }
-/**
- * \brief Retrieves the Spotify taskbar position.
- */
-void Spotify::get_sp_position() {
-    std::ifstream taskbar_config_file(R"(.\config\taskbar.ini)");
-    std::string line;
-    while (std::getline(taskbar_config_file, line)) {
-        size_t found_spotify = line.find("spotify");
-        if (found_spotify != std::string::npos) {
-            sp_position = stoi(line.substr(0, 1));
-            break;
-        }
-    }
+void Spotify::set_taskbar_position(const int position) {
+    sp_position = position >= 0 && position <= 9
+        ? position
+        : -1;
 }
 /**
  * \brief Activates the Spotify window.
  */
 void Spotify::activate() {
+    if (sp_position < 0) {
+        sp_component.logg_and_print(
+            "Spotify taskbar position was not provided"
+        );
+        return;
+    }
+
     ac::keyboard::send_winkey(sp_position);
 }
 /**

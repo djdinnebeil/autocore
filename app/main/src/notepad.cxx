@@ -2,11 +2,12 @@ module notepad;
 
 import std;
 
-import encoding;
-import ac_component;
-import print;
-import clipboard;
-import thread;
+import auto_core.encoding;
+import auto_core.console;
+import ac_main;
+import auto_core.clipboard;
+import auto_core.thread;
+import auto_core.paths;
 
 import <algorithm>;
 import <cctype>;
@@ -25,7 +26,10 @@ std::string to_lower(const std::string& input) {
 * \brief Retrieves the openai api key.
 */
 std::wstring set_openai_api_key() {
-    std::ifstream openai_api_key_file(R"(.\notepad\openai_api_key.txt)");
+    const std::filesystem::path openai_api_path =
+        ac::paths::notepad_directory() / "openai_api_key.txt";
+
+    std::ifstream openai_api_key_file(openai_api_path);
     std::string line;
     std::getline(openai_api_key_file, line);
     openai_api_key_file.close();
@@ -43,14 +47,16 @@ std::wstring set_openai_api_key() {
  */
 void print_openai_api_key() {
     static std::wstring openai_api_key = set_openai_api_key();
-    ac::clipboard::set_clipboard_text(openai_api_key);
-    ac::clipboard::paste_from_clipboard();
+    auto_core.insert_text_replacing_clipboard(openai_api_key);
     auto_core.print("openai_api_key inserted");
 }
 
 std::wstring get_api_key() {
     auto_core.logg_and_logg("get_api_keys()");
-    const std::string api_keys_path = R"(.\notepad\api_keys.txt)";
+
+    const std::filesystem::path api_keys_path =
+        ac::paths::notepad_directory() / "api_key.txt";
+
     std::ifstream file(api_keys_path);
     if (!file.is_open()) {
         auto_core.print("error reading file");
@@ -98,7 +104,10 @@ std::wstring get_api_key() {
                 auto_core.printnl("Incorrect input\nEnter again: ");
             }
             else {
-                print("{} inserted", to_lower(api_key_names[selection - 1]));
+                auto_core.print(
+                    "{} inserted",
+                    to_lower(api_key_names[selection - 1])
+                );
                 return ac::encoding::to_utf16(api_key_values[selection - 1]);
             }
         }
@@ -116,56 +125,18 @@ std::wstring get_api_key() {
  * to avoid blocking the main thread.
  */
 void threaded_print_api_key() {
-    auto previous_clipboard =
-        ac::clipboard::capture_clipboard_text();
+    const auto target_window = ac::console::focus_for_prompt();
 
-    if (!previous_clipboard) {
+    if (!target_window) {
         auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(previous_clipboard.error())
+            ac::console::error_message(target_window.error())
         );
         return;
     }
-
-    HWND current_window_handle = GetForegroundWindow();
-
-    set_focus_auto_core();
 
     std::wstring api_key = get_api_key();
 
-    if (auto result =
-        ac::clipboard::set_clipboard_text(api_key);
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-        return;
-    }
-
-    SetForegroundWindow(current_window_handle);
-
-    if (auto result = ac::clipboard::paste_from_clipboard();
-        !result) {
-
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-        return;
-    }
-
-    Sleep(100);
-
-    if (auto result = ac::clipboard::restore_clipboard_text(
-        *previous_clipboard
-    ); !result) {
-        auto_core.logg_and_print(
-            "Clipboard error: {}",
-            ac::clipboard::error_message(result.error())
-        );
-    }
+    auto_core.insert_text_preserving_clipboard_text(*target_window, api_key);
 }
 
 /**
@@ -178,4 +149,11 @@ void print_api_key() {
     auto_core.logg_and_logg("print_api_key()");
     std::thread t([=]() {ac::thread::run_with_exception_handling(threaded_print_api_key, auto_core); });
     t.detach();
+}
+
+void notepad::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("print_openai_api_key", &::print_openai_api_key);
+    registry.add("print_api_key", &::print_api_key);
 }

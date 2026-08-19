@@ -1,7 +1,7 @@
-module error;
+module auto_core.error;
 
 import std;
-import paths;
+import auto_core.paths;
 import <Windows.h>;
 
 namespace ac::error {

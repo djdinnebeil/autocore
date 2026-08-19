@@ -7,9 +7,7 @@ export struct SpotifyOAuthConfig {
     std::string client_secret;
     std::string port_number;
 
-    std::filesystem::path token_path {
-        R"(.\star\sp_tokens.rc)"
-    };
+    std::filesystem::path token_path;
 
     bool is_valid() const noexcept;
 };

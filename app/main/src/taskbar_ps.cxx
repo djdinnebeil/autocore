@@ -1,9 +1,8 @@
 module taskbar_ps;
 
 import std;
-import keyboard;
-import ac_component;
-import print;
+import auto_core.keyboard;
+import ac_main;
 
 import <Windows.h>;
 

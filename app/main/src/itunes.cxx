@@ -1,18 +1,44 @@
 module itunes;
 
 import std;
-import pipes;
+import auto_core.pipes;
 import journey;
-import ac_component;
+import ac_main;
+import auto_core.paths;
+import itunes_protocol;
 
 import <Windows.h>;
 
 namespace {
-    HANDLE ac_itunes_pipe = INVALID_HANDLE_VALUE;
+    ac::pipes::Pipe ac_itunes_pipe;
+
+    void send_command(ac::pipes::Pipe& pipe, ac::protocol::itunes::Command command) {
+        if (const auto result = ac::pipes::send_pipe_command(
+                pipe,
+                ac::protocol::itunes::to_wire(command)
+            );
+            !result) {
+            auto_core.logg_and_print(
+                "Failed to send iTunes command. Error: {}",
+                result.error().system_error
+            );
+        }
+    }
 }
 
 void create_itunes_pipe() {
-    ac_itunes_pipe = ac::pipes::create_pipe_server(L"ac_itunes_pipe", auto_core);
+    auto result = ac::pipes::create_pipe_server(
+        std::wstring { ac::protocol::itunes::pipe_name }
+    );
+    if (!result) {
+        auto_core.logg_and_print(
+            "Failed to create iTunes pipe. Error: {}",
+            result.error().system_error
+        );
+        return;
+    }
+
+    ac_itunes_pipe = std::move(*result);
 }
 
 /**
@@ -21,7 +47,9 @@ void create_itunes_pipe() {
  * This function starts the iTunes component by creating a new process for the iTunes executable.
  */
 void start_iTunes_component() {
-    std::wstring itunes_path = LR"(.\ac_itunes.exe)";
+    const std::filesystem::path itunes_path =
+        ac::paths::executable_directory() / "ac_itunes.exe";
+
     ac::main::create_process(itunes_path);
 }
 
@@ -33,7 +61,7 @@ void start_iTunes_component() {
  * \keymap_command
  */
 void print_iTunes_songs() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 3);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::print_songs);
 }
 
 /**
@@ -44,7 +72,7 @@ void print_iTunes_songs() {
  * \keymap_command
  */
 void iTunes_next_song() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 2);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::next_song);
 }
 
 /**
@@ -55,7 +83,7 @@ void iTunes_next_song() {
  * \keymap_command
  */
 void print_next_up_song_list() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 4);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::print_next_up);
 }
 
 /**
@@ -66,7 +94,7 @@ void print_next_up_song_list() {
  * \keymap_command
  */
 void iTunes_play_pause() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 1);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::play_pause);
 }
 
 /**
@@ -75,7 +103,7 @@ void iTunes_play_pause() {
  * This function sends a command to the iTunes pipe to play the previous song in iTunes.
  */
 void iTunes_prev_song() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 6);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::previous_song);
 }
 
 /**
@@ -86,7 +114,7 @@ void iTunes_prev_song() {
  * \keymap_command
  */
 void iTunes_stop_song() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 7);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::stop_song);
 }
 
 
@@ -96,7 +124,7 @@ void iTunes_stop_song() {
  * This function sends a command to the iTunes pipe to update the iTunes logger.
  */
 void update_iTunes_logger() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 5);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::update_component);
 }
 
 /**
@@ -105,7 +133,7 @@ void update_iTunes_logger() {
  * This function sends a command to the iTunes pipe to end the iTunes component.
  */
 void send_iTunes_end_signal() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 0);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::shutdown);
 }
 
 /**
@@ -116,5 +144,16 @@ void send_iTunes_end_signal() {
  * \keymap_command
  */
 void remove_iTunes_song() {
-    ac::pipes::send_pipe_command(ac_itunes_pipe, 9);
+    send_command(ac_itunes_pipe, ac::protocol::itunes::Command::remove_song);
+}
+
+void itunes::runtime_commands::register_with(
+    command_registry::Registry& registry
+) {
+    registry.add("print_iTunes_songs", &::print_iTunes_songs);
+    registry.add("iTunes_next_song", &::iTunes_next_song);
+    registry.add("print_next_up_song_list", &::print_next_up_song_list);
+    registry.add("iTunes_play_pause", &::iTunes_play_pause);
+    registry.add("iTunes_stop_song", &::iTunes_stop_song);
+    registry.add("remove_iTunes_song", &::remove_iTunes_song);
 }

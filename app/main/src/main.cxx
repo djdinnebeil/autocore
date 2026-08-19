@@ -12,16 +12,15 @@
  */
 import std;
 import ac_modules;
-import config;
-import clock;
-import print;
+import app_config;
+import auto_core.logging.config;
+import auto_core.clock;
 import keymap;
 import journey;
 import runtime;
-import dash;
+import keymap_runtime;
 import end;
-import logger_x;
-import pipes;
+import auto_core.pipes;
 import <Windows.h>;
 
 
@@ -30,6 +29,7 @@ import <Windows.h>;
  */
 void auto_init() {
     SetConsoleOutputCP(CP_UTF8);
+    SetConsoleTitleW(app_config::program_title().data());
     SetUnhandledExceptionFilter(unhandled_exception_handler);
     SetConsoleCtrlHandler(console_close_event, TRUE);
 }
@@ -39,7 +39,6 @@ void auto_init() {
 void core_init() {
     ac::main::keyboard_hook = SetWindowsHookEx(WH_KEYBOARD_LL, send_numpad_event, NULL, 0);
     ac::main::main_thread_id = GetCurrentThreadId();
-    ac::main::program_window = GetConsoleWindow();
     ac::main::close_window = close_window_hidden_init();
 }
 /**
@@ -58,17 +57,14 @@ void start_components() {
     start_iTunes_component();
     start_sp_component();
     start_wake_component();
-    if (ac::config::start_server()) {
-        start_server();
-    }
+    start_server();
 }
 void print_program_ready() {
     std::string program_start_str = "Program ready";
     program_start_str += "\nToday is " + ac::clock::get_day_of_week();
     program_start_str += "\n" + get_task_list();
-    std::cout << program_start_str << std::endl;
+    auto_core.print(program_start_str);
     Sleep(350);
-    auto_core.logg_and_logg(program_start_str);
 }
 
 /**
@@ -81,11 +77,12 @@ void print_program_ready() {
 int main() {
     auto_init();
     core_init();
-    log_init();
+    initialize_logger_component();
+    initialize_taskbar();
     crash_check();
     create_pipe_servers();
     start_components();
-    ac::config::use_keymap_file() ? set_keymap_from_file() : set_hardcoded_keymap();
+    initialize_keymap();
     std::thread taskbar_ps_thread(run_taskbar_ps);
     taskbar_ps_thread.detach();
     std::thread program_ready_thread(print_program_ready);
@@ -103,11 +100,14 @@ int main() {
         "Auto Core is shutting down"
     );
 
-    const bool logger_shutdown_sent = ac::logger::shutdown_logger();
-    ac::logger::close_logger_connection();
+    if (ac::logging::config::enabled()) {
+        const bool logger_shutdown_sent =
+            auto_core.request_logger_shutdown();
 
-    if (!logger_shutdown_sent) {
-        std::cerr << "Failed to send the termination signal to logger.exe\n";
+        if (!logger_shutdown_sent) {
+            std::cerr
+                << "Failed to send the termination signal to logger.exe\n";
+        }
     }
 
     Sleep(100);

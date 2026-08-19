@@ -10,14 +10,9 @@
  */
 import std;
 
-import config;
-import clock;
-import clipboard;
-import encoding;
-import keyboard;
-import logger;
-import logger_x;
-import print;
+import auto_core.encoding;
+import auto_core.ini;
+import auto_core.paths;
 
 import server_logging;
 
@@ -35,34 +30,55 @@ CivetServer* server;
  * Initializes the server with the configuration options and starts the server loop.
  */
 void run_server() {
-    std::string port_number_str = std::to_string(ac::config::port_number());
-    const char* options[] = {
-        "document_root", R"(.\server\)",
-        "listening_ports", port_number_str.c_str(),
-        nullptr
-    };
-    std::string current_date_iso = ac::clock::get_date_iso();
-    try {
-        server = new CivetServer(options);
-        server_component.logg_and_logg("server started on port {}", options[3]);
-        while (true) {
-            this_thread::sleep_for(chrono::seconds(60));
-            std::string date_iso_now = ac::clock::get_date_iso();
-            if (date_iso_now != current_date_iso) {
-                server_component.update_log_file();
-                current_date_iso = date_iso_now;
+    int configured_port = 8585;
+    if (const auto document = ac::ini::read(
+        ac::paths::config_directory() / "server.ini"
+    )) {
+        if (const auto value = document->find("server", "port")) {
+            int parsed_port = 0;
+            const auto result = std::from_chars(
+                value->data(), value->data() + value->size(), parsed_port
+            );
+            if (result.ec == std::errc {} &&
+                result.ptr == value->data() + value->size() &&
+                parsed_port >= 1 && parsed_port <= 65535) {
+                configured_port = parsed_port;
             }
         }
     }
-    catch (std::exception& e) {
-        ac::print("Exception caught in server: {}", e.what());
-        exit(1);
+
+    const std::string port_number = std::to_string(configured_port);
+
+    const std::filesystem::path document_root_path =
+        ac::paths::executable_directory() / "server";
+
+    const std::string document_root =
+        ac::encoding::to_utf8(document_root_path.native());
+
+    const char* options[] = {
+        "document_root", document_root.c_str(),
+        "listening_ports", port_number.c_str(),
+        nullptr
+    };
+
+    CivetServer server(options);
+
+    server_component.logg_and_logg(
+        "Server started on port {}",
+        port_number
+    );
+
+    while (true) {
+        std::this_thread::sleep_for(
+            std::chrono::minutes(1)
+        );
+
+        server_component.update_log_file();
     }
 }
 
 int main() {
     log_init();
     run_server();
-    ac::logger::close_logger_connection();
     return 0;
 }

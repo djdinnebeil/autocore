@@ -21,16 +21,13 @@
     <ClCompile Include="..\src\clock.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\config.cxx">
+    <ClCompile Include="..\src\clock_formatting.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\keyboard.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\logger.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\print.cxx">
+    <ClCompile Include="..\src\log_protocol.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\clipboard.ixx">
@@ -39,16 +36,13 @@
     <ClCompile Include="..\modules\clock.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\config.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\modules\keyboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\logger.ixx">
+    <ClCompile Include="..\modules\log_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\print.ixx">
+    <ClCompile Include="..\modules\logging_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\thread.ixx">
@@ -60,13 +54,22 @@
     <ClCompile Include="..\src\encoding.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\session.ixx">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\src\ini.cxx">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\session.cxx">
+    <ClCompile Include="..\src\logging_config.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\logging_config_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\error.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\formatting.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\ini.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\pipes.ixx">
@@ -90,11 +93,43 @@
     <ClCompile Include="..\src\component.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\logger_x.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\logger_x.cxx">
+    <ClCompile Include="..\src\component_logger.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\console_writer.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\text_inserter.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\component_logger.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\console_writer.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\console.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\console.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\text_inserter.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\modules\main_log_client.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main_log_client.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\logging_config_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\clock_formatting.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

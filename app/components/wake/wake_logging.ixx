@@ -8,13 +8,9 @@ to update the logger and initialize logging when the component starts.
 export module wake_logging;
 
 import std;
-import config;
-import clock;
-import logger;
-import logger_x;
-import print;
-import session;
-import component;
+import auto_core.logging.config;
+import auto_core.clock;
+import auto_core.component;
 
 namespace fs = std::filesystem;
 
@@ -40,7 +36,7 @@ export void update_wake_component() {
  * This function updates the main log file and logs the start of the Spotify component.
  */
 export void log_init() {
-    ac::logger::connect_to_logger(wake_component);
+    wake_component.connect_to_logger();
 	wake_component.logg_and_logg("wake.exe started");
 }
 
@@ -57,7 +53,7 @@ export void log_last_wake() {
     );
 
     const fs::path wake_directory =
-        fs::path {ac::config::logger_directory()} /
+        ac::logging::config::directory() /
         "wake";
 
     fs::create_directories(wake_directory);
@@ -123,7 +119,7 @@ export void log_last_wake() {
 
     if (current_last_wake_str != previous_last_wake_str) {
         const std::string current_last_wake_output =
-            ac::session::make_datetime() +
+            ac::clock::get_datetime() +
             '\n' +
             current_last_wake_str;
 

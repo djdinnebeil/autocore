@@ -7,7 +7,12 @@
  */
 export module tasks;
 
+export import command_registry;
 import std;
+
+export namespace tasks::runtime_commands {
+    void register_with(command_registry::Registry& registry);
+}
 
 export {
     void launch_task_list();

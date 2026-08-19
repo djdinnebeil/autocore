@@ -1,10 +1,9 @@
 module journal;
 
 import std;
-import keyboard;
-import ac_component;
-import print;
-import thread;
+import auto_core.keyboard;
+import ac_main;
+import auto_core.thread;
 
 import ac_main;
 import <Windows.h>;
@@ -280,3 +279,76 @@ void print_one_is_selected() {
 void print_two_is_selected() {
     auto_core.print_and_insert("2 is selected.");
 }
+
+namespace journal::runtime_commands {
+
+std::string_view trim_argument(std::string_view value) {
+    const std::size_t first = value.find_first_not_of(" \t");
+
+    if (first == std::string_view::npos) {
+        return {};
+    }
+
+    const std::size_t last = value.find_last_not_of(" \t");
+    return value.substr(first, last - first + 1);
+}
+
+command_registry::Action parse_print_choice(std::string_view arguments) {
+    arguments = trim_argument(arguments);
+
+    if (arguments.empty() || arguments.front() != '"') {
+        return {};
+    }
+
+    const std::size_t closing_quote = arguments.find('"', 1);
+
+    if (closing_quote == std::string_view::npos) {
+        return {};
+    }
+
+    const std::string choice_name {arguments.substr(1, closing_quote - 1)};
+    std::string_view remainder = trim_argument(arguments.substr(closing_quote + 1));
+    bool include_zero = false;
+
+    if (!remainder.empty()) {
+        if (remainder.front() != ',') {
+            return {};
+        }
+
+        remainder = trim_argument(remainder.substr(1));
+
+        if (remainder == "true") {
+            include_zero = true;
+        }
+        else if (remainder != "false") {
+            return {};
+        }
+    }
+
+    return ::make_print_choice(choice_name, include_zero);
+}
+
+void register_with(command_registry::Registry& registry) {
+    registry.add("print_Tabby_choice", &::print_Tabby_choice);
+    registry.add("print_Eric_choice", &::print_Eric_choice);
+    registry.add("print_Katrina_choice", &::print_Katrina_choice);
+    registry.add("print_Lily_choice", &::print_Lily_choice);
+    registry.add("print_Star_choice", &::print_Star_choice);
+    registry.add("print_Luna_choice", &::print_Luna_choice);
+    registry.add("print_Daniel_choice", &::print_Daniel_choice);
+    registry.add("print_Jose_choice", &::print_Jose_choice);
+    registry.add("print_Jose_choices", &::print_Jose_choices);
+    registry.add("print_James_choice", &::print_James_choice);
+    registry.add("print_Jace_choice", &::print_Jace_choice);
+    registry.add("print_Tyler_choice", &::print_Tyler_choice);
+    registry.add("print_Gin_choice", &::print_Gin_choice);
+    registry.add("print_one_is_selected", &::print_one_is_selected);
+    registry.add("print_two_is_selected", &::print_two_is_selected);
+    registry.add_factory(
+        "make_print_choice",
+        parse_print_choice,
+        R"(make_print_choice("", false))"
+    );
+}
+
+} // namespace journal::runtime_commands

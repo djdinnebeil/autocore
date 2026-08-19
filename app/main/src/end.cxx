@@ -1,7 +1,7 @@
 module end;
 
 import std;
-import ac_component;
+import ac_main;
 import numkey;
 
 import ac_main;

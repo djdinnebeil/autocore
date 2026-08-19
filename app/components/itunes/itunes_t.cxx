@@ -1,7 +1,7 @@
 module itunes_t;
 
 import std;
-import clock;
+import auto_core.clock;
 
 import itunes_c;
 import itunes_x;
