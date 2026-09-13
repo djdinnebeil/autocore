@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4B04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp</Extensions>
+    </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{CF49913B-E2AB-4426-93D7-245781C3B35E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\shared\protocols\itunes_protocol.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\command_registry.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\modules\pipes.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_config_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_formatting_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_track_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_runtime.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_runtime.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_registry.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_registry.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_pipe.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_pipe.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_config_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_formatting_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_protocol_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_track_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_registry_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_runtime_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\itunes_pipe_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="itunes_config_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="itunes_formatting_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="itunes_track_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TESTING.md" />
+  </ItemGroup>
+</Project>

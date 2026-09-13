@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <AutoCoreRootDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</AutoCoreRootDir>
+    <AutoCoreAppDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</AutoCoreAppDir>
+    <AutoCoreBuildDir>$(AutoCoreRootDir)out\</AutoCoreBuildDir>
+    <AutoCoreIntDir>$(AutoCoreRootDir)out\obj\</AutoCoreIntDir>
+    <AutoCoreLinkDir>$(AutoCoreRootDir)out\core\</AutoCoreLinkDir>
+    <AutoCoreSeedDir>$(AutoCoreRootDir)lib\</AutoCoreSeedDir>
+    <AutoCoreThirdPartyDir>$(AutoCoreRootDir)third_party\</AutoCoreThirdPartyDir>
+    <AutoCoreMacroDir>$(AutoCoreAppDir)core\include\</AutoCoreMacroDir>
+    <AutoCoreDistDir>$(AutoCoreRootDir)dist\</AutoCoreDistDir>
+    <AutoCoreSymbolsDir>$(AutoCoreDistDir)symbols\</AutoCoreSymbolsDir>
+    <AutoCoreVendorIncludes>$(AutoCoreThirdPartyDir)civetweb\include;$(AutoCoreThirdPartyDir)cpr\include;$(AutoCoreThirdPartyDir)curl\include;$(AutoCoreThirdPartyDir)dbghelp\include;$(AutoCoreThirdPartyDir)json\include;$(AutoCoreThirdPartyDir)sqlite3\include;$(AutoCoreThirdPartyDir)taglib\include;$(AutoCoreThirdPartyDir)zlib\include</AutoCoreVendorIncludes>
+    <AutoCoreVendorLibraries>$(AutoCoreThirdPartyDir)civetweb\lib;$(AutoCoreThirdPartyDir)cpr\lib;$(AutoCoreThirdPartyDir)curl\lib;$(AutoCoreThirdPartyDir)sqlite3\lib;$(AutoCoreThirdPartyDir)taglib\lib;$(AutoCoreThirdPartyDir)zlib\lib</AutoCoreVendorLibraries>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IntDir>$(AutoCoreIntDir)$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(ConfigurationType)'=='Application'">$(AutoCoreDistDir)</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(AutoCoreLinkDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(AutoCoreMacroDir);$(AutoCoreVendorIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(AutoCoreLinkDir);$(AutoCoreSeedDir);$(AutoCoreVendorLibraries);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="AutoCoreRootDir">
+      <Value>$(AutoCoreRootDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreAppDir">
+      <Value>$(AutoCoreAppDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreBuildDir">
+      <Value>$(AutoCoreBuildDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreIntDir">
+      <Value>$(AutoCoreIntDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreLinkDir">
+      <Value>$(AutoCoreLinkDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreSeedDir">
+      <Value>$(AutoCoreSeedDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreThirdPartyDir">
+      <Value>$(AutoCoreThirdPartyDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreMacroDir">
+      <Value>$(AutoCoreMacroDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreDistDir">
+      <Value>$(AutoCoreDistDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AutoCoreSymbolsDir">
+      <Value>$(AutoCoreSymbolsDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+  <Target Name="CopyAutoCoreSeedOutputs" AfterTargets="Link" BeforeTargets="CopyDistRuntimeDlls" Condition="'$(ConfigurationType)'=='DynamicLibrary'">
+    <MakeDir Directories="$(AutoCoreSeedDir);$(AutoCoreDistDir)" />
+    <Copy SourceFiles="$(TargetDir)auto_core.dll" DestinationFiles="$(AutoCoreDistDir)auto_core.dll" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="$(TargetDir)auto_core.dll" DestinationFiles="$(AutoCoreSeedDir)auto_core.dll" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="$(TargetDir)auto_core.lib" DestinationFiles="$(AutoCoreSeedDir)auto_core.lib" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
+  </Target>
+  <Target Name="CopyDistRuntimeDlls" AfterTargets="Link" BeforeTargets="PostBuildEvent">
+    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(AutoCoreRootDir)scripts\copy-dist-dlls.ps1&quot;" />
+    <PropertyGroup>
+      <_AutoCoreOutDirFull>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_AutoCoreOutDirFull>
+      <_AutoCoreDistDirFull>$([System.IO.Path]::GetFullPath('$(AutoCoreDistDir)'))</_AutoCoreDistDirFull>
+    </PropertyGroup>
+    <Copy SourceFiles="$(AutoCoreDistDir)auto_core.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" Condition="'$(ConfigurationType)'=='Application' AND '$(_AutoCoreOutDirFull)' != '$(_AutoCoreDistDirFull)'" />
+  </Target>
+</Project>

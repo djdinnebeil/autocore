@@ -1,0 +1,15 @@
+Copyright © 2026 DJ, Daniel
+
+Anyone is free to use, copy, modify, and distribute Auto Core. This software
+is expected to be modified and configured by the individual user.
+
+Disclaimer
+
+This software installs a low-level keyboard hook, may run with elevated
+privileges, and depends on the proper functionality and configuration of
+Windows 11. It is provided as-is, without warranty of any kind. The
+developers disclaim responsibility for failures, inaccuracies, data loss,
+security issues, or other problems that may arise from use of this software,
+including malfunctions or misconfigurations of Windows 11.
+
+Use at your own risk.

@@ -1,0 +1,57 @@
+# Build outputs (plain names also ignore machine-local directory symlinks)
+bin/
+!third_party/
+!third_party/*/
+!third_party/*/bin/
+!third_party/*/bin/**
+obj/
+out/
+out
+Debug/
+Release/
+x64/
+x86/
+
+# Compiled binaries and debug symbols
+*.exe
+*.pdb
+*.obj
+*.aps
+
+# Leftover generated core outputs if an older layout still has them
+# (vendored third-party .lib files stay under third_party/<dep>/lib).
+# Current Auto Core outputs are under out/. Tracked seed copies are lib/
+# (auto_core.dll, auto_core.lib). Do not ignore lib/ or *.dll — runtime
+# DLLs are covered by dist/. Developer scripts under scripts/ stay tracked.
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# Editor/IDE settings and per-user Visual Studio state
+.vs/
+.vs
+*.vcxproj.user
+.vscode/
+.idea/
+
+# Environment/secrets
+.env
+.env.*
+
+*.db
+
+# Local overlays kept on this machine; not part of a public clone
+*.local.ixx
+*.local.ini
+
+# Leftover compiled keymap (removed from the project)
+app/main/modules/keymap_hardcoded.ixx
+
+# Runtime output (exes, DLLs, live config, local data)
+dist/

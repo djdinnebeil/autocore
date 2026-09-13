@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Auto Core local files</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Auto Core local files</h1>
+    <p>
+        <code>server_ac.exe</code> shares a folder with your web browser on
+        this computer only
+        (<a href="http://127.0.0.1:8585/">http://127.0.0.1:8585/</a>
+        by default).
+    </p>
+    <p>To add files you can browse:</p>
+    <ul>
+        <li>Put files in this folder (the default document root is
+            <code>dist/server</code>).</li>
+        <li>Add a directory junction or symlink to another folder
+            (<code>mklink /J</code> or <code>mklink /D</code>).</li>
+        <li>Or set <code>[server] document_root</code> in
+            <code>config/server.ini</code> to an absolute path.
+            Keep a machine-specific path out of git.</li>
+    </ul>
+    <p>
+        This folder is local runtime data. Change the port in
+        <code>config/server.ini</code> if 8585 is already in use.
+        See <code>docs/server.md</code> in the Auto Core repository.
+    </p>
+</body>
+</html>

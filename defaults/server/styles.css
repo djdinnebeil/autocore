@@ -1,0 +1,25 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    max-width: 40rem;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
+    line-height: 1.5;
+    color: #222;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+code {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+ul {
+    padding-left: 1.25rem;
+}
+
+a {
+    color: #0645ad;
+}
