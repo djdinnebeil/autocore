@@ -20,9 +20,10 @@ x86/
 
 # Leftover generated core outputs if an older layout still has them
 # (vendored third-party .lib files stay under third_party/<dep>/lib).
-# Current Auto Core outputs are under out/. Tracked seed copies are lib/
-# (auto_core.dll, auto_core.lib). Do not ignore lib/ or *.dll — runtime
+# Disposable intermediates are obj/. Canonical auto_core.dll and
+# auto_core.lib live in lib/. Do not ignore lib/ or *.dll — runtime
 # DLLs are covered by dist/. Developer scripts under scripts/ stay tracked.
+*.exp
 
 # Logs and temporary files
 *.log
@@ -36,6 +37,7 @@ Desktop.ini
 # Editor/IDE settings and per-user Visual Studio state
 .vs/
 .vs
+*.suo
 *.vcxproj.user
 .vscode/
 .idea/

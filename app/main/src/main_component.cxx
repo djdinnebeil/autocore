@@ -2,6 +2,7 @@ module auto_core.main.application;
 
 import std;
 import auto_core.core.console;
+import auto_core.core.paths;
 
 import <Windows.h>;
 
@@ -112,7 +113,7 @@ bool ac::main::create_process_and_focus(
         std::this_thread::sleep_for(poll);
     }
 
-    auto_core.logg_and_logg(
+    auto_core.log_and_log(
         "Started '{}' but could not confirm keyboard focus.",
         executable_path
     );
@@ -120,28 +121,49 @@ bool ac::main::create_process_and_focus(
 }
 
 /**
-    * \brief Closes the program.
-    *
-    * This function performs the necessary cleanup and shutdown operations for the program.
-    * It stops the server, sends end signals to iTunes and Spotify, destroys the taskbar window,
-    * unhooks the keyboard hook, and posts a quit message to the main thread.
-    *
-    * \keymap_command
-    */
-void close_program() {
-    auto_core.logg_and_logg("close_program()");
+ * \brief Closes the program.
+ *
+ * Hides and detaches the console, stops running child components, unhooks
+ * the keyboard hook, and posts a quit message to the main thread.
+ *
+ * \keymap_command
+ */
+namespace {
+
+void close_program_impl(const bool allow_recovery_prompt) {
+    auto_core.log_and_log("close_program()");
     ac::main::program_closing = true;
-    stop_server();
-    send_itunes_end_signal();
-    send_spotify_end_signal();
-    send_journal_end_signal();
-    send_wake_end_signal();
-    send_writer_end_signal();
-    stop_taskbar_component();
     if (ac::main::keyboard_hook != NULL) {
         UnhookWindowsHookEx(ac::main::keyboard_hook);
+        ac::main::keyboard_hook = NULL;
+    }
+    const bool keep_console_visible =
+        allow_recovery_prompt &&
+        ac::main::components::console_shutdown_prompt_enabled();
+    if (!keep_console_visible) {
+        if (const HWND console = GetConsoleWindow(); console != nullptr) {
+            ShowWindow(console, SW_HIDE);
+        }
+        (void)FreeConsole();
+    }
+    ac::main::components::shutdown(allow_recovery_prompt);
+    if (keep_console_visible) {
+        if (const HWND console = GetConsoleWindow(); console != nullptr) {
+            ShowWindow(console, SW_HIDE);
+        }
+        (void)FreeConsole();
     }
     PostThreadMessage(ac::main::main_thread_id, WM_QUIT, 0, 0);
+}
+
+}
+
+void close_program() {
+    close_program_impl(true);
+}
+
+void close_program_noninteractive() {
+    close_program_impl(false);
 }
 
 /**
@@ -175,10 +197,10 @@ void deactivate_function_key() {
     * and activating the Auto Core window if it is not already in focus.
     */
 void set_focus_auto_core() {
-    auto_core.logg_and_logg("set_focus_auto_core()");
+    auto_core.log_and_log("set_focus_auto_core()");
 
     if (auto result = ac::console::focus_for_prompt(); !result) {
-        auto_core.logg_and_print(
+        auto_core.log_and_print(
             ac::console::error_message(result.error())
         );
     }
@@ -190,4 +212,15 @@ void main_component::runtime_commands::register_with(
     registry.add("close_program", &::close_program);
     registry.add("activate_function_key", &::activate_function_key);
     registry.add("deactivate_function_key", &::deactivate_function_key);
+    registry.add("launch_journal_config", [] {
+        const auto executable =
+            ac::paths::executable_directory() / "journal_config.exe";
+        if (!ac::main::create_process_and_focus(
+                executable, {}, CREATE_NEW_CONSOLE
+            )) {
+            auto_core.log_and_print(
+                "Unable to start journal_config.exe."
+            );
+        }
+    });
 }

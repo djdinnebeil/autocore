@@ -35,10 +35,12 @@ namespace ac {
         ac::logger::MainLogConnection main_log_connection;
 
         void send_to_main_log(
+            const std::string_view timestamp,
             const std::string_view message,
             const bool newline
         ) {
             const ac::logging::Event event {
+                .timestamp = std::string {timestamp},
                 .component = name,
                 .message = std::string {message},
                 .newline = newline
@@ -50,8 +52,14 @@ namespace ac {
         void write_connection_failure(
             const std::string_view message
         ) {
+            const auto event_time = ac::clock::get_local_datetime();
             std::scoped_lock lock(routing_mutex);
-            component_logger.write(message);
+            component_logger.write(
+                ac::clock::format_log_timestamp(event_time),
+                event_time.date_iso,
+                message,
+                false
+            );
             console_writer.write_error(message);
         }
 
@@ -60,14 +68,24 @@ namespace ac {
             const bool newline,
             const OutputRoute route
         ) {
-            std::scoped_lock lock(routing_mutex);
-            component_logger.write(message, newline);
-
-            if (
+            const auto event_time = ac::clock::get_local_datetime();
+            const std::string timestamp =
+                ac::clock::format_log_timestamp(event_time);
+            const bool main_worthy =
                 route == OutputRoute::component_and_main ||
-                route == OutputRoute::component_main_and_console
-            ) {
-                send_to_main_log(message, newline);
+                route == OutputRoute::component_main_and_console;
+
+            std::scoped_lock lock(routing_mutex);
+            component_logger.write(
+                timestamp,
+                event_time.date_iso,
+                message,
+                main_worthy,
+                newline
+            );
+
+            if (main_worthy) {
+                send_to_main_log(timestamp, message, newline);
             }
 
             if (route == OutputRoute::component_main_and_console) {

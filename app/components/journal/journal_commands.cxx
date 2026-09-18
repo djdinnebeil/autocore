@@ -3,6 +3,8 @@ module journal_commands;
 import std;
 import auto_core.core.console;
 import auto_core.core.thread;
+import auto_core.core.config;
+import auto_core.core.paths;
 import command_registry;
 import journal_clock;
 import journal_component;
@@ -36,7 +38,7 @@ std::optional<int> prompt_for_upper_choice() {
         ac::console::focus_for_prompt_via_winkey();
 
     if (!target_window) {
-        journal_component().logg_and_print(
+        journal_component().log_and_print(
             ac::console::error_message(target_window.error())
         );
         return std::nullopt;
@@ -58,7 +60,7 @@ std::optional<int> prompt_for_upper_choice() {
 
     upper = (std::max)(upper, 1);
 
-    journal_component().logg_and_logg("{}", upper);
+    journal_component().log_and_log("{}", upper);
 
     SetForegroundWindow(static_cast<HWND>(*target_window));
     return upper;
@@ -240,5 +242,65 @@ command_registry::Registry create_journal_command_registry() {
         parse_print_and_insert,
         R"(print_and_insert_into_journal(""))"
     );
+
+    ac::config::seed_missing_journal_choices();
+    std::ifstream input(
+        ac::paths::journal_directory() / "journal_choices.ini"
+    );
+    std::string line;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        const auto trimmed_line = trim(line);
+        if (trimmed_line.empty() ||
+            trimmed_line == "[journal_choices]" ||
+            trimmed_line.starts_with(';') ||
+            trimmed_line.starts_with('#')) {
+            continue;
+        }
+
+        const auto equals = trimmed_line.find('=');
+        if (equals == std::string_view::npos) {
+            journal_component().log_and_print(
+                "Invalid journal alias line format: {}",
+                line
+            );
+            continue;
+        }
+
+        const auto name = std::string {trim(trimmed_line.substr(0, equals))};
+        const auto expression = std::string {
+            trim(trimmed_line.substr(equals + 1))
+        };
+        if (name.empty() ||
+            expression.empty() ||
+            name.find('(') != std::string::npos) {
+            journal_component().log_and_print(
+                "Invalid journal alias line format: {}",
+                line
+            );
+            continue;
+        }
+        if (registry.contains(name)) {
+            journal_component().log_and_print(
+                "Journal alias '{}' skipped because that command is reserved",
+                name
+            );
+            continue;
+        }
+
+        auto action = registry.resolve(expression);
+        if (!action) {
+            journal_component().log_and_print(
+                "Journal alias '{}' skipped because '{}' is unknown",
+                name,
+                expression
+            );
+            continue;
+        }
+        registry.add(name, std::move(action));
+    }
+
     return registry;
 }

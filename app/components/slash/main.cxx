@@ -302,7 +302,7 @@ int main(int argument_count, char* arguments[]) {
     try {
         auto action = registry.resolve(command_name);
         if (!action) {
-            slash_component.logg_and_print(
+            slash_component.log_and_print(
                 "Unknown Slash command: {}",
                 command_name
             );

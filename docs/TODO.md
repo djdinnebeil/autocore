@@ -3,6 +3,18 @@
 DLL-specific deferred work is tracked in [app/core/TODO.md](../app/core/TODO.md).
 Main-specific deferred work is tracked in [app/main/TODO.md](../app/main/TODO.md).
 
+## Parked: log_merger_ac.exe
+
+**Status:** Separate future project; not part of the pre-release logger
+
+`logger_ac.exe` is feature-complete for pre-release and is in
+field-testing/maintenance status. Do not begin `log_merger_ac.exe` while
+finalizing that implementation. The future merger may consume daily component
+`.main.log` files and produce a chronological centralized log, as described in
+[configuration.md](configuration.md#logging). Its synchronization,
+reconciliation, incremental-offset, scheduling, and merge design remain
+deferred.
+
 ## Parked: keymap_config.exe
 
 **Status:** Next core product upgrade after clone-and-run readiness
@@ -44,9 +56,10 @@ Wake extras already live under `logs/components/wake/` (`wake_latest.log`,
 `wake_previous.log`, `wake_master.log`) next to the daily wake log. Do not add
 `config/wake.ini` yet.
 
-Later, that file can hold filters to exclude certain system wake events and an
-optional path for the master log (default remains the logger components/wake
-directory). Do not relocate the master log in this phase.
+Later, that file can hold filters to exclude certain system wake events, an
+`enabled` switch (`on` / `off`, with `true` / `false` accepted as aliases),
+and an optional path for the master log (default remains the logger
+components/wake directory). Do not relocate the master log in this phase.
 
 ## Encapsulate interactive taskbar cycling
 

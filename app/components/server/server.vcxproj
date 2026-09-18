@@ -56,7 +56,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\..\build\AutoCore.props" />
+    <Import Project="..\..\..\msbuild\AutoCore.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -158,6 +158,7 @@
     <ClCompile Include="..\..\core\modules\log_protocol.ixx" />
     <ClCompile Include="..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\core\modules\pipes.ixx" />
+    <ClCompile Include="..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="server_logging.ixx" />
     <ClCompile Include="main.cxx" />

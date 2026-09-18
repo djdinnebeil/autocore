@@ -1,6 +1,7 @@
 module auto_core.core.logging.client;
 
 import std;
+import auto_core.core.clock;
 import auto_core.core.encoding;
 import auto_core.core.pipes;
 import auto_core.core.logging.protocol;
@@ -26,7 +27,8 @@ namespace {
     };
 
     std::size_t event_size(const ac::logging::Event& event) {
-        return event.component.size() + event.message.size();
+        return event.timestamp.size() + event.component.size() +
+            event.message.size();
     }
 
     std::string executable_name() {
@@ -64,6 +66,7 @@ namespace ac::logger {
         std::string component_name;
         FailureHandler failure_handler;
         std::thread worker;
+        ac::pipes::Pipe live_pipe;
 
         bool wait_for_retry(
             std::unique_lock<std::mutex>& lock,
@@ -183,6 +186,41 @@ namespace ac::logger {
             );
         }
 
+        bool adopt_pipe(ac::pipes::Pipe pipe) {
+            std::scoped_lock lock(mutex);
+            if (stop_requested) {
+                return false;
+            }
+            live_pipe = std::move(pipe);
+            state = ConnectionState::connected;
+            return true;
+        }
+
+        bool write_encoded(const std::string_view encoded) {
+            HANDLE handle = INVALID_HANDLE_VALUE;
+            {
+                std::scoped_lock lock(mutex);
+                handle = live_pipe.native_handle();
+            }
+            if (handle == nullptr || handle == INVALID_HANDLE_VALUE) {
+                return false;
+            }
+
+            ac::pipes::Pipe borrowed {handle};
+            const auto result = ac::pipes::send_string(borrowed, encoded);
+            borrowed.release();
+            return static_cast<bool>(result);
+        }
+
+        void close_live_pipe() noexcept {
+            ac::pipes::Pipe closing;
+            {
+                std::scoped_lock lock(mutex);
+                (void)live_pipe.cancel();
+                closing = std::move(live_pipe);
+            }
+        }
+
         void run() {
             ac::pipes::Pipe pipe = connect_during_window();
 
@@ -199,9 +237,10 @@ namespace ac::logger {
                 return;
             }
 
-            {
+            if (!adopt_pipe(std::move(pipe))) {
                 std::scoped_lock lock(mutex);
-                state = ConnectionState::connected;
+                state = ConnectionState::closed;
+                return;
             }
 
             while (true) {
@@ -234,6 +273,7 @@ namespace ac::logger {
 
                 if (dropped_event_count != 0) {
                     const ac::logging::Event warning {
+                        .timestamp = ac::clock::get_log_timestamp(),
                         .component = component_name,
                         .message = std::format(
                             "Central logging dropped {} events ({} bytes) "
@@ -248,21 +288,20 @@ namespace ac::logger {
                         ac::logging::encode(warning);
 
                     dropped_warning_sent = encoded_warning &&
-                        ac::pipes::send_string(pipe, *encoded_warning);
+                        write_encoded(*encoded_warning);
                 }
 
                 const auto encoded = ac::logging::encode(event);
                 if (
                     dropped_warning_sent && encoded &&
-                    ac::pipes::send_string(pipe, *encoded)
+                    write_encoded(*encoded)
                 ) {
                     continue;
                 }
 
-                pipe.reset();
-
                 {
                     std::scoped_lock lock(mutex);
+                    live_pipe.reset();
                     if (!dropped_warning_sent) {
                         dropped_events += dropped_event_count;
                         dropped_bytes += dropped_byte_count;
@@ -288,13 +327,17 @@ namespace ac::logger {
                     return;
                 }
 
-                {
+                if (!adopt_pipe(std::move(pipe))) {
                     std::scoped_lock lock(mutex);
-                    state = ConnectionState::connected;
+                    queue.clear();
+                    queued_bytes = 0;
+                    state = ConnectionState::closed;
+                    return;
                 }
             }
 
             std::scoped_lock lock(mutex);
+            live_pipe.reset();
             state = ConnectionState::closed;
         }
     };
@@ -311,6 +354,10 @@ namespace ac::logger {
         const std::string_view component_name,
         FailureHandler failure_handler
     ) {
+        if (!impl_) {
+            return;
+        }
+
         std::scoped_lock lock(impl_->mutex);
         if (impl_->state != ConnectionState::idle) {
             return;
@@ -335,6 +382,10 @@ namespace ac::logger {
     }
 
     bool MainLogConnection::send(const ac::logging::Event& event) {
+        if (!impl_) {
+            return false;
+        }
+
         std::scoped_lock lock(impl_->mutex);
         if (
             impl_->state != ConnectionState::connecting &&
@@ -372,6 +423,10 @@ namespace ac::logger {
     }
 
     bool MainLogConnection::request_logger_shutdown() {
+        if (!impl_) {
+            return false;
+        }
+
         std::string component_name;
 
         {
@@ -381,6 +436,7 @@ namespace ac::logger {
 
         const ac::logging::Event event {
             .type = ac::logging::EventType::shutdown,
+            .timestamp = ac::clock::get_log_timestamp(),
             .component = std::move(component_name),
             .message = {},
             .newline = true
@@ -390,6 +446,10 @@ namespace ac::logger {
     }
 
     void MainLogConnection::close() noexcept {
+        if (!impl_) {
+            return;
+        }
+
         {
             std::scoped_lock lock(impl_->mutex);
             if (
@@ -406,6 +466,7 @@ namespace ac::logger {
         }
 
         impl_->cv.notify_all();
+        impl_->close_live_pipe();
 
         if (impl_->worker.joinable()) {
             (void)CancelSynchronousIo(impl_->worker.native_handle());

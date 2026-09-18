@@ -30,49 +30,24 @@ one-shot-per-command launch model.
 
 ## Surface journal ready-wait failure
 
-**Status:** Deferred startup diagnostics
+**Status:** Done by the generic host
 
-`components::initialize()` calls `wait_for_journal_ready()` and ignores the
-result. Writer ready-wait failure is logged and writer commands stay
-unavailable for the session. Journal has the same 5s ready contract but a
-timeout is only visible if `wait_for_journal_ready` itself logged.
-
-Treat a journal ready failure the same way as writer: log that journal
-commands are unavailable, and keep startup non-fatal.
-
-### Acceptance criteria
-
-- A missing or late `journal_ac.exe` produces a single clear console/log line.
-- Main still reaches the message loop.
-- A successful ready handshake is unchanged.
+A failed `ac.component.v1` hello, including journal, logs and disables only
+that child. Commands from that catalog are not registered.
 
 ## Graceful server shutdown
 
-**Status:** Deferred process-lifetime hardening
+**Status:** Done by the generic host
 
-`stop_server()` uses `TerminateProcess`. Logger shutdown already requests a
-graceful stop and only terminates after a timeout. If `server_ac.exe` grows a
-control channel or window-close path, prefer that before terminating.
-
-### Acceptance criteria
-
-- `server_ac.exe` can exit from a Main-initiated stop without `TerminateProcess`
-  on the success path.
-- A stuck server is still reaped so Main can exit.
-- Start-while-already-running remains a no-op.
+`server_ac.exe` speaks `ac.component.v1`. Main sends `shutdown` on
+`ac_server_pipe`, waits briefly, then terminates if the process is still
+alive.
 
 ## Mutex iTunes shutdown with named invokes
 
-**Status:** Deferred shutdown race
+**Status:** Done by the generic host
 
-Spotify's integer pipe commands take `spotify_pipe_mutex`. iTunes `invoke_named`
-is mutexed, but `send_command` (used for shutdown) is not. A keymap invoke
-overlapping `close_program()` can interleave frames on `ac_itunes_pipe`.
-
-### Acceptance criteria
-
-- Shutdown and named invokes are serialized on the iTunes pipe.
-- A failed shutdown send still continues the rest of `close_program()`.
+Each generic child serializes invoke and shutdown on one per-child mutex.
 
 ## Unused keymap.runtime getters
 

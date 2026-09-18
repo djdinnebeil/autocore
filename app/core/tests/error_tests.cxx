@@ -94,7 +94,7 @@ TEST_CASE(
     CHECK(std::regex_match(
         error_log.appended_text(),
         std::regex {
-            R"(^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \| Auto Core error test\r?\n$)"
+            R"(^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\] Auto Core error test\r?\n$)"
         }
     ));
 }
@@ -109,7 +109,7 @@ TEST_CASE(
     ac::error::log("Error {}: {}", 42, "details");
 
     CHECK(stderr_capture.text() == "Error 42: details\n");
-    CHECK(error_log.appended_text().ends_with(" | Error 42: details\r\n"));
+    CHECK(error_log.appended_text().ends_with("] Error 42: details\r\n"));
 }
 
 TEST_CASE(
@@ -125,7 +125,7 @@ TEST_CASE(
         "Error message formatting failed: "
     ));
     CHECK(error_log.appended_text().find(
-        " | Error message formatting failed: "
+        "] Error message formatting failed: "
     ) != std::string::npos);
 }
 
@@ -141,6 +141,6 @@ TEST_CASE(
     CHECK(stderr_capture.text() ==
         "Error message invalid argument: Format string is null\n");
     CHECK(error_log.appended_text().ends_with(
-        " | Error message invalid argument: Format string is null\r\n"
+        "] Error message invalid argument: Format string is null\r\n"
     ));
 }

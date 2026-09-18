@@ -147,7 +147,7 @@ bool write_crash_marker(const std::string_view crash_marker) {
 }
 
 void restart_program(const std::string& error_report) {
-    auto_core.logg_and_logg(error_report);
+    auto_core.log_and_log(error_report);
 
     const fs::path executable_path =
         ac::paths::executable_directory() / "auto_core.exe";
@@ -157,19 +157,19 @@ void restart_program(const std::string& error_report) {
         {},
         CREATE_NEW_CONSOLE
     )) {
-        auto_core.logg_and_logg(
+        auto_core.log_and_log(
             "Unable to restart auto_core.exe"
         );
 
         return;
     }
 
-    auto_core.logg_and_logg(
+    auto_core.log_and_log(
         "Restarting auto_core.exe at {}",
         ac::clock::get_timestamp_with_seconds()
     );
 
-    close_program();
+    close_program_noninteractive();
     shutdown_logger_component();
     ExitProcess(1);
 }

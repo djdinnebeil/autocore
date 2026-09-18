@@ -209,6 +209,21 @@ namespace ac::pipes {
         return write_pipe_data(pipe.native_handle(), &command, sizeof(command));
     }
 
+    Result<void> send_pipe_command_nowait(Pipe& pipe, int command) {
+        if (!pipe.valid()) {
+            return std::unexpected(Error { ERROR_INVALID_HANDLE });
+        }
+
+        DWORD mode = PIPE_READMODE_BYTE | PIPE_NOWAIT;
+        if (SetNamedPipeHandleState(
+                pipe.native_handle(), &mode, nullptr, nullptr
+            ) == FALSE) {
+            return std::unexpected(Error { GetLastError() });
+        }
+
+        return write_pipe_data(pipe.native_handle(), &command, sizeof(command));
+    }
+
     void CommandDispatcher::set_command(
         int command,
         std::function<void()> action

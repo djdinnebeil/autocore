@@ -183,6 +183,17 @@ export namespace ac::pipes {
     );
 
     /**
+     * \brief Writes one command without waiting for the peer to read.
+     *
+     * Sets `PIPE_NOWAIT` on `pipe` for this write. A write that would block
+     * because the buffer is full fails immediately instead of waiting.
+     */
+    AC_API Result<void> send_pipe_command_nowait(
+        Pipe& pipe,
+        int command
+    );
+
+    /**
      * \brief Writes one length-prefixed byte string to a connected pipe.
      *
      * Empty strings and embedded null bytes are preserved. Messages larger

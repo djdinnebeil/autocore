@@ -27,6 +27,9 @@
     <ClInclude Include="..\src\clock_formatting.hpp">
       <Filter>Tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\components_list_detail.hpp">
+      <Filter>Tests</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\core_config_detail.hpp">
       <Filter>Tests</Filter>
     </ClInclude>

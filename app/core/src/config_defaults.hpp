@@ -1,6 +1,6 @@
 /**
  * \file config_defaults.hpp
- * \brief Portable default bytes for live INI files.
+ * \brief Portable default bytes for live config files.
  *
  * Tracked files under `defaults/` must match these strings. Auto Core writes
  * a missing live file from these bytes and never reads repo `defaults/`.
@@ -18,8 +18,21 @@ namespace ac::config::detail {
     inline constexpr std::string_view logger_ini =
         "[logger]\n"
         "directory = logs\n"
-        "enabled = true\n"
         "write_to_console = false\n";
+
+    inline constexpr std::string_view components_list =
+        "# Components are enabled when listed; append \"off\" to disable.\n"
+        "[components]\n"
+        "logger\n"
+        "taskbar\n"
+        "journal\n"
+        "itunes\n"
+        "spotify\n"
+        "wake\n"
+        "writer\n"
+        "server\n"
+        "dash\n"
+        "slash\n";
 
     inline constexpr std::string_view server_ini =
         "[server]\n"
@@ -29,6 +42,11 @@ namespace ac::config::detail {
     inline constexpr std::string_view crash_recovery_ini =
         "[dialog]\n"
         "default_response = no\n";
+
+    inline constexpr std::string_view shutdown_ini =
+        "[shutdown]\n"
+        "delayed_shutdown_prompt = popup\n"
+        "shutdown_timeout_ms = 5000\n";
 
     inline constexpr std::string_view itunes_ini =
         "[itunes]\n"

@@ -24,7 +24,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared">
-    <Import Project="..\..\build\AutoCore.props" />
+    <Import Project="..\..\..\msbuild\AutoCore.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -71,6 +71,7 @@
     <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\shared\protocols\taskbar_config_protocol.ixx" />
     <ClCompile Include="..\..\shared\protocols\taskbar_protocol.ixx" />
+    <ClCompile Include="..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="taskbar_commands.ixx" />
     <ClCompile Include="taskbar_commands.cxx" />
     <ClCompile Include="taskbar_logging.ixx" />

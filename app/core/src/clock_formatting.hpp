@@ -29,6 +29,7 @@ namespace ac::clock::detail {
         int hour;
         int minute;
         int second;
+        int millisecond;
     };
 
     /**
@@ -48,6 +49,9 @@ namespace ac::clock::detail {
      * \throws std::out_of_range if a clock field is outside its valid range.
      */
     std::string format_timestamp_with_seconds(const LocalTime& time);
+
+    /** \brief Formats local time as `HH:MM:SS.mmm`. */
+    std::string format_timestamp_with_milliseconds(const LocalTime& time);
 
     /**
      * \brief Formats local time using next-day rollover notation.

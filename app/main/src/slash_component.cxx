@@ -70,7 +70,7 @@ std::function<void()> slash_component_command(
     const ac::protocol::slash::CommandName command
 ) {
     return [name = std::string {command.name}] {
-        auto_core.logg_and_logg(
+        auto_core.log_and_log(
             "Starting slash_ac.exe command: {}",
             name
         );

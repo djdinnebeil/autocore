@@ -31,7 +31,7 @@ void itunes_client::invoke_player_method(const wchar_t* method_name) {
         });
     }
     catch (const std::exception& exception) {
-        itunes_component.logg_and_print(
+        itunes_component.log_and_print(
             "Failed to dispatch iTunes playback command: {}",
             exception.what()
         );

@@ -25,6 +25,7 @@ namespace ac::error {
                 GetLocalTime(&time);
 
                 stream
+                    << '['
                     << std::setfill('0')
                     << std::setw(4) << time.wYear << '-'
                     << std::setw(2) << time.wMonth << '-'
@@ -32,7 +33,9 @@ namespace ac::error {
                     << std::setw(2) << time.wHour << ':'
                     << std::setw(2) << time.wMinute << ':'
                     << std::setw(2) << time.wSecond
-                    << " | "
+                    << '.'
+                    << std::setw(3) << time.wMilliseconds
+                    << "] "
                     << message
                     << '\n';
 

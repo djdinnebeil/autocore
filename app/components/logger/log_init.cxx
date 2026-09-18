@@ -8,6 +8,7 @@ import auto_core.core.logging.protocol;
 
 void log_init() {
     const ac::logging::Event session_event {
+        .timestamp = ac::clock::get_log_timestamp(),
         .component = "logger",
         .message = std::format(
             "Main log session started at {}",
@@ -18,9 +19,10 @@ void log_init() {
 
     write_to_main_log(session_event);
 
-    logger_component.logg("logger_ac.exe started");
+    logger_component.log("logger_ac.exe started");
 
     const ac::logging::Event start_event {
+        .timestamp = ac::clock::get_log_timestamp(),
         .component = "logger",
         .message = "logger_ac.exe started",
         .newline = true

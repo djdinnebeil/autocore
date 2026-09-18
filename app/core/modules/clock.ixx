@@ -18,13 +18,15 @@ export namespace ac::clock {
     /**
      * \brief Local date and time strings derived from one clock snapshot.
      *
-     * `date_iso` uses `YYYY-MM-DD`, `timestamp` uses `HH:MM`, and
-     * `timestamp_with_seconds` uses `HH:MM:SS`.
+     * `date_iso` uses `YYYY-MM-DD`, `timestamp` uses `HH:MM`,
+     * `timestamp_with_seconds` uses `HH:MM:SS`, and
+     * `timestamp_with_milliseconds` uses `HH:MM:SS.mmm`.
      */
     struct DateTime {
         std::string date_iso;
         std::string timestamp;
         std::string timestamp_with_seconds;
+        std::string timestamp_with_milliseconds;
     };
 
     /**
@@ -38,6 +40,12 @@ export namespace ac::clock {
      */
     [[nodiscard]]
     AC_API std::string format_datetime(const DateTime& datetime);
+
+    /**
+     * \brief Formats a logging timestamp as `YYYY-MM-DD HH:MM:SS.mmm`.
+     */
+    [[nodiscard]]
+    AC_API std::string format_log_timestamp(const DateTime& datetime);
 
     /**
      * \brief Returns the current local date and time as
@@ -59,6 +67,19 @@ export namespace ac::clock {
      */
     [[nodiscard]]
     AC_API std::string get_timestamp_with_seconds();
+
+    /**
+     * \brief Returns the current local time as `HH:MM:SS.mmm`.
+     */
+    [[nodiscard]]
+    AC_API std::string get_timestamp_with_milliseconds();
+
+    /**
+     * \brief Returns the current local logging timestamp as
+     * `YYYY-MM-DD HH:MM:SS.mmm` from one clock snapshot.
+     */
+    [[nodiscard]]
+    AC_API std::string get_log_timestamp();
 
     /**
      * \brief Returns the current local time using extended-day notation.

@@ -23,7 +23,8 @@ namespace {
             .day_of_week = time.wDayOfWeek,
             .hour = time.wHour,
             .minute = time.wMinute,
-            .second = time.wSecond
+            .second = time.wSecond,
+            .millisecond = time.wMilliseconds
         };
     }
 
@@ -38,7 +39,9 @@ namespace ac::clock {
             .date_iso = detail::format_date_iso(time),
             .timestamp = detail::format_timestamp(time),
             .timestamp_with_seconds =
-                detail::format_timestamp_with_seconds(time)
+                detail::format_timestamp_with_seconds(time),
+            .timestamp_with_milliseconds =
+                detail::format_timestamp_with_milliseconds(time)
         };
     }
 
@@ -47,6 +50,14 @@ namespace ac::clock {
             "{} at {}",
             datetime.date_iso,
             datetime.timestamp_with_seconds
+        );
+    }
+
+    std::string format_log_timestamp(const DateTime& datetime) {
+        return std::format(
+            "{} {}",
+            datetime.date_iso,
+            datetime.timestamp_with_milliseconds
         );
     }
 
@@ -60,6 +71,14 @@ namespace ac::clock {
 
     std::string get_timestamp_with_seconds() {
         return detail::format_timestamp_with_seconds(get_local_time());
+    }
+
+    std::string get_timestamp_with_milliseconds() {
+        return detail::format_timestamp_with_milliseconds(get_local_time());
+    }
+
+    std::string get_log_timestamp() {
+        return format_log_timestamp(get_local_datetime());
     }
 
     std::string get_extended_timestamp(const int day_rollover_hour) {

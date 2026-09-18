@@ -57,7 +57,7 @@ bool keyboard_input::process_key_event(const MSG& message) {
     const key_codes::Code key_code =
         static_cast<key_codes::Code>(message.lParam);
 
-    auto_core.logg_and_logg("key_code = {}", key_code);
+    auto_core.log_and_log("key_code = {}", key_code);
 
     if (taskbar.switch_set) {
         taskbar.switch_windows(key_code);

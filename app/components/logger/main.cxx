@@ -1,4 +1,5 @@
 import std;
+import auto_core.core.clock;
 import auto_core.core.pipes;
 import auto_core.core.logging.protocol;
 import logger_state;
@@ -52,11 +53,12 @@ namespace {
 
             const auto event = ac::logging::decode(*data);
             if (!event) {
-                logger_component.logg("Invalid logger protocol message");
+                logger_component.log("Invalid logger protocol message");
                 break;
             }
 
             if (event->type == ac::logging::EventType::shutdown) {
+                shutdown_main_log(*event);
                 logger_shutdown_requested.store(true);
                 wake_logger_server();
                 break;
@@ -81,7 +83,7 @@ int main() {
         );
 
         if (!pipe_result) {
-            logger_component.logg_and_print(
+            logger_component.log_and_print(
                 "Failed to create logger pipe. Error: {}",
                 pipe_result.error().system_error
             );
@@ -90,7 +92,7 @@ int main() {
 
         ac::pipes::Pipe logger_pipe = std::move(*pipe_result);
 
-        logger_component.logg(
+        logger_component.log(
             "Waiting for logger client connection..."
         );
 
@@ -107,10 +109,11 @@ int main() {
 
                 std::string error_msg = std::format("Failed to connect logger client. Error: {}", error);
 
-                logger_component.logg(error_msg);
+                logger_component.log(error_msg);
                 std::cerr << error_msg << std::endl;
 
                 const ac::logging::Event connection_error {
+                    .timestamp = ac::clock::get_log_timestamp(),
                     .component = "logger",
                     .message = error_msg,
                     .newline = true
@@ -127,7 +130,7 @@ int main() {
             break;
         }
 
-        logger_component.logg(
+        logger_component.log(
             "Logger client connected"
         );
 
@@ -149,12 +152,6 @@ int main() {
         Sleep(10);
     }
 
-    const ac::logging::Event terminated_event {
-        .component = "logger",
-        .message = "logger_ac.exe has now terminated\n***",
-        .newline = true
-    };
-    logger_component.logg("logger_ac.exe has now terminated");
-    write_to_main_log(terminated_event);
+    logger_component.log("logger_ac.exe has now terminated");
     return 0;
 }

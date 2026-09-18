@@ -10,6 +10,7 @@ Index of Auto Core developer documentation.
 | [Strategy](STRATEGY.md) | Goals, locked decisions, agent git |
 | [Configuration](configuration.md) | `dist/config`, `defaults/` samples, keymap, logging, local runtime data |
 | [Development](development.md) | Shared protocols, runtime commands, adding a component |
+| [Adding a new component](new-component.md) | File → New → Project, portable `AutoCore.props`, live `components.list` |
 | [Main](main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
 | [Modules](modules.md) | C++23 module catalog |
 
@@ -32,9 +33,9 @@ Product follow-ups are in [TODO.md](TODO.md). DLL-specific deferred work is in [
 
 ## Tests
 
-- Core: [`app/core/vs/auto_core_tests.vcxproj`](../app/core/vs/auto_core_tests.vcxproj) → `out\obj\auto_core_tests\auto_core_tests.exe`
+- Core: [`app/core/vs/auto_core_tests.vcxproj`](../app/core/vs/auto_core_tests.vcxproj) → `obj\auto_core_tests\auto_core_tests.exe`
 - Main: no unit-test project; diagnostic keymap names live in `auto_core.main.test_commands`
-- iTunes: [`app/components/itunes/TESTING.md`](../app/components/itunes/TESTING.md) → `out\obj\itunes_tests\itunes_tests.exe "~[live]"`
-- Spotify: [`app/components/spotify/TESTING.md`](../app/components/spotify/TESTING.md) → `out\obj\spotify_tests\spotify_tests.exe "~[live]"`
+- iTunes: [`app/components/itunes/TESTING.md`](../app/components/itunes/TESTING.md) → `obj\itunes_tests\itunes_tests.exe "~[live]"`
+- Spotify: [`app/components/spotify/TESTING.md`](../app/components/spotify/TESTING.md) → `obj\spotify_tests\spotify_tests.exe "~[live]"`
 
 See [Building](building.md) and [CONTRIBUTING.md](../CONTRIBUTING.md) for the MSBuild commands.

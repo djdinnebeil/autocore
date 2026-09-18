@@ -17,14 +17,14 @@ the only source for a module.
 | `auto_core.core.component:console_writer` | [`console_writer.ixx`](../app/core/modules/console_writer.ixx) | Internal stdout/stderr writer partition |
 | `auto_core.core.component:text_inserter` | [`text_inserter.ixx`](../app/core/modules/text_inserter.ixx) | Internal clipboard insertion partition |
 | `auto_core.core.console` | [`console.ixx`](../app/core/modules/console.ixx) | Console and window activation for prompts |
-| `auto_core.core.config` | [`core_config.ixx`](../app/core/modules/core_config.ixx) | Cached `auto_core.ini` settings; seeds missing `config/*.ini` and `journal/journal_choices.ini` |
+| `auto_core.core.config` | [`core_config.ixx`](../app/core/modules/core_config.ixx) | Cached `auto_core.ini` settings; seeds missing `config/` files and `journal/journal_choices.ini` |
 | `auto_core.core.encoding` | [`encoding.ixx`](../app/core/modules/encoding.ixx) | Strict UTF-8 / UTF-16 conversion |
 | `auto_core.core.error` | [`error.ixx`](../app/core/modules/error.ixx) | Best-effort stderr and `errors/errors.log` reporting |
 | `auto_core.core.formatting` | [`formatting.ixx`](../app/core/modules/formatting.ixx) | UTF-8 `std::format` with wide-text normalization |
 | `auto_core.core.ini` | [`ini.ixx`](../app/core/modules/ini.ixx) | Sectioned INI parse and file read |
 | `auto_core.core.keyboard` | [`keyboard.ixx`](../app/core/modules/keyboard.ixx) | `SendInput` helpers, including `VK_RWIN`+position |
 | `auto_core.core.logging.protocol` | [`log_protocol.ixx`](../app/core/modules/log_protocol.ixx) | Versioned frames for `logger_ac.exe` |
-| `auto_core.core.logging.config` | [`logging_config.ixx`](../app/core/modules/logging_config.ixx) | Cached `logger.ini` settings |
+| `auto_core.core.logging.config` | [`logging_config.ixx`](../app/core/modules/logging_config.ixx) | Cached `logger.ini` settings and `components.list` logger enablement |
 | `auto_core.core.logging.client` | [`main_log_client.ixx`](../app/core/modules/main_log_client.ixx) | Asynchronous component connection to `logger_ac.exe` |
 | `auto_core.core.paths` | [`paths.ixx`](../app/core/modules/paths.ixx) | Process-lifetime paths from the executable directory |
 | `auto_core.core.pipes` | [`pipes.ixx`](../app/core/modules/pipes.ixx) | Named-pipe handles, string frames, and command dispatch |
@@ -38,16 +38,10 @@ Process lifetime for `auto_core.exe` is [main.md](main.md).
 | Module | Source | Role |
 | --- | --- | --- |
 | `auto_core.main.application` | [`main_component.ixx`](../app/main/modules/main_component.ixx) | Main `Component`, process launch, F-lock, shutdown |
-| `auto_core.main.components` | [`ac_components.ixx`](../app/main/modules/ac_components.ixx) | Aggregates Main-side component sessions |
+| `auto_core.main.components` | [`ac_components.ixx`](../app/main/modules/ac_components.ixx) | Generic host: open `components.list`, hello, invoke, shutdown |
 | `auto_core.main.components.dash` | [`dash_component.ixx`](../app/main/modules/dash_component.ixx) | Launches `dash_ac.exe` |
-| `auto_core.main.components.itunes` | [`itunes_component.ixx`](../app/main/modules/itunes_component.ixx) | Main-side iTunes pipe and command thunks |
-| `auto_core.main.components.journal` | [`journal_component.ixx`](../app/main/modules/journal_component.ixx) | Main-side journal pipe and command thunks |
-| `auto_core.main.components.server` | [`server_component.ixx`](../app/main/modules/server_component.ixx) | Starts and stops `server_ac.exe` |
 | `auto_core.main.components.slash` | [`slash_component.ixx`](../app/main/modules/slash_component.ixx) | Launches Slash recycle-bin commands |
-| `auto_core.main.components.spotify` | [`spotify_component.ixx`](../app/main/modules/spotify_component.ixx) | Main-side Spotify pipe and command thunks |
-| `auto_core.main.components.taskbar` | [`taskbar_component.ixx`](../app/main/modules/taskbar_component.ixx) | Main-side `taskbar_ac.exe` lifecycle and invoke |
-| `auto_core.main.components.wake` | [`wake_component.ixx`](../app/main/modules/wake_component.ixx) | Main-side wake pipe lifecycle |
-| `auto_core.main.components.writer` | [`writer_component.ixx`](../app/main/modules/writer_component.ixx) | Main-side writer pipe and command thunks |
+| `auto_core.main.components.taskbar` | [`taskbar_component.ixx`](../app/main/modules/taskbar_component.ixx) | Main-local taskbar launches and reserved control names |
 | `auto_core.main.crash_recovery` | [`crash_recovery.ixx`](../app/main/modules/crash_recovery.ixx) | Previous-crash dialog and restart handler |
 | `auto_core.main.key_codes` | [`key_codes.ixx`](../app/main/modules/key_codes.ixx) | Normalized virtual-key codes and `bindings.ini` names (`keys`, `resolve`) |
 | `auto_core.main.keyboard_input` | [`keyboard_input.ixx`](../app/main/modules/keyboard_input.ixx) | Low-level hook and main-thread dispatch |
@@ -64,14 +58,15 @@ Process lifetime for `auto_core.exe` is [main.md](main.md).
 | Module | Source | Role |
 | --- | --- | --- |
 | `command_registry` | [`command_registry.ixx`](../app/shared/command_registry.ixx) | Name and factory lookup for runtime commands |
-| `itunes_protocol` | [`itunes_protocol.ixx`](../app/shared/protocols/itunes_protocol.ixx) | iTunes pipe commands and keymap names |
-| `journal_protocol` | [`journal_protocol.ixx`](../app/shared/protocols/journal_protocol.ixx) | Journal pipe requests and keymap tokens |
+| `component_protocol` | [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx) | Generic `ac.component.v1` hello, invoke, and shutdown |
+| `itunes_protocol` | [`itunes_protocol.ixx`](../app/shared/protocols/itunes_protocol.ixx) | iTunes command names used by `itunes_ac.exe` |
+| `journal_protocol` | [`journal_protocol.ixx`](../app/shared/protocols/journal_protocol.ixx) | Journal command tokens used by `journal_ac.exe` |
 | `slash_protocol` | [`slash_protocol.ixx`](../app/shared/protocols/slash_protocol.ixx) | Slash keymap command names |
-| `spotify_protocol` | [`spotify_protocol.ixx`](../app/shared/protocols/spotify_protocol.ixx) | Spotify pipe commands and keymap names |
+| `spotify_protocol` | [`spotify_protocol.ixx`](../app/shared/protocols/spotify_protocol.ixx) | Spotify command names used by `spotify_ac.exe` |
 | `taskbar_config_protocol` | [`taskbar_config_protocol.ixx`](../app/shared/protocols/taskbar_config_protocol.ixx) | Discovery pipe for `taskbar_config.exe` |
-| `taskbar_protocol` | [`taskbar_protocol.ixx`](../app/shared/protocols/taskbar_protocol.ixx) | Main-to-`taskbar_ac.exe` control pipe |
-| `wake_protocol` | [`wake_protocol.ixx`](../app/shared/protocols/wake_protocol.ixx) | Wake pipe commands |
-| `writer_protocol` | [`writer_protocol.ixx`](../app/shared/protocols/writer_protocol.ixx) | Writer pipe requests and keymap names |
+| `taskbar_protocol` | [`taskbar_protocol.ixx`](../app/shared/protocols/taskbar_protocol.ixx) | Reserved Main-local taskbar command names |
+| `wake_protocol` | [`wake_protocol.ixx`](../app/shared/protocols/wake_protocol.ixx) | Legacy wake command names |
+| `writer_protocol` | [`writer_protocol.ixx`](../app/shared/protocols/writer_protocol.ixx) | Writer command names used by `writer_ac.exe` |
 
 ## Components (`app/components`)
 

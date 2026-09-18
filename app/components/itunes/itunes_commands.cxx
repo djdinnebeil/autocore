@@ -16,7 +16,7 @@ import <Windows.h>;
 using std::scoped_lock;
 
 void print_next_up_song_list() {
-    itunes_component.logg_and_logg("print_next_up_song_list()");
+    itunes_component.log_and_log("print_next_up_song_list()");
 
     auto clipboard_text = itunes_component.get_clipboard_text();
 
@@ -46,24 +46,24 @@ void print_next_up_song_list() {
 }
 
 void itunes_play_pause() {
-    itunes_component.logg_and_logg("itunes_play_pause()");
+    itunes_component.log_and_log("itunes_play_pause()");
     itunes::runtime::play_pause(ac_itunes);
 }
 
 void itunes_prev_song() {
-    itunes_component.logg_and_logg("itunes_prev_song()");
+    itunes_component.log_and_log("itunes_prev_song()");
     itunes::runtime::previous_song(ac_itunes);
 }
 
 void itunes_stop_song() {
-    itunes_component.logg_and_logg("itunes_stop_song()");
+    itunes_component.log_and_log("itunes_stop_song()");
     std::wstring current_track =
         itunes::runtime::stop_song(ac_itunes) + L"\n\n";
     itunes_component.insert_text_replacing_clipboard(current_track);
 }
 
 void print_itunes_songs() {
-    itunes_component.logg_and_logg("print_itunes_songs()");
+    itunes_component.log_and_log("print_itunes_songs()");
 
     ac_itunes.get_current_track();
 

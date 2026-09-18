@@ -12,7 +12,7 @@
 import auto_core.core.pipes;
 import command_registry;
 import itunes_pipe;
-import itunes_protocol;
+import component_protocol;
 
 namespace {
 
@@ -81,56 +81,13 @@ namespace {
         }
     };
 
-    void send_command(ac::pipes::Pipe& pipe, ac::protocol::itunes::Command command) {
+    void send_command(ac::pipes::Pipe& pipe, ac::protocol::component::Request command) {
         REQUIRE(ac::pipes::send_pipe_command(
-            pipe, ac::protocol::itunes::to_wire(command)
+            pipe, ac::protocol::component::to_wire(command)
         ));
     }
 
 } // namespace
-
-TEST_CASE(
-    "iTunes numeric commands dispatch over a named pipe",
-    "[itunes][pipe][windows-integration]"
-) {
-    auto pipes = connect_pipe_pair();
-    command_registry::Registry registry;
-    ac::pipes::CommandDispatcher dispatcher;
-    recorded_actions actions;
-    bool protocol_failed = false;
-    register_itunes_pipe_commands(
-        dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
-    );
-
-    using ac::protocol::itunes::Command;
-    for (const auto command : {
-        Command::play_pause,
-        Command::next_song,
-        Command::print_songs,
-        Command::print_next_up,
-        Command::update_component,
-        Command::previous_song,
-        Command::stop_song,
-        Command::remove_song,
-        Command::shutdown
-    }) {
-        send_command(pipes.client, command);
-    }
-
-    REQUIRE(dispatcher.process(pipes.server));
-    CHECK_FALSE(protocol_failed);
-    CHECK(actions.invoked == std::vector<std::string> {
-        "play_pause",
-        "next_song",
-        "print_songs",
-        "print_next_up",
-        "update_component",
-        "previous_song",
-        "stop_song",
-        "remove_song",
-        "shutdown"
-    });
-}
 
 TEST_CASE(
     "iTunes named commands dispatch their string payload over a named pipe",
@@ -146,9 +103,9 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::itunes::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     REQUIRE(ac::pipes::send_string(pipes.client, "itunes_test_named"));
-    send_command(pipes.client, ac::protocol::itunes::Command::shutdown);
+    send_command(pipes.client, ac::protocol::component::Request::shutdown);
 
     REQUIRE(dispatcher.process(pipes.server));
     CHECK_FALSE(protocol_failed);
@@ -168,9 +125,9 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::itunes::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     REQUIRE(ac::pipes::send_string(pipes.client, "missing_itunes_command"));
-    send_command(pipes.client, ac::protocol::itunes::Command::shutdown);
+    send_command(pipes.client, ac::protocol::component::Request::shutdown);
 
     REQUIRE(dispatcher.process(pipes.server));
     CHECK_FALSE(protocol_failed);
@@ -191,11 +148,60 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::itunes::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     pipes.client.reset();
 
     REQUIRE(dispatcher.process(pipes.server));
     CHECK(protocol_failed);
     CHECK(dispatcher.stop_requested());
     CHECK(actions.invoked.empty());
+}
+
+TEST_CASE(
+    "Component hello carries termination policy without changing request IDs",
+    "[component-protocol][unit]"
+) {
+    using ac::protocol::component::Request;
+    using ac::protocol::component::TerminationPolicy;
+
+    CHECK(ac::protocol::component::to_wire(Request::invoke) == 0);
+    CHECK(ac::protocol::component::to_wire(Request::shutdown) == 1);
+
+    const auto graceful = ac::protocol::component::parse_hello(
+        ac::protocol::component::make_hello({"test_command"})
+    );
+    REQUIRE(graceful);
+    CHECK(graceful->termination_policy == TerminationPolicy::graceful);
+    REQUIRE(graceful->commands.size() == 1);
+    CHECK(graceful->commands.front().name == "test_command");
+
+    const auto force_allowed = ac::protocol::component::parse_hello(
+        ac::protocol::component::make_hello(
+            {},
+            TerminationPolicy::force_allowed
+        )
+    );
+    REQUIRE(force_allowed);
+    CHECK(force_allowed->termination_policy ==
+        TerminationPolicy::force_allowed);
+}
+
+TEST_CASE(
+    "Missing or invalid termination policy defaults safely to graceful",
+    "[component-protocol][unit]"
+) {
+    using ac::protocol::component::TerminationPolicy;
+
+    const auto legacy = ac::protocol::component::parse_hello(
+        "ac.component.v1\nlegacy_command\n"
+    );
+    REQUIRE(legacy);
+    CHECK(legacy->termination_policy == TerminationPolicy::graceful);
+
+    const auto invalid = ac::protocol::component::parse_hello(
+        "ac.component.v1\ntermination_policy = unsafe\n"
+    );
+    REQUIRE(invalid);
+    CHECK(invalid->termination_policy == TerminationPolicy::graceful);
+    REQUIRE(invalid->skipped_lines.size() == 1);
 }

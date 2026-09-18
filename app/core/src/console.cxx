@@ -5,6 +5,7 @@ import auto_core.core.keyboard;
 import auto_core.taskbar;
 import <Windows.h>;
 import <conio.h>;
+import <cstdio>;
 
 namespace ac::console {
 
@@ -120,6 +121,36 @@ namespace ac::console {
             (void)FlashWindowEx(&information);
         }
 
+        bool bind_console_streams() noexcept {
+            FILE* stream = nullptr;
+            (void)freopen_s(&stream, "CONIN$", "r", stdin);
+            (void)freopen_s(&stream, "CONOUT$", "w", stdout);
+            (void)freopen_s(&stream, "CONOUT$", "w", stderr);
+            std::cin.clear();
+            std::cout.clear();
+            std::cerr.clear();
+
+            const HWND attached = GetConsoleWindow();
+            return attached != nullptr && IsWindow(attached);
+        }
+
+        bool attach_parent_console() noexcept {
+            const HWND existing = GetConsoleWindow();
+            if (existing != nullptr && IsWindow(existing)) {
+                return true;
+            }
+
+            if (AttachConsole(ATTACH_PARENT_PROCESS) != FALSE) {
+                return bind_console_streams();
+            }
+
+            if (AllocConsole() == FALSE) {
+                return false;
+            }
+
+            return bind_console_streams();
+        }
+
     }
 
     std::string_view error_message(const Error error) noexcept {
@@ -144,6 +175,10 @@ namespace ac::console {
     }
 
     std::expected<void, Error> activate() noexcept {
+        if (!attach_parent_console()) {
+            return std::unexpected(Error::console_unavailable);
+        }
+
         const HWND console_window = GetConsoleWindow();
 
         if (console_window == nullptr || !IsWindow(console_window)) {
@@ -206,6 +241,10 @@ namespace ac::console {
     std::expected<WindowHandle, Error>
         focus_for_prompt_via_winkey() {
         const HWND previous_window = GetForegroundWindow();
+        if (!attach_parent_console()) {
+            return std::unexpected(Error::console_unavailable);
+        }
+
         const HWND console_window = GetConsoleWindow();
 
         if (console_window == nullptr || !IsWindow(console_window)) {

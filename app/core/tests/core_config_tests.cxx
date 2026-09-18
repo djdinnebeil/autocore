@@ -45,13 +45,29 @@ TEST_CASE("Portable config defaults match the documented keys", "[core-config][u
     CHECK(detail::auto_core_ini.find("warn_without_winkey_mapping = true") !=
         std::string_view::npos);
     CHECK(detail::auto_core_ini.find("program_title") == std::string_view::npos);
-    CHECK(detail::logger_ini.find("enabled = true") != std::string_view::npos);
+    CHECK(detail::logger_ini.find("enabled") == std::string_view::npos);
     CHECK(detail::logger_ini.find("directory = logs") != std::string_view::npos);
     CHECK(detail::logger_ini.find("write_to_console = false") !=
         std::string_view::npos);
+    CHECK(detail::components_list.find("[components]") !=
+        std::string_view::npos);
+    CHECK(detail::components_list.find("logger\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("taskbar\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("journal\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("itunes\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("spotify\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("wake\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("writer\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("server\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("dash\n") != std::string_view::npos);
+    CHECK(detail::components_list.find("slash\n") != std::string_view::npos);
     CHECK(detail::server_ini.find("port = 8585") != std::string_view::npos);
     CHECK(detail::server_ini.find("document_root = server") != std::string_view::npos);
     CHECK(detail::crash_recovery_ini.find("default_response = no") !=
+        std::string_view::npos);
+    CHECK(detail::shutdown_ini.find("delayed_shutdown_prompt = popup") !=
+        std::string_view::npos);
+    CHECK(detail::shutdown_ini.find("shutdown_timeout_ms = 5000") !=
         std::string_view::npos);
     CHECK(detail::itunes_ini.find("auto_start = false") !=
         std::string_view::npos);
@@ -130,9 +146,12 @@ TEST_CASE("Tracked defaults/ files match portable config defaults", "[core-confi
     CHECK(read_default_ini(config / "auto_core.ini") ==
         detail::auto_core_ini);
     CHECK(read_default_ini(config / "logger.ini") == detail::logger_ini);
+    CHECK(read_default_ini(config / "components.list") ==
+        detail::components_list);
     CHECK(read_default_ini(config / "server.ini") == detail::server_ini);
     CHECK(read_default_ini(config / "crash_recovery.ini") ==
         detail::crash_recovery_ini);
+    CHECK(read_default_ini(config / "shutdown.ini") == detail::shutdown_ini);
     CHECK(read_default_ini(config / "itunes.ini") == detail::itunes_ini);
     CHECK(read_default_ini(config / "journal.ini") ==
         detail::journal_ini);

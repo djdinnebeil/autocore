@@ -8,13 +8,13 @@ From the repository root, build and run the tests with:
 
 ```powershell
 msbuild app\components\itunes\itunes_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
-.\out\obj\itunes_tests\itunes_tests.exe "~[live]"
+.\obj\itunes_tests\itunes_tests.exe "~[live]"
 ```
 
 Run only the fast iTunes unit tests with:
 
 ```powershell
-.\out\obj\itunes_tests\itunes_tests.exe "[itunes][unit]"
+.\obj\itunes_tests\itunes_tests.exe "[itunes][unit]"
 ```
 
 The default suite also includes `[windows-integration]` tests. These create

@@ -8,13 +8,13 @@ From the repository root, build and run the tests with:
 
 ```powershell
 msbuild app\components\spotify\spotify_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
-.\out\obj\spotify_tests\spotify_tests.exe "~[live]"
+.\obj\spotify_tests\spotify_tests.exe "~[live]"
 ```
 
 Run only the fast contract tests with:
 
 ```powershell
-.\out\obj\spotify_tests\spotify_tests.exe "[spotify][unit]"
+.\obj\spotify_tests\spotify_tests.exe "[spotify][unit]"
 ```
 
 The default suite also includes `[windows-integration]` tests. These create

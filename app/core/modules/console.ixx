@@ -2,8 +2,9 @@
  * \file console.ixx
  * \brief Provides access to the console shared by Auto Core components.
  *
- * Components launched normally by Auto Core inherit its console. Interactive
- * prompts clear pending input before activating that attached console.
+ * Generic `{name}_ac.exe` children inherit Auto Core's console so `print()`
+ * shares `std::cout`. `logger_ac.exe` starts without a window. Interactive
+ * prompts clear pending input and activate that console.
  */
 module;
 
@@ -44,10 +45,11 @@ export namespace ac::console {
     AC_API WindowHandle window() noexcept;
 
     /**
-     * \brief Activates and verifies the console attached to this process.
+     * \brief Activates and verifies the Auto Core console.
      *
-     * Uses only direct Windows activation mechanisms. Application-specific
-     * fallbacks, such as taskbar shortcuts, belong to the caller.
+     * Attaches to the parent console when this process has none. Uses only
+     * direct Windows activation mechanisms. Application-specific fallbacks,
+     * such as taskbar shortcuts, belong to the caller.
      *
      * \return Success, `console_unavailable`, or `activation_failed`.
      */
@@ -64,23 +66,26 @@ export namespace ac::console {
         activate_window(WindowHandle target_window) noexcept;
 
     /**
-     * \brief Clears pending input, activates the attached console, and returns
-     * the window that was foreground before the prompt began.
+     * \brief Clears pending input, activates the Auto Core console, and
+     * returns the window that was foreground before the prompt began.
+     *
+     * Attaches to the parent console when this process has none.
      * \return The previously foreground window, or a console activation error.
      */
     [[nodiscard]]
     AC_API std::expected<WindowHandle, Error> focus_for_prompt();
 
     /**
-     * \brief Focuses the attached console through Win+number when available.
+     * \brief Focuses the Auto Core console through Win+number when available.
      *
-     * Uses the process-local `auto_core` taskbar slot when a snapshot has
-     * one. No snapshot, or a snapshot with no `auto_core` mapping, uses
-     * direct activation. If Win+number cannot focus the console,
-     * `activate()` is used; this function does not return
-     * `winkey_activation_failed`. The current foreground window is returned
-     * for `restore_focus()`. This is not a substitute for `taskbar_ac.exe`
-     * snapshot authority.
+     * Attaches to the parent console when this process has none, or allocates
+     * a console if that attach fails. Uses the
+     * process-local `auto_core` taskbar slot when a snapshot has one. No
+     * snapshot, or a snapshot with no `auto_core` mapping, uses direct
+     * activation. If Win+number cannot focus the console, `activate()` is
+     * used; this function does not return `winkey_activation_failed`. The
+     * current foreground window is returned for `restore_focus()`. This is
+     * not a substitute for `taskbar_ac.exe` snapshot authority.
      */
     [[nodiscard]]
     AC_API std::expected<WindowHandle, Error>

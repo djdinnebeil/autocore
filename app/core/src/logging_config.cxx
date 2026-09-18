@@ -1,10 +1,11 @@
 module;
 
+#include "components_list_detail.hpp"
 #include "logging_config_detail.hpp"
 
 /**
  * \file logging_config.cxx
- * \brief Loads logger.ini for the shared logging subsystem.
+ * \brief Loads logger.ini and components.list for the shared logging subsystem.
  */
 module auto_core.core.logging.config;
 
@@ -18,7 +19,7 @@ namespace ac::logging::config {
 
     namespace {
         struct Data {
-            bool enabled = true;
+            bool enabled = false;
             bool write_to_console = false;
             std::filesystem::path directory =
                 ac::paths::log_directory();
@@ -29,11 +30,22 @@ namespace ac::logging::config {
             Data() {
                 ac::config::seed_missing_config_files();
 
+                const auto list = ac::config::components_list::load(
+                    ac::paths::config_directory() / "components.list"
+                );
+                enabled = ac::config::components_list::special_enabled(
+                    list,
+                    "logger"
+                );
+
                 const auto document = ac::ini::read(
                     ac::paths::config_directory() / "logger.ini"
                 );
                 if (!document) {
                     report += "logger.ini unavailable; using defaults\n";
+                    report += enabled
+                        ? "logger enabled in components.list\n"
+                        : "logger not enabled in components.list\n";
                     return;
                 }
 
@@ -41,7 +53,6 @@ namespace ac::logging::config {
                     document->find("logger", "directory");
                 const detail::Settings resolved = detail::resolve(
                     {
-                        .enabled = document->find("logger", "enabled"),
                         .write_to_console = document->find(
                             "logger", "write_to_console"
                         ),
@@ -54,11 +65,13 @@ namespace ac::logging::config {
                     ac::paths::log_directory(),
                     ac::paths::executable_directory()
                 );
-                enabled = resolved.enabled;
                 write_to_console = resolved.write_to_console;
                 directory = resolved.directory;
                 components_directory = resolved.components_directory;
                 report = resolved.report;
+                report += enabled
+                    ? "logger enabled in components.list\n"
+                    : "logger not enabled in components.list\n";
             }
         };
 

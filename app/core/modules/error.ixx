@@ -22,7 +22,7 @@ export namespace ac::error {
      * \brief Reports an error message without formatting it.
      *
      * The message is written verbatim to `std::cerr` followed by a newline.
-     * A record in `YYYY-MM-DD HH:MM:SS | message` form is also appended to
+     * A record in `[YYYY-MM-DD HH:MM:SS.mmm] message` form is also appended to
      * `errors/errors.log` when the file is available. The timestamp is local
      * wall clock (`GetLocalTime`), not `auto_core.core.clock`, so error logs
      * do not use extended-day hours. If file logging fails, stderr is
@@ -76,4 +76,3 @@ export namespace ac::error {
     }
 
 } // namespace ac::error
-

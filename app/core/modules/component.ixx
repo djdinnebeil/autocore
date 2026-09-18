@@ -82,39 +82,39 @@ export namespace ac {
         /**
          * \name Output convenience methods
          *
-         * `logg` writes to the component log. `logg_and_logg` also queues for
-         * the central logger. `logg_and_print` and `print` share the
+         * `log` writes to the component log. `log_and_log` also queues for
+         * the central logger. `log_and_print` and `print` share the
          * `component_main_and_console` route (log, central logger, and
          * stdout). Names containing `nl` suppress the trailing newline.
          * Narrow, wide, single-character, and formatted UTF-8 overloads are
          * provided. Formatting failures are reported to every destination.
          * \{
          */
-        void logg(std::string_view message) { write(message, OutputRoute::component); }
-        void loggnl(std::string_view message) { write(message, OutputRoute::component, false); }
-        void logg_and_logg(std::string_view message) { write(message, OutputRoute::component_and_main); }
-        void loggnl_and_loggnl(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
-        void logg_and_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
-        void loggnl_and_printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void log(std::string_view message) { write(message, OutputRoute::component); }
+        void lognl(std::string_view message) { write(message, OutputRoute::component, false); }
+        void log_and_log(std::string_view message) { write(message, OutputRoute::component_and_main); }
+        void lognl_and_lognl(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
+        void log_and_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
+        void lognl_and_printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
         void print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
         void printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
 
-        void logg(std::wstring_view message) { write(message, OutputRoute::component); }
-        void loggnl(std::wstring_view message) { write(message, OutputRoute::component, false); }
-        void logg_and_logg(std::wstring_view message) { write(message, OutputRoute::component_and_main); }
-        void loggnl_and_loggnl(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
-        void logg_and_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
-        void loggnl_and_printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void log(std::wstring_view message) { write(message, OutputRoute::component); }
+        void lognl(std::wstring_view message) { write(message, OutputRoute::component, false); }
+        void log_and_log(std::wstring_view message) { write(message, OutputRoute::component_and_main); }
+        void lognl_and_lognl(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
+        void log_and_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
+        void lognl_and_printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
         void print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
         void printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void logg(Character message) { logg(std::basic_string_view<Character> {&message, 1}); }
+        void log(Character message) { log(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void loggnl(Character message) { loggnl(std::basic_string_view<Character> {&message, 1}); }
+        void lognl(Character message) { lognl(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
@@ -125,32 +125,32 @@ export namespace ac {
         void printnl(Character message) { printnl(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename... Args>
-        void logg(const char* format_string, Args&&... args) {
+        void log(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void loggnl(const char* format_string, Args&&... args) {
+        void lognl(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void logg_and_logg(const char* format_string, Args&&... args) {
+        void log_and_log(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_and_main, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void loggnl_and_loggnl(const char* format_string, Args&&... args) {
+        void lognl_and_lognl(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_and_main, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void logg_and_print(const char* format_string, Args&&... args) {
+        void log_and_print(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_main_and_console, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void loggnl_and_printnl(const char* format_string, Args&&... args) {
+        void lognl_and_printnl(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_main_and_console, false, format_string, std::forward<Args>(args)...);
         }
 

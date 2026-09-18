@@ -32,14 +32,14 @@ namespace {
         );
         const auto shell_result = reinterpret_cast<std::intptr_t>(result);
         if (shell_result <= 32) {
-            taskbar_component().logg_and_print(
+            taskbar_component().log_and_print(
                 "Unable to launch {}. ShellExecute error: {}.",
                 display_name,
                 shell_result
             );
             return false;
         }
-        taskbar_component().logg_and_logg(
+        taskbar_component().log_and_log(
             "{}() - launched {} through ShellExecuteW",
             command,
             display_name
@@ -50,7 +50,7 @@ namespace {
 
 void activate_auto_core() {
     if (ac::taskbar::try_activate_native("auto_core")) {
-        taskbar_component().logg_and_logg(
+        taskbar_component().log_and_log(
             "activate_auto_core() - used the current Winkey mapping"
         );
         return;
@@ -58,13 +58,13 @@ void activate_auto_core() {
 
     const auto activated = ac::console::activate();
     if (!activated) {
-        taskbar_component().logg_and_print(
+        taskbar_component().log_and_print(
             "Unable to activate the shared Auto Core console: {}.",
             ac::console::error_message(activated.error())
         );
         return;
     }
-    taskbar_component().logg_and_logg(
+    taskbar_component().log_and_log(
         "activate_auto_core() - activated the shared Auto Core console"
     );
 }
@@ -90,7 +90,7 @@ void launch_gitbash() {
 
 void activate_wordpad() {
     if (ac::taskbar::try_activate_native("wordpad")) {
-        taskbar_component().logg_and_logg(
+        taskbar_component().log_and_log(
             "activate_wordpad() - used the current Winkey mapping"
         );
         return;
@@ -103,7 +103,7 @@ void activate_wordpad() {
 
 void activate_powershell_in_admin() {
     if (ac::taskbar::try_activate_native("powershell_admin")) {
-        taskbar_component().logg_and_logg(
+        taskbar_component().log_and_log(
             "activate_powershell_in_admin() - used the current Winkey mapping"
         );
         return;
@@ -118,14 +118,14 @@ void activate_powershell_in_admin() {
 }
 
 void refresh_taskbar_positions() {
-    taskbar_component().logg_and_logg("refresh_taskbar_positions");
+    taskbar_component().log_and_log("refresh_taskbar_positions");
     if (!ac::taskbar::request_refresh()) {
-        taskbar_component().logg_and_print(
+        taskbar_component().log_and_print(
             "Unable to update Winkey mappings."
         );
         return;
     }
-    taskbar_component().logg_and_print("Winkey mappings updated");
+    taskbar_component().log_and_print("Winkey mappings updated");
 }
 
 command_registry::Registry create_taskbar_command_registry() {

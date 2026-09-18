@@ -269,12 +269,14 @@ namespace ac::config {
             directory / "crash_recovery.ini",
             detail::crash_recovery_ini
         );
+        write_if_missing(directory / "shutdown.ini", detail::shutdown_ini);
         write_if_missing(directory / "itunes.ini", detail::itunes_ini);
         write_if_missing(directory / "journal.ini", detail::journal_ini);
         write_if_missing(directory / "taskbar.ini", detail::taskbar_ini);
         write_if_missing(directory / "keymap.ini", detail::keymap_ini);
         write_if_missing(directory / "spotify.ini", detail::spotify_ini);
         write_if_missing(directory / "writer.ini", detail::writer_ini);
+        write_if_missing(directory / "components.list", detail::components_list);
     }
 
     void seed_missing_journal_choices() {

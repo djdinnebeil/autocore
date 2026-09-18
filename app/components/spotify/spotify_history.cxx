@@ -26,7 +26,7 @@ vs.
 track_spotify_history_update_or_insert
 */
 void track_spotify_history_update_or_insert(const SongMetadata& meta) {
-    spotify_component.logg("track_spotify_history_update_or_insert() called");
+    spotify_component.log("track_spotify_history_update_or_insert() called");
 
     static const std::filesystem::path db_path =
         ac::paths::spotify_directory() / "spotify_history.db";
@@ -37,7 +37,7 @@ void track_spotify_history_update_or_insert(const SongMetadata& meta) {
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_open16(db_path.c_str(), &db) != SQLITE_OK) {
-        spotify_component.logg(
+        spotify_component.log(
             "Error opening database '{}': {}",
             db_path,
             db != nullptr ? sqlite3_errmsg(db) : "unknown SQLite error"
@@ -57,7 +57,7 @@ void track_spotify_history_update_or_insert(const SongMetadata& meta) {
     )sql";
 
     if (sqlite3_prepare_v2(db, select_sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        spotify_component.logg("Error preparing SELECT: {}", sqlite3_errmsg(db));
+        spotify_component.log("Error preparing SELECT: {}", sqlite3_errmsg(db));
         sqlite3_close(db);
         return;
     }
@@ -91,11 +91,11 @@ void track_spotify_history_update_or_insert(const SongMetadata& meta) {
             sqlite3_bind_text(stmt, 2, timestamp.c_str(), -1, SQLITE_STATIC);
             sqlite3_bind_int(stmt, 3, id);
             if (sqlite3_step(stmt) != SQLITE_DONE) {
-                spotify_component.logg("Error updating track: {}", sqlite3_errmsg(db));
+                spotify_component.log("Error updating track: {}", sqlite3_errmsg(db));
             }
         }
         else {
-            spotify_component.logg("Error preparing UPDATE: {}", sqlite3_errmsg(db));
+            spotify_component.log("Error preparing UPDATE: {}", sqlite3_errmsg(db));
         }
     }
     else {
@@ -114,17 +114,17 @@ void track_spotify_history_update_or_insert(const SongMetadata& meta) {
             sqlite3_bind_text(stmt, 5, timestamp.c_str(), -1, SQLITE_STATIC);
             sqlite3_bind_text(stmt, 6, timestamp.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(stmt) != SQLITE_DONE) {
-                spotify_component.logg("Error inserting new track: {}", sqlite3_errmsg(db));
+                spotify_component.log("Error inserting new track: {}", sqlite3_errmsg(db));
             }
         }
         else {
-            spotify_component.logg("Error preparing INSERT: {}", sqlite3_errmsg(db));
+            spotify_component.log("Error preparing INSERT: {}", sqlite3_errmsg(db));
         }
     }
 
     if (stmt) sqlite3_finalize(stmt);
     sqlite3_close(db);
-    spotify_component.logg("track_spotify_history_update_or_insert() finished");
+    spotify_component.log("track_spotify_history_update_or_insert() finished");
 }
 
 /*
@@ -134,7 +134,7 @@ vs.
 track_spotify_history_update_or_insert
 */
 void track_spotify_history(const SongMetadata& meta) {
-    spotify_component.logg("track_spotify_history() called");
+    spotify_component.log("track_spotify_history() called");
 
     static const std::filesystem::path db_path =
         ac::paths::spotify_directory() / "spotify_history.db";
@@ -145,7 +145,7 @@ void track_spotify_history(const SongMetadata& meta) {
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_open16(db_path.c_str(), &db) != SQLITE_OK) {
-        spotify_component.logg(
+        spotify_component.log(
             "Error opening database '{}': {}",
             db_path,
             db != nullptr ? sqlite3_errmsg(db) : "unknown SQLite error"
@@ -167,7 +167,7 @@ void track_spotify_history(const SongMetadata& meta) {
     )sql";
 
     if (sqlite3_prepare_v2(db, upsert_sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        spotify_component.logg("Error preparing UPSERT: {}", sqlite3_errmsg(db));
+        spotify_component.log("Error preparing UPSERT: {}", sqlite3_errmsg(db));
         sqlite3_close(db);
         return;
     }
@@ -181,12 +181,12 @@ void track_spotify_history(const SongMetadata& meta) {
     sqlite3_bind_text(stmt, 6, timestamp.c_str(), -1, SQLITE_STATIC); // last_played
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-        spotify_component.logg("Error executing UPSERT: {}\n", sqlite3_errmsg(db));
+        spotify_component.log("Error executing UPSERT: {}\n", sqlite3_errmsg(db));
     }
 
     if (stmt) {
         sqlite3_finalize(stmt);
     }
     sqlite3_close(db);
-    spotify_component.logg("track_spotify_history() finished");
+    spotify_component.log("track_spotify_history() finished");
 }

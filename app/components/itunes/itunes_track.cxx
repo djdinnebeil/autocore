@@ -39,7 +39,7 @@ TrackInfo itunes_client::get_track_info_on_com_thread() {
                 prop.value = V_BSTR(&varResult);
             }
             else {
-                itunes_component.logg_and_logg("iTunes error with V_BSTR in get_track_info");
+                itunes_component.log_and_log("iTunes error with V_BSTR in get_track_info");
                 prop.value = L"";
             }
         }
@@ -73,7 +73,7 @@ std::wstring itunes_client::get_current_track() {
     }
     catch (const std::exception& exception) {
         remaining_song_duration = -1;
-        itunes_component.logg_and_print(
+        itunes_component.log_and_print(
             "Failed to dispatch iTunes track query: {}",
             exception.what()
         );
@@ -113,8 +113,8 @@ std::wstring itunes_client::get_current_track_on_com_thread() {
                 last_retrieved_song,
                 current_song
             )) {
-            itunes_component.loggnl_and_loggnl("current song: ");
-            itunes_component.logg_and_print(current_song);
+            itunes_component.lognl_and_lognl("current song: ");
+            itunes_component.log_and_print(current_song);
         }
     }
     return current_song;

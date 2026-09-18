@@ -64,7 +64,7 @@ void stop_spotify_monitor() {
  * \runtime
  */
 void spotify_next_song() {
-    spotify_component.logg_and_logg("spotify_next_song()");
+    spotify_component.log_and_log("spotify_next_song()");
     ac_spotify.next_song();
     {
         const std::scoped_lock lock {spotify_mtx};
@@ -79,7 +79,7 @@ void spotify_next_song() {
  * the sleep time based on the song's remaining duration and playback state.
  */
 void spotify_monitor_loop() {
-    spotify_component.logg_and_logg("Spotify monitor started");
+    spotify_component.log_and_log("Spotify monitor started");
     Sleep(350);
     try {
         std::unique_lock<std::mutex> lock(spotify_mtx);
@@ -91,15 +91,15 @@ void spotify_monitor_loop() {
         while (true) {
             spotify_playback_state_change = false;
             if (ac_spotify.reauthorization_required) {
-                spotify_component.loggnl("Spotify authorization required - ");
+                spotify_component.lognl("Spotify authorization required - ");
                 sleep_time_ms = sleep_timerate_ms;
             }
             else if (!ac_spotify.is_playing) {
-                spotify_component.loggnl("Spotify not playing - ");
+                spotify_component.lognl("Spotify not playing - ");
                 sleep_time_ms = sleep_timerate_ms;
             }
             else if (ac_spotify.last_status_code == speed_boost_code) {
-                spotify_component.logg_and_print("speed boost!");
+                spotify_component.log_and_print("speed boost!");
                 sleep_time_ms = speed_boost_ms;
             }
             else if (ac_spotify.remaining_song_duration_ms < sleep_timerate_ms) {
@@ -108,21 +108,21 @@ void spotify_monitor_loop() {
             else {
                 sleep_time_ms = sleep_timerate_ms;
             }
-            spotify_component.logg("sleep time {} seconds at {}", sleep_time_ms / 1000, ac::clock::get_timestamp_with_seconds());
+            spotify_component.log("sleep time {} seconds at {}", sleep_time_ms / 1000, ac::clock::get_timestamp_with_seconds());
             if (spotify_cv.wait_for(lock, chrono::milliseconds(sleep_time_ms), [] {return spotify_playback_state_change; })) {
                 if (ac_spotify.end_thread) {
                     break;
                 }
-                spotify_component.logg("spotify_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
+                spotify_component.log("spotify_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay);
             }
             ac_spotify.get_current_song();
         }
     }
     catch (const std::exception& e) {
-        spotify_component.logg_and_print("Spotify monitor crashed: {}", e.what());
+        spotify_component.log_and_print("Spotify monitor crashed: {}", e.what());
     }
     catch (...) {
-        spotify_component.logg_and_print("Spotify monitor crashed due to an unknown exception");
+        spotify_component.log_and_print("Spotify monitor crashed due to an unknown exception");
     }
 }

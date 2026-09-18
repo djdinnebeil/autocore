@@ -35,5 +35,5 @@ export void update_spotify_component() {
  */
 export void log_init() {
 	spotify_component.connect_to_logger();
-	spotify_component.logg_and_logg("spotify_ac.exe started");
+	spotify_component.log_and_log("spotify_ac.exe started");
 }

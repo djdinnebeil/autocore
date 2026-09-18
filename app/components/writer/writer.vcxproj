@@ -21,7 +21,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared">
-    <Import Project="..\..\build\AutoCore.props" />
+    <Import Project="..\..\..\msbuild\AutoCore.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"><Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" /></ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"><Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" /></ImportGroup>
@@ -80,6 +80,7 @@
     <ClCompile Include="..\..\core\modules\thread.ixx" />
     <ClCompile Include="..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="..\..\shared\command_registry.ixx" />
+    <ClCompile Include="..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\shared\protocols\writer_protocol.ixx" />
     <ClCompile Include="writer_component.ixx" />
     <ClCompile Include="writer_commands.ixx" />

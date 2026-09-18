@@ -1509,15 +1509,15 @@ namespace ac::taskbar {
         {
             std::scoped_lock lock(client_mutex);
             pipe = client_pipe;
+            client_pipe = INVALID_HANDLE_VALUE;
         }
-        if (pipe != INVALID_HANDLE_VALUE) CancelIoEx(pipe, nullptr);
-        if (client_thread.joinable()) client_thread.join();
-        {
-            std::scoped_lock lock(client_mutex);
-            if (client_pipe != INVALID_HANDLE_VALUE) {
-                CloseHandle(client_pipe);
-                client_pipe = INVALID_HANDLE_VALUE;
-            }
+        if (pipe != INVALID_HANDLE_VALUE) {
+            (void)CancelIoEx(pipe, nullptr);
+            (void)CloseHandle(pipe);
+        }
+        if (client_thread.joinable()) {
+            (void)CancelSynchronousIo(client_thread.native_handle());
+            client_thread.join();
         }
     }
 

@@ -10,15 +10,16 @@ import auto_core.core.clock;
 namespace ac::component_detail {
 
     /**
-     * \brief Owns a synchronized, daily file log for one component session.
+     * \brief Owns synchronized comprehensive and central-subset daily logs.
      *
-     * Files are named `<date>_<component>.log` under the supplied directory
-     * (`components/<name>/` from `ac::Component`). Construction opens
-     * `{session_start.date_iso}_{component}.log` and appends a session header.
-     * Each `write` checks the local calendar date and may roll to today's file
-     * with continuation markers. Destruction appends a session footer. File
-     * failures are reported through `auto_core.core.error`; later writes no-op
-     * until a roll retries the open.
+     * Files are named `<date>_<component>.log` and
+     * `<date>_<component>.main.log` under the supplied directory
+     * (`components/<name>/` from `ac::Component`). Construction opens both
+     * files and appends a session header to the comprehensive log. Each
+     * `write` checks the supplied event date and may roll both files. Session
+     * markers remain comprehensive-log metadata. File failures are reported
+     * through `auto_core.core.error`; later writes no-op until a roll retries
+     * the open.
      */
     class ComponentLogger {
     public:
@@ -46,7 +47,13 @@ namespace ac::component_detail {
          * Compares the local calendar date with the open file and rolls when
          * they differ. Records ending in a newline are flushed immediately.
          */
-        void write(std::string_view message, bool newline = true);
+        void write(
+            std::string_view timestamp,
+            std::string_view date_iso,
+            std::string_view message,
+            bool main_worthy,
+            bool newline = true
+        );
         /** \brief Rolls the log file when the local calendar date changed. */
         void update_file();
         /** \brief Flushes the current file when it is open. */

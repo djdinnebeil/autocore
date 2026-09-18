@@ -16,7 +16,8 @@ namespace {
             .day_of_week = 2,
             .hour = 3,
             .minute = 4,
-            .second = 5
+            .second = 5,
+            .millisecond = 6
         };
     }
 
@@ -29,14 +30,23 @@ TEST_CASE("Clock timestamps use fixed-width 24-hour fields", "[clock][unit]") {
         ac::clock::detail::format_timestamp_with_seconds(time) ==
         "03:04:05"
     );
+    CHECK(
+        ac::clock::detail::format_timestamp_with_milliseconds(time) ==
+        "03:04:05.006"
+    );
 
     time.hour = 23;
     time.minute = 59;
     time.second = 59;
+    time.millisecond = 999;
     CHECK(ac::clock::detail::format_timestamp(time) == "23:59");
     CHECK(
         ac::clock::detail::format_timestamp_with_seconds(time) ==
         "23:59:59"
+    );
+    CHECK(
+        ac::clock::detail::format_timestamp_with_milliseconds(time) ==
+        "23:59:59.999"
     );
 }
 
@@ -137,12 +147,17 @@ TEST_CASE("Clock formats a complete local datetime", "[clock][unit]") {
     const ac::clock::DateTime datetime {
         .date_iso = "2007-01-02",
         .timestamp = "03:04",
-        .timestamp_with_seconds = "03:04:05"
+        .timestamp_with_seconds = "03:04:05",
+        .timestamp_with_milliseconds = "03:04:05.006"
     };
 
     CHECK(
         ac::clock::format_datetime(datetime) ==
         "2007-01-02 at 03:04:05"
+    );
+    CHECK(
+        ac::clock::format_log_timestamp(datetime) ==
+        "2007-01-02 03:04:05.006"
     );
 }
 
@@ -195,10 +210,16 @@ TEST_CASE("Internal clock formatters reject invalid fields", "[clock][unit]") {
 TEST_CASE("Public clock functions return valid local-time shapes", "[clock][integration]") {
     const std::regex timestamp_pattern {R"(^\d{2}:\d{2}$)"};
     const std::regex timestamp_seconds_pattern {R"(^\d{2}:\d{2}:\d{2}$)"};
+    const std::regex timestamp_milliseconds_pattern {
+        R"(^\d{2}:\d{2}:\d{2}\.\d{3}$)"
+    };
     const std::regex date_iso_pattern {R"(^\d{4}-\d{2}-\d{2}$)"};
     const std::regex date_compact_pattern {R"(^\d{1,2}-\d{1,2}-\d{2}$)"};
     const std::regex datetime_pattern {
         R"(^\d{4}-\d{2}-\d{2} at \d{2}:\d{2}:\d{2}$)"
+    };
+    const std::regex log_timestamp_pattern {
+        R"(^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$)"
     };
 
     const ac::clock::DateTime datetime = ac::clock::get_local_datetime();
@@ -207,6 +228,10 @@ TEST_CASE("Public clock functions return valid local-time shapes", "[clock][inte
     CHECK(std::regex_match(
         datetime.timestamp_with_seconds,
         timestamp_seconds_pattern
+    ));
+    CHECK(std::regex_match(
+        datetime.timestamp_with_milliseconds,
+        timestamp_milliseconds_pattern
     ));
     CHECK(
         datetime.timestamp_with_seconds.substr(0, 5) ==
@@ -217,6 +242,14 @@ TEST_CASE("Public clock functions return valid local-time shapes", "[clock][inte
     CHECK(std::regex_match(
         ac::clock::get_timestamp_with_seconds(),
         timestamp_seconds_pattern
+    ));
+    CHECK(std::regex_match(
+        ac::clock::get_timestamp_with_milliseconds(),
+        timestamp_milliseconds_pattern
+    ));
+    CHECK(std::regex_match(
+        ac::clock::get_log_timestamp(),
+        log_timestamp_pattern
     ));
     CHECK(std::regex_match(
         ac::clock::get_extended_timestamp(6),

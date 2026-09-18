@@ -2,9 +2,7 @@
 
 `server_ac.exe` serves a local folder over HTTP so a web browser on this
 computer can open those files. Auto Core starts it with the other helper
-processes and stops it with `TerminateProcess` on shutdown.
-
-The process has no named pipe and no keymap commands. It only serves files.
+processes and stops it with v1 `shutdown`.
 
 ## Configuration
 
@@ -52,5 +50,7 @@ local.
 
 ## Lifecycle
 
-Main calls `start_server()` once during startup. A second call is a no-op.
-`stop_server()` terminates the process.
+Main starts `server_ac.exe` as a generic `ac.component.v1` child when `server`
+is enabled in `components.list`. Hello is sent before the HTTP bind. Shutdown
+sends v1 `shutdown` on `ac_server_pipe`. A leftover process still holding
+port `8585` is logged after hello; it does not stall Main's hello wait.

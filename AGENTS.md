@@ -7,8 +7,8 @@ Start in [docs/](docs/). Overview (do not restate): [README.md](README.md).
 Architecture, packaging, or git workflow: read [docs/STRATEGY.md](docs/STRATEGY.md).
 Do not restate it. Do not reopen locked decisions unless asked.
 
-Production shape is **Release x64**. Link `auto_core.lib` from `out/core`
-then `lib/`. No root `.sln`.
+Production shape is **Release x64**. Link `auto_core.lib` from `lib/`.
+No root `.sln`.
 
 ## Naming traps
 

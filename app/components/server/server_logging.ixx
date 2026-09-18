@@ -18,5 +18,5 @@ export void update_server_component() {
 
 export void log_init() {
 	server_component.connect_to_logger();
-	server_component.logg_and_logg("server_ac.exe started");
+	server_component.log_and_log("server_ac.exe started");
 }

@@ -9,11 +9,11 @@ namespace {
 
 inline constexpr UINT shutdown_request_message = WM_APP + 97;
 
-void request_shutdown() {
+void request_shutdown(const bool allow_recovery_prompt) {
     PostThreadMessage(
         ac::main::main_thread_id,
         shutdown_request_message,
-        0,
+        allow_recovery_prompt ? 1 : 0,
         0
     );
 }
@@ -38,16 +38,16 @@ LRESULT CALLBACK shutdown_window_procedure(
 ) {
     switch (message) {
     case WM_QUERYENDSESSION:
-        auto_core.logg_and_logg(
+        auto_core.log_and_log(
             "shutdown_window_procedure() - WM_QUERYENDSESSION"
         );
         return TRUE;
     case WM_ENDSESSION:
         if (w_param == TRUE) {
-            auto_core.logg_and_logg(
+            auto_core.log_and_log(
                 "shutdown_window_procedure() - WM_ENDSESSION"
             );
-            request_shutdown();
+            request_shutdown(false);
             return TRUE;
         }
         break;
@@ -100,25 +100,25 @@ BOOL WINAPI console_control_handler(DWORD control_type) {
     if (!ac::main::program_closing) {
         switch (control_type) {
         case CTRL_CLOSE_EVENT:
-            auto_core.logg_and_logg(
+            auto_core.log_and_log(
                 "console_control_handler() - CTRL_CLOSE_EVENT"
             );
-            request_shutdown();
+            request_shutdown(false);
             return TRUE;
         case CTRL_BREAK_EVENT:
-            auto_core.logg_and_logg(
+            auto_core.log_and_log(
                 "console_control_handler() - CTRL_BREAK_EVENT"
             );
-            request_shutdown();
+            request_shutdown(true);
             return TRUE;
         case CTRL_C_EVENT:
-            auto_core.logg_and_logg(
+            auto_core.log_and_log(
                 "console_control_handler() - CTRL_C_EVENT"
             );
-            request_shutdown();
+            request_shutdown(true);
             return TRUE;
         default:
-            auto_core.logg_and_logg(
+            auto_core.log_and_log(
                 "console_control_handler() - default"
             );
             break;
@@ -147,6 +147,11 @@ bool process_shutdown_event(const MSG& message) {
         return false;
     }
 
-    close_program();
+    if (message.wParam != 0) {
+        close_program();
+    }
+    else {
+        close_program_noninteractive();
+    }
     return true;
 }

@@ -19,6 +19,32 @@ import auto_core.main.program_ready;
 import auto_core.main.shutdown_events;
 
 namespace {
+    constexpr wchar_t instance_mutex_name[] = L"Local\\AutoCore.main";
+
+    /**
+     * Waits for a previous auto_core.exe to exit. The handle is not released
+     * so the mutex stays owned through static destructors until process exit.
+     */
+    [[nodiscard]]
+    bool acquire_instance_mutex() {
+        const HANDLE mutex = CreateMutexW(
+            nullptr,
+            FALSE,
+            instance_mutex_name
+        );
+        if (mutex == nullptr) {
+            return false;
+        }
+
+        const DWORD wait = WaitForSingleObject(mutex, INFINITE);
+        if (wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED) {
+            CloseHandle(mutex);
+            return false;
+        }
+
+        return true;
+    }
+
     void initialize_process_environment() {
         SetConsoleOutputCP(CP_UTF8);
         SetConsoleTitleW(L"Auto Core");
@@ -68,6 +94,11 @@ namespace {
  * \return `1` if the user declines crash continue; otherwise `0`.
  */
 int main() {
+
+    if (!acquire_instance_mutex()) {
+        std::cerr << "Failed to acquire the Auto Core instance lock\n";
+        return 1;
+    }
 
     ac::config::initialize_core_settings();
 

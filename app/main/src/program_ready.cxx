@@ -12,7 +12,7 @@ std::string read_task_list_summary() {
         ac::paths::writer_directory() / "task_list.txt";
     std::ifstream file(task_list_path, std::ios::binary);
     if (!file) {
-        auto_core.logg_and_print(
+        auto_core.log_and_print(
             "Unable to read task list: {}", task_list_path.string()
         );
         return {};
@@ -30,7 +30,7 @@ std::string read_task_list_summary() {
         task_list += line;
     }
     if (file.bad()) {
-        auto_core.logg_and_print(
+        auto_core.log_and_print(
             "Unable to read complete task list: {}",
             task_list_path.string()
         );

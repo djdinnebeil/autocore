@@ -27,7 +27,7 @@ This repository is for people who want to **build or extend** the source and **r
 
 Build from source (below), then run from `dist/` (`auto_core.exe`, `auto_core.dll`, vendor runtime DLLs, and the component executables). Projects use the DLL CRT (`/MD`); if you run binaries you did not build on that PC, install the matching **MSVC v145** redistributable.
 
-1. Start `auto_core.exe` from `dist`. Missing `dist/config/*.ini` files are written once from portable defaults (`auto_core.ini` is not fatal). Edit the live files as needed. Tracked samples in [`defaults/`](defaults/) are documentation only; Auto Core never reads them.
+1. Start `auto_core.exe` from `dist`. Missing `dist/config/` files (`*.ini` and `components.list`) are written once from portable defaults (`auto_core.ini` is not fatal). Edit the live files as needed. Tracked samples in [`defaults/`](defaults/) are documentation only; Auto Core never reads them.
 2. Edit `dist/keymap/bindings.ini` if you want a custom map. If the file is missing, Auto Core writes a seed map on first start and does not overwrite an existing file. [`defaults/keymap/bindings.ini`](defaults/keymap/bindings.ini) is a sample to copy by hand, not a file the program loads.
 3. Run `taskbar_config.exe` from `dist` so `taskbar/applications/*.ini` matches the programs you pin. See [Taskbar](docs/taskbar.md).
 4. Optional helpers (or let Main seed the INI): `spotify_oauth.exe` ([Spotify](docs/spotify.md)), `journal_config.exe` (episode counters in `journals.db` under `[journal] directory`), `writer_config.exe` ([Writer config](docs/writer_config.md)), `server_config.exe` ([Server config](docs/server_config.md)). Restart `server_ac.exe` after rewriting `server.ini`.
@@ -41,14 +41,14 @@ To run the same build on another Windows 11 PC, copy the `dist/` folder, then re
 
 1. Clone or copy the repository onto Windows 11.
 2. Install Visual Studio **2026** (version **18+**) with the Desktop development with C++ workload (MSVC **v145**, C++23).
-3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). After Link, Windows PowerShell runs [`scripts/copy-dist-dlls.ps1`](scripts/copy-dist-dlls.ps1), which copies vendor runtime DLLs from `third_party/*/bin/` and `auto_core.dll` (`out/core` then `lib/`) into `dist/`.
-4. Shared paths live in [`app/build/AutoCore.props`](app/build/AutoCore.props) (repo-relative; a clone does not edit that file).
+3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). After Link, Windows PowerShell runs [`scripts/copy-dist-dlls.ps1`](scripts/copy-dist-dlls.ps1), which copies vendor runtime DLLs from `third_party/*/bin/` and `lib/auto_core.dll` into `dist/`.
+4. Shared paths live in [`msbuild/AutoCore.props`](msbuild/AutoCore.props) (repo-relative; a clone does not edit that file).
 
-The linker searches `out/core/auto_core.lib` then `lib/auto_core.lib`. `dist/` is gitignored.
+The linker searches `lib/auto_core.lib`. `dist/` is gitignored.
 
 ## Extending
 
-New components, shared protocols, and keymap registration are documented in [Development](docs/development.md). The module catalog is [Modules](docs/modules.md). Contribution mechanics (tests, what not to commit) are in [CONTRIBUTING.md](CONTRIBUTING.md).
+New components, shared protocols, and keymap registration are documented in [Development](docs/development.md). Creating a child from File → New → Project is [Adding a new component](docs/new-component.md). The module catalog is [Modules](docs/modules.md). Contribution mechanics (tests, what not to commit) are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Person-name journal aliases live in `journal_choices.ini` under the configured journal data directory (default `dist/journal/`). A missing live file is written once from [`defaults/journal/journal_choices.ini`](defaults/journal/journal_choices.ini). An existing file is never overwritten. Unused aliases are not bound; `bindings.ini` is the filter.
 
@@ -82,6 +82,7 @@ The main application, core DLL, shared protocols, and component projects are sep
 | `logger` | Central component logger | `logger_ac.exe` | Receives component log events over named pipes |
 | `server` | Local file server | `server_ac.exe` | Loopback HTTP file server |
 | `server_config` | Server INI setup | `server_config.exe` | Writes `config/server.ini` if missing; menu get/set for `port` and `document_root` |
+| `simple_test` | Generic host smoke test | `simple_test_ac.exe` | New-child discovery via live `components.list`; see [Development](docs/development.md#generic-host-smoke-test-simple_test) |
 | `slash` | Recycle bin utility | `slash_ac.exe` | Prints deleted items |
 | `spotify` | Spotify controller | `spotify_ac.exe` | Web API playback control and local history; see [Spotify](docs/spotify.md) |
 | `spotify_oauth` | Spotify authorization helper | `spotify_oauth.exe` | Handles the OAuth authorization flow |
@@ -104,20 +105,20 @@ Auto Core/
 ├─ NOTICE.md            Third-party library attribution
 ├─ CONTRIBUTING.md      How to build and extend
 ├─ SECURITY.md          Hook, secrets, how to report issues
-├─ scripts/             Developer scripts (`build-all.ps1`, `copy-dist-dlls.ps1`)
-├─ app/                 Everything that builds into Auto Core (source, projects, resources, props)
-│  ├─ build/            Shared Visual Studio build configuration, including AutoCore.props
-│  ├─ components/       Component executable projects (itunes/spotify tests nested)
-│  ├─ core/             Auto Core DLL project, core library code, and nested tests
-│  ├─ main/             Main executable project
-│  ├─ resources/        Application resources, such as .ico and .rc files
-│  └─ shared/           Shared modules and code used across app projects
-├─ defaults/            Portable defaults (git; not loaded at runtime)
-│  ├─ config/           Samples for dist/config/*.ini
+├─ scripts/             Repo build and post-Link copy scripts
+├─ msbuild/             AutoCore.props (one level below repo root; not obj/)
+├─ app/                 Build input (source, projects, resources). Not source-only
+│  ├─ components/       Child executables that ship in dist/ (unit tests nested)
+│  ├─ core/             auto_core.dll source, include/ac_api.hpp, nested tests
+│  ├─ main/             auto_core.exe project
+│  ├─ resources/        Shared .ico and .rc files
+│  └─ shared/           Compile-time IPC protocols and command_registry
+├─ defaults/            Tracked samples for dist/X (never loaded at runtime)
+│  ├─ config/           Samples for dist/config/
 │  ├─ keymap/           Sample bindings.ini
 │  ├─ journal/          Sample journal_choices.ini
 │  └─ server/           Shipped document root (copied to dist/server on build)
-├─ dist/                Portable runtime output (gitignored)
+├─ dist/                Gitignored assembled runtime for end users
 │  ├─ config/           Live configuration files
 │  ├─ keymap/           bindings.ini, keymap_commands.txt, and components/ catalogs
 │  ├─ journal/          Journal aliases and journals.db (local)
@@ -127,17 +128,15 @@ Auto Core/
 │  ├─ taskbar/          Per-program INIs in applications/; cached_positions.ini
 │  ├─ writer/           gpt_prompts.txt and task_list.txt (local)
 │  └─ symbols/          Debug symbol files, such as .pdb files
-├─ docs/                Project documentation
-├─ lib/                 Tracked seed auto_core.dll and auto_core.lib
-├─ third_party/         Vendored libraries (`<dependency>/`; product `include`, `lib`, `bin`; Catch2 at `catch2/`)
-└─ out/                 Local MSBuild output (not source)
-   ├─ obj/              Intermediate objects (safe to delete)
-   └─ core/             Generated auto_core.lib, .exp, extra auto_core.dll
+├─ docs/                Developer documentation
+├─ lib/                 Canonical auto_core.dll and auto_core.lib
+├─ obj/                 Gitignored IntDir, including test binaries
+└─ third_party/         Committed vendors (`<dependency>/`; product `include`, `lib`, `bin`; Catch2 at `catch2/`)
 ```
 
 `dist/` is gitignored runtime state. See [configuration](docs/configuration.md).
 
-Build artifacts are generated under `out/` (`out/obj/` intermediates, `out/core/` generated `auto_core.lib`) and `dist/` (executables and the runtime `auto_core.dll`). The `app/build/` folder contains source-controlled build configuration, not compiler output. Wipe `out/obj/` anytime; deleting `out/core/` forces a core DLL rebuild.
+Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `auto_core.lib` and `auto_core.dll`), and `dist/` (executables and the runtime `auto_core.dll`). Shared Visual Studio settings live in `msbuild/`. Wipe `obj/` anytime; rebuilding the core DLL overwrites `lib/` in place.
 
 ## Dash
 
@@ -182,6 +181,7 @@ The documentation index is [docs/README.md](docs/README.md).
 | [Building](docs/building.md) | Solutions, MSBuild order, output directories |
 | [Configuration](docs/configuration.md) | INI files, `defaults/`, keymap, logging, copying `dist/` |
 | [Development](docs/development.md) | Protocols, runtime commands, new components |
+| [Adding a new component](docs/new-component.md) | File → New → Project, `AutoCore.props`, live list and keymap |
 | [Main](docs/main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
 | [Modules](docs/modules.md) | C++23 module catalog |
 | [Contributing](CONTRIBUTING.md) | Clone, build, what not to commit |

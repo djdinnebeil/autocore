@@ -65,7 +65,7 @@ namespace {
 }
 
 void remove_itunes_song() {
-    itunes_component.logg_and_logg("remove_itunes_song()");
+    itunes_component.log_and_log("remove_itunes_song()");
     const auto result = itunes::runtime::remove_song(
         ac_itunes,
         file_recycler
@@ -74,9 +74,9 @@ void remove_itunes_song() {
         return;
     }
 
-    const std::wstring logg_message =
+    const std::wstring log_message =
         result.status == itunes::runtime::removal_status::recycled
         ? L"File moved to the recycle bin: " + result.path.wstring()
         : L"Error - file not moved to the recycle bin: " + result.path.wstring();
-    itunes_component.logg_and_logg(logg_message);
+    itunes_component.log_and_log(log_message);
 }

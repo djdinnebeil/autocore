@@ -7,10 +7,10 @@ namespace ac::logging::config::detail {
         std::optional<bool> parse_bool(
             const std::optional<std::string_view> value
         ) noexcept {
-            if (value == "true") {
+            if (value == "on" || value == "true") {
                 return true;
             }
-            if (value == "false") {
+            if (value == "off" || value == "false") {
                 return false;
             }
             return std::nullopt;
@@ -23,19 +23,11 @@ namespace ac::logging::config::detail {
         const std::filesystem::path& executable_directory
     ) {
         Settings settings {
-            .enabled = true,
             .write_to_console = false,
             .directory = default_directory,
             .components_directory = default_directory / "components",
             .report = "Logging configuration:\n"
         };
-
-        if (const auto value = parse_bool(raw.enabled)) {
-            settings.enabled = *value;
-        }
-        else {
-            settings.report += "enabled missing or invalid; using true\n";
-        }
 
         if (const auto value = parse_bool(raw.write_to_console)) {
             settings.write_to_console = *value;

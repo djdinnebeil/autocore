@@ -28,7 +28,7 @@ export namespace ac::config {
     };
 
     /**
-     * \brief Writes missing `config/*.ini` files from portable defaults.
+     * \brief Writes missing `config/` files from portable defaults.
      *
      * Creates `config/` if needed. Existing live files are never overwritten.
      * Does not read repo `defaults/`.

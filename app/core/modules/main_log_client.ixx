@@ -77,12 +77,12 @@ export namespace ac::logger {
         AC_API bool request_logger_shutdown();
 
         /**
-         * \brief Stops the worker, cancels blocking I/O, and clears the queue.
+         * \brief Stops the worker without waiting out a reconnect window.
          *
-         * Cancels in-flight synchronous I/O on the worker with
-         * `CancelSynchronousIo`. This operation is idempotent. Closing an idle
-         * object permanently closes it; a closed object cannot be started
-         * again.
+         * Closes the live logger pipe so a blocked `WriteFile` or `CreateFile`
+         * fails, cancels in-flight synchronous I/O, then joins. This operation
+         * is idempotent. Closing an idle object permanently closes it; a
+         * closed object cannot be started again.
          */
         AC_API void close() noexcept;
 

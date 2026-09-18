@@ -24,13 +24,13 @@ namespace {
 }
 
 void itunes_next_song() {
-    itunes_component.logg_and_logg("itunes_next_song()");
+    itunes_component.log_and_log("itunes_next_song()");
     itunes::runtime::next_song(ac_itunes, playback_monitor);
 }
 
 void itunes_client::start_itunes_thread() {
     Sleep(25);
-    itunes_component.logg_and_logg("itunes_thread started");
+    itunes_component.log_and_log("itunes_thread started");
     const int sleep_timerate_secs_playing = 5;
     const int sleep_timerate_secs_pause = 5;
     const int extra_time_ms = 100;
@@ -60,7 +60,7 @@ void itunes_client::start_itunes_thread() {
                     Sleep(extra_time_ms);
                 }
             }
-            itunes_component.logg("iTunes sleep time {} seconds at {}", sleep_time_secs, ac::clock::get_timestamp_with_seconds());
+            itunes_component.log("iTunes sleep time {} seconds at {}", sleep_time_secs, ac::clock::get_timestamp_with_seconds());
             if (itunes_condition.wait_for(lock, chrono::seconds(sleep_time_secs), [] {
                     return itunes_playback_state_change.load() ||
                            ac_itunes.end_thread.load();
@@ -68,16 +68,16 @@ void itunes_client::start_itunes_thread() {
                 if (ac_itunes.end_thread.load()) {
                     break;
                 }
-                itunes_component.logg("itunes_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
+                itunes_component.log("itunes_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay_ms);
             }
         }
     }
     catch (const std::exception& e) {
-        itunes_component.logg_and_print("itunes_song_thread() has crashed: {}", e.what());
+        itunes_component.log_and_print("itunes_song_thread() has crashed: {}", e.what());
     }
     catch (...) {
-        itunes_component.logg_and_print("itunes_song_thread() has crashed due to an unknown exception");
+        itunes_component.log_and_print("itunes_song_thread() has crashed due to an unknown exception");
     }
-    itunes_component.logg("end of iTunes thread");
+    itunes_component.log("end of iTunes thread");
 }

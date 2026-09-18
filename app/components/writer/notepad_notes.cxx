@@ -19,7 +19,7 @@ std::optional<fs::path> daily_note_path() {
     fs::create_directories(notes_directory, error);
 
     if (error) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Unable to create notes directory '{}': {}",
             notes_directory.string(),
             error.message()
@@ -35,7 +35,7 @@ bool ensure_file_exists(const fs::path& path) {
         return true;
     }
     if (error) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Unable to inspect text file '{}': {}",
             path.string(), error.message()
         );
@@ -44,7 +44,7 @@ bool ensure_file_exists(const fs::path& path) {
 
     std::ofstream output(path, std::ios::app);
     if (!output) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Unable to create text file: {}", path.string()
         );
         return false;
@@ -180,7 +180,7 @@ bool open_path_in_notepad(const fs::path& path) {
         .nShow = SW_SHOWNORMAL,
     };
     if (!ShellExecuteExW(&execution)) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Unable to open text file '{}'. ShellExecute error: {}",
             path.string(), GetLastError()
         );
@@ -193,7 +193,7 @@ bool open_path_in_notepad(const fs::path& path) {
 
     const HWND target = wait_for_notepad_window(path);
     if (target == nullptr) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Opened text file '{}', but its Notepad window was not found.",
             path.string()
         );
@@ -201,7 +201,7 @@ bool open_path_in_notepad(const fs::path& path) {
     }
     if (const auto activated = ac::console::activate_window(target);
         !activated) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Opened text file '{}', but could not focus Notepad: {}.",
             path.string(),
             ac::console::error_message(activated.error())

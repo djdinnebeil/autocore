@@ -24,7 +24,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared">
-    <Import Project="..\..\build\AutoCore.props" />
+    <Import Project="..\..\..\msbuild\AutoCore.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -60,6 +60,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\shared\protocols\spotify_protocol.ixx" />
+    <ClCompile Include="..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\core\modules\pipes.ixx" />
     <ClCompile Include="spotify_registry.ixx" />

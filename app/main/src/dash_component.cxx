@@ -7,7 +7,7 @@ import auto_core.core.paths;
 import <Windows.h>;
 
 void launch_dash() {
-    auto_core.logg_and_logg("launch_dash()");
+    auto_core.log_and_log("launch_dash()");
 
     const auto target = reinterpret_cast<std::uintptr_t>(
         GetForegroundWindow());

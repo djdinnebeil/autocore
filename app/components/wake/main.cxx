@@ -8,59 +8,69 @@ aiding in the analysis of system behavior and Auto Core's interaction with the h
 import std;
 import auto_core.core.pipes;
 import wake_logging;
-import wake_protocol;
-
-/**
- * \brief Ends the wake component.
- */
-void end_wake() {
-    wake_component.logg("wake_ac.exe is shutting down");
-}
-
-/**
- * \brief Sets up the command map for handling pipe commands.
- *
- * This function maps integer command IDs to corresponding functions that handle
- * specific commands for the iTunes component.
- */
-void set_commands(ac::pipes::CommandDispatcher& dispatcher) {
-    dispatcher.set_command(ac::protocol::wake::to_wire(ac::protocol::wake::Command::shutdown), [&dispatcher]() {
-        end_wake();
-        dispatcher.request_stop();
-    });
-    dispatcher.set_command(ac::protocol::wake::to_wire(ac::protocol::wake::Command::log_last_wake), log_last_wake);
-    dispatcher.set_command(ac::protocol::wake::to_wire(ac::protocol::wake::Command::update_component), update_wake_component);
-}
+import component_protocol;
 
 int main() {
     log_init();
     log_last_wake();
-    ac::pipes::CommandDispatcher dispatcher;
-    set_commands(dispatcher);
 
-    ac::pipes::Pipe wake_pipe;
     auto connection = ac::pipes::connect_to_pipe_server(
-        std::wstring { ac::protocol::wake::pipe_name }
+        ac::protocol::component::pipe_name("wake")
     );
-
-    if (connection) {
-        wake_pipe = std::move(*connection);
-        if (const auto result = dispatcher.process(wake_pipe);
-            !result) {
-            wake_component.logg_and_print(
-                "Wake pipe failed. Error: {}",
-                result.error().system_error
-            );
-        }
-    }
-    else {
-        wake_component.logg_and_print(
+    if (!connection) {
+        wake_component.log_and_print(
             "Failed to connect to wake pipe. Error: {}",
             connection.error().system_error
         );
+        wake_component.log_and_log("wake_ac.exe has ended");
+        return 1;
     }
 
-    wake_component.logg_and_logg("wake_ac.exe has ended");
+    ac::pipes::Pipe pipe = std::move(*connection);
+    ac::pipes::CommandDispatcher dispatcher;
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::shutdown
+        ),
+        [&dispatcher] {
+            wake_component.log_and_log("shutdown signal received");
+            dispatcher.request_stop();
+        }
+    );
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::invoke
+        ),
+        [&pipe, &dispatcher] {
+            const auto expression = ac::pipes::read_string(pipe);
+            if (!expression) {
+                dispatcher.request_stop();
+                return;
+            }
+            wake_component.log_and_print(
+                "Unknown wake command: {}",
+                *expression
+            );
+        }
+    );
 
+    if (const auto hello = ac::pipes::send_string(
+            pipe, ac::protocol::component::make_hello({})
+        ); !hello) {
+        wake_component.log_and_print(
+            "Failed to send wake hello. Error: {}",
+            hello.error().system_error
+        );
+        return 1;
+    }
+
+    if (const auto result = dispatcher.process(pipe); !result) {
+        wake_component.log_and_print(
+            "Wake pipe failed. Error: {}",
+            result.error().system_error
+        );
+    }
+
+    wake_component.log_and_log("program terminated");
     return 0;
 }

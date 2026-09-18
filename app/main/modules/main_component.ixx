@@ -60,8 +60,10 @@ export namespace ac::main {
 export bool primary = true;
 
 export {
-    /** Signals components to stop, unhooks the keyboard, and posts `WM_QUIT`. */
+    /** Removes input hooks, stops components, and posts `WM_QUIT`. */
     void close_program();
+    /** Shuts down without displaying interactive component recovery UI. */
+    void close_program_noninteractive();
     /** Uses each key's secondary keymap action until deactivated. */
     void activate_function_key();
     /** Restores primary keymap actions. */

@@ -27,18 +27,12 @@ playback monitor
 ```
 
 Auto Core owns the server side of the local named pipe and launches
-`itunes_ac.exe`. There is no ready-wait. The component connects as the client,
-registers its numeric wire commands and named runtime commands, and processes
-requests until Auto Core sends the shutdown command or the pipe fails.
+`itunes_ac.exe`. There is no extra ready string. The component connects as the
+client, sends `ac.component.v1` hello with its catalog, and processes invoke
+and shutdown until Auto Core stops the child or the pipe fails.
 
-The Main adapter is `app/main/modules/itunes_component.ixx` and
-`app/main/src/itunes_component.cxx`. Named `invoke_named` writes take
-`itunes_pipe_mutex` so a numeric header and its string payload cannot be
-interleaved by concurrent keymap invocations. Integer `send_command`, used
-for shutdown, does not take that mutex. A keymap invoke overlapping
-`close_program()` can interleave frames on `ac_itunes_pipe`; serializing
-those writes is deferred in [`app/main/TODO.md`](../app/main/TODO.md).
-Spotify already mutexes both paths.
+Main hosts iTunes as a generic `ac.component.v1` child. Invoke and shutdown
+share one per-child mutex on the control pipe.
 
 All COM initialization, interface access, method invocation, interface release,
 and `CoUninitialize` calls run on one dedicated owner thread. Commands and the

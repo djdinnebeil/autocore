@@ -5,7 +5,7 @@
 .DESCRIPTION
   Locates an MSBuild installation supporting MSVC v145 / Visual Studio 2026
   (version 18+) with vswhere and builds every production solution. Core DLL
-  first.
+  first. Renames locked dist\ outputs so Link can replace them.
   There is no root .sln.
 .EXAMPLE
   .\scripts\build-all.ps1
@@ -39,8 +39,53 @@ function Find-MSBuild {
     throw 'Compatible MSBuild not found. Install Visual Studio 2026 (version 18+) or Build Tools with the C++ x64/x86 build tools (MSVC v145).'
 }
 
+function Test-FileWritable {
+    param([Parameter(Mandatory)][string]$Path)
+    try {
+        $stream = [System.IO.File]::Open($Path, 'Open', 'ReadWrite', 'None')
+        $stream.Dispose()
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+function Unlock-DistFile {
+    param([Parameter(Mandatory)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+    if (Test-FileWritable $Path) {
+        return
+    }
+
+    $name = Split-Path -Leaf $Path
+    $staleName = '{0}.old.{1}' -f $name, [guid]::NewGuid().ToString('N')
+    Write-Host "Renaming locked $name so the linker can replace it."
+    Rename-Item -LiteralPath $Path -NewName $staleName
+    Remove-Item -LiteralPath (Join-Path (Split-Path -Parent $Path) $staleName) `
+        -Force -ErrorAction SilentlyContinue
+}
+
 $MSBuild = Find-MSBuild
 $Common = @('/m', '/nologo', '/t:Build', '/p:Configuration=Release', '/p:Platform=x64')
+
+# close_program does not wait for children. Leftover dist processes can
+# still map auto_core.dll and *_ac.exe; rename those outputs so Link can
+# replace them.
+
+$DistDir = Join-Path $RepoRoot 'dist'
+if (Test-Path -LiteralPath $DistDir) {
+    Get-ChildItem -LiteralPath $DistDir -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in '.exe', '.dll' } |
+        ForEach-Object { Unlock-DistFile $_.FullName }
+    $SymbolsDir = Join-Path $DistDir 'symbols'
+    if (Test-Path -LiteralPath $SymbolsDir) {
+        Get-ChildItem -LiteralPath $SymbolsDir -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
+            ForEach-Object { Unlock-DistFile $_.FullName }
+    }
+}
 
 $Solutions = @(
     'app\core\vs\auto_core_dll.sln'
@@ -52,6 +97,7 @@ $Solutions = @(
     'app\components\logger\logger.sln'
     'app\components\server\server.sln'
     'app\components\server_config\server_config.sln'
+    'app\components\simple_test\simple_test.sln'
     'app\components\slash\slash.sln'
     'app\components\spotify\spotify.sln'
     'app\components\spotify_oauth\spotify_oauth.sln'

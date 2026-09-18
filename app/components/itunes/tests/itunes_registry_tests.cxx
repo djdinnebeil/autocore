@@ -24,7 +24,8 @@ TEST_CASE("iTunes registry contains every canonical command", "[itunes][registry
         "itunes_print_next_up",
         "itunes_print_songs",
         "itunes_remove_song",
-        "itunes_stop_song"
+        "itunes_stop_song",
+        "print_next_up_song_list"
     };
 
     CHECK(registry.registered_names() == expected);

@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
-    <AutoCoreRootDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</AutoCoreRootDir>
-    <AutoCoreAppDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</AutoCoreAppDir>
-    <AutoCoreBuildDir>$(AutoCoreRootDir)out\</AutoCoreBuildDir>
-    <AutoCoreIntDir>$(AutoCoreRootDir)out\obj\</AutoCoreIntDir>
-    <AutoCoreLinkDir>$(AutoCoreRootDir)out\core\</AutoCoreLinkDir>
-    <AutoCoreSeedDir>$(AutoCoreRootDir)lib\</AutoCoreSeedDir>
+    <AutoCoreRootDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</AutoCoreRootDir>
+    <AutoCoreAppDir>$(AutoCoreRootDir)app\</AutoCoreAppDir>
+    <AutoCoreIntDir>$(AutoCoreRootDir)obj\</AutoCoreIntDir>
+    <AutoCoreLibDir>$(AutoCoreRootDir)lib\</AutoCoreLibDir>
     <AutoCoreThirdPartyDir>$(AutoCoreRootDir)third_party\</AutoCoreThirdPartyDir>
     <AutoCoreMacroDir>$(AutoCoreAppDir)core\include\</AutoCoreMacroDir>
     <AutoCoreDistDir>$(AutoCoreRootDir)dist\</AutoCoreDistDir>
@@ -17,7 +15,7 @@
   <PropertyGroup>
     <IntDir>$(AutoCoreIntDir)$(ProjectName)\</IntDir>
     <OutDir Condition="'$(ConfigurationType)'=='Application'">$(AutoCoreDistDir)</OutDir>
-    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(AutoCoreLinkDir)</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(AutoCoreLibDir)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -25,7 +23,7 @@
       <AdditionalIncludeDirectories>$(AutoCoreMacroDir);$(AutoCoreVendorIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(AutoCoreLinkDir);$(AutoCoreSeedDir);$(AutoCoreVendorLibraries);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(AutoCoreLibDir);$(AutoCoreVendorLibraries);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -37,20 +35,12 @@
       <Value>$(AutoCoreAppDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
-    <BuildMacro Include="AutoCoreBuildDir">
-      <Value>$(AutoCoreBuildDir)</Value>
-      <EnvironmentVariable>true</EnvironmentVariable>
-    </BuildMacro>
     <BuildMacro Include="AutoCoreIntDir">
       <Value>$(AutoCoreIntDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
-    <BuildMacro Include="AutoCoreLinkDir">
-      <Value>$(AutoCoreLinkDir)</Value>
-      <EnvironmentVariable>true</EnvironmentVariable>
-    </BuildMacro>
-    <BuildMacro Include="AutoCoreSeedDir">
-      <Value>$(AutoCoreSeedDir)</Value>
+    <BuildMacro Include="AutoCoreLibDir">
+      <Value>$(AutoCoreLibDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
     <BuildMacro Include="AutoCoreThirdPartyDir">
@@ -70,12 +60,6 @@
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
   </ItemGroup>
-  <Target Name="CopyAutoCoreSeedOutputs" AfterTargets="Link" BeforeTargets="CopyDistRuntimeDlls" Condition="'$(ConfigurationType)'=='DynamicLibrary'">
-    <MakeDir Directories="$(AutoCoreSeedDir);$(AutoCoreDistDir)" />
-    <Copy SourceFiles="$(TargetDir)auto_core.dll" DestinationFiles="$(AutoCoreDistDir)auto_core.dll" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
-    <Copy SourceFiles="$(TargetDir)auto_core.dll" DestinationFiles="$(AutoCoreSeedDir)auto_core.dll" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
-    <Copy SourceFiles="$(TargetDir)auto_core.lib" DestinationFiles="$(AutoCoreSeedDir)auto_core.lib" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" />
-  </Target>
   <Target Name="CopyDistRuntimeDlls" AfterTargets="Link" BeforeTargets="PostBuildEvent">
     <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(AutoCoreRootDir)scripts\copy-dist-dlls.ps1&quot;" />
     <PropertyGroup>

@@ -161,6 +161,9 @@
     <ClInclude Include="..\src\clock_formatting.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\components_list_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\core_config_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

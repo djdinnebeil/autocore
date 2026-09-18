@@ -15,16 +15,17 @@ export namespace ac::logging {
     /**
      * \brief The only wire-protocol version accepted by this build.
      */
-    inline constexpr std::uint8_t protocol_version = 1;
+    inline constexpr std::uint8_t protocol_version = 2;
 
     /**
-     * \brief Size of the fixed header that precedes component and message bytes.
+     * \brief Size of the fixed header that precedes event field bytes.
      *
-     * Layout: bytes 0–3 `ACLG` magic, 4 protocol version, 5 `EventType`,
-     * 6 newline flag (`0` or `1`), 7–10 little-endian component length,
-     * 11–14 little-endian message length.
+     * Layout: bytes 0-3 `ACLG` magic, 4 protocol version, 5 `EventType`,
+     * 6 newline flag (`0` or `1`), 7-10 little-endian timestamp length,
+     * 11-14 little-endian component length, and 15-18 little-endian message
+     * length.
      */
-    inline constexpr std::size_t encoded_header_size = 15;
+    inline constexpr std::size_t encoded_header_size = 19;
 
     /**
      * \brief Maximum encoded frame size, including `encoded_header_size`.
@@ -42,11 +43,12 @@ export namespace ac::logging {
     /**
      * \brief A message or control event exchanged with the main logger.
      *
-     * `component` and `message` are encoded byte-for-byte. They conventionally
-     * contain UTF-8, but the protocol does not validate their encoding.
+     * `timestamp`, `component`, and `message` are encoded byte-for-byte. They
+     * conventionally contain UTF-8, but the protocol does not validate them.
      */
     struct Event {
         EventType type = EventType::message;
+        std::string timestamp;
         std::string component;
         std::string message;
         bool newline = true;
@@ -77,8 +79,9 @@ export namespace ac::logging {
      * \brief Encodes an event as a logger-protocol frame.
      *
      * The header is `encoded_header_size` bytes (`ACLG`, version, type,
-     * newline `0` or `1`, and two little-endian 32-bit lengths). The two byte
-     * strings follow without terminators. The complete frame is the payload of
+     * newline `0` or `1`, and three little-endian 32-bit lengths). The
+     * timestamp, component, and message bytes follow without terminators. The
+     * complete frame is the payload of
      * one `pipes::send_string` / `read_string` frame; `logger_ac.exe` decodes that
      * pipe payload, not the raw pipe bytes.
      *
@@ -96,8 +99,8 @@ export namespace ac::logging {
      *
      * Trailing bytes are not permitted. Versions other than
      * `protocol_version`, newline values other than `0` or `1`, and values
-     * outside the declared `EventType` range are rejected. Component and
-     * message bytes are preserved without text validation.
+     * outside the declared `EventType` range are rejected. Timestamp,
+     * component, and message bytes are preserved without text validation.
      *
      * \param data The complete encoded frame (one pipe string payload).
      * \return The decoded event, or the error describing why the frame was

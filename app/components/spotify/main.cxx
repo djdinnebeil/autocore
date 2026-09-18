@@ -16,13 +16,14 @@ import command_registry;
 import spotify_registry;
 import spotify_pipe;
 import auto_core.taskbar;
+import component_protocol;
 import <Windows.h>;
 
 /**
  * \brief Ends the Spotify process and performs necessary cleanup.
  */
 void end_spotify() {
-    spotify_component.logg("spotify_ac.exe is shutting down");
+    spotify_component.log_and_log("shutdown signal received");
     stop_spotify_monitor();
 }
 /**
@@ -38,7 +39,7 @@ int main() {
     log_init();
 
     if (!ac::taskbar::connect()) {
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Unable to receive the native taskbar snapshot from Auto Core."
         );
     }
@@ -50,7 +51,7 @@ int main() {
 
     ac::pipes::Pipe ac_spotify_pipe;
     auto connection = ac::pipes::connect_to_pipe_server(
-        std::wstring { ac::protocol::spotify::pipe_name }
+        ac::protocol::component::pipe_name("spotify")
     );
 
     if (connection) {
@@ -71,14 +72,26 @@ int main() {
                 .switch_player = &spotify_switch_player,
                 .download_album_cover = &spotify_download_album_cover,
                 .unknown_named = [](const std::string_view name) {
-                    spotify_component.logg_and_print("Unknown Spotify command: {}", name);
+                    spotify_component.log_and_print("Unknown Spotify command: {}", name);
                 }
             },
             protocol_failed
         );
-        if (const auto result = dispatcher.process(ac_spotify_pipe);
+        if (const auto hello = ac::pipes::send_string(
+                ac_spotify_pipe,
+                ac::protocol::component::make_hello(
+                    registry.autocomplete_values()
+                )
+            ); !hello) {
+            spotify_component.log_and_print(
+                "Failed to send Spotify hello. Error: {}",
+                hello.error().system_error
+            );
+            exit_code = 1;
+        }
+        else if (const auto result = dispatcher.process(ac_spotify_pipe);
             !result) {
-            spotify_component.logg_and_print(
+            spotify_component.log_and_print(
                 "Spotify pipe failed. Error: {}",
                 result.error().system_error
             );
@@ -88,7 +101,7 @@ int main() {
         }
     }
     else {
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Failed to connect to Spotify pipe. Error: {}",
             connection.error().system_error
         );
@@ -96,7 +109,7 @@ int main() {
 
     stop_spotify_monitor();
 
-    spotify_component.logg_and_logg("spotify_ac.exe has ended");
+    spotify_component.log_and_log("program terminated");
 
     return exit_code;
 }

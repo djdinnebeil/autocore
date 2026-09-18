@@ -19,7 +19,8 @@ Dash provides five operations:
 5. Exit.
 
 Auto Core exposes only the `launch_dash` keymap command. Dash is not started
-with the component session; `launch_dash` is on demand.
+with the component session; `launch_dash` is on demand when `dash` is enabled
+in `config/components.list`.
 
 ## Main launch
 

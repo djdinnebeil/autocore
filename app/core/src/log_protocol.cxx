@@ -14,7 +14,7 @@ namespace {
 
     static_assert(
         ac::logging::encoded_header_size ==
-            protocol_magic.size() + 1 + 1 + 1 + 4 + 4
+            protocol_magic.size() + 1 + 1 + 1 + 4 + 4 + 4
     );
 
     void append_uint32_le(
@@ -87,6 +87,8 @@ namespace ac::logging {
         }
 
         if (
+            event.timestamp.size() >
+                (std::numeric_limits<std::uint32_t>::max)() ||
             event.component.size() >
                 (std::numeric_limits<std::uint32_t>::max)() ||
             event.message.size() >
@@ -98,7 +100,8 @@ namespace ac::logging {
         }
 
         const std::size_t body_size =
-            event.component.size() + event.message.size();
+            event.timestamp.size() + event.component.size() +
+            event.message.size();
 
         if (body_size > maximum_encoded_size - encoded_header_size) {
             return std::unexpected(
@@ -114,12 +117,17 @@ namespace ac::logging {
         encoded.push_back(event.newline ? '\x01' : '\x00');
         append_uint32_le(
             encoded,
+            static_cast<std::uint32_t>(event.timestamp.size())
+        );
+        append_uint32_le(
+            encoded,
             static_cast<std::uint32_t>(event.component.size())
         );
         append_uint32_le(
             encoded,
             static_cast<std::uint32_t>(event.message.size())
         );
+        encoded.append(event.timestamp);
         encoded.append(event.component);
         encoded.append(event.message);
 
@@ -177,27 +185,34 @@ namespace ac::logging {
             );
         }
 
-        const std::uint32_t component_size = read_uint32_le(data, 7);
-        const std::uint32_t message_size = read_uint32_le(data, 11);
+        const std::uint32_t timestamp_size = read_uint32_le(data, 7);
+        const std::uint32_t component_size = read_uint32_le(data, 11);
+        const std::uint32_t message_size = read_uint32_le(data, 15);
         const std::size_t remaining_size =
             data.size() - encoded_header_size;
 
         if (
-            component_size > remaining_size ||
-            message_size > remaining_size - component_size ||
-            component_size + message_size != remaining_size
+            timestamp_size > remaining_size ||
+            component_size > remaining_size - timestamp_size ||
+            message_size > remaining_size - timestamp_size - component_size ||
+            timestamp_size + component_size + message_size != remaining_size
         ) {
             return std::unexpected(
                 ProtocolError::malformed_frame
             );
         }
 
-        const std::size_t component_offset = encoded_header_size;
+        const std::size_t timestamp_offset = encoded_header_size;
+        const std::size_t component_offset =
+            timestamp_offset + timestamp_size;
         const std::size_t message_offset =
             component_offset + component_size;
 
         return Event {
             .type = type,
+            .timestamp = std::string {
+                data.substr(timestamp_offset, timestamp_size)
+            },
             .component = std::string {
                 data.substr(component_offset, component_size)
             },

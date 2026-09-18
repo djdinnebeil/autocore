@@ -18,7 +18,7 @@ void itunes_client::set_config() {
 
     const auto document = ac::ini::read(itunes_config_path);
     if (!document) {
-        itunes_component.logg_and_logg(
+        itunes_component.log_and_log(
             "itunes.ini unavailable at {}; using defaults (auto_start = {})",
             itunes_config_path,
             auto_start
@@ -41,7 +41,7 @@ void itunes_client::set_config() {
     auto_start = settings.auto_start;
     tab_end = settings.tab_end;
 
-    itunes_component.logg_and_logg(
+    itunes_component.log_and_log(
         "itunes.ini {}: auto_start raw={} resolved={}",
         itunes_config_path,
         raw_auto_start.value_or("absent"),

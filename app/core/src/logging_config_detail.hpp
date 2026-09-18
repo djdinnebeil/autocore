@@ -12,13 +12,11 @@
 namespace ac::logging::config::detail {
 
     struct RawSettings {
-        std::optional<std::string_view> enabled;
         std::optional<std::string_view> write_to_console;
         std::optional<std::filesystem::path> directory;
     };
 
     struct Settings {
-        bool enabled;
         bool write_to_console;
         std::filesystem::path directory;
         std::filesystem::path components_directory;

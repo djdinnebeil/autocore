@@ -102,7 +102,7 @@ std::string episode_title() {
     const std::string series = trim_copy(journal_setting("series").value_or(""));
     const auto episode = journal_database::take_next_episode(series);
     if (!episode) {
-        journal_component().logg_and_print("{}", episode.error());
+        journal_component().log_and_print("{}", episode.error());
         return {};
     }
 
@@ -127,7 +127,7 @@ void journal_title::print_episode_title() {
     const std::string text = episode_title();
     if (text.empty()) {
         if (!ac::keyboard::send_linebreak()) {
-            journal_component().logg_and_print(
+            journal_component().log_and_print(
                 "Unable to send a linebreak."
             );
         }

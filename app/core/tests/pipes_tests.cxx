@@ -142,6 +142,10 @@ TEST_CASE(
     REQUIRE_FALSE(command);
     CHECK(command.error().system_error == ERROR_INVALID_HANDLE);
 
+    const auto nowait = ac::pipes::send_pipe_command_nowait(pipe, 1);
+    REQUIRE_FALSE(nowait);
+    CHECK(nowait.error().system_error == ERROR_INVALID_HANDLE);
+
     const auto sent = ac::pipes::send_string(pipe, "message");
     REQUIRE_FALSE(sent);
     CHECK(sent.error().system_error == ERROR_INVALID_HANDLE);
@@ -184,4 +188,25 @@ TEST_CASE(
 
     REQUIRE_FALSE(result);
     CHECK(result.error().system_error == ERROR_INVALID_DATA);
+}
+
+TEST_CASE(
+    "Nowait command write succeeds on a connected pipe",
+    "[pipes][windows-integration]"
+) {
+    auto pipes = connect_pipe_pair();
+
+    REQUIRE(ac::pipes::send_pipe_command_nowait(pipes.client, 7));
+
+    std::int32_t command {};
+    DWORD bytes_read {};
+    REQUIRE(ReadFile(
+        pipes.server.native_handle(),
+        &command,
+        sizeof(command),
+        &bytes_read,
+        nullptr
+    ) != FALSE);
+    CHECK(bytes_read == sizeof(command));
+    CHECK(command == 7);
 }

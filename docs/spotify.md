@@ -232,8 +232,8 @@ waits for the desktop window, and transfers playback to that local device.
 | `spotify_component.ixx` | Component logging identity and logger connection. |
 | `main.cxx` | Process startup, pipe loop, and orderly shutdown. |
 
-The main-process adapter is implemented by
-`app/main/modules/spotify_component.ixx` and `app/main/src/spotify_component.cxx`.
+Main hosts Spotify as a generic `ac.component.v1` child. Invoke and shutdown
+share one per-child mutex on the control pipe.
 
 ## Verification status
 

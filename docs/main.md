@@ -8,28 +8,30 @@ documented with each component; this page covers the Main process only.
 
 [`main.cxx`](../app/main/src/main.cxx) runs this sequence:
 
-1. Load `config/auto_core.ini` (write portable defaults if the file is missing).
+1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
+   mutex, held until this process ends).
+2. Load `config/auto_core.ini` (write portable defaults if the file is missing).
    A missing file or invalid `warn_without_winkey_mapping` uses `true` and is
    not fatal.
-2. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
+3. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
-3. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
+4. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
    marker and continues; No exits (`1`) and leaves the marker so the next start
    asks again.
-4. Install the unhandled-exception restart filter.
-5. Capture `main_thread_id`, then install the low-level keyboard hook and
+5. Install the unhandled-exception restart filter.
+6. Capture `main_thread_id`, then install the low-level keyboard hook and
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
-6. Start `logger_ac.exe` when central logging is enabled, then connect.
-7. Initialize the component session (`taskbar_ac.exe`, pipes, child processes).
-8. Load `keymap/bindings.ini`. If the file is missing, write a seed of every
+7. Start `logger_ac.exe` when `logger` is enabled in `components.list`, then connect.
+8. Initialize the generic component session from `config/components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled).
+9. Load `keymap/bindings.ini`. If the file is missing, write a seed of every
    `key_codes` name (`numpad_0` / `numpad_1` filled, others `{, }`). Workspace
    or file-load failure installs a two-key emergency map in memory and does
    not rewrite an existing file.
-9. Print the ready banner on a detached thread (weekday and
+10. Print the ready banner on a detached thread (weekday and
    `writer/task_list.txt`). A missing file is logged and the task section is
    omitted; an empty file prints "Nothing pending today."
-10. Enter the thread message loop.
+11. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two
@@ -81,13 +83,9 @@ rows (no resolved command on either side of any key), logs and installs an
 in-memory emergency map with the same two filled bindings. That emergency
 map is not written back to `bindings.ini`.
 
-After a successful workspace, Main loads `journal_choices.ini` from the
-configured journal data directory,
-then rewrites `keymap/components/journal.keymap_commands.txt` (keeps factory
-templates already in the file, then protocol names plus parsed alias names,
-sorted) and refreshes `keymap/keymap_commands.txt` from the command registry
-plus those alias names. Malformed or reserved alias lines are logged and
-omitted from both files.
+After a successful workspace, Main refreshes `keymap/keymap_commands.txt`
+from the command registry, including names advertised by started generic
+children. Journal aliases are advertised by `journal_ac.exe`.
 
 `bindings.ini` lines are `key = {primary, secondary}`. An optional `[keymap]`
 header and `;` / `#` comments are ignored. A comma inside `()` or quotes is
@@ -160,78 +158,69 @@ Neither is intended for production maps; both are still registered so
 ## Shutdown
 
 Console close, Ctrl+C, Ctrl+Break, and session end post `WM_APP+97` to the
-main thread. That calls `close_program()`: set `program_closing`, stop the
-local server, send pipe shutdowns to iTunes, Spotify, journal, wake, and
-writer, stop `taskbar_ac.exe`, unhook the keyboard, and post `WM_QUIT`.
-Windows may still terminate the process about five seconds after a console
-close (`CTRL_CLOSE_EVENT`) if that work has not finished.
+main thread. That calls `close_program()`: set `program_closing`, remove the
+keyboard hook, send v1 `shutdown` to all generic children, and supervise their
+process handles under the shared `shutdown.ini` deadline. Popup mode hides and
+detaches the console first; console mode keeps it for delayed-shutdown recovery.
+Logger starts with `CREATE_NO_WINDOW`. Generic `{name}_ac.exe` children inherit
+Main's console (`CreateProcess` flags `0`) so `print()` writes the same
+`std::cout`. Dash and config tools keep `CREATE_NEW_CONSOLE`. A prompt
+activates Main's console (Win+number when `auto_core` is in slots 1–10) or
+allocates its own if attach fails. A new `auto_core.exe` waits for this
+process to exit before initializing.
+Title-bar close (`CTRL_CLOSE_EVENT`) is not a supported shutdown path.
+Shared attachment means it can reach children. Windows may still terminate
+the process about five seconds after a console close if that work has not
+finished.
 
-Logger shutdown is separate: Main requests a graceful stop, waits six
-seconds, then terminates `logger_ac.exe` if needed. `server_ac.exe` is stopped with
-`TerminateProcess`.
+Logger shutdown is separate: Main requests a graceful stop and waits for the
+shared `shutdown.ini` deadline. The logger writes the session's terminal
+centralized-log entry before shutting down and rejects every later central-log
+event; subsequent shutdown detail remains available in component-local logs.
+If the deadline expires, Main terminates `logger_ac.exe`. The logger also runs
+in a kill-on-close job owned by Main, so it cannot survive an abrupt Main exit.
+Generic children, including `server_ac.exe`, receive v1 `shutdown` on their
+control pipe.
 
 ## Component session
 
 `ac::main::components::initialize()` is the RAII session started from `main`:
 
-1. Start `taskbar_ac.exe`, wait up to five seconds for `taskbar_ready`, then up
-   to five seconds to connect to the snapshot authority. Failure logs and
-   continues without native Win+position.
-2. Create pipe servers for journal, Spotify, iTunes, wake, and writer.
-3. Start those children and `server_ac.exe`.
-4. Wait up to five seconds for `journal_ready` and `writer_ready`. Writer
-   ready-wait failure is logged. Keymap still registers writer names; invoke
-   and shutdown check `pipe.valid()`, and shutdown `reset()`s the handle.
-   There is no session flag that skips registration. The journal ready result
-   is ignored; a timeout is only visible if `wait_for_journal_ready` itself
-   logged.
+1. Load `config/components.list`. Invalid names are logged and ignored.
+   Known specials (`logger`, `dash`, `slash`) are not started as v1
+   children.
+2. If `taskbar` is enabled, start it and wait for hello, then attach the
+   snapshot client. Snapshot failure keeps the control child.
+3. Create pipes and start every other enabled `{name}_ac.exe` without
+   waiting. Wait for those hellos in parallel (5s window). Failure disables
+   only that child (pipe closed, process terminated).
 
-The returned `Session` destructor stops the taskbar client only. Pipe
-shutdowns and `stop_server()` run from `close_program()` before `WM_QUIT`.
+The returned `Session` destructor calls `shutdown()` if it is still active.
+Shutdown requests are sent in reverse successful-start order before Main waits
+for any process. Main only offers OS termination for children whose hello
+declares `force_allowed`; graceful children can be left running.
 
-Dash is not started here; `launch_dash` runs on demand. See
+Dash is not started here; `launch_dash` runs on demand when `dash` is
+enabled in `components.list`. See
 [dash.md](dash.md) for the `--target` / `--parent-pid` launch line.
 
-Slash is launched per recycle-bin command and has no long-lived pipe. Runtime
-names come from `keymap/components/slash.keymap_commands.txt`, or from the protocol `all` list
-(`report_and_empty_recycle_bin`) if that file is missing. The wait is infinite
-on the main thread, so a Slash command blocks keyboard dispatch until
-`slash_ac.exe` exits.
+Slash is launched per recycle-bin command when `slash` is listed enabled
+and has no long-lived pipe.
 
-Wake has no ready-wait and no Main keymap names. Main creates `wake_pipe`,
-starts `wake_ac.exe`, and at shutdown sends only the protocol `shutdown`
-command.
+Wake and server are generic v1 children. Wake has no advertised keymap
+names. Server shutdown uses the control pipe.
 
-## Pipe children
+## Generic children
 
-iTunes and Spotify have no ready-wait. Main creates `ac_itunes_pipe` /
-`ac_spotify_pipe`, starts `itunes_ac.exe` / `spotify_ac.exe`, and sends named invokes
-from the keymap. Spotify serializes invoke and shutdown on one mutex. iTunes
-mutexes named invoke only; integer shutdown is not serialized (see
-[app/main/TODO.md](../app/main/TODO.md)). Runtime names come from
-`keymap/components/itunes.keymap_commands.txt` /
-`keymap/components/spotify.keymap_commands.txt`, or from the
-protocol `all` lists if those files are missing. Main also registers
-`print_next_up_song_list` as an alias for `itunes_print_next_up`.
-
-Journal waits up to five seconds for `journal_ready`. Parameterized keymap
-names go through factories that forward `make_print_choice(...)` and
-`print_and_insert_into_journal(...)` expressions on `ac_journal_pipe`.
-`launch_journal_config` is Main-local: it starts `journal_config.exe` with
-`CREATE_NEW_CONSOLE` and is not a pipe request. Person-name print-choice
-aliases live in `journal_choices.ini` under the configured journal data
-directory and expand only when
-`bindings.ini` names them.
-
-Writer waits up to five seconds for `writer_ready`. Invoke is by command
-name on `ac_writer_pipe`. After shutdown the pipe handle is reset.
+Boot-time children speak [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx).
+Main forwards keymap names from each child's hello catalog. Journal aliases
+live in `journal_choices.ini` and are advertised by `journal_ac.exe`.
+`launch_journal_config` is Main-local.
 
 Registering runtime commands and adding a new child project are in
-[development.md](development.md). Per-component contracts:
+[development.md](development.md). Per-component product docs:
 
 - [Dash](dash.md)
 - [iTunes](itunes.md)
 - [Spotify](spotify.md)
 - [Taskbar](taskbar.md)
-- Journal protocol: [`journal_protocol.ixx`](../app/shared/protocols/journal_protocol.ixx)
-- Writer protocol: [`writer_protocol.ixx`](../app/shared/protocols/writer_protocol.ixx)

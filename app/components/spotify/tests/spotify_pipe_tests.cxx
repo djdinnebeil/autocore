@@ -12,7 +12,7 @@
 import auto_core.core.pipes;
 import command_registry;
 import spotify_pipe;
-import spotify_protocol;
+import component_protocol;
 
 namespace {
 
@@ -80,54 +80,13 @@ struct recorded_actions {
     }
 };
 
-void send_command(ac::pipes::Pipe& pipe, ac::protocol::spotify::Command command) {
+void send_command(ac::pipes::Pipe& pipe, ac::protocol::component::Request command) {
     REQUIRE(ac::pipes::send_pipe_command(
-        pipe, ac::protocol::spotify::to_wire(command)
+        pipe, ac::protocol::component::to_wire(command)
     ));
 }
 
 } // namespace
-
-TEST_CASE(
-    "Spotify numeric commands dispatch over a named pipe",
-    "[spotify][pipe][windows-integration]"
-) {
-    auto pipes = connect_pipe_pair();
-    command_registry::Registry registry;
-    ac::pipes::CommandDispatcher dispatcher;
-    recorded_actions actions;
-    bool protocol_failed = false;
-    register_spotify_pipe_commands(
-        dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
-    );
-
-    using ac::protocol::spotify::Command;
-    for (const auto command : {
-        Command::play_pause,
-        Command::next_song,
-        Command::print_songs,
-        Command::get_queue,
-        Command::update_component,
-        Command::switch_player,
-        Command::download_album_cover,
-        Command::shutdown
-    }) {
-        send_command(pipes.client, command);
-    }
-
-    REQUIRE(dispatcher.process(pipes.server));
-    CHECK_FALSE(protocol_failed);
-    CHECK(actions.invoked == std::vector<std::string> {
-        "play_pause",
-        "next_song",
-        "print_songs",
-        "get_queue",
-        "update_component",
-        "switch_player",
-        "download_album_cover",
-        "shutdown"
-    });
-}
 
 TEST_CASE(
     "Spotify named commands dispatch their string payload over a named pipe",
@@ -143,9 +102,9 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::spotify::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     REQUIRE(ac::pipes::send_string(pipes.client, "spotify_test_named"));
-    send_command(pipes.client, ac::protocol::spotify::Command::shutdown);
+    send_command(pipes.client, ac::protocol::component::Request::shutdown);
 
     REQUIRE(dispatcher.process(pipes.server));
     CHECK_FALSE(protocol_failed);
@@ -165,9 +124,9 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::spotify::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     REQUIRE(ac::pipes::send_string(pipes.client, "missing_spotify_command"));
-    send_command(pipes.client, ac::protocol::spotify::Command::shutdown);
+    send_command(pipes.client, ac::protocol::component::Request::shutdown);
 
     REQUIRE(dispatcher.process(pipes.server));
     CHECK_FALSE(protocol_failed);
@@ -188,7 +147,7 @@ TEST_CASE(
         dispatcher, pipes.server, registry, actions.pipe_actions(), protocol_failed
     );
 
-    send_command(pipes.client, ac::protocol::spotify::Command::invoke_named);
+    send_command(pipes.client, ac::protocol::component::Request::invoke);
     pipes.client.reset();
 
     REQUIRE(dispatcher.process(pipes.server));

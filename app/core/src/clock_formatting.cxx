@@ -32,6 +32,7 @@ namespace {
         require_range(time.hour, 0, 23, "hour");
         require_range(time.minute, 0, 59, "minute");
         require_range(time.second, 0, 59, "second");
+        require_range(time.millisecond, 0, 999, "millisecond");
     }
 
     void validate_date(const ac::clock::detail::LocalTime& time) {
@@ -56,6 +57,17 @@ namespace ac::clock::detail {
             time.hour,
             time.minute,
             time.second
+        );
+    }
+
+    std::string format_timestamp_with_milliseconds(const LocalTime& time) {
+        validate_time(time);
+        return std::format(
+            "{:02}:{:02}:{:02}.{:03}",
+            time.hour,
+            time.minute,
+            time.second,
+            time.millisecond
         );
     }
 

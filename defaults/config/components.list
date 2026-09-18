@@ -1,0 +1,12 @@
+# Components are enabled when listed; append "off" to disable.
+[components]
+logger
+taskbar
+journal
+itunes
+spotify
+wake
+writer
+server
+dash
+slash

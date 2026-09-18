@@ -5,7 +5,7 @@ import auto_core.taskbar;
 import command_registry;
 import writer_commands;
 import writer_component;
-import writer_protocol;
+import component_protocol;
 
 import <Windows.h>;
 
@@ -49,10 +49,10 @@ int main(int argument_count, char* arguments[]) {
     ac::config::initialize_core_settings();
 
     writer_component().connect_to_logger();
-    writer_component().logg_and_logg("writer_ac.exe started");
+    writer_component().log_and_log("writer_ac.exe started");
 
     if (!ac::taskbar::connect()) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Unable to receive the native taskbar snapshot; notes will "
             "open without taskbar pre-activation."
         );
@@ -62,10 +62,10 @@ int main(int argument_count, char* arguments[]) {
     } taskbar_connection_guard;
 
     auto connection = ac::pipes::connect_to_pipe_server(
-        std::wstring {ac::protocol::writer::pipe_name}
+        ac::protocol::component::pipe_name("writer")
     );
     if (!connection) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Failed to connect to writer pipe. Error: {}",
             connection.error().system_error
         );
@@ -76,13 +76,13 @@ int main(int argument_count, char* arguments[]) {
     ac::pipes::CommandDispatcher dispatcher;
     bool protocol_failed = false;
     dispatcher.set_command(
-        ac::protocol::writer::to_wire(
-            ac::protocol::writer::Request::invoke
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::invoke
         ),
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                writer_component().logg_and_print(
+                writer_component().log_and_print(
                     "Failed to read writer command. Error: {}",
                     expression.error().system_error
                 );
@@ -92,7 +92,7 @@ int main(int argument_count, char* arguments[]) {
             }
             auto action = registry.resolve(*expression);
             if (!action) {
-                writer_component().logg_and_print(
+                writer_component().log_and_print(
                     "Unknown writer command: {}", *expression
                 );
                 return;
@@ -101,16 +101,21 @@ int main(int argument_count, char* arguments[]) {
         }
     );
     dispatcher.set_command(
-        ac::protocol::writer::to_wire(
-            ac::protocol::writer::Request::shutdown
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::shutdown
         ),
-        [&dispatcher] { dispatcher.request_stop(); }
+        [&dispatcher] {
+            writer_component().log_and_log("shutdown signal received");
+            dispatcher.request_stop();
+        }
     );
 
     if (const auto ready = ac::pipes::send_string(
-            pipe, ac::protocol::writer::ready_message
+            pipe, ac::protocol::component::make_hello(
+                registry.autocomplete_values()
+            )
         ); !ready) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Failed to signal writer readiness. Error: {}",
             ready.error().system_error
         );
@@ -118,7 +123,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        writer_component().logg_and_print(
+        writer_component().log_and_print(
             "Writer pipe failed. Error: {}",
             result.error().system_error
         );
@@ -128,6 +133,6 @@ int main(int argument_count, char* arguments[]) {
         return 1;
     }
 
-    writer_component().logg_and_logg("writer_ac.exe ended");
+    writer_component().log_and_log("program terminated");
     return 0;
 }

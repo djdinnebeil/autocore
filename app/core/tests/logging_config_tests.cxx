@@ -6,7 +6,6 @@ namespace detail = ac::logging::config::detail;
 TEST_CASE("Logger configuration applies explicit values", "[logging-config][unit]") {
     const auto settings = detail::resolve(
         {
-            .enabled = "false",
             .write_to_console = "true",
             .directory = R"(D:\logs)"
         },
@@ -14,11 +13,34 @@ TEST_CASE("Logger configuration applies explicit values", "[logging-config][unit
         R"(C:\app)"
     );
 
-    CHECK_FALSE(settings.enabled);
     CHECK(settings.write_to_console);
     CHECK(settings.directory == R"(D:\logs)");
     CHECK(settings.components_directory ==
         std::filesystem::path {R"(D:\logs\components)"});
+}
+
+TEST_CASE("Logger configuration accepts on and off", "[logging-config][unit]") {
+    const auto settings = detail::resolve(
+        {
+            .write_to_console = "on"
+        },
+        R"(C:\default-logs)",
+        R"(C:\app)"
+    );
+
+    CHECK(settings.write_to_console);
+}
+
+TEST_CASE("Logger configuration accepts false", "[logging-config][unit]") {
+    const auto settings = detail::resolve(
+        {
+            .write_to_console = "false"
+        },
+        R"(C:\default-logs)",
+        R"(C:\app)"
+    );
+
+    CHECK_FALSE(settings.write_to_console);
 }
 
 TEST_CASE("Logger configuration has efficient defaults", "[logging-config][unit]") {
@@ -28,7 +50,6 @@ TEST_CASE("Logger configuration has efficient defaults", "[logging-config][unit]
         R"(C:\app)"
     );
 
-    CHECK(settings.enabled);
     CHECK_FALSE(settings.write_to_console);
     CHECK(settings.directory == R"(C:\default-logs)");
     CHECK(settings.components_directory ==
@@ -38,17 +59,13 @@ TEST_CASE("Logger configuration has efficient defaults", "[logging-config][unit]
 TEST_CASE("Invalid logger booleans use defaults", "[logging-config][unit]") {
     const auto settings = detail::resolve(
         {
-            .enabled = "TRUE",
             .write_to_console = "yes"
         },
         R"(C:\logs)",
         R"(C:\app)"
     );
 
-    CHECK(settings.enabled);
     CHECK_FALSE(settings.write_to_console);
-    CHECK(settings.report.find("enabled missing or invalid") !=
-        std::string::npos);
     CHECK(settings.report.find("write_to_console missing or invalid") !=
         std::string::npos);
     CHECK(settings.components_directory ==

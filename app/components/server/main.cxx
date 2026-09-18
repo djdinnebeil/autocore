@@ -11,6 +11,8 @@ import std;
 import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.paths;
+import auto_core.core.pipes;
+import component_protocol;
 
 import server_logging;
 
@@ -64,7 +66,7 @@ namespace {
  * \brief Runs the server.
  * Initializes the server with the configuration options and starts the server loop.
  */
-void run_server() {
+void run_server(std::atomic_bool& stop_requested) {
     int configured_port = 8585;
     std::filesystem::path document_root_path =
         ac::paths::executable_directory() / "server";
@@ -83,7 +85,7 @@ void run_server() {
 
     std::error_code exists_error;
     if (!std::filesystem::exists(document_root_path, exists_error)) {
-        server_component.logg_and_logg(
+        server_component.log_and_log(
             "Document root is missing: {}",
             document_root_path
         );
@@ -95,25 +97,112 @@ void run_server() {
         nullptr
     };
 
-    CivetServer server(options);
+    try {
+        CivetServer server(options);
 
-    server_component.logg_and_logg(
-        "Server started at http://127.0.0.1:{}/ serving {}",
-        port_number,
-        document_root_path
-    );
-
-    while (true) {
-        std::this_thread::sleep_for(
-            std::chrono::minutes(1)
+        server_component.log_and_log(
+            "Server started at http://127.0.0.1:{}/ serving {}",
+            port_number,
+            document_root_path
         );
 
-        server_component.update_log_file();
+        while (true) {
+            if (stop_requested.load()) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            server_component.update_log_file();
+        }
     }
+    catch (const std::exception& exception) {
+        server_component.log_and_print(
+            "Failed to bind http://127.0.0.1:{}/: {}",
+            port_number,
+            exception.what()
+        );
+    }
+    catch (...) {
+        server_component.log_and_print(
+            "Failed to bind http://127.0.0.1:{}/",
+            port_number
+        );
+    }
+}
+
+bool run_control_pipe(std::atomic_bool& stop_requested) {
+    auto connection = ac::pipes::connect_to_pipe_server(
+        ac::protocol::component::pipe_name("server")
+    );
+    if (!connection) {
+        server_component.log_and_print(
+            "Failed to connect to the server control pipe. Error: {}",
+            connection.error().system_error
+        );
+        return false;
+    }
+
+    ac::pipes::Pipe pipe = std::move(*connection);
+    ac::pipes::CommandDispatcher dispatcher;
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::shutdown
+        ),
+        [&dispatcher, &stop_requested] {
+            server_component.log_and_log(
+                "shutdown signal received - force termination allowed"
+            );
+            stop_requested.store(true);
+            dispatcher.request_stop();
+        }
+    );
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::invoke
+        ),
+        [&pipe, &dispatcher] {
+            const auto expression = ac::pipes::read_string(pipe);
+            if (!expression) {
+                dispatcher.request_stop();
+                return;
+            }
+            server_component.log_and_print(
+                "Unknown server command: {}",
+                *expression
+            );
+        }
+    );
+
+    if (const auto hello = ac::pipes::send_string(
+            pipe,
+            ac::protocol::component::make_hello(
+                {},
+                ac::protocol::component::TerminationPolicy::force_allowed
+            )
+        ); !hello) {
+        server_component.log_and_print(
+            "Failed to send server hello. Error: {}",
+            hello.error().system_error
+        );
+        stop_requested.store(true);
+        return false;
+    }
+
+    std::jthread http {[&stop_requested] {
+        run_server(stop_requested);
+    }};
+    (void)dispatcher.process(pipe);
+    stop_requested.store(true);
+    return true;
 }
 
 int main() {
     log_init();
-    run_server();
+    std::atomic_bool stop_requested {false};
+
+    if (!run_control_pipe(stop_requested)) {
+        return 1;
+    }
+
+    server_component.log_and_log("program terminated");
     return 0;
 }

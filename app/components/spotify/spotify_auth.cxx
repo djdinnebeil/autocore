@@ -218,7 +218,7 @@ void Spotify::check_refresh_token_expiration() {
     if (refresh_token_expiration <= 0) {
         reauthorization_required = true;
 
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify refresh-token expiration is missing or invalid."
         );
 
@@ -230,7 +230,7 @@ void Spotify::check_refresh_token_expiration() {
     if (current_time >= refresh_token_expiration) {
         reauthorization_required = true;
 
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify refresh token has expired."
         );
 
@@ -256,7 +256,7 @@ void Spotify::check_refresh_token_expiration() {
             (seconds_remaining + seconds_per_day - 1) /
             seconds_per_day;
 
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify refresh token will expire in "
             + std::to_string(days_remaining)
             + (days_remaining == 1 ? " day." : " days.")
@@ -273,7 +273,7 @@ bool Spotify::check_timerate() {
 
     // Handle case where system time went backward
     if (current_time < start_timestamp) {
-        spotify_component.logg("Warning: System time appears to have gone backward. Forcing token refresh.");
+        spotify_component.log("Warning: System time appears to have gone backward. Forcing token refresh.");
         return true;
     }
 
@@ -295,7 +295,7 @@ bool Spotify::refresh_tokens() {
     }
 
     if (!tokens_extracted) {
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify reauthorization required - run spotify_oauth.exe to clear"
         );
         return false;
@@ -304,7 +304,7 @@ bool Spotify::refresh_tokens() {
     check_refresh_token_expiration();
 
     if (reauthorization_required) {
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify reauthorization required - run spotify_oauth.exe to clear"
         );
         return false;
@@ -334,7 +334,7 @@ bool Spotify::refresh_tokens() {
             save_tokens();
         }
         authorization_header = "Bearer " + access_token;
-        spotify_component.logg_and_logg("refresh_tokens() - tokens refreshed");
+        spotify_component.log_and_log("refresh_tokens() - tokens refreshed");
         return true;
     }
     else if (response.status_code == 400) {
@@ -349,7 +349,7 @@ bool Spotify::refresh_tokens() {
                 refresh_token_expiration = 0;
                 save_tokens();
 
-                spotify_component.logg_and_print(
+                spotify_component.log_and_print(
                     "Spotify refresh token is no longer valid. "
                     "Spotify reauthorization required - run spotify_oauth.exe to clear"
                 );
@@ -358,13 +358,13 @@ bool Spotify::refresh_tokens() {
             }
         }
         catch (const json::exception& e) {
-            spotify_component.logg_and_print(
+            spotify_component.log_and_print(
                 "Failed to parse Spotify token error response: {}",
                 e.what()
             );
         }
 
-        spotify_component.logg_and_print(
+        spotify_component.log_and_print(
             "Spotify token request failed: Status Code {} - {}",
             response.status_code,
             response.text
@@ -373,11 +373,11 @@ bool Spotify::refresh_tokens() {
         return false;
     }
     else if (response.status_code == 429) {
-        spotify_component.logg_and_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
+        spotify_component.log_and_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
         return false;
     }
     else {
-        spotify_component.logg_and_print("Error: \nStatus Code {} - {}", response.status_code, response.text);
+        spotify_component.log_and_print("Error: \nStatus Code {} - {}", response.status_code, response.text);
         return false;
     }
 }

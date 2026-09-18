@@ -26,10 +26,11 @@ namespace {
 
 } // namespace
 
-TEST_CASE("Log events have stable version 1 wire bytes", "[log_protocol][unit]") {
+TEST_CASE("Log events have stable version 2 wire bytes", "[log_protocol][unit]") {
     SECTION("message event") {
         const ac::logging::Event event {
             .type = ac::logging::EventType::message,
+            .timestamp = "2026-09-16 16:52:31.482",
             .component = "core",
             .message = "ready",
             .newline = true
@@ -40,11 +41,14 @@ TEST_CASE("Log events have stable version 1 wire bytes", "[log_protocol][unit]")
 
         const std::string expected {
             'A', 'C', 'L', 'G',
-            '\x01',
+            '\x02',
             '\x00',
             '\x01',
+            '\x17', '\x00', '\x00', '\x00',
             '\x04', '\x00', '\x00', '\x00',
             '\x05', '\x00', '\x00', '\x00',
+            '2', '0', '2', '6', '-', '0', '9', '-', '1', '6', ' ',
+            '1', '6', ':', '5', '2', ':', '3', '1', '.', '4', '8', '2',
             'c', 'o', 'r', 'e',
             'r', 'e', 'a', 'd', 'y'
         };
@@ -63,9 +67,10 @@ TEST_CASE("Log events have stable version 1 wire bytes", "[log_protocol][unit]")
 
         const std::string expected {
             'A', 'C', 'L', 'G',
-            '\x01',
+            '\x02',
             '\x01',
             '\x00',
+            '\x00', '\x00', '\x00', '\x00',
             '\x00', '\x00', '\x00', '\x00',
             '\x00', '\x00', '\x00', '\x00'
         };
@@ -82,6 +87,7 @@ TEST_CASE("Every event type and newline state round-trips", "[log_protocol][unit
         for (const bool newline : {false, true}) {
             const ac::logging::Event original {
                 .type = type,
+                .timestamp = std::string {'2', '\0', '6'},
                 .component = std::string {'a', '\0', 'b'},
                 .message = std::string {'x', '\0', 'y'},
                 .newline = newline
@@ -93,6 +99,7 @@ TEST_CASE("Every event type and newline state round-trips", "[log_protocol][unit
             const auto decoded = ac::logging::decode(*encoded);
             REQUIRE(decoded.has_value());
             CHECK(decoded->type == original.type);
+            CHECK(decoded->timestamp == original.timestamp);
             CHECK(decoded->component == original.component);
             CHECK(decoded->message == original.message);
             CHECK(decoded->newline == original.newline);
@@ -109,11 +116,13 @@ TEST_CASE("Empty event fields round-trip", "[log_protocol][unit]") {
     const auto decoded = ac::logging::decode(*encoded);
     REQUIRE(decoded.has_value());
     CHECK(decoded->component.empty());
+    CHECK(decoded->timestamp.empty());
     CHECK(decoded->message.empty());
 }
 
 TEST_CASE("Payload bytes are not text-validated", "[log_protocol][unit]") {
     const ac::logging::Event original {
+        .timestamp = std::string {static_cast<char>(0xfe)},
         .component = std::string {static_cast<char>(0xff)},
         .message = std::string {
             static_cast<char>(0xc0),
@@ -126,15 +135,17 @@ TEST_CASE("Payload bytes are not text-validated", "[log_protocol][unit]") {
 
     const auto decoded = ac::logging::decode(*encoded);
     REQUIRE(decoded.has_value());
+    CHECK(decoded->timestamp == original.timestamp);
     CHECK(decoded->component == original.component);
     CHECK(decoded->message == original.message);
 }
 
 TEST_CASE("The maximum frame size is accepted", "[log_protocol][unit]") {
     ac::logging::Event event {
+        .timestamp = "timestamp",
         .component = "component",
         .message = std::string(
-            ac::logging::maximum_encoded_size - header_size - 9,
+            ac::logging::maximum_encoded_size - header_size - 18,
             'x'
         )
     };
@@ -145,6 +156,7 @@ TEST_CASE("The maximum frame size is accepted", "[log_protocol][unit]") {
 
     const auto decoded = ac::logging::decode(*encoded);
     REQUIRE(decoded.has_value());
+    CHECK(decoded->timestamp == event.timestamp);
     CHECK(decoded->component == event.component);
     CHECK(decoded->message == event.message);
 }
@@ -228,7 +240,7 @@ TEST_CASE("Decoder validates fixed header fields", "[log_protocol][unit]") {
 }
 
 TEST_CASE("Decoder validates declared field lengths", "[log_protocol][unit]") {
-    SECTION("component exceeds remaining data") {
+    SECTION("timestamp exceeds remaining data") {
         std::string frame = valid_frame();
         write_uint32(frame, 7, 1);
 
@@ -237,9 +249,18 @@ TEST_CASE("Decoder validates declared field lengths", "[log_protocol][unit]") {
         CHECK(result.error() == ac::logging::ProtocolError::malformed_frame);
     }
 
-    SECTION("message exceeds remaining data") {
+    SECTION("component exceeds remaining data") {
         std::string frame = valid_frame();
         write_uint32(frame, 11, 1);
+
+        const auto result = ac::logging::decode(frame);
+        REQUIRE_FALSE(result.has_value());
+        CHECK(result.error() == ac::logging::ProtocolError::malformed_frame);
+    }
+
+    SECTION("message exceeds remaining data") {
+        std::string frame = valid_frame();
+        write_uint32(frame, 15, 1);
 
         const auto result = ac::logging::decode(frame);
         REQUIRE_FALSE(result.has_value());

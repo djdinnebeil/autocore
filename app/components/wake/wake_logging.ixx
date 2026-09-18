@@ -23,7 +23,7 @@ export void update_wake_component() {
 
 export void log_init() {
     wake_component.connect_to_logger();
-	wake_component.logg_and_logg("wake_ac.exe started");
+	wake_component.log_and_log("wake_ac.exe started");
 }
 
 /**
@@ -31,7 +31,7 @@ export void log_init() {
  * to `wake_master.log` and updates `wake_previous.log`.
  */
 export void log_last_wake() {
-    wake_component.logg(
+    wake_component.log(
         "Checking last wake log at {}",
         ac::clock::get_timestamp_with_seconds()
     );
@@ -57,7 +57,7 @@ export void log_last_wake() {
         );
 
         if (!current_last_wake_clear.is_open()) {
-            wake_component.logg(
+            wake_component.log(
                 "Unable to clear '{}'.",
                 current_last_wake_file.string()
             );
@@ -130,7 +130,7 @@ export void log_last_wake() {
             }
         }
 
-        wake_component.loggnl_and_loggnl(
+        wake_component.lognl_and_lognl(
             "wake state change detected at {}",
             current_last_wake_output
         );

@@ -6,7 +6,7 @@ import auto_core.taskbar;
 import command_registry;
 import journal_commands;
 import journal_component;
-import journal_protocol;
+import component_protocol;
 
 import <Windows.h>;
 
@@ -41,6 +41,7 @@ int write_manifest(
 } // namespace
 
 int main(int argument_count, char* arguments[]) {
+    ac::config::initialize_core_settings();
     auto registry = create_journal_command_registry();
 
     if (argument_count == 3 &&
@@ -49,13 +50,11 @@ int main(int argument_count, char* arguments[]) {
         return write_manifest(registry, arguments[2]);
     }
 
-    ac::config::initialize_core_settings();
-
     journal_component().connect_to_logger();
-    journal_component().logg_and_logg("journal_ac.exe started");
+    journal_component().log_and_log("journal_ac.exe started");
 
     if (!ac::taskbar::connect()) {
-        journal_component().logg_and_print(
+        journal_component().log_and_print(
             "Unable to receive the native taskbar snapshot; interactive "
             "prompts will use direct console activation."
         );
@@ -65,10 +64,10 @@ int main(int argument_count, char* arguments[]) {
     } taskbar_connection_guard;
 
     auto connection = ac::pipes::connect_to_pipe_server(
-        std::wstring {ac::protocol::journal::pipe_name}
+        ac::protocol::component::pipe_name("journal")
     );
     if (!connection) {
-        journal_component().logg_and_print(
+        journal_component().log_and_print(
             "Failed to connect to journal pipe. Error: {}",
             connection.error().system_error
         );
@@ -79,13 +78,13 @@ int main(int argument_count, char* arguments[]) {
     ac::pipes::CommandDispatcher dispatcher;
     bool protocol_failed = false;
     dispatcher.set_command(
-        ac::protocol::journal::to_wire(
-            ac::protocol::journal::Request::invoke
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::invoke
         ),
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                journal_component().logg_and_print(
+                journal_component().log_and_print(
                     "Failed to read journal command. Error: {}",
                     expression.error().system_error
                 );
@@ -96,7 +95,7 @@ int main(int argument_count, char* arguments[]) {
 
             auto action = registry.resolve(*expression);
             if (!action) {
-                journal_component().logg_and_print(
+                journal_component().log_and_print(
                     "Unknown journal command: {}",
                     *expression
                 );
@@ -106,16 +105,21 @@ int main(int argument_count, char* arguments[]) {
         }
     );
     dispatcher.set_command(
-        ac::protocol::journal::to_wire(
-            ac::protocol::journal::Request::shutdown
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::shutdown
         ),
-        [&dispatcher] { dispatcher.request_stop(); }
+        [&dispatcher] {
+            journal_component().log_and_log("shutdown signal received");
+            dispatcher.request_stop();
+        }
     );
 
     if (const auto ready = ac::pipes::send_string(
-            pipe, ac::protocol::journal::ready_message
+            pipe, ac::protocol::component::make_hello(
+                registry.autocomplete_values()
+            )
         ); !ready) {
-        journal_component().logg_and_print(
+        journal_component().log_and_print(
             "Failed to signal journal readiness. Error: {}",
             ready.error().system_error
         );
@@ -123,7 +127,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        journal_component().logg_and_print(
+        journal_component().log_and_print(
             "Journal pipe failed. Error: {}",
             result.error().system_error
         );
@@ -134,6 +138,6 @@ int main(int argument_count, char* arguments[]) {
         return 1;
     }
 
-    journal_component().logg_and_logg("journal_ac.exe ended");
+    journal_component().log_and_log("program terminated");
     return 0;
 }
