@@ -41,6 +41,22 @@ export namespace ac {
         /** \brief Closes the central logger connection, if any. */
         AC_API ~Component() noexcept;
 
+        /**
+         * \brief Returns the component name passed to the constructor.
+         */
+        [[nodiscard]] AC_API std::string_view name() const noexcept;
+
+        /**
+         * \brief Reports a missing or malformed `config/<name>.ini`.
+         *
+         * Uses `log_and_print`. Directs the user to `<name>_config.exe`.
+         * States that built-in defaults are in use and the file will not be
+         * created. Does not write the INI.
+         *
+         * \param malformed True when the file exists but cannot be used.
+         */
+        AC_API void report_ini_unavailable(bool malformed = false);
+
         Component(const Component&) = delete;
         Component& operator=(const Component&) = delete;
         Component(Component&&) = delete;

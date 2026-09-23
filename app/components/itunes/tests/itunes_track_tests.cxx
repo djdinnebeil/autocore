@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../itunes_track_detail.hpp"
+#include "../main/itunes_track_detail.hpp"
 
 namespace detail = itunes::track::detail;
 

@@ -5,7 +5,7 @@ namespace ac::paths::detail {
     std::filesystem::path resolve_configured_directory(
         const std::optional<std::filesystem::path>& configured,
         const std::filesystem::path& default_directory,
-        const std::filesystem::path& executable_directory
+        const std::filesystem::path& installation_root
     ) {
         if (!configured || configured->empty()) {
             return default_directory;
@@ -13,7 +13,7 @@ namespace ac::paths::detail {
 
         std::filesystem::path resolved {*configured};
         if (resolved.is_relative()) {
-            resolved = executable_directory / resolved;
+            resolved = installation_root / resolved;
         }
         return resolved.lexically_normal();
     }

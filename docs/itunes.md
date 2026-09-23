@@ -72,8 +72,9 @@ tab_end = 4
 | `auto_start` | `false` | Only lowercase `true` or `false` is applied. Any other present value keeps the default. |
 | `tab_end` | `3` | Stops queue-item formatting when this numbered tab is reached. A malformed integer preserves the current/default value. |
 
-The distributed configuration currently enables automatic startup and uses a
-`tab_end` value of `4`.
+The distributed sample uses `auto_start = false` and `tab_end = 3`. Only
+`itunes_config.exe` writes `itunes.ini`. Missing or malformed: `itunes_ac.exe`
+calls `report_ini_unavailable` and uses `shared/defaults.ixx` in memory.
 
 ## Canonical runtime commands
 
@@ -204,4 +205,4 @@ track deletion and non-administrator attachment remain outside the completed
 refactor phase.
 
 Build commands and test tags are documented in
-`app/components/itunes/TESTING.md`.
+`app/components/itunes/tests/TESTING.md`.

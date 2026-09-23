@@ -20,7 +20,7 @@ Dash provides five operations:
 
 Auto Core exposes only the `launch_dash` keymap command. Dash is not started
 with the component session; `launch_dash` is on demand when `dash` is enabled
-in `config/components.list`.
+in `config/components.ini` `[components]`.
 
 ## Main launch
 
@@ -79,6 +79,13 @@ Users should retain access to each issuing service and be prepared to rotate
 its secret. A lost vault, failed Windows profile, forgotten account credential,
 or unavailable old computer may make the stored values unrecoverable. Deleting
 `dash.vault` permanently removes Dash's stored copies.
+
+## Configuration
+
+`config/dash.ini` exists so the shared config contract applies. There are no
+tunables yet; defaults are `app/components/dash/shared/defaults.ixx` (`[dash]`
+with no keys). Only `dash_config.exe` writes the file. Missing or malformed:
+`dash_ac.exe` reports and continues. The vault stays under `%LOCALAPPDATA%`.
 
 ## Operational limitations
 

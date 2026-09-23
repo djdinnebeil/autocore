@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{8A93D97D-8E16-4A5F-92E1-6559F3D50796}</ProjectGuid>
+    <RootNamespace>itunestests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared">
+    <Import Project="..\..\..\..\msbuild\AutoCore.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(AutoCoreIntDir)$(ProjectName)\</OutDir>
+    <IntDir>$(AutoCoreIntDir)$(ProjectName)\intermediate\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <EnableModules>true</EnableModules>
+      <BuildStlModules>true</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreThirdPartyDir)catch2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>auto_core.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\shared\itunes_protocol.ixx" />
+    <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
+    <ClCompile Include="..\..\..\shared\command_registry.ixx" />
+    <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
+    <ClCompile Include="..\main\itunes_config_detail.cxx" />
+    <ClCompile Include="..\main\itunes_formatting_detail.cxx" />
+    <ClCompile Include="..\main\itunes_track_detail.cxx" />
+    <ClCompile Include="..\main\itunes_runtime.ixx" />
+    <ClCompile Include="..\main\itunes_runtime.cxx" />
+    <ClCompile Include="..\main\itunes_registry.ixx" />
+    <ClCompile Include="..\main\itunes_registry.cxx" />
+    <ClCompile Include="..\main\itunes_pipe.ixx" />
+    <ClCompile Include="..\main\itunes_pipe.cxx" />
+    <ClCompile Include="itunes_config_tests.cxx" />
+    <ClCompile Include="itunes_formatting_tests.cxx" />
+    <ClCompile Include="itunes_protocol_tests.cxx" />
+    <ClCompile Include="itunes_track_tests.cxx" />
+    <ClCompile Include="itunes_registry_tests.cxx" />
+    <ClCompile Include="itunes_runtime_tests.cxx" />
+    <ClCompile Include="itunes_pipe_tests.cxx" />
+    <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\main\itunes_config_detail.hpp" />
+    <ClInclude Include="..\main\itunes_formatting_detail.hpp" />
+    <ClInclude Include="..\main\itunes_track_detail.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TESTING.md" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

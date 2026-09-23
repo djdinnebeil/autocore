@@ -89,6 +89,7 @@
     <ClInclude Include="..\src\components_list_detail.hpp" />
     <ClInclude Include="..\src\config_defaults.hpp" />
     <ClInclude Include="..\src\configured_directory.hpp" />
+    <ClInclude Include="..\src\installation_layout.hpp" />
     <ClInclude Include="..\src\core_config_detail.hpp" />
     <ClInclude Include="..\src\logging_config_detail.hpp" />
     <ClInclude Include="..\src\spotify_config_detail.hpp" />

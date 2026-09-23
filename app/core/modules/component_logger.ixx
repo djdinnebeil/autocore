@@ -14,12 +14,11 @@ namespace ac::component_detail {
      *
      * Files are named `<date>_<component>.log` and
      * `<date>_<component>.main.log` under the supplied directory
-     * (`components/<name>/` from `ac::Component`). Construction opens both
-     * files and appends a session header to the comprehensive log. Each
-     * `write` checks the supplied event date and may roll both files. Session
-     * markers remain comprehensive-log metadata. File failures are reported
-     * through `auto_core.core.error`; later writes no-op until a roll retries
-     * the open.
+     * (`components/<name>/` from `ac::Component`). Construction opens
+     * the files and appends a session header to the comprehensive log.
+     * Each `write` checks the supplied event date and may roll the open
+     * files. File failures are reported through `auto_core.core.error`;
+     * later writes no-op until a roll retries the open.
      */
     class ComponentLogger {
     public:

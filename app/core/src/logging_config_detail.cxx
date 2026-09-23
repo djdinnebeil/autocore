@@ -20,7 +20,7 @@ namespace ac::logging::config::detail {
     Settings resolve(
         const RawSettings& raw,
         const std::filesystem::path& default_directory,
-        const std::filesystem::path& executable_directory
+        const std::filesystem::path& installation_root
     ) {
         Settings settings {
             .write_to_console = false,
@@ -40,7 +40,7 @@ namespace ac::logging::config::detail {
         settings.directory = ac::paths::detail::resolve_configured_directory(
             raw.directory,
             default_directory,
-            executable_directory
+            installation_root
         );
 
         settings.components_directory = settings.directory / "components";

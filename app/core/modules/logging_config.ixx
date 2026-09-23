@@ -2,11 +2,12 @@
  * \file logging_config.ixx
  * \brief Cached logger configuration shared by Auto Core processes.
  *
- * Settings are loaded from `config/logger.ini` and `config/components.list`
- * under the executable directory.
- * The first access caches the result for the process lifetime. A missing file
- * is written once from the portable defaults; invalid values keep those
- * defaults and do not rewrite an existing file.
+ * Settings are loaded from `config/logger.ini` and `components.list`
+ * under the installation root. A missing or unreadable
+ * `components.list` discovers `*_ac.exe` in the binary directory and does not
+ * write the file. A readable `[components]` catalog is authoritative.
+ * The first access caches the result for the process lifetime. A missing
+ * `logger.ini` keeps the defaults in memory and does not write the file.
  */
 module;
 
@@ -21,10 +22,11 @@ export namespace ac::logging::config {
     /**
      * \brief Returns whether central logging is enabled.
      *
-     * True when `logger` is listed enabled (bare or `on`) in
-     * `config/components.list`. A missing name, `off`, a duplicate entry,
-     * or a list that cannot be read keeps this false. This flag does not
-     * control console output; see `write_to_console()`.
+     * True when `logger` is enabled in `components.list`. A missing
+     * name, `off`, or a malformed value keeps this false. When
+     * `components.list` is missing or unreadable, this is true if
+     * `logger_ac.exe` is in the binary directory. This flag does not control
+     * console output; see `write_to_console()`.
      */
     [[nodiscard]] AC_API bool enabled();
 
@@ -43,7 +45,7 @@ export namespace ac::logging::config {
      *
      * Reads `[logger] directory`. A missing or empty setting uses
      * `ac::paths::log_directory()`. Relative paths are resolved against the
-     * executable directory. Dated `YYYY-MM-DD_main.log` files are written
+     * installation root. Dated `YYYY-MM-DD_main.log` files are written
      * here. Per-component files live under `components_directory()`.
      */
     [[nodiscard]] AC_API const std::filesystem::path& directory();

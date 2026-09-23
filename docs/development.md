@@ -4,22 +4,23 @@ How to extend Auto Core: shared protocols, runtime commands, and new component p
 
 ## Shared folder
 
-The `app/shared` folder contains protocols shared by the main application and component executables. Reusable runtime facilities such as paths, logging, and named pipes are provided by the core DLL under `app/core`.
+The `app/shared` folder contains the generic host protocol and command registry. Name-specific protocols and `defaults.ixx` live under `app/components/<name>/shared/`. Reusable runtime facilities such as paths, logging, and named pipes are provided by the core DLL under `app/core`.
 
 The C++23 module catalog is [modules.md](modules.md).
 
 | Folder or Module | Purpose |
 | --- | --- |
-| `command_registry.ixx` | Stores and resolves runtime keymap command names. |
-| `component_protocol.ixx` | Generic `ac.component.v1` hello, invoke, and shutdown. |
-| `itunes_protocol.ixx` | iTunes command names used by `itunes_ac.exe`. |
-| `journal_protocol.ixx` | Journal command tokens used by `journal_ac.exe`. |
-| `slash_protocol.ixx` | Slash recycle-bin command names. |
-| `spotify_protocol.ixx` | Spotify command names used by `spotify_ac.exe`. |
-| `taskbar_config_protocol.ixx` | On-demand discovery protocol for `taskbar_config.exe`. |
-| `taskbar_protocol.ixx` | Reserved Main-local taskbar command names. |
-| `wake_protocol.ixx` | Legacy wake command names (unused on the v1 control pipe). |
-| `writer_protocol.ixx` | Writer command names used by `writer_ac.exe`. |
+| `app/shared/command_registry.ixx` | Stores and resolves runtime keymap command names. |
+| `app/shared/components_editor_request.ixx` | Child `_config.exe` launches `components_editor.exe --component <name>`. |
+| `app/shared/protocols/component_protocol.ixx` | Generic `ac.component.v1` hello, invoke, and shutdown. |
+| `itunes/shared/itunes_protocol.ixx` | iTunes command names used by `itunes_ac.exe`. |
+| `journal/shared/journal_protocol.ixx` | Journal command tokens used by `journal_ac.exe`. |
+| `slash/shared/slash_protocol.ixx` | Slash recycle-bin command names. |
+| `spotify/shared/spotify_protocol.ixx` | Spotify command names used by `spotify_ac.exe`. |
+| `taskbar/shared/taskbar_config_protocol.ixx` | On-demand discovery protocol for `taskbar_config.exe`. |
+| `taskbar/shared/taskbar_protocol.ixx` | Reserved Main-local taskbar command names. |
+| `wake/shared/wake_protocol.ixx` | Legacy wake command names (unused on the v1 control pipe). |
+| `writer/shared/writer_protocol.ixx` | Writer command names used by `writer_ac.exe`. |
 
 ## Registering runtime commands
 
@@ -29,16 +30,17 @@ The command registry is a process-lifetime static built in this order: test comm
 
 `get_runtime_command_names()` and `get_runtime_command_autocomplete_values()` exist on `auto_core.main.keymap.runtime` but have no in-repo callers; the autocomplete file is written from the registry directly.
 
-Mappings in `dist/keymap/bindings.ini` are the key map. If `bindings.ini` is missing, Main writes a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, others `{, }`). If workspace creation or file load fails, Main installs a two-key emergency map in memory and does not rewrite an existing `bindings.ini`. A generic sample is [`defaults/keymap/bindings.ini`](../defaults/keymap/bindings.ini). See [configuration.md](configuration.md).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, others `key = primary | secondary`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. A generic sample is [`defaults/keymap.map`](../defaults/keymap.map). See [configuration.md](configuration.md).
 
 ## Defaults vs live files
 
 A public clone should not contain another person's keymap, journal print-choice table, or machine-specific config. `dist/` is gitignored. Tracked files live under [`defaults/`](../defaults/) (repo `defaults/X` is the sample for runtime `dist/X`):
 
-- [`defaults/journal/journal_choices.ini`](../defaults/journal/journal_choices.ini) — live `dist/journal/journal_choices.ini`
-- [`defaults/keymap/bindings.ini`](../defaults/keymap/bindings.ini) — live `dist/keymap/bindings.ini` (Auto Core writes a seed if missing)
-- [`defaults/config/`](../defaults/config/) — live `dist/config/` INI files and `components.list` (Auto Core writes portable defaults if missing)
-- [`defaults/server/`](../defaults/server/) — shipped `dist/server/` pages (copied at build)
+- [`defaults/components/journal/journal_choices.ini`](../defaults/components/journal/journal_choices.ini) — live journal `journal_choices.ini`
+- [`defaults/keymap.map`](../defaults/keymap.map) — live `dist/keymap.map` (`keymap_editor.exe` writes a seed if missing)
+- [`defaults/components.list`](../defaults/components.list) — live `dist/components.list`
+- [`defaults/config/`](../defaults/config/) — samples for live `dist/config/`. Main host INIs are written only by Main `_config.exe` programs. Component `<name>.ini` samples match each child's `shared/defaults.ixx`; only `<name>_config.exe` writes the live file.
+- [`defaults/server/`](../defaults/server/) — shipped `dist/components/server/` pages (copied at build)
 
 Auto Core does not read `defaults/`. A missing live `journal_choices.ini` is written once from the portable sample. Copy other defaults by hand when you want those bytes. `*.local.ini` / `*.local.ixx` are gitignored and are not loaded.
 
@@ -47,7 +49,8 @@ If `journal_choices.ini` is missing, Auto Core writes the sample aliases once. L
 ## Main process session
 
 `auto_core.exe` constructs `ac::Component auto_core`, then
-`ac::main::components::initialize()` reads `config/components.list` once
+`ac::main::components::initialize()` reads `components.list`
+once (or discovers `*_ac.exe` if that file is unreadable)
 and starts each enabled generic child:
 
 1. If `taskbar` is enabled, start it first (control pipe, hello, then
@@ -86,18 +89,21 @@ Put the project at `app/components/<name>/`. Import
 `spotify_oauth`, `journal_config`, `server_config`, `taskbar_config`, and
 `writer_config` unsuffixed.
 
-Enable a v1 child in live `dist/config/components.list`. Advertise
+Enable a v1 child in live `dist/components.list` (`name` or `name on`).
+Advertise
 commands in the child's hello catalog and bind them in live
-`dist/keymap/bindings.ini`. Main does not need a per-component protocol
+`dist/keymap/keymap.map`. Main does not need a per-component protocol
 file or `register_with` entry. `logger`, `dash`, and `slash` may be
 listed; they are known specials (log process / one-shot keymap
 launchers), not v1 session children. Do not use those names for a new
 v1 project.
 
-Editing [`defaults/config/components.list`](../defaults/config/components.list)
-and [`app/core/src/config_defaults.hpp`](../app/core/src/config_defaults.hpp)
-is optional seed-only. A missing live list is written once from those
-bytes. Changing the seed rebuilds `auto_core.dll`.
+Run `<name>_config.exe` so it launches `components_editor.exe --component <name>`,
+or run `components_editor.exe` with no arguments so a live catalog full-syncs
+discovered `<name>_ac.exe` names that already have `config/<name>.ini`. Do not seed names in
+[`app/core/src/config_defaults.hpp`](../app/core/src/config_defaults.hpp);
+the portable `[components]` list stays blank. Changing that seed rebuilds
+`auto_core.dll` if `config_defaults.hpp` changes.
 
 A clone does not need an `obj` junction. If you want intermediates
 elsewhere, create a directory junction to `obj` yourself and keep it out
@@ -109,9 +115,8 @@ of git.
 discovers a completely new child from the live list without rebuilding
 `auto_core.exe`, `auto_core.dll`, or any existing component. It is
 intentionally omitted from
-[`defaults/config/components.list`](../defaults/config/components.list) and
 [`config_defaults.hpp`](../app/core/src/config_defaults.hpp) so the portable
-seed stays production-only.
+`[components]` seed stays blank.
 
 1. Build only this child (Release x64):
 
@@ -119,12 +124,13 @@ seed stays production-only.
    msbuild "app\components\simple_test\simple_test.sln" /m /t:Build /p:Configuration=Release /p:Platform=x64
    ```
 
-2. Append `simple_test on` to live `dist/config/components.list`. Auto Core
-   does not overwrite that file once it exists.
+2. Append `simple_test` to live `dist/components.list`,
+   or run `simple_test_config.exe` / `components_editor.exe`. Auto Core
+   does not write that file.
 3. Bind `print_simple_test` (no parentheses) in live
-   `dist/keymap/bindings.ini`, for example
+   `dist/keymap/keymap.map`, for example
    `numpad_3 = {print_simple_test, make_print_choice("42nd", true)}`.
-4. Start the already-built `dist/auto_core.exe`. Confirm the child prints
+4. Start the already-built `dist/bin/auto_core.exe`. Confirm the child prints
    startup lines (`component: simple_test`, `pipe: ac_simple_test_pipe`),
    `print_simple_test` appears in regenerated
    `dist/keymap/keymap_commands.txt`, and the bound key prints

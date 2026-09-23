@@ -10,7 +10,7 @@ import auto_core.core.paths;
 
 namespace {
 
-    std::filesystem::path process_executable_directory() {
+    std::filesystem::path process_image_parent() {
         std::array<wchar_t, 32768> buffer {};
         const DWORD length = GetModuleFileNameW(
             nullptr,
@@ -44,26 +44,28 @@ namespace {
 } // namespace
 
 TEST_CASE(
-    "Executable directory matches the running process",
+    "Binary directory matches the running process image parent",
     "[paths][windows-integration]"
 ) {
+    CHECK(ac::paths::bin_directory() == process_image_parent());
     CHECK(
-        ac::paths::executable_directory() ==
-        process_executable_directory()
+        ac::paths::installation_root() ==
+        ac::paths::bin_directory().parent_path()
     );
 }
 
 TEST_CASE(
-    "Auto Core paths are derived from the executable directory",
-    "[paths][windows-integration]"
+    "Data paths are derived from the installation root",
+    "[paths][unit]"
 ) {
-    const auto& executable = ac::paths::executable_directory();
+    const auto& root = ac::paths::installation_root();
     const auto& config = ac::paths::config_directory();
     const auto& keymap = ac::paths::keymap_directory();
 
-    CHECK(config == executable / "config");
-    CHECK(keymap == executable / "keymap");
-    CHECK(ac::paths::keymap_file() == keymap / "bindings.ini");
+    CHECK(config == root / "config");
+    CHECK(keymap == root / "keymap");
+    CHECK(ac::paths::keymap_file() == root / "keymap.map");
+    CHECK(ac::paths::components_list_file() == root / "components.list");
     CHECK(
         ac::paths::keymap_settings_file() ==
         config / "keymap.ini"
@@ -76,36 +78,42 @@ TEST_CASE(
         ac::paths::keymap_commands_file() ==
         keymap / "keymap_commands.txt"
     );
-    CHECK(ac::paths::taskbar_directory() == executable / "taskbar");
-    CHECK(
-        ac::paths::taskbar_applications_directory() ==
-        executable / "taskbar" / "applications"
-    );
-    CHECK(ac::paths::spotify_directory() == executable / "spotify");
-    CHECK(ac::paths::journal_directory() == executable / "journal");
-    CHECK(ac::paths::writer_directory() == executable / "writer");
-    CHECK(ac::paths::notes_directory() == executable / "notes");
-    CHECK(ac::paths::log_directory() == executable / "logs");
-    CHECK(ac::paths::error_log_directory() == executable / "errors");
+    CHECK(ac::paths::log_directory() == root / "logs");
+    CHECK(ac::paths::error_log_directory() == root / "errors");
 }
 
 TEST_CASE(
-    "Path accessors return stable process-lifetime references",
-    "[paths][windows-integration]"
+    "Assembled dist bin layout keeps data at the installation root",
+    "[paths][runtime-layout]"
 ) {
-    check_stable_reference(ac::paths::executable_directory);
+    const auto dist_exe = std::filesystem::path {__FILE__}
+        .parent_path()
+        .parent_path()
+        .parent_path()
+        .parent_path() /
+        "dist" / "bin" / "auto_core.exe";
+    std::error_code error;
+    if (!std::filesystem::exists(dist_exe, error) || error) {
+        SKIP("dist/bin/auto_core.exe is not present");
+    }
+
+    const auto bin = dist_exe.parent_path();
+    const auto root = bin.parent_path();
+    CHECK(bin.filename() == "bin");
+    CHECK(std::filesystem::exists(root / "config", error));
+    CHECK_FALSE(std::filesystem::exists(bin / "config", error));
+}
+
+TEST_CASE(
+    "Path accessors return stable references",
+    "[paths][unit]"
+) {
+    check_stable_reference(ac::paths::bin_directory);
+    check_stable_reference(ac::paths::installation_root);
     check_stable_reference(ac::paths::config_directory);
     check_stable_reference(ac::paths::keymap_directory);
     check_stable_reference(ac::paths::keymap_file);
-    check_stable_reference(ac::paths::keymap_settings_file);
-    check_stable_reference(ac::paths::keymap_components_directory);
-    check_stable_reference(ac::paths::keymap_commands_file);
-    check_stable_reference(ac::paths::taskbar_directory);
-    check_stable_reference(ac::paths::taskbar_applications_directory);
-    check_stable_reference(ac::paths::spotify_directory);
-    check_stable_reference(ac::paths::journal_directory);
-    check_stable_reference(ac::paths::writer_directory);
-    check_stable_reference(ac::paths::notes_directory);
+    check_stable_reference(ac::paths::components_list_file);
     check_stable_reference(ac::paths::log_directory);
     check_stable_reference(ac::paths::error_log_directory);
 }

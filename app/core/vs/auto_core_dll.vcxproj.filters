@@ -152,6 +152,9 @@
     <ClInclude Include="..\src\configured_directory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\installation_layout.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\logging_config_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -1,16 +1,19 @@
 /**
  * \file components_list_detail.hpp
- * \brief Pure parse of `config/components.list`.
+ * \brief Pure parse of `components.list` `[components]` and `*_ac.exe` discovery.
  *
  * Shared by the DLL (`logging::config::enabled`) and Main. Included by
  * Catch2 tests. Not a module interface.
  *
  * Names are case-sensitive and lowercase-only. Invalid names are not
- * normalized. Known specials (`logger`, `dash`, `slash`) use the same
- * on/off rules as other names but are never v1 host children.
+ * normalized. `discover_ac_executables` returns every valid `*_ac.exe`
+ * name, including known specials (`logger`, `dash`, `slash`). Callers
+ * split those three into `ParseResult.specials`; they are never v1 host
+ * children.
  */
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -18,6 +21,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace ac::config::components_list {
@@ -28,12 +32,25 @@ namespace ac::config::components_list {
         "slash"
     };
 
+    struct MalformedValue {
+        std::string name;
+        std::string value;
+    };
+
     struct ParseResult {
         bool ok {false};
         std::string error;
         std::vector<std::string> enabled;
         std::vector<std::string> specials;
+        std::vector<std::string> listed;
         std::vector<std::string> invalid_names;
+        std::vector<MalformedValue> malformed_values;
+    };
+
+    struct RuntimeCatalog {
+        ParseResult result;
+        bool used_discovery {false};
+        std::string io_error;
     };
 
     [[nodiscard]]
@@ -78,6 +95,19 @@ namespace ac::config::components_list {
     }
 
     [[nodiscard]]
+    inline bool name_is_listed(
+        const ParseResult& result,
+        const std::string_view name
+    ) noexcept {
+        for (const auto& listed : result.listed) {
+            if (listed == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [[nodiscard]]
     inline std::string_view trim_list_line(const std::string_view value) noexcept {
         const auto first = value.find_first_not_of(" \t\r");
         if (first == std::string_view::npos) {
@@ -85,27 +115,6 @@ namespace ac::config::components_list {
         }
         const auto last = value.find_last_not_of(" \t\r");
         return value.substr(first, last - first + 1);
-    }
-
-    inline void append_list_tokens(
-        const std::string_view line,
-        std::vector<std::string_view>& tokens
-    ) {
-        tokens.clear();
-        std::size_t i = 0;
-        while (i < line.size()) {
-            while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) {
-                ++i;
-            }
-            if (i >= line.size()) {
-                break;
-            }
-            const auto begin = i;
-            while (i < line.size() && line[i] != ' ' && line[i] != '\t') {
-                ++i;
-            }
-            tokens.push_back(line.substr(begin, i - begin));
-        }
     }
 
     inline void record_unique(
@@ -120,49 +129,100 @@ namespace ac::config::components_list {
         names.emplace_back(name);
     }
 
-    inline void apply_list_entry(
-        ParseResult& result,
-        std::unordered_map<std::string, bool>& enabled_by_name,
-        std::unordered_map<std::string, bool>& seen,
-        const std::vector<std::string_view>& tokens
+    [[nodiscard]]
+    inline bool has_ac_exe_suffix(const std::string_view filename) noexcept {
+        constexpr std::string_view suffix = "_ac.exe";
+        if (filename.size() <= suffix.size()) {
+            return false;
+        }
+        const auto tail = filename.substr(filename.size() - suffix.size());
+        for (std::size_t i = 0; i < suffix.size(); ++i) {
+            char character = tail[i];
+            if (character >= 'A' && character <= 'Z') {
+                character = static_cast<char>(character - 'A' + 'a');
+            }
+            if (character != suffix[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    [[nodiscard]]
+    inline ParseResult catalog_from_names(const std::vector<std::string>& names) {
+        ParseResult result;
+        result.ok = true;
+        for (const auto& name : names) {
+            if (!is_valid_component_name(name)) {
+                continue;
+            }
+            record_unique(result.listed, name);
+            if (is_special_name(name)) {
+                record_unique(result.specials, name);
+            }
+            else {
+                record_unique(result.enabled, name);
+            }
+        }
+        return result;
+    }
+
+    [[nodiscard]]
+    inline std::vector<std::string> discover_ac_executables(
+        const std::filesystem::path& directory
     ) {
-        if (tokens.empty()) {
-            return;
+        std::vector<std::string> names;
+        std::error_code error;
+        const auto iterator = std::filesystem::directory_iterator(
+            directory,
+            error
+        );
+        if (error) {
+            return names;
         }
 
-        const auto name = tokens.front();
-        if (!is_valid_component_name(name)) {
-            record_unique(result.invalid_names, name);
-            return;
+        for (const auto& entry : iterator) {
+            std::error_code status_error;
+            if (!entry.is_regular_file(status_error) || status_error) {
+                continue;
+            }
+
+            const auto u8_name = entry.path().filename().u8string();
+            const std::string filename(u8_name.begin(), u8_name.end());
+            if (!has_ac_exe_suffix(filename)) {
+                continue;
+            }
+
+            const auto name = filename.substr(0, filename.size() - 7);
+            if (!is_valid_component_name(name)) {
+                continue;
+            }
+            record_unique(names, name);
         }
 
-        const std::string key {name};
-        if (seen[key]) {
-            enabled_by_name[key] = false;
-            return;
-        }
-        seen[key] = true;
-
-        auto& names = is_special_name(name) ? result.specials : result.enabled;
-        if (tokens.size() == 1 ||
-            (tokens.size() == 2 && tokens[1] == "on")) {
-            enabled_by_name[key] = true;
-            names.push_back(key);
-            return;
-        }
-
-        enabled_by_name[key] = false;
+        std::ranges::sort(names);
+        return names;
     }
 
     [[nodiscard]]
     inline ParseResult parse(const std::string_view text) {
         ParseResult result;
-        std::unordered_map<std::string, bool> enabled_by_name;
-        std::unordered_map<std::string, bool> seen;
+        std::vector<std::pair<std::string, std::string>> entries;
         std::string current_section;
-        bool has_section = false;
-        std::vector<std::string_view> tokens;
         std::size_t line_start = 0;
+
+        const auto upsert = [&](
+            const std::string_view name,
+            const std::string_view value
+        ) {
+            for (auto& entry : entries) {
+                if (entry.first == name) {
+                    entry.second = std::string {value};
+                    return;
+                }
+            }
+            entries.emplace_back(name, value);
+        };
 
         while (line_start <= text.size()) {
             const auto line_end = text.find('\n', line_start);
@@ -178,13 +238,21 @@ namespace ac::config::components_list {
                     current_section = std::string {
                         trim_list_line(line.substr(1, line.size() - 2))
                     };
-                    if (current_section == "components") {
-                        has_section = true;
-                    }
                 }
                 else if (current_section == "components") {
-                    append_list_tokens(line, tokens);
-                    apply_list_entry(result, enabled_by_name, seen, tokens);
+                    const auto split = line.find_first_of(" \t");
+                    const auto name = split == std::string_view::npos
+                        ? line
+                        : trim_list_line(line.substr(0, split));
+                    const auto value = split == std::string_view::npos
+                        ? std::string_view {}
+                        : trim_list_line(line.substr(split + 1));
+                    if (!is_valid_component_name(name)) {
+                        record_unique(result.invalid_names, name);
+                    }
+                    else {
+                        upsert(name, value);
+                    }
                 }
             }
 
@@ -194,34 +262,22 @@ namespace ac::config::components_list {
             line_start = line_end + 1;
         }
 
-        if (!has_section) {
-            result.ok = false;
-            result.error =
-                "config/components.list is missing a [components] section; "
-                "optional components are disabled.";
-            result.enabled.clear();
-            result.specials.clear();
-            result.invalid_names.clear();
-            return result;
-        }
-
-        std::vector<std::string> enabled;
-        enabled.reserve(result.enabled.size());
-        for (const auto& name : result.enabled) {
-            if (enabled_by_name[name]) {
-                enabled.push_back(name);
+        for (const auto& entry : entries) {
+            record_unique(result.listed, entry.first);
+            const bool on = entry.second.empty() || entry.second == "on";
+            if (on) {
+                auto& names = is_special_name(entry.first)
+                    ? result.specials
+                    : result.enabled;
+                names.push_back(entry.first);
+            }
+            else if (entry.second != "off") {
+                result.malformed_values.push_back(
+                    {.name = entry.first, .value = entry.second}
+                );
             }
         }
-        result.enabled = std::move(enabled);
 
-        std::vector<std::string> specials;
-        specials.reserve(result.specials.size());
-        for (const auto& name : result.specials) {
-            if (enabled_by_name[name]) {
-                specials.push_back(name);
-            }
-        }
-        result.specials = std::move(specials);
         result.ok = true;
         return result;
     }
@@ -232,8 +288,9 @@ namespace ac::config::components_list {
         if (!input) {
             ParseResult result;
             result.error =
-                "Unable to open config/components.list; optional components "
-                "are disabled.";
+                "Unable to open components.list. Run "
+                "components_editor.exe to generate it. Optional components "
+                "are disabled; the file will not be created.";
             return result;
         }
 
@@ -244,12 +301,32 @@ namespace ac::config::components_list {
         if (!input && !input.eof()) {
             ParseResult result;
             result.error =
-                "Unable to read config/components.list; optional components "
-                "are disabled.";
+                "Unable to read components.list. Run "
+                "components_editor.exe to generate it. Optional components "
+                "are disabled; the file will not be created.";
             return result;
         }
 
         return parse(bytes);
+    }
+
+    [[nodiscard]]
+    inline RuntimeCatalog load_runtime_catalog(
+        const std::filesystem::path& list_path,
+        const std::filesystem::path& bin_directory
+    ) {
+        RuntimeCatalog catalog;
+        catalog.result = load(list_path);
+        if (catalog.result.ok) {
+            return catalog;
+        }
+
+        catalog.io_error = catalog.result.error;
+        catalog.used_discovery = true;
+        catalog.result = catalog_from_names(
+            discover_ac_executables(bin_directory)
+        );
+        return catalog;
     }
 
 } // namespace ac::config::components_list

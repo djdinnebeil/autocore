@@ -18,6 +18,9 @@
     <ClInclude Include="..\src\configured_directory.hpp">
       <Filter>Tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\installation_layout.hpp">
+      <Filter>Tests</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\logging_config_detail.hpp">
       <Filter>Tests</Filter>
     </ClInclude>

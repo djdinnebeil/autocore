@@ -106,6 +106,31 @@ namespace ac {
         return impl_->session_start;
     }
 
+    std::string_view Component::name() const noexcept {
+        return impl_->name;
+    }
+
+    void Component::report_ini_unavailable(const bool malformed) {
+        const auto& component_name = impl_->name;
+        const auto file = std::string {"config/"} + component_name + ".ini";
+        const auto exe = component_name + "_config.exe";
+        if (malformed) {
+            log_and_print(
+                "{} is malformed. Run {} to generate a valid file. "
+                "Using built-in defaults; the file will not be created.",
+                file,
+                exe
+            );
+            return;
+        }
+        log_and_print(
+            "{} is missing. Run {} to generate it. "
+            "Using built-in defaults; the file will not be created.",
+            file,
+            exe
+        );
+    }
+
     void Component::write(
         const std::string_view message,
         const OutputRoute route,

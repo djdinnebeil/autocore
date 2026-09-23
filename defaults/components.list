@@ -1,0 +1,12 @@
+# Leave blank for on; use explicit on/off to override
+[components]
+dash
+itunes
+journal
+logger
+server
+slash
+spotify
+taskbar
+wake
+writer

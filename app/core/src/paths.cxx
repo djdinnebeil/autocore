@@ -1,6 +1,7 @@
 module;
 
 #include "configured_directory.hpp"
+#include "installation_layout.hpp"
 
 module auto_core.core.paths;
 
@@ -13,7 +14,7 @@ namespace ac::paths {
 
     namespace {
 
-        std::filesystem::path get_executable_directory() {
+        std::filesystem::path get_image_path() {
             std::wstring buffer(260, L'\0');
 
             while (true) {
@@ -46,9 +47,7 @@ namespace ac::paths {
 
                 if (length < size) {
                     buffer.resize(length);
-
-                    return std::filesystem::path {buffer}
-                    .parent_path();
+                    return std::filesystem::path {buffer};
                 }
 
                 if (buffer.size() >
@@ -62,20 +61,28 @@ namespace ac::paths {
             }
         }
 
+        const detail::InstallationLayout& cached_layout() {
+            static const detail::InstallationLayout layout =
+                detail::layout_from_image_path(get_image_path());
+            return layout;
+        }
+
     }
 
     const std::filesystem::path&
-        executable_directory() {
-        static const std::filesystem::path directory =
-            get_executable_directory();
+        bin_directory() {
+        return cached_layout().bin_directory;
+    }
 
-        return directory;
+    const std::filesystem::path&
+        installation_root() {
+        return cached_layout().installation_root;
     }
 
     const std::filesystem::path&
         config_directory() {
         static const std::filesystem::path directory =
-            executable_directory() / "config";
+            installation_root() / "config";
 
         return directory;
     }
@@ -83,7 +90,7 @@ namespace ac::paths {
     const std::filesystem::path&
         keymap_directory() {
         static const std::filesystem::path directory =
-            executable_directory() / "keymap";
+            installation_root() / "keymap";
 
         return directory;
     }
@@ -91,7 +98,15 @@ namespace ac::paths {
     const std::filesystem::path&
         keymap_file() {
         static const std::filesystem::path file =
-            keymap_directory() / "bindings.ini";
+            installation_root() / "keymap.map";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        components_list_file() {
+        static const std::filesystem::path file =
+            installation_root() / "components.list";
 
         return file;
     }
@@ -124,7 +139,7 @@ namespace ac::paths {
         taskbar_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
-                executable_directory() / "taskbar";
+                installation_root() / "taskbar";
 
             const auto document = ac::ini::read(
                 config_directory() / "taskbar.ini"
@@ -144,7 +159,7 @@ namespace ac::paths {
                         ac::encoding::to_utf16(*value)
                     },
                     default_directory,
-                    executable_directory()
+                    installation_root()
                 );
             }
             catch (...) {
@@ -167,7 +182,7 @@ namespace ac::paths {
         spotify_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
-                executable_directory() / "spotify";
+                installation_root() / "components" / "spotify";
 
             const auto document = ac::ini::read(
                 config_directory() / "spotify.ini"
@@ -187,7 +202,7 @@ namespace ac::paths {
                         ac::encoding::to_utf16(*value)
                     },
                     default_directory,
-                    executable_directory()
+                    installation_root()
                 );
             }
             catch (...) {
@@ -202,7 +217,7 @@ namespace ac::paths {
         journal_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
-                executable_directory() / "journal";
+                installation_root() / "components" / "journal";
 
             const auto document = ac::ini::read(
                 config_directory() / "journal.ini"
@@ -222,7 +237,7 @@ namespace ac::paths {
                         ac::encoding::to_utf16(*value)
                     },
                     default_directory,
-                    executable_directory()
+                    installation_root()
                 );
             }
             catch (...) {
@@ -237,7 +252,7 @@ namespace ac::paths {
         writer_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
-                executable_directory() / "writer";
+                installation_root() / "writer";
 
             const auto document = ac::ini::read(
                 config_directory() / "writer.ini"
@@ -257,7 +272,7 @@ namespace ac::paths {
                         ac::encoding::to_utf16(*value)
                     },
                     default_directory,
-                    executable_directory()
+                    installation_root()
                 );
             }
             catch (...) {
@@ -272,7 +287,7 @@ namespace ac::paths {
         notes_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
-                executable_directory() / "notes";
+                installation_root() / "notes";
 
             const auto document = ac::ini::read(
                 config_directory() / "writer.ini"
@@ -292,7 +307,7 @@ namespace ac::paths {
                         ac::encoding::to_utf16(*value)
                     },
                     default_directory,
-                    executable_directory()
+                    installation_root()
                 );
             }
             catch (...) {
@@ -306,7 +321,7 @@ namespace ac::paths {
     const std::filesystem::path&
         log_directory() {
         static const std::filesystem::path directory =
-            executable_directory() / "logs";
+            installation_root() / "logs";
 
         return directory;
     }
@@ -314,7 +329,7 @@ namespace ac::paths {
     const std::filesystem::path&
         error_log_directory() {
         static const std::filesystem::path directory =
-            executable_directory() / "errors";
+            installation_root() / "errors";
 
         return directory;
     }

@@ -10,7 +10,6 @@ module;
 module auto_core.core.logging.config;
 
 import std;
-import auto_core.core.config;
 import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.paths;
@@ -28,21 +27,44 @@ namespace ac::logging::config {
             std::string report = "Logging configuration:\n";
 
             Data() {
-                ac::config::seed_missing_config_files();
-
-                const auto list = ac::config::components_list::load(
-                    ac::paths::config_directory() / "components.list"
-                );
+                const auto list_path = ac::paths::components_list_file();
+                const auto catalog =
+                    ac::config::components_list::load_runtime_catalog(
+                        list_path,
+                        ac::paths::bin_directory()
+                    );
+                if (catalog.used_discovery) {
+                    report +=
+                        "components.list unavailable; discovering *_ac.exe "
+                        "in the binary directory. Run components_editor.exe to "
+                        "generate it. The file will not be created.\n";
+                }
                 enabled = ac::config::components_list::special_enabled(
-                    list,
+                    catalog.result,
                     "logger"
                 );
+                const bool logger_malformed = [&catalog] {
+                    if (catalog.used_discovery) {
+                        return false;
+                    }
+                    for (const auto& entry : catalog.result.malformed_values) {
+                        if (entry.name == "logger") {
+                            return true;
+                        }
+                    }
+                    return false;
+                }();
 
                 const auto document = ac::ini::read(
                     ac::paths::config_directory() / "logger.ini"
                 );
                 if (!document) {
                     report += "logger.ini unavailable; using defaults\n";
+                    if (logger_malformed) {
+                        report +=
+                            "logger has a malformed [components] value; "
+                            "logger is disabled\n";
+                    }
                     report += enabled
                         ? "logger enabled in components.list\n"
                         : "logger not enabled in components.list\n";
@@ -63,15 +85,26 @@ namespace ac::logging::config {
                             : std::nullopt
                     },
                     ac::paths::log_directory(),
-                    ac::paths::executable_directory()
+                    ac::paths::installation_root()
                 );
                 write_to_console = resolved.write_to_console;
                 directory = resolved.directory;
                 components_directory = resolved.components_directory;
                 report = resolved.report;
+                if (catalog.used_discovery) {
+                    report +=
+                        "components.list unavailable; discovering *_ac.exe "
+                        "in the binary directory. Run components_editor.exe to "
+                        "generate it. The file will not be created.\n";
+                }
                 report += enabled
                     ? "logger enabled in components.list\n"
                     : "logger not enabled in components.list\n";
+                if (logger_malformed) {
+                    report +=
+                        "logger has a malformed [components] value; "
+                        "logger is disabled\n";
+                }
             }
         };
 

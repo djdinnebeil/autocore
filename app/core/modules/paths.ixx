@@ -2,13 +2,16 @@
  * \file paths.ixx
  * \brief Provides paths to Auto Core files and directories.
  *
- * Paths are derived from the directory containing the running executable.
- * Accessors compute their result once and return a reference that remains
- * valid for the lifetime of the process. They do not create or validate the
- * referenced filesystem object.
+ * Binary paths are derived from the directory containing the running
+ * executable (`bin_directory`). Configuration and runtime-data paths are
+ * derived from that directory's parent (`installation_root`). Accessors
+ * compute their result once and return a reference that remains valid for
+ * the lifetime of the process. They do not create or validate the
+ * referenced filesystem object. The process current working directory is
+ * never used.
  *
- * Derived accessors call `executable_directory` on first use and therefore
- * throw the same `std::system_error` or `std::length_error`.
+ * Derived accessors throw the same `std::system_error` or
+ * `std::length_error` as `bin_directory` on first use.
  */
 module;
 
@@ -26,17 +29,24 @@ export namespace ac::paths {
      * The path is discovered on the first call and cached for the lifetime of
      * the process.
      *
-     * \return A process-lifetime reference to the executable directory.
+     * \return A process-lifetime reference to the binary directory.
      * \throws std::system_error if Windows cannot obtain the executable path.
      * \throws std::length_error if the executable path exceeds the Win32 path
      * length limit.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&
-        executable_directory();
+        bin_directory();
 
     /**
-     * \brief Returns `<executable directory>/config`.
+     * \brief Returns the parent of `bin_directory` (the installation root).
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        installation_root();
+
+    /**
+     * \brief Returns `<installation root>/config`.
      *
      * Cached for the process lifetime. The directory is not created or
      * validated.
@@ -46,18 +56,25 @@ export namespace ac::paths {
         config_directory();
 
     /**
-     * \brief Returns `<executable directory>/keymap`.
+     * \brief Returns `<installation root>/keymap`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&
         keymap_directory();
 
     /**
-     * \brief Returns `<keymap directory>/bindings.ini`.
+     * \brief Returns `<installation root>/keymap.map`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&
         keymap_file();
+
+    /**
+     * \brief Returns `<installation root>/components.list`.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        components_list_file();
 
     /**
      * \brief Returns `<config directory>/keymap.ini`.
@@ -84,9 +101,9 @@ export namespace ac::paths {
      * \brief Returns the Taskbar data directory.
      *
      * Reads `[taskbar] directory` from `config/taskbar.ini`. A relative path
-     * is resolved against the executable directory. An absolute path is used
+     * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
-     * `<executable directory>/taskbar`. The live file is not rewritten.
+     * `<installation root>/taskbar`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */
@@ -108,9 +125,9 @@ export namespace ac::paths {
      * \brief Returns the Spotify data directory.
      *
      * Reads `[spotify] directory` from `config/spotify.ini`. A relative path
-     * is resolved against the executable directory. An absolute path is used
+     * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
-     * `<executable directory>/spotify`. The live file is not rewritten.
+     * `<installation root>/components/spotify`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */
@@ -122,9 +139,9 @@ export namespace ac::paths {
      * \brief Returns the Journal data directory.
      *
      * Reads `[journal] directory` from `config/journal.ini`. A relative path
-     * is resolved against the executable directory. An absolute path is used
+     * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
-     * `<executable directory>/journal`. The live file is not rewritten.
+     * `<installation root>/components/journal`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */
@@ -136,9 +153,9 @@ export namespace ac::paths {
      * \brief Returns the Writer data directory.
      *
      * Reads `[writer] directory` from `config/writer.ini`. A relative path
-     * is resolved against the executable directory. An absolute path is used
+     * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
-     * `<executable directory>/writer`. The live file is not rewritten.
+     * `<installation root>/writer`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */
@@ -150,9 +167,9 @@ export namespace ac::paths {
      * \brief Returns the Writer notes directory.
      *
      * Reads `[writer] notes_directory` from `config/writer.ini`. A relative
-     * path is resolved against the executable directory. An absolute path is
+     * path is resolved against the installation root. An absolute path is
      * used as-is. A missing file, missing key, or empty value keeps
-     * `<executable directory>/notes`. The live file is not rewritten.
+     * `<installation root>/notes`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */
@@ -161,14 +178,14 @@ export namespace ac::paths {
         notes_directory();
 
     /**
-     * \brief Returns `<executable directory>/logs`.
+     * \brief Returns `<installation root>/logs`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&
         log_directory();
 
     /**
-     * \brief Returns `<executable directory>/errors`.
+     * \brief Returns `<installation root>/errors`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&

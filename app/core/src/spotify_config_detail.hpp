@@ -16,7 +16,7 @@ namespace ac::spotify::config::detail {
     std::filesystem::path resolve(
         const RawSettings& raw,
         const std::filesystem::path& default_directory,
-        const std::filesystem::path& executable_directory
+        const std::filesystem::path& installation_root
     );
 
 } // namespace ac::spotify::config::detail

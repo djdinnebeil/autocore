@@ -98,14 +98,25 @@ namespace ac::component_detail {
                 (std::string {date} + "_" + name + ".main.log");
         }
 
-        void open_files_unlocked(
-            const std::string_view date,
+        void write_session_marker(
             const std::string_view timestamp,
-            const bool initial
+            const std::string_view marker
         ) {
+            if (!log_stream.is_open()) {
+                return;
+            }
+            (void)write_record(
+                log_stream,
+                line_open,
+                timestamp,
+                marker,
+                true
+            );
+        }
+
+        void open_files(const std::string_view date) {
             std::error_code error;
             std::filesystem::create_directories(directory, error);
-
             if (error) {
                 ac::error::log(
                     "Failed to create component log directory: {} - {}",
@@ -133,6 +144,17 @@ namespace ac::component_detail {
                     central_subset_path
                 );
             }
+        }
+
+        void open_files_unlocked(
+            const std::string_view date,
+            const std::string_view timestamp,
+            const bool initial
+        ) {
+            open_files(date);
+            if (!log_stream.is_open()) {
+                return;
+            }
 
             logger_date = date;
 
@@ -147,13 +169,14 @@ namespace ac::component_detail {
                     ac::clock::format_datetime(session_start)
                 );
 
-            (void)write_record(
-                log_stream,
-                line_open,
-                timestamp,
-                marker,
-                true
-            );
+            write_session_marker(timestamp, marker);
+        }
+
+        void close_files() {
+            close_open_line(log_stream, line_open);
+            log_stream.close();
+            close_open_line(main_log_stream, main_line_open);
+            main_log_stream.close();
         }
 
         void update_files_unlocked(
@@ -173,11 +196,9 @@ namespace ac::component_detail {
                     "--- Session continues in next log file ---",
                     true
                 );
-                log_stream.close();
             }
 
-            close_open_line(main_log_stream, main_line_open);
-            main_log_stream.close();
+            close_files();
             open_files_unlocked(date, timestamp, false);
         }
 
@@ -207,11 +228,9 @@ namespace ac::component_detail {
                     "***",
                     true
                 );
-                log_stream.close();
             }
 
-            close_open_line(main_log_stream, main_line_open);
-            main_log_stream.close();
+            close_files();
         }
     };
 

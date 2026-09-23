@@ -8,13 +8,14 @@
     <AutoCoreThirdPartyDir>$(AutoCoreRootDir)third_party\</AutoCoreThirdPartyDir>
     <AutoCoreMacroDir>$(AutoCoreAppDir)core\include\</AutoCoreMacroDir>
     <AutoCoreDistDir>$(AutoCoreRootDir)dist\</AutoCoreDistDir>
+    <AutoCoreBinDir>$(AutoCoreDistDir)bin\</AutoCoreBinDir>
     <AutoCoreSymbolsDir>$(AutoCoreDistDir)symbols\</AutoCoreSymbolsDir>
     <AutoCoreVendorIncludes>$(AutoCoreThirdPartyDir)civetweb\include;$(AutoCoreThirdPartyDir)cpr\include;$(AutoCoreThirdPartyDir)curl\include;$(AutoCoreThirdPartyDir)dbghelp\include;$(AutoCoreThirdPartyDir)json\include;$(AutoCoreThirdPartyDir)sqlite3\include;$(AutoCoreThirdPartyDir)taglib\include;$(AutoCoreThirdPartyDir)zlib\include</AutoCoreVendorIncludes>
     <AutoCoreVendorLibraries>$(AutoCoreThirdPartyDir)civetweb\lib;$(AutoCoreThirdPartyDir)cpr\lib;$(AutoCoreThirdPartyDir)curl\lib;$(AutoCoreThirdPartyDir)sqlite3\lib;$(AutoCoreThirdPartyDir)taglib\lib;$(AutoCoreThirdPartyDir)zlib\lib</AutoCoreVendorLibraries>
   </PropertyGroup>
   <PropertyGroup>
     <IntDir>$(AutoCoreIntDir)$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(ConfigurationType)'=='Application'">$(AutoCoreDistDir)</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='Application'">$(AutoCoreBinDir)</OutDir>
     <OutDir Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(AutoCoreLibDir)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -55,6 +56,10 @@
       <Value>$(AutoCoreDistDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
+    <BuildMacro Include="AutoCoreBinDir">
+      <Value>$(AutoCoreBinDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
     <BuildMacro Include="AutoCoreSymbolsDir">
       <Value>$(AutoCoreSymbolsDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
@@ -64,8 +69,8 @@
     <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(AutoCoreRootDir)scripts\copy-dist-dlls.ps1&quot;" />
     <PropertyGroup>
       <_AutoCoreOutDirFull>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_AutoCoreOutDirFull>
-      <_AutoCoreDistDirFull>$([System.IO.Path]::GetFullPath('$(AutoCoreDistDir)'))</_AutoCoreDistDirFull>
+      <_AutoCoreBinDirFull>$([System.IO.Path]::GetFullPath('$(AutoCoreBinDir)'))</_AutoCoreBinDirFull>
     </PropertyGroup>
-    <Copy SourceFiles="$(AutoCoreDistDir)auto_core.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" Condition="'$(ConfigurationType)'=='Application' AND '$(_AutoCoreOutDirFull)' != '$(_AutoCoreDistDirFull)'" />
+    <Copy SourceFiles="$(AutoCoreLibDir)auto_core.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="false" OverwriteReadOnlyFiles="true" Condition="'$(ConfigurationType)'=='Application' AND '$(_AutoCoreOutDirFull)' != '$(_AutoCoreBinDirFull)'" />
   </Target>
 </Project>

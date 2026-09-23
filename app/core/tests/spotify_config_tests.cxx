@@ -43,7 +43,7 @@ TEST_CASE(
 }
 
 TEST_CASE(
-    "Relative Spotify directory joins the executable directory",
+    "Relative Spotify directory joins the installation root",
     "[spotify-config][unit]"
 ) {
     const auto directory = detail::resolve(

@@ -74,15 +74,13 @@ paths respectively.
 
 ## Authorization
 
-Run `spotify_oauth.exe` to authorize and register Connect devices. The helper
-shares `config/spotify.ini` with `spotify_ac.exe` (no separate OAuth INI). If
-that live file is missing, the helper prompts for the application-data
-directory, suggesting `.\spotify` as the default to accept, and writes
-`[spotify] directory`. Blank input stores `directory = spotify`. If the file
-already exists, the helper uses that value and does not rewrite it. Relative
-paths resolve against the executable directory; an absolute path is used as-is.
+`spotify_config.exe` owns `config/spotify.ini` (`[spotify] directory`, default
+`spotify`). Run `spotify_oauth.exe` to authorize and register Connect devices.
+OAuth does not write `spotify.ini`. Missing or malformed INI: `spotify_ac.exe`
+uses `shared/defaults.ixx` and `report_ini_unavailable`. Relative directory
+paths resolve against the installation root; an absolute path is used as-is.
 
-The helper then presents a menu:
+The oauth helper then presents a menu:
 
 1. Generate new tokens. Enter a Spotify client ID and local port. The helper
    starts a loopback HTTP listener at `http://127.0.0.1:<port>/callback`,
@@ -141,7 +139,7 @@ Paths are relative to the directory containing the executables, normally
 
 | File | Format and purpose |
 | --- | --- |
-| `config/spotify.ini` | `[spotify] directory` (portable default `spotify`). Live file is under gitignored `dist/`; tracked sample is [`defaults/config/spotify.ini`](../defaults/config/spotify.ini). Auto Core never reads `defaults/`. A missing live file is written once from the portable default. `spotify_oauth.exe` prompts before writing that file when it is absent. |
+| `config/spotify.ini` | `[spotify] directory` (portable default `spotify`). Live file is under gitignored `dist/`; tracked sample is [`defaults/config/spotify.ini`](../defaults/config/spotify.ini). Auto Core never reads `defaults/`. Written only by `spotify_config.exe`. Missing or malformed: `spotify_ac.exe` uses `shared/defaults.ixx` and `report_ini_unavailable`; oauth does not write this file. |
 | `spotify/spotify_codes.ini` | INI with `[auth] client_id` and `[devices]` keys named by Spotify Connect. Written by `spotify_oauth.exe` (option 1 preserves devices; option 2 registers them) and updated by `spotify_ac.exe` when Connect names or IDs change. |
 | `spotify/spotify_tokens.ini` | INI `[tokens]` section: access token, refresh token, `authorized_at`, and `refresh_expires_at`. Written by `spotify_oauth.exe` and refreshed by `spotify_ac.exe`. Machine-local; do not copy to another PC. |
 | `spotify/spotify_history.db` | SQLite listening-history database. |
@@ -245,4 +243,4 @@ local Windows pipes. The Release x64 `spotify_ac.exe` build also passes.
 The non-live suite does not contact Spotify, start the desktop client, change
 playback, write OAuth state, download art, insert text, or modify the history
 database. Build commands and test tags are documented in
-`app/components/spotify/TESTING.md`.
+`app/components/spotify/tests/TESTING.md`.

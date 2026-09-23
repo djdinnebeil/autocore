@@ -1,37 +1,42 @@
 # Main executable
 
-`auto_core.exe` is the Auto Core keyboard manager. It lives in `app/main`,
-links `auto_core.lib`, and loads `auto_core.dll`. Child product behavior is
-documented with each component; this page covers the Main process only.
+`auto_core.exe` is the Auto Core keyboard manager. It lives in
+`app/main/component`, links `auto_core.lib`, and loads `auto_core.dll`. Child
+product behavior is documented with each component; this page covers the Main
+process only.
 
 ## Startup order
 
-[`main.cxx`](../app/main/src/main.cxx) runs this sequence:
+[`main.cxx`](../app/main/component/src/main.cxx) runs this sequence:
 
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
-2. Load `config/auto_core.ini` (write portable defaults if the file is missing).
-   A missing file or invalid `warn_without_winkey_mapping` uses `true` and is
-   not fatal.
-3. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
+2. If `config/auto_core.ini` is missing, launch `auto_core_config.exe` and wait.
+   That helper runs the six Main helpers and writes the
+   sentinel only after they succeed. If the file still does not exist, exit `1`.
+   `auto_core.ini` is not parsed. If `components.list` is missing, launch
+   `components_editor.exe` (full catalog reconstruction) and wait. Main does not
+   write that file. If the list is still missing, exit `1`.
+3. Load `config/main.ini`. Missing or invalid `warn_without_winkey_mapping`
+   uses `true` and is reported; the file is not created.
+4. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
-4. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
+5. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
    marker and continues; No exits (`1`) and leaves the marker so the next start
    asks again.
-5. Install the unhandled-exception restart filter.
-6. Capture `main_thread_id`, then install the low-level keyboard hook and
+6. Install the unhandled-exception restart filter.
+7. Capture `main_thread_id`, then install the low-level keyboard hook and
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
-7. Start `logger_ac.exe` when `logger` is enabled in `components.list`, then connect.
-8. Initialize the generic component session from `config/components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled).
-9. Load `keymap/bindings.ini`. If the file is missing, write a seed of every
-   `key_codes` name (`numpad_0` / `numpad_1` filled, others `{, }`). Workspace
-   or file-load failure installs a two-key emergency map in memory and does
-   not rewrite an existing file.
-10. Print the ready banner on a detached thread (weekday and
+8. Start `logger_ac.exe` when `logger` is enabled in `components.list`, then connect.
+9. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled).
+10. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
+   two-key emergency map in memory and report the gap. Runtime does not write
+   `keymap.map`.
+11. Print the ready banner on a detached thread (weekday and
    `writer/task_list.txt`). A missing file is logged and the task section is
    omitted; an empty file prints "Nothing pending today."
-11. Enter the thread message loop.
+12. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two
@@ -59,43 +64,45 @@ field is public because the hook reads it; encapsulation is tracked in
 [TODO.md](TODO.md).
 
 Numpad Enter is normalized to `key_codes::numpad_enter` (`0x100`) using
-`LLKHF_EXTENDED`. `bindings.ini` names are resolved by `key_codes::resolve`;
+`LLKHF_EXTENDED`. `keymap.map` names are resolved by `key_codes::resolve`;
 plain `enter` is not a distinct mapping.
 
 ## Keymap
 
 `initialize_keymap()` runs after the component session and always loads
-`keymap/bindings.ini`. Name lookup happens only at init: each expression is
+`keymap/keymap.map`. Name lookup happens only at init: each expression is
 resolved into a `std::function` and stored in `active_keymap`. The hook then
 calls `primary()` / `secondary()` with no further name lookup.
 
-Workspace init creates `keymap/` and `keymap/components/`. If
-`bindings.ini` is missing, it writes a seed listing every name in
-`key_codes::keys`:
+`keymap_editor.exe` writes a seed `keymap.map` listing every name in `key_codes::keys` when that file is missing:
 
 - `numpad_0`: `activate_function_key` / `deactivate_function_key`
 - `numpad_1`: `activate_auto_core` / `close_program`
-- All other keys: `{, }` (unbound)
+- All other keys: `primary | secondary` (unbound)
 
-An existing `bindings.ini` is never overwritten, including empty or broken
+An existing `keymap.map` is never overwritten, including empty or broken
 files. Workspace failure, or a file that cannot be opened or has no usable
 rows (no resolved command on either side of any key), logs and installs an
 in-memory emergency map with the same two filled bindings. That emergency
-map is not written back to `bindings.ini`.
+map is not written back to `keymap.map`. Runtime does not create
+`keymap.map`.
 
 After a successful workspace, Main refreshes `keymap/keymap_commands.txt`
 from the command registry, including names advertised by started generic
 children. Journal aliases are advertised by `journal_ac.exe`.
 
-`bindings.ini` lines are `key = {primary, secondary}`. An optional `[keymap]`
-header and `;` / `#` comments are ignored. A comma inside `()` or quotes is
-not the action split. Each side is resolved on its own: a valid name still
-binds when the other is empty or unknown. `{, }` (both actions empty after
-trim) leaves the key unbound; it is not in `active_keymap` and is not logged
-as invalid. A missing line is the same as `{, }`. After a successful load,
-each `key_codes` name not in `active_keymap` prints `numpad 2 hasn't been
-set` (underscore in the INI name becomes a space), unless
-`silence_nonset_warning` is exactly `true`. Unbound keys are not Auto
+`keymap.map` lines are `key = primary | secondary`. `[...]` headers and `;` /
+`#` comments are ignored. A `|` inside `()` or quotes is not the action
+split, and a second top-level `|` is invalid. Each side is resolved on its
+own: a valid name still binds when the other is empty or unknown. `key =`,
+`key = |`, and `key = primary | secondary` are the same unset pair. The word
+`primary` is unset only on the primary side, and `secondary` only on the
+secondary side. A swapped pair is an invalid line. A blank side loads as
+empty. Both sides empty leaves the key unbound; it is not in
+`active_keymap` and is not logged as invalid. A missing line is the same as
+unbound. After a successful load, each `key_codes` name not in
+`active_keymap` prints `numpad 2 hasn't been set` (underscore in the INI
+name becomes a space), unless `silence_nonset_warning` is exactly `true`. Unbound keys are not Auto
 Core's: the hook calls `CallNextHookEx`, so Windows and the focused app still
 see the physical key. A key with at least one filled side is in the map and
 eats the keystroke (`return 1`); an empty side is a no-op. Unknown command
@@ -108,11 +115,11 @@ emergency fallback.
 Optional `config/keymap.ini` `[keymap] trace_enabled` must be
 exactly `true` to log each binding as it is created. `[keymap]
 silence_nonset_warning` must be exactly `true` to skip the load-time unset
-messages. A missing file is written once with both flags `false`. Missing
-file or any other value leaves both flags off. See
+messages. A missing file keeps both flags off and is reported; the file is not created.
+Missing file or any other value leaves both flags off. See
 [configuration.md](configuration.md).
 
-### Why bindings.ini is the only map
+### Why keymap.map is the only map
 
 A selectable compiled table was dropped. It saved about **34 µs** of table
 fill versus about **0.9–1.5 ms** of registry + autocomplete refresh + parse
@@ -153,7 +160,7 @@ cannot be written, the handler does not restart. See
 `send_crash_command` is a diagnostic keymap name that forces this path.
 `encoding_test` round-trips UTF-16 through core encoding and prints PASS/FAIL.
 Neither is intended for production maps; both are still registered so
-`bindings.ini` can bind them.
+`keymap.map` can bind them.
 
 ## Shutdown
 
@@ -186,9 +193,12 @@ control pipe.
 
 `ac::main::components::initialize()` is the RAII session started from `main`:
 
-1. Load `config/components.list`. Invalid names are logged and ignored.
-   Known specials (`logger`, `dash`, `slash`) are not started as v1
-   children.
+1. Load `components.list`. Invalid names and malformed
+   values are logged; those names are ignored or disabled. A missing file
+   is reconstructed by `components_editor.exe` at startup; if that fails,
+   Main exits. An unreadable existing file is reported and every valid
+   `*_ac.exe` beside Main is enabled. Known specials (`logger`, `dash`,
+   `slash`) are not started as v1 children.
 2. If `taskbar` is enabled, start it and wait for hello, then attach the
    snapshot client. Snapshot failure keeps the control child.
 3. Create pipes and start every other enabled `{name}_ac.exe` without

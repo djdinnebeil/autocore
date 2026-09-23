@@ -72,7 +72,7 @@ TEST_CASE("Invalid logger booleans use defaults", "[logging-config][unit]") {
         std::filesystem::path {R"(C:\logs\components)"});
 }
 
-TEST_CASE("Logger directory logs is executable logs", "[logging-config][unit]") {
+TEST_CASE("Logger directory logs is installation-root logs", "[logging-config][unit]") {
     const auto settings = detail::resolve(
         {.directory = "logs"},
         R"(C:\default)",
@@ -84,7 +84,7 @@ TEST_CASE("Logger directory logs is executable logs", "[logging-config][unit]") 
         std::filesystem::path {R"(C:\app\logs\components)"});
 }
 
-TEST_CASE("Relative logger directories use executable directory", "[logging-config][unit]") {
+TEST_CASE("Relative logger directories use the installation root", "[logging-config][unit]") {
     const auto settings = detail::resolve(
         {.directory = R"(logs\components\..\current)"},
         R"(C:\default)",

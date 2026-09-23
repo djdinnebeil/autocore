@@ -1,0 +1,25 @@
+# Key binding: key = primary | secondary
+# Example: numpad_1 = activate_auto_core | close_program
+# Leave a binding blank to return control to the OS
+
+[keymap: concise]
+numpad_0 = activate_function_key | deactivate_function_key
+numpad_1 = activate_auto_core | close_program
+numpad_2 = primary | secondary
+numpad_3 = primary | secondary
+numpad_4 = primary | secondary
+numpad_5 = primary | secondary
+numpad_6 = primary | secondary
+numpad_7 = primary | secondary
+numpad_8 = primary | secondary
+numpad_9 = primary | secondary
+numpad_multiply = primary | secondary
+numpad_add = primary | secondary
+numpad_decimal = primary | secondary
+numpad_enter = primary | secondary
+numpad_subtract = primary | secondary
+numpad_divide = primary | secondary
+media_play_pause = primary | secondary
+browser_home = primary | secondary
+launch_mail = primary | secondary
+launch_calculator = primary | secondary

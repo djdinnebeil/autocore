@@ -31,11 +31,12 @@ section below already decides it, do not re-explore.
 - `lib/` — canonical `auto_core.dll` and `auto_core.lib` (`OutDir` for the
   core DLL). Tracked. The linker searches `lib/` only. The linker also
   writes `auto_core.exp` here; that file is gitignored.
-- `dist/auto_core.dll` — runtime copy from `lib/` via
+- `dist/bin/auto_core.dll` — runtime copy from `lib/` via
   [`scripts/copy-dist-dlls.ps1`](../scripts/copy-dist-dlls.ps1) on every
   project that imports
   [`msbuild/AutoCore.props`](../msbuild/AutoCore.props). That script
-  also copies `third_party/*/bin/*.dll` into `dist/`.
+  also copies `third_party/*/bin/*.dll` into `dist/bin/`. Application
+  `OutDir` is `dist/bin/`. `dist/` remains the installation root.
 - `third_party/<dependency>/` — the single vendor tree, not generated core
   outputs. Product packages use `include/`, `lib/`, `bin/` per package.
   Catch2 is amalgamated test source at `third_party/catch2/`.
@@ -53,9 +54,12 @@ machine-specific drive letter.
   `AutoCoreAppDir` is `$(AutoCoreRootDir)app\`. Each `.vcxproj` imports the
   props file explicitly. A clone must not edit it.
 - **Runtime.** [`app/core/modules/paths.ixx`](../app/core/modules/paths.ixx)
-  derives `config/`, `keymap/`, and related directories from the executable
-  directory (`dist/` after a normal build), not from the source tree. End
-  users of a `dist/` tree do not need the repo.
+  derives `bin_directory` from the running image (`dist/bin` after a normal
+  build) and `installation_root` as that directory's parent (`dist/`).
+  Configuration, `components.list`, `keymap.map`, and runtime data resolve
+  from `installation_root`. Child executables resolve from `bin_directory`.
+  The process current working directory is never the path base. End users of
+  a `dist/` tree do not need the repo.
 - **Clone caveats.** Windows 11 and Visual Studio 2026 (version 18+) with
   C++23. `obj/` and `dist/` are gitignored. Link `auto_core.lib` from
   `lib/`. Keep `msbuild/` at the repo root. Post-Link DLL copy runs Windows
@@ -78,11 +82,18 @@ Clone vs `dist/` stays in Locked: two audiences.
 
 - `app/` — build input (source, projects, resources). Not source-only.
   No root `.sln`. Shared props are not here.
-- `app/components/` — child executable projects that ship in `dist/`.
-  Unit tests stay nested under the component that owns them.
+- `app/components/` — child executable projects that ship in `dist/bin/`.
+  The component root holds folders only: `main/` (`<name>_ac.exe`),
+  `config/` (`<name>_config.exe`), and `shared/` (`<name>_protocol.ixx`,
+  `defaults.ixx`). Spotify also has `oauth/` (`spotify_oauth.exe`).
+  Each executable has its own `.sln` next to its `.vcxproj`. Unit tests
+  live in `<name>/tests/` with their own `.sln` when present. Nested
+  `.vcxproj` files import `..\..\..\..\msbuild\AutoCore.props`.
 - `app/core/` — `auto_core.dll` source, `include/ac_api.hpp`, nested
   tests.
-- `app/main/` — `auto_core.exe` project.
+- `app/main/` — `component/` (`auto_core.exe`), `config/` (`auto_core_config.exe`
+  and other Main helpers), and `components/` (`components_config.exe`,
+  `components_editor.exe`).
 - `app/shared/` — compile-time IPC protocols and `command_registry`.
   Runtime facilities stay in the core DLL.
 - `app/resources/` — shared `.ico`/`.rc`. Stays under `app/`.
@@ -116,13 +127,28 @@ Do not copy these into `AGENTS.md`.
 A normal component is an executable that satisfies `ac.component.v1`.
 Main must not know that component at compile time.
 
-- `config/components.list` is an open catalog. Names are case-sensitive and
+- `<installation_root>/components.list` `[components]` is an open catalog.
+  Lines are `name`, `name on`, or `name off` (blank defaults to on;
+  malformed values default to off). Names are case-sensitive and
   lowercase-only (`^[a-z][a-z0-9_]*$`). Invalid names are not normalized.
   `logger`, `dash`, and `slash` may be listed; they are known specials, not
-  v1 session children. List on/off is the enable switch. There is no
-  filesystem scan of `*_ac.exe`.
-- The name is the only discovery input: `weather` means `weather_ac.exe`
-  next to `auto_core.exe` and pipe `ac_weather_pipe`.
+  v1 session children. The list is the enable switch when the file is
+  readable. `discover_ac_executables` returns every valid `*_ac.exe` name
+  from `bin_directory`, including those specials; the catalog split keeps
+  them out of v1 `enabled`. `components_config.exe` owns
+  `config/components.ini` (`[settings]` only: `new_components`,
+  `sort_components`, `remove_missing_components`) and launches missing
+  `<name>_config.exe` programs. `components_editor.exe` is the exclusive
+  writer of `components.list`. Child `_config.exe` programs write
+  `config/<name>.ini` and register with
+  `components_editor.exe --component <name>` after a successful write.
+  They never write `components.ini` or `components.list`. A missing
+  `components.list` is reconstructible: Main launches no-arg
+  `components_editor.exe` and fails startup if the list is still absent.
+  Runtime scans `*_ac.exe` only when an existing `components.list` is
+  unreadable.
+- The name is the only launch input once listed: `weather` means
+  `weather_ac.exe` in `bin_directory` and pipe `ac_weather_pipe`.
 - v1 wire is hello/catalog, then Main-to-child `invoke = 0` plus one
   expression string, or `shutdown = 1`. Do not reuse or renumber those IDs.
   After hello, children do not send unsolicited runtime messages on this
@@ -133,6 +159,37 @@ Main must not know that component at compile time.
   Main-local commands stay explicit specials. Do not add a controller DLL,
   sidecar manifests, component kinds, dependency graphs, restart, or
   catalog updates.
+
+## Locked: component configuration
+
+Every production child defines `dist/config/<name>.ini`, ships
+`<name>_config.exe`, and keeps typed defaults in that child's
+`shared/defaults.ixx`. Main host INIs are owned by helpers under
+`app/main/config/` and `app/main/components/`. `component_protocol` stays in `app/shared`.
+Name-specific protocols live under that child's `shared/`.
+
+- Only `_config.exe` writes `.ini` files. `auto_core.exe` and
+  `<name>_ac.exe` never create or rewrite them. `auto_core.ini` is an
+  existence sentinel written by `auto_core_config.exe` after the five
+  Main helpers succeed. `config/components.ini` is written only by
+  `components_config.exe`. `components.list` is written only by
+  `components_editor.exe`. The config helper initializes missing
+  `components.ini`, launches `<name>_config.exe` when `config/<name>.ini`
+  is missing, and may offer a no-arg `components_editor.exe` full sync.
+  `components_editor.exe` reconstructs `components.list` from installed
+  `*_ac.exe` names that already have `config/<name>.ini`, using INI
+  settings or compiled defaults. Targeted `--component <name>` requires
+  that INI to exist and does not prune missing names. There is no
+  legacy `[components]` / `[list]` migration. Sync does not overwrite
+  existing on/off values.
+- If an INI is missing or malformed, runtime uses in-memory defaults and
+  `log_and_print` (`Component::report_ini_unavailable` for children). The
+  file is not created. Per-key invalid values in a readable file keep that
+  key's default and do not rewrite the file.
+- Tracked samples under `defaults/config/<name>.ini` must match
+  `defaults.ixx`. Runtime never reads `defaults/`.
+- Nested project Target Names stay `<name>_ac`, `<name>_config`, and
+  unsuffixed `spotify_oauth`.
 
 ## Locked: pre-release logger status
 
@@ -153,25 +210,35 @@ or maintaining the pre-release `logger_ac.exe` implementation.
 ## Current path
 
 - Done: Phase 0; living [docs/STRATEGY.md](STRATEGY.md) plus `AGENTS.md`
-  pointer. Clone-vs-end-user `dist/` inventory is done (config seeds,
-  `defaults/` mirror, `dist/` gitignored). Readiness docs, vendor runtime
-  DLLs under `third_party/<dependency>/bin/`, and copy into `dist/` on
+  pointer. Clone-vs-end-user `dist/` inventory is done (`defaults/`
+  mirror, `dist/` gitignored). Readiness docs, vendor runtime
+  DLLs under `third_party/<dependency>/bin/`, and copy into `dist/bin/` on
   build via `scripts/copy-dist-dlls.ps1`. Folder layout is locked.
 - Done: generic component host. A normal component is an executable that
   satisfies `ac.component.v1`; Main must not know that component at
-  compile time. `components.list` is an open lowercase catalog. Discovery
-  is the name only (`weather` → `weather_ac.exe` and `ac_weather_pipe`).
-  The v1 control channel is hello/catalog, then Main-to-child `invoke` and
-  `shutdown`. Logger, taskbar snapshot/cycling/`activate_*`, dash, slash,
-  and Main-local commands stay explicit specials. `logger`, `dash`, and
-  `slash` may be listed in `components.list`; that file is their enable
-  switch. They are not v1 session children.
+  compile time. `components.list` `[components]` is an open lowercase
+  catalog (`name` / `name on` / `name off`). Launch is the name only
+  (`weather` → `weather_ac.exe` in `bin/` and `ac_weather_pipe`). Discovery of
+  `*_ac.exe` is used by `components_editor.exe` to reconcile the catalog when
+  `config/<name>.ini` exists, and by runtime only when an existing
+  `components.list` is unreadable. The v1 control channel is
+  hello/catalog, then Main-to-child `invoke` and `shutdown`. Logger,
+  taskbar snapshot/cycling/`activate_*`, dash, slash, and Main-local
+  commands stay explicit specials. `logger`, `dash`, and `slash` may be
+  listed in `[components]`; that section is their enable switch. They are not
+  v1 session children. Discovery includes those specials; the catalog
+  split keeps them non-v1.
 - Done for pre-release: `logger_ac.exe` logging upgrade. The implementation is
   feature-complete and has moved to field-testing/maintenance; further work is
   limited to concrete defects, regressions, reliability issues, or unmet
   pre-release requirements. `log_merger_ac.exe` remains future work.
+- Done: host vs component INI contract. Host files are written only by
+  Main `_config.exe` programs. Component INIs are generated only by
+  `<name>_config.exe`. Nested `main` / `config` / `shared` trees land per
+  child session. Main lives under `app/main/component`,
+  `app/main/config`, and `app/main/components`.
 - Remaining packaging: run
   [`scripts/build-all.ps1`](../scripts/build-all.ps1) on this PC. After
   it succeeds, delete `.git` and start a new project (`git init`,
   `git add .`, first commit, private remote, push `main`). Public GitHub
-  later. `keymap_config.exe` is parked (see [TODO.md](TODO.md)).
+  later.

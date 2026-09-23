@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shutdown_config", "shutdown_config.vcxproj", "{F1A5E6B8-D5C4-417E-CF90-55E66F770883}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x64.ActiveCfg = Debug|x64
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x64.Build.0 = Debug|x64
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x86.ActiveCfg = Debug|Win32
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x86.Build.0 = Debug|Win32
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Release|x64.ActiveCfg = Release|x64
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Release|x64.Build.0 = Release|x64
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Release|x86.ActiveCfg = Release|Win32
+		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A2B6F7C9-E6D5-428F-DA01-66F770881993}
+	EndGlobalSection
+EndGlobal

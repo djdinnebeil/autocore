@@ -77,9 +77,12 @@ $Common = @('/m', '/nologo', '/t:Build', '/p:Configuration=Release', '/p:Platfor
 
 $DistDir = Join-Path $RepoRoot 'dist'
 if (Test-Path -LiteralPath $DistDir) {
-    Get-ChildItem -LiteralPath $DistDir -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Extension -in '.exe', '.dll' } |
-        ForEach-Object { Unlock-DistFile $_.FullName }
+    $BinDir = Join-Path $DistDir 'bin'
+    if (Test-Path -LiteralPath $BinDir) {
+        Get-ChildItem -LiteralPath $BinDir -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension -in '.exe', '.dll' } |
+            ForEach-Object { Unlock-DistFile $_.FullName }
+    }
     $SymbolsDir = Join-Path $DistDir 'symbols'
     if (Test-Path -LiteralPath $SymbolsDir) {
         Get-ChildItem -LiteralPath $SymbolsDir -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
@@ -89,23 +92,36 @@ if (Test-Path -LiteralPath $DistDir) {
 
 $Solutions = @(
     'app\core\vs\auto_core_dll.sln'
-    'app\main\vs\auto_core.sln'
-    'app\components\dash\dash.sln'
-    'app\components\itunes\itunes.sln'
-    'app\components\journal\journal.sln'
-    'app\components\journal_config\journal_config.sln'
-    'app\components\logger\logger.sln'
-    'app\components\server\server.sln'
-    'app\components\server_config\server_config.sln'
-    'app\components\simple_test\simple_test.sln'
-    'app\components\slash\slash.sln'
-    'app\components\spotify\spotify.sln'
-    'app\components\spotify_oauth\spotify_oauth.sln'
-    'app\components\taskbar\taskbar.sln'
-    'app\components\taskbar_config\taskbar_config.sln'
-    'app\components\wake\wake.sln'
-    'app\components\writer\writer.sln'
-    'app\components\writer_config\writer_config.sln'
+    'app\main\component\vs\auto_core.sln'
+    'app\main\config\auto_core_config\auto_core_config.sln'
+    'app\main\config\main_config\main_config.sln'
+    'app\main\components\config\components_config.sln'
+    'app\main\components\editor\components_editor.sln'
+    'app\main\keymap\config\keymap_config.sln'
+    'app\main\keymap\editor\keymap_editor.sln'
+    'app\main\config\shutdown_config\shutdown_config.sln'
+    'app\main\config\crash_recovery_config\crash_recovery_config.sln'
+    'app\components\dash\main\dash.sln'
+    'app\components\dash\config\dash_config.sln'
+    'app\components\itunes\main\itunes.sln'
+    'app\components\itunes\config\itunes_config.sln'
+    'app\components\journal\main\journal.sln'
+    'app\components\journal\config\journal_config.sln'
+    'app\components\logger\main\logger.sln'
+    'app\components\logger\config\logger_config.sln'
+    'app\components\server\main\server.sln'
+    'app\components\server\config\server_config.sln'
+    'app\components\slash\main\slash.sln'
+    'app\components\slash\config\slash_config.sln'
+    'app\components\spotify\main\spotify.sln'
+    'app\components\spotify\config\spotify_config.sln'
+    'app\components\spotify\oauth\spotify_oauth.sln'
+    'app\components\taskbar\main\taskbar.sln'
+    'app\components\taskbar\config\taskbar_config.sln'
+    'app\components\wake\main\wake.sln'
+    'app\components\wake\config\wake_config.sln'
+    'app\components\writer\main\writer.sln'
+    'app\components\writer\config\writer_config.sln'
 )
 
 foreach ($solution in $Solutions) {
