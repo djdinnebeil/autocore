@@ -48,8 +48,7 @@ int main(int argument_count, char* arguments[]) {
         return write_manifest(registry, arguments[2]);
     }
 
-    writer_component().connect_to_logger();
-    writer_component().log_and_log("writer_ac.exe started");
+    writer_component().log_main("writer_ac.exe started");
 
     {
         const auto ini_path = ac::paths::config_directory() / "writer.ini";
@@ -64,7 +63,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (!ac::taskbar::connect()) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Unable to receive the native taskbar snapshot; notes will "
             "open without taskbar pre-activation."
         );
@@ -77,7 +76,7 @@ int main(int argument_count, char* arguments[]) {
         ac::protocol::component::pipe_name("writer")
     );
     if (!connection) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Failed to connect to writer pipe. Error: {}",
             connection.error().system_error
         );
@@ -94,7 +93,7 @@ int main(int argument_count, char* arguments[]) {
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                writer_component().log_and_print(
+                writer_component().log_print(
                     "Failed to read writer command. Error: {}",
                     expression.error().system_error
                 );
@@ -104,7 +103,7 @@ int main(int argument_count, char* arguments[]) {
             }
             auto action = registry.resolve(*expression);
             if (!action) {
-                writer_component().log_and_print(
+                writer_component().log_print(
                     "Unknown writer command: {}", *expression
                 );
                 return;
@@ -117,7 +116,7 @@ int main(int argument_count, char* arguments[]) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            writer_component().log_and_log("shutdown signal received");
+            writer_component().log_main("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -127,7 +126,7 @@ int main(int argument_count, char* arguments[]) {
                 registry.autocomplete_values()
             )
         ); !ready) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Failed to signal writer readiness. Error: {}",
             ready.error().system_error
         );
@@ -135,7 +134,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Writer pipe failed. Error: {}",
             result.error().system_error
         );
@@ -145,6 +144,6 @@ int main(int argument_count, char* arguments[]) {
         return 1;
     }
 
-    writer_component().log_and_log("program terminated");
+    writer_component().log_main("program terminated");
     return 0;
 }

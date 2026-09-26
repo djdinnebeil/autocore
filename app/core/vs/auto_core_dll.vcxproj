@@ -31,9 +31,7 @@
     <ClCompile Include="..\modules\formatting.ixx" />
     <ClCompile Include="..\modules\ini.ixx" />
     <ClCompile Include="..\modules\keyboard.ixx" />
-    <ClCompile Include="..\modules\log_protocol.ixx" />
     <ClCompile Include="..\modules\logging_config.ixx" />
-    <ClCompile Include="..\modules\main_log_client.ixx" />
     <ClCompile Include="..\modules\paths.ixx" />
     <ClCompile Include="..\modules\pipes.ixx" />
     <ClCompile Include="..\modules\thread.ixx" />
@@ -53,10 +51,8 @@
     <ClCompile Include="..\src\error.cxx" />
     <ClCompile Include="..\src\keyboard.cxx" />
     <ClCompile Include="..\src\ini.cxx" />
-    <ClCompile Include="..\src\log_protocol.cxx" />
     <ClCompile Include="..\src\logging_config.cxx" />
     <ClCompile Include="..\src\logging_config_detail.cxx" />
-    <ClCompile Include="..\src\main_log_client.cxx" />
     <ClCompile Include="..\src\paths.cxx" />
     <ClCompile Include="..\src\spotify_config_detail.cxx" />
     <ClCompile Include="..\src\pipes.cxx" />

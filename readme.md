@@ -27,7 +27,7 @@ This repository is for people who want to **build or extend** the source and **r
 
 Build from source (below), then run from `dist/` (`dist\bin\auto_core.exe`, runtime DLLs, and the component executables). Projects use the DLL CRT (`/MD`); if you run binaries you did not build on that PC, install the matching **MSVC v145** redistributable.
 
-1. Start `auto_core.exe` from `dist\bin` (or `Auto Core.lnk` at the installation root). If `config/auto_core.ini` is missing, Main launches `auto_core_config.exe`, which runs the six Main helpers and writes the sentinel only after they succeed. Component INIs (`<name>.ini`) are **not** seeded; run `<name>_config.exe` to generate them. If an INI is missing at runtime, that process uses built-in defaults and reports the gap; it does not write the file. Tracked samples in [`defaults/`](defaults/) are documentation only; Auto Core never reads them.
+1. Start `auto_core.exe` from `dist\bin` (or `Auto Core.lnk` at the installation root). If `config/auto_core.ini` is missing, Main launches `auto_core_config.exe`, which runs the five configuration programs, prompts for `warn_without_winkey_mapping`, and writes `auto_core.ini` only after they succeed. Presence of that file means Auto Core is initialized. There is no `initialized` key. Component INIs (`<name>.ini`) are **not** seeded; run `<name>_config.exe` to generate them. If an INI is missing at runtime, that process uses built-in defaults and reports the gap; it does not write the file. Tracked samples in [`defaults/`](defaults/) are documentation only; Auto Core never reads them.
 2. Edit `dist/keymap.map` if you want a custom map. If the file is missing, run `keymap_editor.exe` to write a seed. An existing file is not overwritten. [`defaults/keymap.map`](defaults/keymap.map) is a sample to copy by hand, not a file the program loads.
 3. Run `taskbar_config.exe` from `dist\bin` so `taskbar/applications/*.ini` matches the programs you pin. See [Taskbar](docs/taskbar.md).
 4. Run `<name>_config.exe` from `dist\bin` to generate `config/<name>.ini`. Spotify tokens still use `spotify_oauth.exe` ([Spotify](docs/spotify.md)). Restart `server_ac.exe` after rewriting `server.ini`.
@@ -77,9 +77,9 @@ The main application, core DLL, shared protocols, and component projects are sep
 | --- | --- | --- | --- |
 | `dash` | Local secret insertion | `dash_ac.exe` | Current-user DPAPI with a Windows Hello access check; see [Dash](docs/dash.md) |
 | `journal` | Journaling titles and file workflow | `journal_ac.exe` | Pipe child of Auto Core; episode counters in `journals.db` under `[journal] directory` |
+| `logger` | Merged main log | `logger_ac.exe` | Reads local `.main.log` files into `YYYY-MM-DD_main.log`. See [Logger](docs/logger.md) |
 | `journal_config` | Journal database setup | `journal_config.exe` | Writes `config/journal.ini` if missing; creates `journals.db` and series tables; on-demand like `taskbar_config` |
 | `itunes` | iTunes controller | `itunes_ac.exe` | Dedicated-owner-thread COM automation; see [iTunes](docs/itunes.md) |
-| `logger` | Central component logger | `logger_ac.exe` | Receives component log events over named pipes |
 | `server` | Local file server | `server_ac.exe` | Loopback HTTP; `server_config.exe` owns `server.ini` |
 | `slash` | Recycle bin utility | `slash_ac.exe` | Prints deleted items |
 | `spotify` | Spotify controller | `spotify_ac.exe` | Web API playback control and local history; see [Spotify](docs/spotify.md) |
@@ -108,7 +108,11 @@ Auto Core/
 ├─ app/                 Build input (source, projects, resources). Not source-only
 │  ├─ components/       Child trees: <name>/main, config, shared (spotify + oauth; tests when present)
 │  ├─ core/             auto_core.dll source, include/ac_api.hpp, nested tests
-│  ├─ main/             component/ (auto_core.exe) and config/ helpers
+│  ├─ main/             Main family: runtime/, editors/, config/, shared/
+│  │  ├─ runtime/       auto_core.exe source only
+│  │  ├─ editors/       components_editor.exe, keymap_editor.exe
+│  │  ├─ config/        Main configuration executables
+│  │  └─ shared/        Main-family shared code and defaults
 │  ├─ resources/        Shared .ico and .rc files
 │  └─ shared/           Compile-time IPC protocols and command_registry
 ├─ defaults/            Tracked samples for dist/X (never loaded at runtime)

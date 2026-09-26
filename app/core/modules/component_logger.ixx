@@ -10,7 +10,7 @@ import auto_core.core.clock;
 namespace ac::component_detail {
 
     /**
-     * \brief Owns synchronized comprehensive and central-subset daily logs.
+     * \brief Owns synchronized comprehensive and main-subset daily logs.
      *
      * Files are named `<date>_<component>.log` and
      * `<date>_<component>.main.log` under the supplied directory

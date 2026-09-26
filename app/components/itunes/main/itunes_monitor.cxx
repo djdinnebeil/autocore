@@ -24,13 +24,13 @@ namespace {
 }
 
 void itunes_next_song() {
-    itunes_component.log_and_log("itunes_next_song()");
+    itunes_component.log_main("itunes_next_song()");
     itunes::runtime::next_song(ac_itunes, playback_monitor);
 }
 
 void itunes_client::start_itunes_thread() {
     Sleep(25);
-    itunes_component.log_and_log("itunes_thread started");
+    itunes_component.log_main("itunes_thread started");
     const int sleep_timerate_secs_playing = 5;
     const int sleep_timerate_secs_pause = 5;
     const int extra_time_ms = 100;
@@ -74,10 +74,10 @@ void itunes_client::start_itunes_thread() {
         }
     }
     catch (const std::exception& e) {
-        itunes_component.log_and_print("itunes_song_thread() has crashed: {}", e.what());
+        itunes_component.log_print("itunes_song_thread() has crashed: {}", e.what());
     }
     catch (...) {
-        itunes_component.log_and_print("itunes_song_thread() has crashed due to an unknown exception");
+        itunes_component.log_print("itunes_song_thread() has crashed due to an unknown exception");
     }
     itunes_component.log("end of iTunes thread");
 }

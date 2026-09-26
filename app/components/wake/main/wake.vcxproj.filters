@@ -60,9 +60,6 @@
     <ClCompile Include="..\shared\wake_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\log_protocol.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">

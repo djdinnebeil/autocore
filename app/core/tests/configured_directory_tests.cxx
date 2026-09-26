@@ -38,7 +38,7 @@ TEST_CASE(
     "[configured-directory][unit]"
 ) {
     const auto layout = ac::paths::detail::layout_from_image_path(
-        std::filesystem::path {R"(C:\Example\Auto Core\bin\logger_ac.exe)"}
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\journal_ac.exe)"}
     );
     const auto directory = ac::paths::detail::resolve_configured_directory(
         std::filesystem::path {R"(components\journal)"},

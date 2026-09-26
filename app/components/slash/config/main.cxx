@@ -10,13 +10,12 @@ int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
     ac::Component slash_config {"slash_config"};
-    slash_config.connect_to_logger();
-    slash_config.log_and_log("slash_config.exe started");
+    slash_config.log_main("slash_config.exe started");
 
     const auto path = ac::paths::config_directory() / "slash.ini";
     std::error_code error;
     if (std::filesystem::exists(path, error)) {
-        slash_config.log_and_print(
+        slash_config.log_print(
             "config/slash.ini already exists. Slash has no extra settings."
         );
         return ac::config::components_request::run_component_update("slash");
@@ -25,7 +24,7 @@ int main(int argc, char* argv[]) {
     std::error_code create_error;
     std::filesystem::create_directories(path.parent_path(), create_error);
     if (create_error) {
-        slash_config.log_and_print(
+        slash_config.log_print(
             "Failed to create config directory: {}",
             create_error.message()
         );
@@ -33,7 +32,7 @@ int main(int argc, char* argv[]) {
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        slash_config.log_and_print("Failed to create {}", path.string());
+        slash_config.log_print("Failed to create {}", path.string());
         return 1;
     }
     output.write(
@@ -42,10 +41,10 @@ int main(int argc, char* argv[]) {
     );
     output.close();
     if (!output) {
-        slash_config.log_and_print("Failed to write {}", path.string());
+        slash_config.log_print("Failed to write {}", path.string());
         return 1;
     }
-    slash_config.log_and_print(
+    slash_config.log_print(
         "Wrote default {} (no tunables yet).",
         path.string()
     );

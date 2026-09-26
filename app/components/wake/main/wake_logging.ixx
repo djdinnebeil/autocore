@@ -24,8 +24,7 @@ export void update_wake_component() {
 }
 
 export void log_init() {
-    wake_component.connect_to_logger();
-	wake_component.log_and_log("wake_ac.exe started");
+	wake_component.log_main("wake_ac.exe started");
     const auto ini_path = ac::paths::config_directory() / "wake.ini";
     if (!ac::ini::read(ini_path)) {
         std::error_code exists_error;
@@ -139,7 +138,7 @@ export void log_last_wake() {
             }
         }
 
-        wake_component.lognl_and_lognl(
+        wake_component.lognl_main(
             "wake state change detected at {}",
             current_last_wake_output
         );

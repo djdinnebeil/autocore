@@ -30,7 +30,7 @@ bool ensure_journal_ini(const bool prompt) {
         return true;
     }
     if (error) {
-        journal_config.log_and_print(
+        journal_config.log_print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -49,7 +49,7 @@ bool ensure_journal_ini(const bool prompt) {
     std::error_code create_error;
     std::filesystem::create_directories(ac::paths::config_directory(), create_error);
     if (create_error) {
-        journal_config.log_and_print(
+        journal_config.log_print(
             "Failed to create config directory: {}",
             create_error.message()
         );
@@ -57,7 +57,7 @@ bool ensure_journal_ini(const bool prompt) {
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        journal_config.log_and_print("Failed to create {}", path.string());
+        journal_config.log_print("Failed to create {}", path.string());
         return false;
     }
     const auto contents = journal::defaults::ini_for(directory);
@@ -67,7 +67,7 @@ bool ensure_journal_ini(const bool prompt) {
 }
 
 void print_error(const std::string& message) {
-    journal_config.log_and_print("{}", message);
+    journal_config.log_print("{}", message);
 }
 
 void list_series() {
@@ -95,7 +95,7 @@ void add_series() {
         print_error(result.error());
         return;
     }
-    journal_config.log_and_print("Created the series.");
+    journal_config.log_print("Created the series.");
 }
 
 void update_counter() {
@@ -135,7 +135,7 @@ void update_counter() {
         print_error(result.error());
         return;
     }
-    journal_config.log_and_print(
+    journal_config.log_print(
         "{} count is now {}.",
         result->name,
         result->counter
@@ -162,7 +162,7 @@ void set_firebase_url() {
         print_error(result.error());
         return;
     }
-    journal_config.log_and_print("Saved Firebase URL.");
+    journal_config.log_print("Saved Firebase URL.");
 }
 
 void print_menu() {
@@ -192,20 +192,19 @@ void activate_own_console() {
 } // namespace
 
 int main(int argc, char* argv[]) {
-    journal_config.connect_to_logger();
-    journal_config.log_and_log("journal_config.exe started");
+    journal_config.log_main("journal_config.exe started");
 
     const bool initialize =
         ac::config::components_request::is_initialize_run(argc, argv);
     if (!ensure_journal_ini(!initialize)) {
-        journal_config.log_and_print("Journal configuration was not initialized.");
+        journal_config.log_print("Journal configuration was not initialized.");
         return 1;
     }
 
     ac::config::seed_missing_journal_choices();
 
     if (initialize) {
-        journal_config.log_and_log("journal.ini initialized");
+        journal_config.log_main("journal.ini initialized");
         return ac::config::components_request::run_component_update("journal");
     }
 

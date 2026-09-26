@@ -90,7 +90,7 @@ void run_server(std::atomic_bool& stop_requested) {
 
     std::error_code exists_error;
     if (!std::filesystem::exists(document_root_path, exists_error)) {
-        server_component.log_and_log(
+        server_component.log_main(
             "Document root is missing: {}",
             document_root_path
         );
@@ -105,7 +105,7 @@ void run_server(std::atomic_bool& stop_requested) {
     try {
         CivetServer server(options);
 
-        server_component.log_and_log(
+        server_component.log_main(
             "Server started at http://127.0.0.1:{}/ serving {}",
             port_number,
             document_root_path
@@ -120,14 +120,14 @@ void run_server(std::atomic_bool& stop_requested) {
         }
     }
     catch (const std::exception& exception) {
-        server_component.log_and_print(
+        server_component.log_print(
             "Failed to bind http://127.0.0.1:{}/: {}",
             port_number,
             exception.what()
         );
     }
     catch (...) {
-        server_component.log_and_print(
+        server_component.log_print(
             "Failed to bind http://127.0.0.1:{}/",
             port_number
         );
@@ -139,7 +139,7 @@ bool run_control_pipe(std::atomic_bool& stop_requested) {
         ac::protocol::component::pipe_name("server")
     );
     if (!connection) {
-        server_component.log_and_print(
+        server_component.log_print(
             "Failed to connect to the server control pipe. Error: {}",
             connection.error().system_error
         );
@@ -153,7 +153,7 @@ bool run_control_pipe(std::atomic_bool& stop_requested) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher, &stop_requested] {
-            server_component.log_and_log(
+            server_component.log_main(
                 "shutdown signal received - force termination allowed"
             );
             stop_requested.store(true);
@@ -170,7 +170,7 @@ bool run_control_pipe(std::atomic_bool& stop_requested) {
                 dispatcher.request_stop();
                 return;
             }
-            server_component.log_and_print(
+            server_component.log_print(
                 "Unknown server command: {}",
                 *expression
             );
@@ -184,7 +184,7 @@ bool run_control_pipe(std::atomic_bool& stop_requested) {
                 ac::protocol::component::TerminationPolicy::force_allowed
             )
         ); !hello) {
-        server_component.log_and_print(
+        server_component.log_print(
             "Failed to send server hello. Error: {}",
             hello.error().system_error
         );
@@ -208,6 +208,6 @@ int main() {
         return 1;
     }
 
-    server_component.log_and_log("program terminated");
+    server_component.log_main("program terminated");
     return 0;
 }

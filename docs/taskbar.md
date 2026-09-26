@@ -66,7 +66,7 @@ mode = live
 | `directory` | Taskbar data root. Portable default `taskbar` (`dist/taskbar` when run from `dist`). A relative path is resolved against the installation root; an absolute path is used as-is. A missing or malformed `taskbar.ini` uses that default in memory (`report_ini_unavailable`) and does not create the file. Shared by `taskbar_ac.exe` and `taskbar_config.exe`. Only `taskbar_config.exe` writes the live file. |
 | `mode` | `live` discovers positions 1–10 and overwrites `cached_positions.ini` under that data root. `cache` uses that file when it has at least one valid slot; if the file is missing or empty, it discovers once, writes the file, and uses that. Any other value means `live`. `refresh_taskbar_positions` always rediscovers and overwrites the cache. |
 
-The Auto Core mapping warning is `[main]` `warn_without_winkey_mapping` in `config/main.ini` (default `true`). When true, `taskbar_ac.exe` warns if Auto Core is not in positions 1–10. Set `false` to silence it.
+The Auto Core mapping warning is `[auto_core]` `warn_without_winkey_mapping` in `config/auto_core.ini` (default `true`). When true, `taskbar_ac.exe` warns if Auto Core is not in positions 1–10. Set `false` to silence it. Only `auto_core_config.exe` writes that file.
 
 ### `taskbar/cached_positions.ini`
 
@@ -287,9 +287,9 @@ the app is already running.
 | `app/components/taskbar/config/enum_windows.cxx` | Config-side EnumWindows enumerator for window matching. |
 | `app/core/taskbar/` | `auto_core.taskbar` snapshot, matching, and Win+position input. |
 | `app/main/modules/main_taskbar.ixx` | Main cycling session and INI command registration. |
-| `app/main/component/src/main_taskbar.cxx` | Native vs emulated `activate_*` and cycling. |
+| `app/main/runtime/src/main_taskbar.cxx` | Native vs emulated `activate_*` and cycling. |
 | `app/main/modules/taskbar_component.ixx` | Main-side `taskbar_ac.exe` lifecycle and control pipe. |
-| `app/main/component/src/taskbar_component.cxx` | Lifecycle client, pipe invoke, and Main-local reserved launches. |
+| `app/main/runtime/src/taskbar_component.cxx` | Lifecycle client, pipe invoke, and Main-local reserved launches. |
 | `app/shared/protocols/taskbar_protocol.ixx` | Control-pipe contract and authority command names. |
 
 ## Manual test

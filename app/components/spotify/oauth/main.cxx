@@ -27,42 +27,41 @@ int run_generate_tokens(SpotifyOAuthConfig config) {
     std::cout << "Enter local server port: ";
     std::getline(std::cin, config.port_number);
 
-    spotify_oauth_log.log_and_log("Spotify authorization started");
+    spotify_oauth_log.log_main("Spotify authorization started");
     SpotifyOAuth oauth(std::move(config));
     const auto result = oauth.authorize();
 
     if (!result.succeeded()) {
-        spotify_oauth_log.log_and_print(
+        spotify_oauth_log.log_print(
             "Spotify authorization failed:\n{}",
             result.message
         );
         return 1;
     }
 
-    spotify_oauth_log.log_and_print("{}", result.message);
+    spotify_oauth_log.log_print("{}", result.message);
     return 0;
 }
 
 int run_register_devices(SpotifyOAuthConfig config) {
-    spotify_oauth_log.log_and_log("Spotify device registration started");
+    spotify_oauth_log.log_main("Spotify device registration started");
     SpotifyOAuth oauth(std::move(config));
     const auto result = oauth.register_devices();
 
     if (!result.succeeded()) {
-        spotify_oauth_log.log_and_print(
+        spotify_oauth_log.log_print(
             "Spotify device registration failed:\n{}",
             result.message
         );
         return 1;
     }
 
-    spotify_oauth_log.log_and_print("{}", result.message);
+    spotify_oauth_log.log_print("{}", result.message);
     return 0;
 }
 
 int main() {
-    spotify_oauth_log.connect_to_logger();
-    spotify_oauth_log.log_and_log("spotify_oauth.exe started");
+    spotify_oauth_log.log_main("spotify_oauth.exe started");
     std::cout
         << "spotify_oauth.exe does not write config/spotify.ini. "
            "Run spotify_config.exe if that file is missing.\n";
@@ -91,7 +90,7 @@ int main() {
             config.client_id = load_client_id(config.config_path);
 
             if (config.client_id.empty()) {
-                spotify_oauth_log.log_and_print(
+                spotify_oauth_log.log_print(
                     "client_id is missing from {}.\n"
                     "Generate new tokens first, then try again.",
                     config.config_path.filename().string()
@@ -102,7 +101,7 @@ int main() {
             return run_register_devices(std::move(config));
         }
 
-        spotify_oauth_log.log_and_print("Unknown option.");
+        spotify_oauth_log.log_print("Unknown option.");
         return 1;
     }
 }

@@ -58,11 +58,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\modules\clock.ixx" />
+    <ClCompile Include="..\modules\component.ixx" />
     <ClCompile Include="..\modules\encoding.ixx" />
     <ClCompile Include="..\modules\error.ixx" />
     <ClCompile Include="..\modules\formatting.ixx" />
     <ClCompile Include="..\modules\ini.ixx" />
-    <ClCompile Include="..\modules\log_protocol.ixx" />
+    <ClCompile Include="..\modules\logging_config.ixx" />
     <ClCompile Include="..\modules\paths.ixx" />
     <ClCompile Include="..\modules\pipes.ixx" />
     <ClCompile Include="..\src\clock_formatting.cxx" />
@@ -71,6 +72,7 @@
     <ClCompile Include="..\src\logging_config_detail.cxx" />
     <ClCompile Include="..\src\spotify_config_detail.cxx" />
     <ClCompile Include="..\tests\clock_tests.cxx" />
+    <ClCompile Include="..\tests\component_log_tests.cxx" />
     <ClCompile Include="..\tests\core_config_tests.cxx" />
     <ClCompile Include="..\tests\configured_directory_tests.cxx" />
     <ClCompile Include="..\tests\encoding_tests.cxx" />
@@ -78,7 +80,7 @@
     <ClCompile Include="..\tests\formatting_tests.cxx" />
     <ClCompile Include="..\tests\ini_tests.cxx" />
     <ClCompile Include="..\tests\logging_config_tests.cxx" />
-    <ClCompile Include="..\tests\log_protocol_tests.cxx" />
+    <ClCompile Include="..\tests\main_log_merge_tests.cxx" />
     <ClCompile Include="..\tests\paths_tests.cxx" />
     <ClCompile Include="..\tests\spotify_config_tests.cxx" />
     <ClCompile Include="..\tests\pipes_tests.cxx" />

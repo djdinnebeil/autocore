@@ -9,8 +9,6 @@ import auto_core.core.clock;
 import auto_core.core.console;
 import auto_core.core.encoding;
 import auto_core.core.logging.config;
-import auto_core.core.logging.client;
-import auto_core.core.logging.protocol;
 
 namespace ac {
 
@@ -32,36 +30,6 @@ namespace ac {
         ac::component_detail::ComponentLogger component_logger;
         ac::component_detail::ConsoleWriter console_writer;
         ac::component_detail::TextInserter text_inserter;
-        ac::logger::MainLogConnection main_log_connection;
-
-        void send_to_main_log(
-            const std::string_view timestamp,
-            const std::string_view message,
-            const bool newline
-        ) {
-            const ac::logging::Event event {
-                .timestamp = std::string {timestamp},
-                .component = name,
-                .message = std::string {message},
-                .newline = newline
-            };
-
-            (void)main_log_connection.send(event);
-        }
-
-        void write_connection_failure(
-            const std::string_view message
-        ) {
-            const auto event_time = ac::clock::get_local_datetime();
-            std::scoped_lock lock(routing_mutex);
-            component_logger.write(
-                ac::clock::format_log_timestamp(event_time),
-                event_time.date_iso,
-                message,
-                false
-            );
-            console_writer.write_error(message);
-        }
 
         void write_message(
             const std::string_view message,
@@ -84,11 +52,11 @@ namespace ac {
                 newline
             );
 
-            if (main_worthy) {
-                send_to_main_log(timestamp, message, newline);
-            }
-
-            if (route == OutputRoute::component_main_and_console) {
+            const bool explicit_console =
+                route == OutputRoute::component_main_and_console;
+            const bool configured_console =
+                ac::logging::config::write_logs_to_console();
+            if (explicit_console || configured_console) {
                 console_writer.write(message, newline);
             }
         }
@@ -98,9 +66,7 @@ namespace ac {
         : impl_(std::make_unique<Impl>(name)) {
     }
 
-    Component::~Component() noexcept {
-        impl_->main_log_connection.close();
-    }
+    Component::~Component() noexcept = default;
 
     const clock::DateTime& Component::session_start() const noexcept {
         return impl_->session_start;
@@ -115,7 +81,7 @@ namespace ac {
         const auto file = std::string {"config/"} + component_name + ".ini";
         const auto exe = component_name + "_config.exe";
         if (malformed) {
-            log_and_print(
+            log_print(
                 "{} is malformed. Run {} to generate a valid file. "
                 "Using built-in defaults; the file will not be created.",
                 file,
@@ -123,7 +89,7 @@ namespace ac {
             );
             return;
         }
-        log_and_print(
+        log_print(
             "{} is missing. Run {} to generate it. "
             "Using built-in defaults; the file will not be created.",
             file,
@@ -392,23 +358,6 @@ namespace ac {
     ) {
         printnl(message);
         insert_text_preserving_clipboard_text(message);
-    }
-
-    void Component::connect_to_logger() {
-        if (!ac::logging::config::enabled()) {
-            return;
-        }
-
-        impl_->main_log_connection.start(
-            impl_->name,
-            [component = impl_.get()](const std::string_view message) {
-                component->write_connection_failure(message);
-            }
-        );
-    }
-
-    bool Component::request_logger_shutdown() {
-        return impl_->main_log_connection.request_logger_shutdown();
     }
 
     void Component::update_log_file() {

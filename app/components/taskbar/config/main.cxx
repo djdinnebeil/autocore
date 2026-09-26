@@ -1046,7 +1046,7 @@ namespace {
         const auto windows = enumerate_windows();
         if (!buttons || !windows) {
             std::wcerr << L"Unable to collect taskbar or window metadata.\n";
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Unable to collect taskbar or window metadata."
             );
             return 1;
@@ -1056,7 +1056,7 @@ namespace {
         if (!generate_configurations(
                 configuration, *buttons, *windows, generated)) {
             std::wcerr << L"Unable to write generated configurations.\n";
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Unable to write generated configurations."
             );
             return 1;
@@ -1084,12 +1084,12 @@ namespace {
                    << L", already present " << existing << L".\n";
         if (!write_keymap_manifest(configuration)) {
             std::wcerr << L"Unable to update keymap/components/taskbar.keymap_commands.txt.\n";
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Unable to update keymap/components/taskbar.keymap_commands.txt."
             );
             return 1;
         }
-        taskbar_config.log_and_log("taskbar configuration generated");
+        taskbar_config.log_main("taskbar configuration generated");
         return 0;
     }
 
@@ -1101,7 +1101,7 @@ namespace {
             return true;
         }
         if (error) {
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Failed to inspect {}: {}",
                 path.string(),
                 error.message()
@@ -1119,7 +1119,7 @@ namespace {
 
         const auto utf8 = to_utf8(directory);
         if (!utf8) {
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Failed to encode the taskbar data directory."
             );
             return false;
@@ -1130,7 +1130,7 @@ namespace {
             create_error
         );
         if (create_error) {
-            taskbar_config.log_and_print(
+            taskbar_config.log_print(
                 "Failed to create config directory: {}",
                 create_error.message()
             );
@@ -1138,7 +1138,7 @@ namespace {
         }
         std::ofstream output(path, std::ios::binary | std::ios::trunc);
         if (!output) {
-            taskbar_config.log_and_print("Failed to create {}", path.string());
+            taskbar_config.log_print("Failed to create {}", path.string());
             return false;
         }
         const auto contents = taskbar::defaults::ini_for(
@@ -1194,17 +1194,16 @@ namespace {
 }
 
 int wmain(int argc, wchar_t* argv[]) {
-    taskbar_config.connect_to_logger();
-    taskbar_config.log_and_log("taskbar_config.exe started");
+    taskbar_config.log_main("taskbar_config.exe started");
     try {
         if (ac::config::components_request::is_initialize_run(argc, argv)) {
             if (!ensure_taskbar_ini(false)) {
-                taskbar_config.log_and_print(
+                taskbar_config.log_print(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
             }
-            taskbar_config.log_and_log("taskbar.ini initialized");
+            taskbar_config.log_main("taskbar.ini initialized");
             return ac::config::components_request::run_component_update(
                 "taskbar"
             );
@@ -1220,7 +1219,7 @@ int wmain(int argc, wchar_t* argv[]) {
     }
     catch (const std::exception& error) {
         std::cerr << "taskbar_config.exe failed: " << error.what() << '\n';
-        taskbar_config.log_and_print(
+        taskbar_config.log_print(
             "taskbar_config.exe failed: {}",
             error.what()
         );

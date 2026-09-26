@@ -22,12 +22,11 @@ void update_itunes_component() {
 }
 
 void log_init() {
-    itunes_component.connect_to_logger();
-    itunes_component.log_and_log("itunes_ac.exe started");
+    itunes_component.log_main("itunes_ac.exe started");
 }
 
 void end_itunes() {
-    itunes_component.log_and_log("shutdown signal received");
+    itunes_component.log_main("shutdown signal received");
 }
 
 int main(int argc, char* argv[]) {
@@ -58,7 +57,7 @@ int main(int argc, char* argv[]) {
                 .stop_song = itunes_stop_song,
                 .remove_song = remove_itunes_song,
                 .unknown_named = [](const std::string_view name) {
-                    itunes_component.log_and_print(
+                    itunes_component.log_print(
                         "Unknown iTunes command: {}", name
                     );
                 }
@@ -71,7 +70,7 @@ int main(int argc, char* argv[]) {
                     registry.autocomplete_values()
                 )
             ); !hello) {
-            itunes_component.log_and_print(
+            itunes_component.log_print(
                 "Failed to send iTunes hello. Error: {}",
                 hello.error().system_error
             );
@@ -79,13 +78,13 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         if (ac_itunes.auto_start && !ac_itunes.initialize_com()) {
-            itunes_component.log_and_print(
+            itunes_component.log_print(
                 "Unable to initialize iTunes automation after retrying."
             );
         }
         if (const auto result = dispatcher.process(ac_itunes_pipe);
             !result) {
-            itunes_component.log_and_print(
+            itunes_component.log_print(
                 "iTunes pipe failed. Error: {}",
                 result.error().system_error
             );
@@ -93,14 +92,14 @@ int main(int argc, char* argv[]) {
         if (protocol_failed) return 1;
     }
     else {
-        itunes_component.log_and_print(
+        itunes_component.log_print(
             "Failed to connect to iTunes pipe. Error: {}",
             connection.error().system_error
         );
     }
 
     ac_itunes.shutdown();
-    itunes_component.log_and_log("program terminated");
+    itunes_component.log_main("program terminated");
 
 
     return 0;

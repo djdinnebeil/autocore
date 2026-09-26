@@ -41,14 +41,12 @@ TEST_CASE("Core configuration keeps the winkey warning for invalid values", "[co
 }
 
 TEST_CASE("Portable config defaults match the documented keys", "[core-config][unit]") {
-    CHECK(detail::auto_core_ini.find("[auto_core]") != std::string_view::npos);
-    CHECK(detail::auto_core_ini.find("initialized = true") !=
-        std::string_view::npos);
-    CHECK(detail::auto_core_ini.find("warn_without_winkey_mapping") ==
-        std::string_view::npos);
-    CHECK(detail::main_ini.find("[main]") != std::string_view::npos);
-    CHECK(detail::main_ini.find("warn_without_winkey_mapping = true") !=
-        std::string_view::npos);
+    CHECK(detail::auto_core_ini ==
+        "# The presence of this file indicates that Auto Core has been initialized.\n"
+        "\n"
+        "[auto_core]\n"
+        "warn_without_winkey_mapping = true\n");
+    CHECK(detail::auto_core_ini.find("initialized =") == std::string_view::npos);
     CHECK(detail::components_ini.find("[settings]") !=
         std::string_view::npos);
     CHECK(detail::components_ini.find("new_components = on") !=
@@ -77,10 +75,10 @@ TEST_CASE("Portable config defaults match the documented keys", "[core-config][u
         std::string_view::npos);
     CHECK(detail::journal_choices_ini.find("print_one_is_selected =") !=
         std::string_view::npos);
-    CHECK(detail::keymap_ini.find("[keymap]") != std::string_view::npos);
-    CHECK(detail::keymap_ini.find("trace_enabled = false") != std::string_view::npos);
-    CHECK(detail::keymap_ini.find("silence_nonset_warning = false") !=
-        std::string_view::npos);
+    CHECK(detail::keymap_ini ==
+        "[keymap]\n"
+        "silence_nonset_warning = false\n");
+    CHECK(detail::keymap_ini.find("trace_enabled") == std::string_view::npos);
 }
 
 namespace {
@@ -127,7 +125,6 @@ TEST_CASE("Tracked defaults/ files match portable config defaults", "[core-confi
 
     CHECK(read_default_ini(config / "auto_core.ini") ==
         detail::auto_core_ini);
-    CHECK(read_default_ini(config / "main.ini") == detail::main_ini);
     CHECK(read_default_ini(config / "components.ini") ==
         detail::components_ini);
     CHECK(read_default_ini(repo / "defaults" / "components.list") ==

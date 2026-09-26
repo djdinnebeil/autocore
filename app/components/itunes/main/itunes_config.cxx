@@ -37,7 +37,7 @@ void itunes_client::set_config() {
     auto_start = settings.auto_start;
     tab_end = settings.tab_end;
 
-    itunes_component.log_and_log(
+    itunes_component.log_main(
         "itunes.ini {}: auto_start raw={} resolved={}",
         itunes_config_path,
         raw_auto_start.value_or("absent"),

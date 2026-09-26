@@ -14,14 +14,9 @@
 namespace ac::config::detail {
 
     inline constexpr std::string_view auto_core_ini =
-        "# This file is not parsed.\n"
-        "# auto_core.exe checks only for this file's existence.\n"
+        "# The presence of this file indicates that Auto Core has been initialized.\n"
         "\n"
         "[auto_core]\n"
-        "initialized = true\n";
-
-    inline constexpr std::string_view main_ini =
-        "[main]\n"
         "warn_without_winkey_mapping = true\n";
 
     inline constexpr std::string_view components_ini =
@@ -65,7 +60,6 @@ namespace ac::config::detail {
 
     inline constexpr std::string_view keymap_ini =
         "[keymap]\n"
-        "trace_enabled = false\n"
         "silence_nonset_warning = false\n";
 
 } // namespace ac::config::detail

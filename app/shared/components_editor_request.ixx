@@ -1,7 +1,8 @@
 /**
  * \file components_editor_request.ixx
- * \brief Launch `components_editor.exe --component <name>` from a child
- *        `_config.exe`. Request identity is `component = <name>`.
+ * \brief Launch `components_editor.exe` from a child helper.
+ *        `--component <name>` registers a name. `--on` or `--off` with
+ *        that flag sets an explicit `components.list` state.
  */
 export module components_editor_request;
 
@@ -15,7 +16,15 @@ export namespace ac::config::components_request {
 
     inline constexpr std::string_view executable_name = "components_editor.exe";
     inline constexpr std::string_view flag = "--component";
+    inline constexpr std::string_view on_flag = "--on";
+    inline constexpr std::string_view off_flag = "--off";
     inline constexpr std::string_view initialize_flag = "--initialize";
+
+    enum class ListedState {
+        unchanged,
+        on,
+        off
+    };
 
     [[nodiscard]]
     inline bool is_initialize_run(const int argc, char* argv[]) noexcept {
@@ -53,7 +62,10 @@ export namespace ac::config::components_request {
     }
 
     [[nodiscard]]
-    inline int run_component_update(const std::string_view name) {
+    inline int run_component_update(
+        const std::string_view name,
+        const ListedState state = ListedState::unchanged
+    ) {
         if (!is_valid_component_name(name)) {
             std::cerr
                 << "Invalid component name for components.list: "
@@ -72,6 +84,14 @@ export namespace ac::config::components_request {
         command_line.append(flag.begin(), flag.end());
         command_line += L' ';
         command_line.append(name.begin(), name.end());
+        if (state == ListedState::on) {
+            command_line += L' ';
+            command_line.append(on_flag.begin(), on_flag.end());
+        }
+        else if (state == ListedState::off) {
+            command_line += L' ';
+            command_line.append(off_flag.begin(), off_flag.end());
+        }
 
         if (!CreateProcessW(
                 executable_path.c_str(),

@@ -30,7 +30,7 @@ The command registry is a process-lifetime static built in this order: test comm
 
 `get_runtime_command_names()` and `get_runtime_command_autocomplete_values()` exist on `auto_core.main.keymap.runtime` but have no in-repo callers; the autocomplete file is written from the registry directly.
 
-Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, others `key = primary | secondary`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. A generic sample is [`defaults/keymap.map`](../defaults/keymap.map). See [configuration.md](configuration.md).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. A generic sample is [`defaults/keymap.map`](../defaults/keymap.map). See [configuration.md](configuration.md).
 
 ## Defaults vs live files
 
@@ -93,8 +93,8 @@ Enable a v1 child in live `dist/components.list` (`name` or `name on`).
 Advertise
 commands in the child's hello catalog and bind them in live
 `dist/keymap/keymap.map`. Main does not need a per-component protocol
-file or `register_with` entry. `logger`, `dash`, and `slash` may be
-listed; they are known specials (log process / one-shot keymap
+file or `register_with` entry. `dash` and `slash` may be
+listed; they are known specials (one-shot keymap
 launchers), not v1 session children. Do not use those names for a new
 v1 project.
 

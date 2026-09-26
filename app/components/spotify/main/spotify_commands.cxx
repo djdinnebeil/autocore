@@ -23,9 +23,9 @@ using namespace cpr;
  * \brief Retrieves and inserts the user's Spotify queue.
  */
 void spotify_get_queue() {
-    spotify_component.log_and_log("spotify_get_queue()");
+    spotify_component.log_main("spotify_get_queue()");
     std::string user_queue = ac_spotify.get_user_queue();
-    spotify_component.log_and_print(user_queue);
+    spotify_component.log_print(user_queue);
     spotify_component.insert_text_replacing_clipboard(
         ac::encoding::to_utf16(user_queue) + L"\n\n"
     );
@@ -36,7 +36,7 @@ void spotify_get_queue() {
 * \runtime
 */
 void spotify_print_songs() {
-    spotify_component.log_and_log("spotify_print_songs()");
+    spotify_component.log_main("spotify_print_songs()");
     std::ostringstream song_text;
     ac_spotify.get_current_song();
     if (!ac_spotify.song_history.empty()) {
@@ -61,7 +61,7 @@ void spotify_print_songs() {
 * \runtime
 */
 void spotify_play_pause() {
-    spotify_component.log_and_log("spotify_play_pause()");
+    spotify_component.log_main("spotify_play_pause()");
     ac_spotify.play_pause();
 }
 /**
@@ -76,7 +76,7 @@ void spotify_previous_song() {
 * \runtime
 */
 void spotify_switch_player() {
-    spotify_component.log_and_log("spotify_switch_player()");
+    spotify_component.log_main("spotify_switch_player()");
     ac_spotify.switch_player();
 }
 /**

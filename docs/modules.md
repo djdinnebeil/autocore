@@ -17,41 +17,39 @@ the only source for a module.
 | `auto_core.core.component:console_writer` | [`console_writer.ixx`](../app/core/modules/console_writer.ixx) | Internal stdout/stderr writer partition |
 | `auto_core.core.component:text_inserter` | [`text_inserter.ixx`](../app/core/modules/text_inserter.ixx) | Internal clipboard insertion partition |
 | `auto_core.core.console` | [`console.ixx`](../app/core/modules/console.ixx) | Console and window activation for prompts |
-| `auto_core.core.config` | [`core_config.ixx`](../app/core/modules/core_config.ixx) | Cached `main.ini`; `journal_config.exe` may seed `journal/journal_choices.ini` |
+| `auto_core.core.config` | [`core_config.ixx`](../app/core/modules/core_config.ixx) | Cached `auto_core.ini` `[auto_core] warn_without_winkey_mapping`; `journal_config.exe` may seed `journal/journal_choices.ini` |
 | `auto_core.core.encoding` | [`encoding.ixx`](../app/core/modules/encoding.ixx) | Strict UTF-8 / UTF-16 conversion |
 | `auto_core.core.error` | [`error.ixx`](../app/core/modules/error.ixx) | Best-effort stderr and `errors/errors.log` reporting |
 | `auto_core.core.formatting` | [`formatting.ixx`](../app/core/modules/formatting.ixx) | UTF-8 `std::format` with wide-text normalization |
 | `auto_core.core.ini` | [`ini.ixx`](../app/core/modules/ini.ixx) | Sectioned INI parse and file read |
 | `auto_core.core.keyboard` | [`keyboard.ixx`](../app/core/modules/keyboard.ixx) | `SendInput` helpers, including `VK_RWIN`+position |
-| `auto_core.core.logging.protocol` | [`log_protocol.ixx`](../app/core/modules/log_protocol.ixx) | Versioned frames for `logger_ac.exe` |
-| `auto_core.core.logging.config` | [`logging_config.ixx`](../app/core/modules/logging_config.ixx) | Cached `logger.ini` settings and `components.ini` `[components]` logger enablement |
-| `auto_core.core.logging.client` | [`main_log_client.ixx`](../app/core/modules/main_log_client.ixx) | Asynchronous component connection to `logger_ac.exe` |
+| `auto_core.core.logging.config` | [`logging_config.ixx`](../app/core/modules/logging_config.ixx) | Cached `logger.ini` interval, shutdown merge, and console flag |
 | `auto_core.core.paths` | [`paths.ixx`](../app/core/modules/paths.ixx) | Process-lifetime `bin_directory` and `installation_root` |
 | `auto_core.core.pipes` | [`pipes.ixx`](../app/core/modules/pipes.ixx) | Named-pipe handles, string frames, and command dispatch |
 | `auto_core.core.thread` | [`thread.ixx`](../app/core/modules/thread.ixx) | Thread-entry exception reporting |
 | `auto_core.taskbar` | [`core_taskbar.ixx`](../app/core/taskbar/core_taskbar.ixx) | Snapshot authority, client lookup, and native Win+position |
 
-## Main executable (`app/main/component`)
+## Main executable (`app/main/runtime`)
 
 Process lifetime for `auto_core.exe` is [main.md](main.md).
 
 | Module | Source | Role |
 | --- | --- | --- |
-| `auto_core.main.application` | [`main_component.ixx`](../app/main/component/modules/main_component.ixx) | Main `Component`, process launch, F-lock, shutdown |
-| `auto_core.main.components` | [`ac_components.ixx`](../app/main/component/modules/ac_components.ixx) | Generic host: open `components.ini` `[components]`, hello, invoke, shutdown |
-| `auto_core.main.components.dash` | [`dash_component.ixx`](../app/main/component/modules/dash_component.ixx) | Launches `dash_ac.exe` |
-| `auto_core.main.components.slash` | [`slash_component.ixx`](../app/main/component/modules/slash_component.ixx) | Launches Slash recycle-bin commands |
-| `auto_core.main.components.taskbar` | [`taskbar_component.ixx`](../app/main/component/modules/taskbar_component.ixx) | Main-local taskbar launches and reserved control names |
-| `auto_core.main.crash_recovery` | [`crash_recovery.ixx`](../app/main/component/modules/crash_recovery.ixx) | Previous-crash dialog and restart handler |
-| `auto_core.main.key_codes` | [`key_codes.ixx`](../app/main/component/modules/key_codes.ixx) | Normalized virtual-key codes and `mappings.ini` names (`keys`, `resolve`) |
-| `auto_core.main.keyboard_input` | [`keyboard_input.ixx`](../app/main/component/modules/keyboard_input.ixx) | Low-level hook and main-thread dispatch |
-| `auto_core.main.keymap` | [`keymap.ixx`](../app/main/component/modules/keymap.ixx) | Active primary/secondary key bindings |
-| `auto_core.main.keymap.runtime` | [`keymap_runtime.ixx`](../app/main/component/modules/keymap_runtime.ixx) | File keymap, command registry, workspace files |
-| `auto_core.main.logger` | [`logger_init.ixx`](../app/main/component/modules/logger_init.ixx) | Starts and stops `logger_ac.exe` from Main |
-| `auto_core.main.program_ready` | [`program_ready.ixx`](../app/main/component/modules/program_ready.ixx) | Startup status output |
-| `auto_core.main.shutdown_events` | [`shutdown_events.ixx`](../app/main/component/modules/shutdown_events.ixx) | Console and session shutdown |
-| `auto_core.main.taskbar` | [`main_taskbar.ixx`](../app/main/component/modules/main_taskbar.ixx) | Interactive cycling session owned by Main |
-| `auto_core.main.test_commands` | [`test_commands.ixx`](../app/main/component/modules/test_commands.ixx) | Diagnostic keymap commands |
+| `auto_core.main.application` | [`main_component.ixx`](../app/main/runtime/modules/main_component.ixx) | Main `Component`, process launch, F-lock, shutdown |
+| `auto_core.main.components` | [`ac_components.ixx`](../app/main/runtime/modules/ac_components.ixx) | Generic host: open `components.ini` `[components]`, hello, invoke, shutdown |
+| `auto_core.main.components.dash` | [`dash_component.ixx`](../app/main/runtime/modules/dash_component.ixx) | Launches `dash_ac.exe` |
+| `auto_core.main.components.slash` | [`slash_component.ixx`](../app/main/runtime/modules/slash_component.ixx) | Launches Slash recycle-bin commands |
+| `auto_core.main.components.taskbar` | [`taskbar_component.ixx`](../app/main/runtime/modules/taskbar_component.ixx) | Main-local taskbar launches and reserved control names |
+| `auto_core.main.crash_recovery` | [`crash_recovery.ixx`](../app/main/runtime/modules/crash_recovery.ixx) | Previous-crash dialog and restart handler |
+| `auto_core.main.key_codes` | [`key_codes.ixx`](../app/main/runtime/modules/key_codes.ixx) | Normalized virtual-key codes and `mappings.ini` names (`keys`, `resolve`) |
+| `auto_core.main.keyboard_input` | [`keyboard_input.ixx`](../app/main/runtime/modules/keyboard_input.ixx) | Low-level hook and main-thread dispatch |
+| `auto_core.main.keymap` | [`keymap.ixx`](../app/main/runtime/modules/keymap.ixx) | Active primary/secondary key bindings |
+| `auto_core.main.keymap.runtime` | [`keymap_runtime.ixx`](../app/main/runtime/modules/keymap_runtime.ixx) | File keymap, command registry, workspace files |
+| `auto_core.main.logger` | [`logger_init.ixx`](../app/main/runtime/modules/logger_init.ixx) | Creates the log directory and writes Main's local session records |
+| `auto_core.main.program_ready` | [`program_ready.ixx`](../app/main/runtime/modules/program_ready.ixx) | Startup status output |
+| `auto_core.main.shutdown_events` | [`shutdown_events.ixx`](../app/main/runtime/modules/shutdown_events.ixx) | Console and session shutdown |
+| `auto_core.main.taskbar` | [`main_taskbar.ixx`](../app/main/runtime/modules/main_taskbar.ixx) | Interactive cycling session owned by Main |
+| `auto_core.main.test_commands` | [`test_commands.ixx`](../app/main/runtime/modules/test_commands.ixx) | Diagnostic keymap commands |
 
 ## Shared (`app/shared` plus per-child `shared/`)
 
@@ -88,9 +86,6 @@ Generic host contracts stay here. Name-specific protocols move to
 | `journal_component` | [`journal_component.ixx`](../app/components/journal/main/journal_component.ixx) | `journal_ac.exe` Component session |
 | `journal_database` | [`journal_database.ixx`](../app/components/journal/main/journal_database.ixx) | `journals.db` series, counters, Firebase URL |
 | `journal_title` | [`journal_title.ixx`](../app/components/journal/main/journal_title.ixx) | Episode title and new-file workflow |
-| `log_init` | [`log_init.ixx`](../app/components/logger/main/log_init.ixx) | `logger_ac.exe` startup logging |
-| `logger_state` | [`logger_state.ixx`](../app/components/logger/main/logger_state.ixx) | Logger process state |
-| `main_log` | [`main_log.ixx`](../app/components/logger/main/main_log.ixx) | Writes decoded central-log events |
 | `server_logging` | [`server_logging.ixx`](../app/components/server/main/server_logging.ixx) | `server_ac.exe` Component logging |
 | `music` | [`music.ixx`](../app/components/slash/main/music.ixx) | Recycled music-file naming |
 | `path_utils` | [`path_utils.ixx`](../app/components/slash/main/path_utils.ixx) | Path stem and extension helpers |

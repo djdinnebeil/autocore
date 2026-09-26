@@ -3,8 +3,8 @@
  * \brief Provides access to the console shared by Auto Core components.
  *
  * Generic `{name}_ac.exe` children inherit Auto Core's console so `print()`
- * shares `std::cout`. `logger_ac.exe` starts without a window. Interactive
- * prompts clear pending input and activate that console.
+ * shares `std::cout`. Interactive prompts clear pending input and activate
+ * that console.
  */
 module;
 

@@ -5,7 +5,7 @@ module;
 
 /**
  * \file logging_config.cxx
- * \brief Loads logger.ini and components.list for the shared logging subsystem.
+ * \brief Loads logger.ini for the shared logging subsystem.
  */
 module auto_core.core.logging.config;
 
@@ -18,12 +18,14 @@ namespace ac::logging::config {
 
     namespace {
         struct Data {
-            bool enabled = false;
-            bool write_to_console = false;
+            std::uint64_t merge_interval_seconds = 60;
+            bool merge_logs_on_shutdown = true;
+            bool write_logs_to_console = false;
             std::filesystem::path directory =
                 ac::paths::log_directory();
             std::filesystem::path components_directory =
                 directory / "components";
+            bool ini_missing = false;
             std::string report = "Logging configuration:\n";
 
             Data() {
@@ -39,35 +41,20 @@ namespace ac::logging::config {
                         "in the binary directory. Run components_editor.exe to "
                         "generate it. The file will not be created.\n";
                 }
-                enabled = ac::config::components_list::special_enabled(
-                    catalog.result,
-                    "logger"
-                );
-                const bool logger_malformed = [&catalog] {
-                    if (catalog.used_discovery) {
-                        return false;
-                    }
-                    for (const auto& entry : catalog.result.malformed_values) {
-                        if (entry.name == "logger") {
-                            return true;
-                        }
-                    }
-                    return false;
-                }();
 
-                const auto document = ac::ini::read(
-                    ac::paths::config_directory() / "logger.ini"
-                );
+                const auto ini_path =
+                    ac::paths::config_directory() / "logger.ini";
+                const auto document = ac::ini::read(ini_path);
                 if (!document) {
+                    std::error_code exists_error;
+                    const bool present =
+                        std::filesystem::exists(ini_path, exists_error);
+                    ini_missing = !present && !exists_error;
                     report += "logger.ini unavailable; using defaults\n";
-                    if (logger_malformed) {
-                        report +=
-                            "logger has a malformed [components] value; "
-                            "logger is disabled\n";
-                    }
-                    report += enabled
-                        ? "logger enabled in components.list\n"
-                        : "logger not enabled in components.list\n";
+                    report += "directory = logs\n";
+                    report += "merge_interval_seconds = 60\n";
+                    report += "merge_logs_on_shutdown = on\n";
+                    report += "write_logs_to_console = off\n";
                     return;
                 }
 
@@ -75,8 +62,14 @@ namespace ac::logging::config {
                     document->find("logger", "directory");
                 const detail::Settings resolved = detail::resolve(
                     {
-                        .write_to_console = document->find(
-                            "logger", "write_to_console"
+                        .merge_interval_seconds = document->find(
+                            "logger", "merge_interval_seconds"
+                        ),
+                        .merge_logs_on_shutdown = document->find(
+                            "logger", "merge_logs_on_shutdown"
+                        ),
+                        .write_logs_to_console = document->find(
+                            "logger", "write_logs_to_console"
                         ),
                         .directory = directory_value
                             ? std::optional<std::filesystem::path> {
@@ -87,7 +80,9 @@ namespace ac::logging::config {
                     ac::paths::log_directory(),
                     ac::paths::installation_root()
                 );
-                write_to_console = resolved.write_to_console;
+                merge_interval_seconds = resolved.merge_interval_seconds;
+                merge_logs_on_shutdown = resolved.merge_logs_on_shutdown;
+                write_logs_to_console = resolved.write_logs_to_console;
                 directory = resolved.directory;
                 components_directory = resolved.components_directory;
                 report = resolved.report;
@@ -96,14 +91,6 @@ namespace ac::logging::config {
                         "components.list unavailable; discovering *_ac.exe "
                         "in the binary directory. Run components_editor.exe to "
                         "generate it. The file will not be created.\n";
-                }
-                report += enabled
-                    ? "logger enabled in components.list\n"
-                    : "logger not enabled in components.list\n";
-                if (logger_malformed) {
-                    report +=
-                        "logger has a malformed [components] value; "
-                        "logger is disabled\n";
                 }
             }
         };
@@ -114,12 +101,16 @@ namespace ac::logging::config {
         }
     }
 
-    bool enabled() {
-        return data().enabled;
+    std::uint64_t merge_interval_seconds() {
+        return data().merge_interval_seconds;
     }
 
-    bool write_to_console() {
-        return data().write_to_console;
+    bool merge_logs_on_shutdown() {
+        return data().merge_logs_on_shutdown;
+    }
+
+    bool write_logs_to_console() {
+        return data().write_logs_to_console;
     }
 
     const std::filesystem::path& directory() {
@@ -128,6 +119,10 @@ namespace ac::logging::config {
 
     const std::filesystem::path& components_directory() {
         return data().components_directory;
+    }
+
+    bool ini_missing() {
+        return data().ini_missing;
     }
 
     std::string_view configuration_report() {

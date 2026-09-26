@@ -30,7 +30,7 @@ bool ensure_writer_ini(const bool prompt) {
         return true;
     }
     if (error) {
-        writer_config.log_and_print(
+        writer_config.log_print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -49,7 +49,7 @@ bool ensure_writer_ini(const bool prompt) {
     std::error_code create_error;
     std::filesystem::create_directories(ac::paths::config_directory(), create_error);
     if (create_error) {
-        writer_config.log_and_print(
+        writer_config.log_print(
             "Failed to create config directory: {}",
             create_error.message()
         );
@@ -57,7 +57,7 @@ bool ensure_writer_ini(const bool prompt) {
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        writer_config.log_and_print("Failed to create {}", path.string());
+        writer_config.log_print("Failed to create {}", path.string());
         return false;
     }
     const auto contents = writer::defaults::ini_for(
@@ -106,7 +106,7 @@ bool write_empty_if_missing(const std::filesystem::path& path) {
         return true;
     }
     if (error) {
-        writer_config.log_and_print(
+        writer_config.log_print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -116,10 +116,10 @@ bool write_empty_if_missing(const std::filesystem::path& path) {
 
     std::ofstream output(path, std::ios::binary);
     if (!output) {
-        writer_config.log_and_print("Failed to create {}", path.string());
+        writer_config.log_print("Failed to create {}", path.string());
         return false;
     }
-    writer_config.log_and_print("Created {}", path.string());
+    writer_config.log_print("Created {}", path.string());
     return true;
 }
 
@@ -127,7 +127,7 @@ void create_missing_writer_files() {
     std::error_code error;
     std::filesystem::create_directories(ac::paths::writer_directory(), error);
     if (error) {
-        writer_config.log_and_print(
+        writer_config.log_print(
             "Failed to create writer directory: {}",
             error.message()
         );
@@ -142,7 +142,7 @@ void open_folder(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     if (error) {
-        writer_config.log_and_print(
+        writer_config.log_print(
             "Failed to create {}: {}",
             directory.string(),
             error.message()
@@ -159,7 +159,7 @@ void open_folder(const std::filesystem::path& directory) {
         SW_SHOWNORMAL
     );
     if (reinterpret_cast<std::intptr_t>(result) <= 32) {
-        writer_config.log_and_print("Failed to open {}", directory.string());
+        writer_config.log_print("Failed to open {}", directory.string());
     }
 }
 
@@ -190,18 +190,17 @@ void activate_own_console() {
 } // namespace
 
 int main(int argc, char* argv[]) {
-    writer_config.connect_to_logger();
-    writer_config.log_and_log("writer_config.exe started");
+    writer_config.log_main("writer_config.exe started");
 
     const bool initialize =
         ac::config::components_request::is_initialize_run(argc, argv);
     if (!ensure_writer_ini(!initialize)) {
-        writer_config.log_and_print("Writer configuration was not initialized.");
+        writer_config.log_print("Writer configuration was not initialized.");
         return 1;
     }
 
     if (initialize) {
-        writer_config.log_and_log("writer.ini initialized");
+        writer_config.log_main("writer.ini initialized");
         return ac::config::components_request::run_component_update("writer");
     }
 

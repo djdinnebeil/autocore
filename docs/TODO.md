@@ -1,19 +1,17 @@
 # Auto Core follow-up work
 
 DLL-specific deferred work is tracked in [app/core/TODO.md](../app/core/TODO.md).
-Main-specific deferred work is tracked in [app/main/component/TODO.md](../app/main/component/TODO.md).
+Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main/runtime/TODO.md).
 
-## Parked: log_merger_ac.exe
+## Done: incremental main-log merge
 
-**Status:** Separate future project; not part of the pre-release logger
+**Status:** `logger_ac.exe` merges local `.main.log` files.
 
-`logger_ac.exe` is feature-complete for pre-release and is in
-field-testing/maintenance status. Do not begin `log_merger_ac.exe` while
-finalizing that implementation. The future merger may consume daily component
-`.main.log` files and produce a chronological centralized log, as described in
-[configuration.md](configuration.md#logging). Its synchronization,
-reconciliation, incremental-offset, scheduling, and merge design remain
-deferred.
+Each executable still writes `{date}_{name}.log` and `{date}_{name}.main.log`.
+`logger_ac.exe` appends new main-log records to `YYYY-MM-DD_main.log`.
+`config/logger.ini` sets `directory`, `merge_interval_seconds`,
+`merge_logs_on_shutdown`, and `write_logs_to_console`. The shutdown merge
+is a detached `logger_ac.exe --once` after the hosted logger has exited.
 
 ## Done: keymap_config.exe
 

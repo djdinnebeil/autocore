@@ -1,157 +1,215 @@
+#include "logger_session_detail.hpp"
+#include "merge_detail.hpp"
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <shellapi.h>
+
+#pragma comment(lib, "Shell32.lib")
+
 import std;
-import auto_core.core.clock;
+import auto_core.core.component;
+import auto_core.core.error;
+import auto_core.core.logging.config;
+import auto_core.core.paths;
 import auto_core.core.pipes;
-import auto_core.core.logging.protocol;
-import logger_state;
-import log_init;
-import main_log;
-
-import <Windows.h>;
-
-namespace {
-    std::atomic_bool logger_shutdown_requested = false;
-    std::atomic_uint active_logger_connections = 0;
-}
+import component_protocol;
 
 namespace {
 
-    constexpr std::wstring_view logger_pipe_name =
-        L"auto_core_logger";
+ac::Component logger_component {"logger"};
 
-    void wake_logger_server() {
-        const std::wstring full_pipe_name =
-            LR"(\\.\pipe\)" + std::wstring {logger_pipe_name};
-
-        for (int attempt = 0; attempt < 20; ++attempt) {
-            HANDLE wake_pipe = CreateFileW(
-                full_pipe_name.c_str(),
-                GENERIC_READ | GENERIC_WRITE,
-                0,
-                nullptr,
-                OPEN_EXISTING,
-                0,
-                nullptr
-            );
-
-            if (wake_pipe != INVALID_HANDLE_VALUE) {
-                CloseHandle(wake_pipe);
-                return;
-            }
-
-            Sleep(10);
-        }
+void report_merge(const ac::logger::detail::MergeResult& result) {
+    if (!result.ok) {
+        ac::error::log(result.message);
+        logger_component.log_print("{}", result.message);
     }
-
-
-    void process_logger_connection(ac::pipes::Pipe logger_pipe) {
-        while (true) {
-            const auto data = ac::pipes::read_string(logger_pipe);
-
-            if (!data) {
-                break;
-            }
-
-            const auto event = ac::logging::decode(*data);
-            if (!event) {
-                logger_component.log("Invalid logger protocol message");
-                break;
-            }
-
-            if (event->type == ac::logging::EventType::shutdown) {
-                shutdown_main_log(*event);
-                logger_shutdown_requested.store(true);
-                wake_logger_server();
-                break;
-            }
-
-            write_to_main_log(*event);
-        }
-
-        DisconnectNamedPipe(logger_pipe.native_handle());
-        active_logger_connections.fetch_sub(1);
-    }
-
 }
 
-
-int main() {
-    log_init();
-
-    while (!logger_shutdown_requested.load()) {
-        auto pipe_result = ac::pipes::create_pipe_server(
-            std::wstring {logger_pipe_name}
-        );
-
-        if (!pipe_result) {
-            logger_component.log_and_print(
-                "Failed to create logger pipe. Error: {}",
-                pipe_result.error().system_error
-            );
-            return 1;
-        }
-
-        ac::pipes::Pipe logger_pipe = std::move(*pipe_result);
-
+void log_periodic_merge(const ac::logger::detail::MergeResult& result) {
+    report_merge(result);
+    if (result.ok) {
         logger_component.log(
-            "Waiting for logger client connection..."
+            "Periodic merge ({}s)",
+            ac::logging::config::merge_interval_seconds()
         );
+    }
+}
 
-        const BOOL connected =
-            ConnectNamedPipe(
-                logger_pipe.native_handle(),
-                nullptr
-            );
+[[nodiscard]]
+int run_once(const bool shutdown_launch) {
+    if (shutdown_launch) {
+        logger_component.log_main("Shutdown one-shot merge");
+    }
+    else {
+        logger_component.log("One-shot merge");
+    }
+    const auto result = ac::logger::detail::merge_once(
+        ac::logging::config::directory()
+    );
+    report_merge(result);
+    return result.ok ? 0 : 1;
+}
 
-        if (!connected) {
-            const DWORD error = GetLastError();
+[[nodiscard]]
+int run_hosted(ac::pipes::Pipe pipe) {
+    ac::pipes::CommandDispatcher dispatcher;
+    struct Event {
+        HANDLE handle = nullptr;
+        ~Event() {
+            if (handle != nullptr) {
+                CloseHandle(handle);
+            }
+        }
+    } shutdown_event {CreateEventW(nullptr, TRUE, FALSE, nullptr)};
+    if (shutdown_event.handle == nullptr) {
+        logger_component.log_print(
+            "Failed to create the logger shutdown event. Error: {}",
+            GetLastError()
+        );
+        return 1;
+    }
 
-            if (error != ERROR_PIPE_CONNECTED) {
+    const auto schedule = ac::logger::detail::schedule_for(
+        ac::logging::config::merge_interval_seconds()
+    );
+    const auto interval_ms = schedule.wait_forever
+        ? INFINITE
+        : static_cast<DWORD>(ac::logger::detail::interval_milliseconds(
+            ac::logging::config::merge_interval_seconds()
+        ));
 
-                std::string error_msg = std::format("Failed to connect logger client. Error: {}", error);
-
-                logger_component.log(error_msg);
-                std::cerr << error_msg << std::endl;
-
-                const ac::logging::Event connection_error {
-                    .timestamp = ac::clock::get_log_timestamp(),
-                    .component = "logger",
-                    .message = error_msg,
-                    .newline = true
-                 };
-
-                write_to_main_log(connection_error);
-
+    std::jthread worker([handle = shutdown_event.handle, schedule, interval_ms] {
+        const auto directory = ac::logging::config::directory();
+        if (schedule.merge_before_wait) {
+            log_periodic_merge(ac::logger::detail::merge_once(directory));
+        }
+        while (true) {
+            const DWORD wake = WaitForSingleObject(handle, interval_ms);
+            const auto outcome = ac::logger::detail::classify_wait(wake);
+            if (outcome == ac::logger::detail::WaitOutcome::interval) {
+                log_periodic_merge(ac::logger::detail::merge_once(directory));
                 continue;
             }
-        }
-
-        if (logger_shutdown_requested.load()) {
-            DisconnectNamedPipe(logger_pipe.native_handle());
+            if (outcome == ac::logger::detail::WaitOutcome::failed) {
+                logger_component.log_print(
+                    "Logger wait failed. Error: {}",
+                    GetLastError()
+                );
+            }
+            else if (outcome == ac::logger::detail::WaitOutcome::unexpected) {
+                logger_component.log_print(
+                    "Unexpected logger wait result: {}",
+                    wake
+                );
+            }
             break;
         }
+    });
 
-        logger_component.log(
-            "Logger client connected"
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::shutdown
+        ),
+        [&dispatcher, handle = shutdown_event.handle] {
+            logger_component.log_main("shutdown signal received");
+            SetEvent(handle);
+            dispatcher.request_stop();
+        }
+    );
+    dispatcher.set_command(
+        ac::protocol::component::to_wire(
+            ac::protocol::component::Request::invoke
+        ),
+        [&pipe, &dispatcher] {
+            const auto expression = ac::pipes::read_string(pipe);
+            if (!expression) {
+                dispatcher.request_stop();
+                return;
+            }
+            logger_component.log_print(
+                "Unknown logger command: {}",
+                *expression
+            );
+        }
+    );
+
+    if (const auto hello = ac::pipes::send_string(
+            pipe,
+            ac::protocol::component::make_hello({})
+        ); !hello) {
+        SetEvent(shutdown_event.handle);
+        logger_component.log_print(
+            "Failed to send logger hello. Error: {}",
+            hello.error().system_error
         );
-
-        active_logger_connections.fetch_add(1);
-        std::thread(
-            process_logger_connection,
-            std::move(logger_pipe)
-        ).detach();
+        return 1;
     }
 
-    // Component shutdown signals are sent before Auto Core's final logger
-    // signal. Give their already-connected logging clients time to flush and
-    // disconnect so logger_ac.exe remains the last component to finish.
-    const ULONGLONG connection_wait_deadline = GetTickCount64() + 5000;
-    while (
-        active_logger_connections.load() != 0 &&
-        GetTickCount64() < connection_wait_deadline
-    ) {
-        Sleep(10);
+    if (const auto result = dispatcher.process(pipe); !result) {
+        SetEvent(shutdown_event.handle);
+        logger_component.log_print(
+            "Logger pipe failed. Error: {}",
+            result.error().system_error
+        );
     }
 
-    logger_component.log("logger_ac.exe has now terminated");
+    worker.join();
+    logger_component.log_main("program terminated");
     return 0;
+}
+
+} // namespace
+
+int main() {
+    int argument_count = 0;
+    LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
+    bool once = false;
+    bool shutdown_once = false;
+    if (arguments != nullptr) {
+        for (int index = 1; index < argument_count; ++index) {
+            if (ac::logger::detail::is_once_argument(arguments[index])) {
+                once = true;
+            }
+            else if (ac::logger::detail::is_shutdown_argument(arguments[index])) {
+                shutdown_once = true;
+            }
+        }
+        LocalFree(arguments);
+    }
+    if (once) {
+        return run_once(shutdown_once);
+    }
+
+    const std::wstring pipe_name =
+        LR"(\\.\pipe\)" + ac::protocol::component::pipe_name("logger");
+    const HANDLE handle = CreateFileW(
+        pipe_name.c_str(),
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        nullptr,
+        OPEN_EXISTING,
+        0,
+        nullptr
+    );
+    const unsigned long open_error = handle == INVALID_HANDLE_VALUE
+        ? GetLastError()
+        : 0;
+    const auto kind = ac::logger::detail::classify_pipe_open(
+        handle != INVALID_HANDLE_VALUE,
+        open_error
+    );
+
+    if (kind == ac::logger::detail::LaunchKind::manual) {
+        return run_once(false);
+    }
+    if (kind == ac::logger::detail::LaunchKind::failed) {
+        logger_component.log_print(
+            "Failed to connect to the logger pipe. Error: {}",
+            open_error
+        );
+        return 1;
+    }
+
+    return run_hosted(ac::pipes::Pipe {handle});
 }

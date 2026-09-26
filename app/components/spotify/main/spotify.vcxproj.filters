@@ -109,9 +109,6 @@
     <ClCompile Include="spotify_pipe.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\log_protocol.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

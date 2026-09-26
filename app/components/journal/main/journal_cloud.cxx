@@ -25,7 +25,7 @@ std::string quote(const std::string& input) {
 std::optional<std::string> load_firebase_url() {
     const auto url = journal_database::firebase_url();
     if (!url) {
-        journal_component().log_and_log("{}", url.error());
+        journal_component().log_main("{}", url.error());
         return std::nullopt;
     }
     return *url;
@@ -53,7 +53,7 @@ void put_string(const std::string& url, const std::string& value) {
         );
         return;
     }
-    journal_component().log_and_log(
+    journal_component().log_main(
         "Updated data: {}",
         remove_outer_quotes(response.text)
     );
@@ -79,7 +79,7 @@ void get_string(const std::string& url) {
         );
         return;
     }
-    journal_component().log_and_log(
+    journal_component().log_main(
         "Retrieved data: {}",
         remove_outer_quotes(response.text)
     );

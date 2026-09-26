@@ -18,11 +18,11 @@ int main() {
         ac::protocol::component::pipe_name("wake")
     );
     if (!connection) {
-        wake_component.log_and_print(
+        wake_component.log_print(
             "Failed to connect to wake pipe. Error: {}",
             connection.error().system_error
         );
-        wake_component.log_and_log("wake_ac.exe has ended");
+        wake_component.log_main("wake_ac.exe has ended");
         return 1;
     }
 
@@ -33,7 +33,7 @@ int main() {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            wake_component.log_and_log("shutdown signal received");
+            wake_component.log_main("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -47,7 +47,7 @@ int main() {
                 dispatcher.request_stop();
                 return;
             }
-            wake_component.log_and_print(
+            wake_component.log_print(
                 "Unknown wake command: {}",
                 *expression
             );
@@ -57,7 +57,7 @@ int main() {
     if (const auto hello = ac::pipes::send_string(
             pipe, ac::protocol::component::make_hello({})
         ); !hello) {
-        wake_component.log_and_print(
+        wake_component.log_print(
             "Failed to send wake hello. Error: {}",
             hello.error().system_error
         );
@@ -65,12 +65,12 @@ int main() {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        wake_component.log_and_print(
+        wake_component.log_print(
             "Wake pipe failed. Error: {}",
             result.error().system_error
         );
     }
 
-    wake_component.log_and_log("program terminated");
+    wake_component.log_main("program terminated");
     return 0;
 }

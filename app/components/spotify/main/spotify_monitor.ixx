@@ -64,7 +64,7 @@ void stop_spotify_monitor() {
  * \runtime
  */
 void spotify_next_song() {
-    spotify_component.log_and_log("spotify_next_song()");
+    spotify_component.log_main("spotify_next_song()");
     ac_spotify.next_song();
     {
         const std::scoped_lock lock {spotify_mtx};
@@ -79,7 +79,7 @@ void spotify_next_song() {
  * the sleep time based on the song's remaining duration and playback state.
  */
 void spotify_monitor_loop() {
-    spotify_component.log_and_log("Spotify monitor started");
+    spotify_component.log_main("Spotify monitor started");
     Sleep(350);
     try {
         std::unique_lock<std::mutex> lock(spotify_mtx);
@@ -99,7 +99,7 @@ void spotify_monitor_loop() {
                 sleep_time_ms = sleep_timerate_ms;
             }
             else if (ac_spotify.last_status_code == speed_boost_code) {
-                spotify_component.log_and_print("speed boost!");
+                spotify_component.log_print("speed boost!");
                 sleep_time_ms = speed_boost_ms;
             }
             else if (ac_spotify.remaining_song_duration_ms < sleep_timerate_ms) {
@@ -120,9 +120,9 @@ void spotify_monitor_loop() {
         }
     }
     catch (const std::exception& e) {
-        spotify_component.log_and_print("Spotify monitor crashed: {}", e.what());
+        spotify_component.log_print("Spotify monitor crashed: {}", e.what());
     }
     catch (...) {
-        spotify_component.log_and_print("Spotify monitor crashed due to an unknown exception");
+        spotify_component.log_print("Spotify monitor crashed due to an unknown exception");
     }
 }

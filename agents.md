@@ -1,11 +1,16 @@
 # Agent map
 
-Three areas: `app/core` = `auto_core.dll`, `app/main/component` =
-`auto_core.exe`, `app/main/config` = Main `_config.exe` helpers,
-`app/main/components` = `components_config.exe` and `components_editor.exe`,
-`app/components` = child processes (`<name>/main`, `<name>/config`,
-`<name>/shared`). Generic IPC is `app/shared` (`component_protocol`,
-`command_registry`). Name-specific protocols live in that child's `shared/`.
+`app/core` = `auto_core.dll`. `app/main/` is the Main family:
+`runtime/` = `auto_core.exe` only, `editors/` = persistent operational-data
+editors (`components_editor.exe` owns `components.list`,
+`keymap_editor.exe` owns `keymap.map`), `config/` = configuration
+executables (`components_config.exe`, `keymap_config.exe`, and the other
+Main `_config.exe` helpers), `shared/` = Main-family code and defaults.
+`app/components/` = optional child processes (`<name>/main`,
+`<name>/config`, `<name>/star`, `<name>/shared`). Cross-subsystem
+contracts are `app/shared` (`component_protocol`, `command_registry`,
+`component_star`).
+Name-specific protocols live in that child's `shared/`.
 
 Start in [docs/](docs/). Overview (do not restate): [README.md](README.md).
 Architecture, packaging, or git workflow: read [docs/STRATEGY.md](docs/STRATEGY.md).
@@ -21,10 +26,16 @@ No root `.sln`.
   `wake_ac.exe`, `writer_ac.exe`). Keep `auto_core.exe` and config
   helpers unsuffixed (`<name>_config.exe`, `spotify_oauth.exe`,
   `components_config.exe`, `components_editor.exe`).
-- dir `spotify/` nests `main` / `config` / `oauth` / `shared`; exe
-  `spotify_ac.exe`, `spotify_config.exe`, `spotify_oauth.exe`
-- dir `itunes/` nests `main` / `config` / `shared`; exe `itunes_ac.exe`,
-  `itunes_config.exe`
+- `<name>_star.exe` is the user-facing management console
+  (`spotify_star.exe`, `itunes_star.exe`). Enable/disable goes through
+  `components_editor.exe`.
+- dir `spotify/` nests `main` / `config` / `oauth` / `star` / `shared`; exe
+  `spotify_ac.exe`, `spotify_config.exe`, `spotify_oauth.exe`,
+  `spotify_star.exe`
+- dir `logger/` nests `main` / `config`; exe `logger_ac.exe`,
+  `logger_config.exe`
+- dir `itunes/` nests `main` / `config` / `star` / `shared`; exe
+  `itunes_ac.exe`, `itunes_config.exe`, `itunes_star.exe`
 - file `core_config.ixx` / module `auto_core.core.config`
 - file `main_log_client.ixx` / module `auto_core.core.logging.client`
 - file `main_component.ixx` / module `auto_core.main.application`

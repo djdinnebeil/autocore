@@ -144,8 +144,8 @@
     <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
     <ClCompile Include="..\..\..\core\modules\ini.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
-    <ClCompile Include="..\shared\defaults.ixx" />
-    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\main\shared\defaults.ixx" />
+    <ClCompile Include="..\..\..\main\shared\config_support.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>

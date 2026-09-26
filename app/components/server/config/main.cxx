@@ -128,7 +128,7 @@ bool write_server_ini(std::string_view document_root, int port) {
     std::error_code error;
     std::filesystem::create_directories(ac::paths::config_directory(), error);
     if (error) {
-        server_config.log_and_print(
+        server_config.log_print(
             "Failed to create config directory: {}",
             error.message()
         );
@@ -138,14 +138,14 @@ bool write_server_ini(std::string_view document_root, int port) {
     const auto path = ac::paths::config_directory() / "server.ini";
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        server_config.log_and_print("Failed to create {}", path.string());
+        server_config.log_print("Failed to create {}", path.string());
         return false;
     }
     const auto contents = server::defaults::ini_for(document_root, port);
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        server_config.log_and_print("Failed to write {}", path.string());
+        server_config.log_print("Failed to write {}", path.string());
         return false;
     }
     return true;
@@ -159,7 +159,7 @@ bool ensure_server_ini(const bool prompt) {
         return true;
     }
     if (error) {
-        server_config.log_and_print(
+        server_config.log_print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -196,10 +196,10 @@ void set_port() {
         return;
     }
     if (!write_server_ini(current_stored_document_root(), *port)) {
-        server_config.log_and_print("Failed to write config/server.ini port.");
+        server_config.log_print("Failed to write config/server.ini port.");
         return;
     }
-    server_config.log_and_print("Port stored as {}.", *port);
+    server_config.log_print("Port stored as {}.", *port);
 }
 
 void show_document_root() {
@@ -217,19 +217,19 @@ void set_document_root() {
         return;
     }
     if (!write_server_ini(*directory, current_port())) {
-        server_config.log_and_print(
+        server_config.log_print(
             "Failed to write config/server.ini document_root."
         );
         return;
     }
-    server_config.log_and_print("document_root stored as {}.", *directory);
+    server_config.log_print("document_root stored as {}.", *directory);
 }
 
 void open_folder(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     if (error) {
-        server_config.log_and_print(
+        server_config.log_print(
             "Failed to create {}: {}",
             directory.string(),
             error.message()
@@ -246,7 +246,7 @@ void open_folder(const std::filesystem::path& directory) {
         SW_SHOWNORMAL
     );
     if (reinterpret_cast<std::intptr_t>(result) <= 32) {
-        server_config.log_and_print("Failed to open {}", directory.string());
+        server_config.log_print("Failed to open {}", directory.string());
     }
 }
 
@@ -278,18 +278,17 @@ void activate_own_console() {
 } // namespace
 
 int main(int argc, char* argv[]) {
-    server_config.connect_to_logger();
-    server_config.log_and_log("server_config.exe started");
+    server_config.log_main("server_config.exe started");
 
     const bool initialize =
         ac::config::components_request::is_initialize_run(argc, argv);
     if (!ensure_server_ini(!initialize)) {
-        server_config.log_and_print("Server configuration was not initialized.");
+        server_config.log_print("Server configuration was not initialized.");
         return 1;
     }
 
     if (initialize) {
-        server_config.log_and_log("server.ini initialized");
+        server_config.log_main("server.ini initialized");
         return ac::config::components_request::run_component_update("server");
     }
 

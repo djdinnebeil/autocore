@@ -19,11 +19,11 @@ The component root holds those folders only. Optional `tests/` (own `.sln`) if
 the child has Catch2 tests. Extra executables (Spotify `oauth/`) are sibling
 folders with their own `.sln`.
 
-Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_and_print`), uses those defaults in memory, and does **not** create the file.
+Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_print`), uses those defaults in memory, and does **not** create the file.
 
 Lived example: [`app/components/server`](../app/components/server) (`main` / `config` / `shared/defaults.ixx`).
 
-Do not use `logger`, `dash`, or `slash` as a new v1 list name (those are known specials). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the post-Link DLL copy. Those are toolchain requirements, not filesystem paths to type into the project.
+Do not use `dash` or `slash` as a new v1 list name (those are known specials). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the post-Link DLL copy. Those are toolchain requirements, not filesystem paths to type into the project.
 
 Each heading is tagged **source**, **compile**, or **runtime configuration**.
 
@@ -147,7 +147,6 @@ Add → Existing Item. These must compile (`ClCompile` / `ResourceCompile`). Pat
 - `..\..\..\core\modules\formatting.ixx`
 - `..\..\..\core\modules\ini.ixx`
 - `..\..\..\core\modules\keyboard.ixx`
-- `..\..\..\core\modules\log_protocol.ixx`
 - `..\..\..\core\modules\logging_config.ixx`
 - `..\..\..\core\modules\paths.ixx`
 - `..\..\..\core\modules\pipes.ixx`
@@ -181,17 +180,16 @@ ac::Component& example_component() {
 }
 
 `example_config.exe` uses the same logging API after
-`ac::Component component {"example_config"}` and
-`connect_to_logger()`. That identity is the executable's own log directory,
-`logs/components/example_config/`. `log()`, `log_and_log()`, and
-`log_and_print()` keep their usual meaning. Interactive prompts stay on
+`ac::Component component {"example_config"}`. That identity is the executable's own log directory,
+`logs/components/example_config/`. `log()`, `log_main()`, and
+`log_print()` keep their usual meaning. Interactive prompts stay on
 `cout`. The config executable still writes `config/example.ini`; it does
 not call `report_ini_unavailable()`.
 
 command_registry::Registry create_example_command_registry() {
     command_registry::Registry registry;
     registry.add("print_example", [] {
-        example_component().log_and_print(
+        example_component().log_print(
             "this is print_example() from within example_ac.exe"
         );
     });
@@ -203,7 +201,6 @@ command_registry::Registry create_example_command_registry() {
 int main() {
     auto registry = create_example_command_registry();
     auto& component = example_component();
-    component.connect_to_logger();
 
     const auto ini_path = ac::paths::config_directory() / "example.ini";
     if (const auto document = ac::ini::read(ini_path); !document) {
@@ -231,7 +228,7 @@ int main() {
             }
             auto action = registry.resolve(*expression);
             if (!action) {
-                component.log_and_print("Unknown example command: {}", *expression);
+                component.log_print("Unknown example command: {}", *expression);
                 return;
             }
             action();
@@ -242,7 +239,7 @@ int main() {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher, &component] {
-            component.log_and_log("shutdown signal received");
+            component.log_main("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -256,7 +253,7 @@ int main() {
     if (!dispatcher.process(pipe)) {
         return 1;
     }
-    component.log_and_log("program terminated");
+    component.log_main("program terminated");
     return 0;
 }
 ```
@@ -299,7 +296,7 @@ or run `components_editor.exe` with no arguments to full-sync discovered
 example
 ```
 
-List `logger`, `dash`, or `slash` only as those known specials, not as a new v1 child. Do not hard-code extra names in [`app/core/src/config_defaults.hpp`](../app/core/src/config_defaults.hpp) unless they belong in the portable `components.list` seed.
+List `dash` or `slash` only as those known specials, not as a new v1 child. Do not hard-code extra names in [`app/core/src/config_defaults.hpp`](../app/core/src/config_defaults.hpp) unless they belong in the portable `components.list` seed.
 
 ## Bind a command (runtime configuration)
 
@@ -356,13 +353,13 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 - Adding `example` to `config_defaults.hpp` “so Main knows it” — that rebuilds the DLL and is not required.
 - A Project Reference / dependency from `auto_core.vcxproj` to the child.
 - Compiling `app\core\src\*.cxx` into the child (those live in the DLL).
-- Using `logger`, `dash`, or `slash` as a new v1 project name.
+- Using `dash` or `slash` as a new v1 project name.
 - Building Debug and expecting `dist\` to match a Release host.
 - Editing Additional Include/Library Directories because Output Directory still looks like `x64\Release`.
 
 ## Adding a New Auto Core Component
 
-1. **Source.** Create `app/components/<name>/main`, `config`, and `shared`. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}`, calls `connect_to_logger()`, prompts and writes the INI only, then launches `components_editor.exe --component <name>`.
+1. **Source.** Create `app/components/<name>/main`, `config`, and `shared`. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}`, prompts and writes the INI only, then launches `components_editor.exe --component <name>`.
 2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `dist\bin\<name>_ac.exe` and `dist\bin\<name>_config.exe`.
 3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini` and register the name with `components_editor.exe --component <name>`, or append the name under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
 

@@ -61,7 +61,7 @@ namespace ac::config {
 
             Data() {
                 const auto path =
-                    ac::paths::config_directory() / "main.ini";
+                    ac::paths::config_directory() / "auto_core.ini";
                 const auto document = ac::ini::read(path);
                 if (!document) {
                     settings = default_settings;
@@ -70,30 +70,30 @@ namespace ac::config {
                         std::filesystem::exists(path, exists_error);
                     if (present && !exists_error) {
                         report =
-                            "config/main.ini is malformed. Run "
-                            "main_config.exe to generate a valid file. "
+                            "config/auto_core.ini is malformed. Run "
+                            "auto_core_config.exe to generate a valid file. "
                             "Using built-in defaults; the file will not be "
                             "created.";
                     }
                     else {
                         report =
-                            "config/main.ini is missing. Run main_config.exe "
-                            "to generate it. Using built-in defaults; the "
-                            "file will not be created.";
+                            "config/auto_core.ini is missing. Run "
+                            "auto_core_config.exe to generate it. Using "
+                            "built-in defaults; the file will not be created.";
                     }
                     return;
                 }
 
                 const auto raw = document->find(
-                    "main",
+                    "auto_core",
                     "warn_without_winkey_mapping"
                 );
                 if (!raw) {
                     settings = default_settings;
                     report =
-                        "config/main.ini is missing [main] "
-                        "warn_without_winkey_mapping. Run main_config.exe to "
-                        "repair it. Using built-in defaults; the file will "
+                        "config/auto_core.ini is missing [auto_core] "
+                        "warn_without_winkey_mapping. Run auto_core_config.exe "
+                        "to repair it. Using built-in defaults; the file will "
                         "not be rewritten.";
                     return;
                 }
@@ -107,9 +107,10 @@ namespace ac::config {
                 };
                 if (*raw != "true" && *raw != "false") {
                     report =
-                        "config/main.ini [main] warn_without_winkey_mapping "
-                        "is invalid. Run main_config.exe to repair it. Using "
-                        "the default; the file will not be rewritten.";
+                        "config/auto_core.ini [auto_core] "
+                        "warn_without_winkey_mapping is invalid. Run "
+                        "auto_core_config.exe to repair it. Using the "
+                        "default; the file will not be rewritten.";
                 }
             }
         };

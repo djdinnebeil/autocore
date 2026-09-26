@@ -39,7 +39,7 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
     }
     if (window_title == L"Spotify Premium") {
         *reinterpret_cast<bool*>(lParam) = true;
-        spotify_component.log_and_print("spotify window found");
+        spotify_component.log_print("spotify window found");
         spotify_window_hwnd = hwnd;
         return FALSE;
     }
@@ -52,7 +52,7 @@ void Spotify::activate() {
     if (ac::taskbar::try_activate_native("spotify")) {
         return;
     }
-    spotify_component.log_and_print(
+    spotify_component.log_print(
         "Spotify is not present in the native taskbar snapshot."
     );
 }

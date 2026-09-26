@@ -18,7 +18,7 @@ const std::filesystem::path& gpt_prompts_file() {
 std::optional<std::vector<std::string>> load_gpt_prompts() {
     std::ifstream input(gpt_prompts_file());
     if (!input) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Unable to open GPT prompts file: {}",
             gpt_prompts_file().string()
         );
@@ -43,14 +43,14 @@ std::optional<std::vector<std::string>> load_gpt_prompts() {
     }
 
     if (input.bad()) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "Unable to read GPT prompts file: {}",
             gpt_prompts_file().string()
         );
         return std::nullopt;
     }
     if (prompts.empty()) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "GPT prompts file contains no prompts: {}",
             gpt_prompts_file().string()
         );
@@ -72,7 +72,7 @@ std::optional<std::string> select_gpt_prompt(
 
     std::string input;
     while (std::getline(std::cin, input)) {
-        writer_component().log_and_log(
+        writer_component().log_main(
             "GPT prompt selection: {}", input
         );
         std::size_t selection = 0;
@@ -86,7 +86,7 @@ std::optional<std::string> select_gpt_prompt(
         writer_component().printnl("Incorrect input\nEnter again: ");
     }
 
-    writer_component().log_and_print(
+    writer_component().log_print(
         "GPT prompt selection cancelled: input closed"
     );
     return std::nullopt;
@@ -95,7 +95,7 @@ std::optional<std::string> select_gpt_prompt(
 void select_and_insert_gpt_prompt_worker() {
     const auto target_window = ac::console::focus_for_prompt_via_winkey();
     if (!target_window) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             ac::console::error_message(target_window.error())
         );
         return;
@@ -120,12 +120,12 @@ void select_and_insert_gpt_prompt_worker() {
 } // namespace
 
 void writer_actions::select_and_insert_gpt_prompt() {
-    writer_component().log_and_log("select_and_insert_gpt_prompt()");
+    writer_component().log_main("select_and_insert_gpt_prompt()");
 
     static std::atomic_bool selection_in_progress = false;
     bool expected = false;
     if (!selection_in_progress.compare_exchange_strong(expected, true)) {
-        writer_component().log_and_print(
+        writer_component().log_print(
             "GPT prompt selection is already active"
         );
         return;

@@ -50,9 +50,6 @@
     <ClCompile Include="..\modules\ini.ixx">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\log_protocol.ixx">
-      <Filter>Tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\modules\paths.ixx">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -96,9 +93,6 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\logging_config_tests.cxx">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\tests\log_protocol_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\paths_tests.cxx">

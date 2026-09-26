@@ -1,24 +1,27 @@
 # Main executable
 
 `auto_core.exe` is the Auto Core keyboard manager. It lives in
-`app/main/component`, links `auto_core.lib`, and loads `auto_core.dll`. Child
+`app/main/runtime`, links `auto_core.lib`, and loads `auto_core.dll`. Child
 product behavior is documented with each component; this page covers the Main
 process only.
 
 ## Startup order
 
-[`main.cxx`](../app/main/component/src/main.cxx) runs this sequence:
+[`main.cxx`](../app/main/runtime/src/main.cxx) runs this sequence:
 
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
 2. If `config/auto_core.ini` is missing, launch `auto_core_config.exe` and wait.
-   That helper runs the six Main helpers and writes the
-   sentinel only after they succeed. If the file still does not exist, exit `1`.
-   `auto_core.ini` is not parsed. If `components.list` is missing, launch
-   `components_editor.exe` (full catalog reconstruction) and wait. Main does not
-   write that file. If the list is still missing, exit `1`.
-3. Load `config/main.ini`. Missing or invalid `warn_without_winkey_mapping`
-   uses `true` and is reported; the file is not created.
+   That helper runs the five configuration programs, prompts for
+   `warn_without_winkey_mapping`, and writes `auto_core.ini` only after they
+   succeed. Presence of the file means Auto Core is initialized. There is no
+   `initialized` key. If the file still does not exist, exit `1`. If
+   `components.list` is missing, launch `components_editor.exe` (full catalog
+   reconstruction) and wait. Main does not write that file. If the list is
+   still missing, exit `1`.
+3. Load `[auto_core] warn_without_winkey_mapping` from `config/auto_core.ini`.
+   Missing or invalid values use `true` and are reported; the file is not
+   created.
 4. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
 5. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
@@ -28,7 +31,7 @@ process only.
 7. Capture `main_thread_id`, then install the low-level keyboard hook and
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
-8. Start `logger_ac.exe` when `logger` is enabled in `components.list`, then connect.
+8. Create the log directory and write Main's local session log.
 9. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled).
 10. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
@@ -42,9 +45,9 @@ The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two
 handlers are printed and are not fatal; the same message still goes to
 Translate/Dispatch. `GetMessage` returning `-1` ends the loop like `WM_QUIT`.
-`main` does not call `close_program()` on that path. After the loop, Main shuts
-down the logger and returns `0`. The component `Session` destructor runs when
-`main` returns.
+`main` does not call `close_program()` on that path. After the loop, Main writes
+its local shutdown record and returns `0`. The component `Session` destructor
+runs when `main` returns.
 
 ## Keyboard hook and F-lock
 
@@ -78,7 +81,7 @@ calls `primary()` / `secondary()` with no further name lookup.
 
 - `numpad_0`: `activate_function_key` / `deactivate_function_key`
 - `numpad_1`: `activate_auto_core` / `close_program`
-- All other keys: `primary | secondary` (unbound)
+- All other keys: blank (`key =`, unbound)
 
 An existing `keymap.map` is never overwritten, including empty or broken
 files. Workspace failure, or a file that cannot be opened or has no usable
@@ -94,8 +97,9 @@ children. Journal aliases are advertised by `journal_ac.exe`.
 `keymap.map` lines are `key = primary | secondary`. `[...]` headers and `;` /
 `#` comments are ignored. A `|` inside `()` or quotes is not the action
 split, and a second top-level `|` is invalid. Each side is resolved on its
-own: a valid name still binds when the other is empty or unknown. `key =`,
-`key = |`, and `key = primary | secondary` are the same unset pair. The word
+own: a valid name still binds when the other is empty or unknown. The seed
+writes an unbound key as `key =`. `key =`, `key = |`, and
+`key = primary | secondary` are the same unset pair. The word
 `primary` is unset only on the primary side, and `secondary` only on the
 secondary side. A swapped pair is an invalid line. A blank side loads as
 empty. Both sides empty leaves the key unbound; it is not in
@@ -112,12 +116,10 @@ skipped. Zero usable rows (no resolved command), or a file that cannot be
 opened, uses the emergency map. Unset messages are not printed after
 emergency fallback.
 
-Optional `config/keymap.ini` `[keymap] trace_enabled` must be
-exactly `true` to log each binding as it is created. `[keymap]
-silence_nonset_warning` must be exactly `true` to skip the load-time unset
-messages. A missing file keeps both flags off and is reported; the file is not created.
-Missing file or any other value leaves both flags off. See
-[configuration.md](configuration.md).
+Optional `config/keymap.ini` `[keymap] silence_nonset_warning` must be
+exactly `true` to skip the load-time unset messages. A missing file keeps
+the flag off and is reported; the file is not created. Any other value
+leaves the flag off. See [configuration.md](configuration.md).
 
 ### Why keymap.map is the only map
 
@@ -152,8 +154,8 @@ returns true.
 On a crash, Main writes `<exe>/crash/.crash`, copies `auto_core.exe` and
 `symbols/auto_core.pdb` into a dated `crash/<date>_crash` folder with
 `crash.log` (a same-day collision uses `<date>_crash_N`; copy failures are
-ignored), starts a new `auto_core.exe`, then runs `close_program()`, shuts
-down the logger, and `ExitProcess(1)`. If the marker or artifact directory
+ignored), starts a new `auto_core.exe`, then runs `close_program()`, writes
+the local shutdown record, and `ExitProcess(1)`. If the marker or artifact directory
 cannot be written, the handler does not restart. See
 [configuration.md](configuration.md) for `crash_recovery.ini`.
 
@@ -169,7 +171,7 @@ main thread. That calls `close_program()`: set `program_closing`, remove the
 keyboard hook, send v1 `shutdown` to all generic children, and supervise their
 process handles under the shared `shutdown.ini` deadline. Popup mode hides and
 detaches the console first; console mode keeps it for delayed-shutdown recovery.
-Logger starts with `CREATE_NO_WINDOW`. Generic `{name}_ac.exe` children inherit
+Generic `{name}_ac.exe` children inherit
 Main's console (`CreateProcess` flags `0`) so `print()` writes the same
 `std::cout`. Dash and config tools keep `CREATE_NEW_CONSOLE`. A prompt
 activates Main's console (Win+number when `auto_core` is in slots 1–10) or
@@ -180,12 +182,7 @@ Shared attachment means it can reach children. Windows may still terminate
 the process about five seconds after a console close if that work has not
 finished.
 
-Logger shutdown is separate: Main requests a graceful stop and waits for the
-shared `shutdown.ini` deadline. The logger writes the session's terminal
-centralized-log entry before shutting down and rejects every later central-log
-event; subsequent shutdown detail remains available in component-local logs.
-If the deadline expires, Main terminates `logger_ac.exe`. The logger also runs
-in a kill-on-close job owned by Main, so it cannot survive an abrupt Main exit.
+Main writes its local shutdown record separately from child shutdown.
 Generic children, including `server_ac.exe`, receive v1 `shutdown` on their
 control pipe.
 
@@ -197,7 +194,7 @@ control pipe.
    values are logged; those names are ignored or disabled. A missing file
    is reconstructed by `components_editor.exe` at startup; if that fails,
    Main exits. An unreadable existing file is reported and every valid
-   `*_ac.exe` beside Main is enabled. Known specials (`logger`, `dash`,
+   `*_ac.exe` beside Main is enabled. Known specials (`dash` and
    `slash`) are not started as v1 children.
 2. If `taskbar` is enabled, start it and wait for hello, then attach the
    snapshot client. Snapshot failure keeps the control child.

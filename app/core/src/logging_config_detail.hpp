@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -12,12 +13,16 @@
 namespace ac::logging::config::detail {
 
     struct RawSettings {
-        std::optional<std::string_view> write_to_console;
+        std::optional<std::string_view> merge_interval_seconds;
+        std::optional<std::string_view> merge_logs_on_shutdown;
+        std::optional<std::string_view> write_logs_to_console;
         std::optional<std::filesystem::path> directory;
     };
 
     struct Settings {
-        bool write_to_console;
+        std::uint64_t merge_interval_seconds;
+        bool merge_logs_on_shutdown;
+        bool write_logs_to_console;
         std::filesystem::path directory;
         std::filesystem::path components_directory;
         std::string report;

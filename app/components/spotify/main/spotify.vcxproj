@@ -151,7 +151,6 @@
     <ClCompile Include="..\..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
     <ClCompile Include="..\..\..\core\modules\keyboard.ixx" />
-    <ClCompile Include="..\..\..\core\modules\log_protocol.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\shared\spotify_protocol.ixx" />

@@ -129,9 +129,6 @@
     <ClCompile Include="..\shared\itunes_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\log_protocol.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="itunes_config_detail.hpp">

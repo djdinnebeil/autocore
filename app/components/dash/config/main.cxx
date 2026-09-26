@@ -10,13 +10,12 @@ int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
     ac::Component dash_config {"dash_config"};
-    dash_config.connect_to_logger();
-    dash_config.log_and_log("dash_config.exe started");
+    dash_config.log_main("dash_config.exe started");
 
     const auto path = ac::paths::config_directory() / "dash.ini";
     std::error_code error;
     if (std::filesystem::exists(path, error)) {
-        dash_config.log_and_print(
+        dash_config.log_print(
             "config/dash.ini already exists.\n"
             "The vault stays under %LOCALAPPDATA%\\Auto Core."
         );
@@ -26,7 +25,7 @@ int main(int argc, char* argv[]) {
     std::error_code create_error;
     std::filesystem::create_directories(path.parent_path(), create_error);
     if (create_error) {
-        dash_config.log_and_print(
+        dash_config.log_print(
             "Failed to create config directory: {}",
             create_error.message()
         );
@@ -34,7 +33,7 @@ int main(int argc, char* argv[]) {
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        dash_config.log_and_print("Failed to create {}", path.string());
+        dash_config.log_print("Failed to create {}", path.string());
         return 1;
     }
     output.write(
@@ -43,10 +42,10 @@ int main(int argc, char* argv[]) {
     );
     output.close();
     if (!output) {
-        dash_config.log_and_print("Failed to write {}", path.string());
+        dash_config.log_print("Failed to write {}", path.string());
         return 1;
     }
-    dash_config.log_and_print(
+    dash_config.log_print(
         "Wrote default {} (vault path is not configured here).",
         path.string()
     );

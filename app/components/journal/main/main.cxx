@@ -50,8 +50,7 @@ int main(int argument_count, char* arguments[]) {
         return write_manifest(registry, arguments[2]);
     }
 
-    journal_component().connect_to_logger();
-    journal_component().log_and_log("journal_ac.exe started");
+    journal_component().log_main("journal_ac.exe started");
 
     {
         const auto ini_path = ac::paths::config_directory() / "journal.ini";
@@ -66,7 +65,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (!ac::taskbar::connect()) {
-        journal_component().log_and_print(
+        journal_component().log_print(
             "Unable to receive the native taskbar snapshot; interactive "
             "prompts will use direct console activation."
         );
@@ -79,7 +78,7 @@ int main(int argument_count, char* arguments[]) {
         ac::protocol::component::pipe_name("journal")
     );
     if (!connection) {
-        journal_component().log_and_print(
+        journal_component().log_print(
             "Failed to connect to journal pipe. Error: {}",
             connection.error().system_error
         );
@@ -96,7 +95,7 @@ int main(int argument_count, char* arguments[]) {
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                journal_component().log_and_print(
+                journal_component().log_print(
                     "Failed to read journal command. Error: {}",
                     expression.error().system_error
                 );
@@ -107,7 +106,7 @@ int main(int argument_count, char* arguments[]) {
 
             auto action = registry.resolve(*expression);
             if (!action) {
-                journal_component().log_and_print(
+                journal_component().log_print(
                     "Unknown journal command: {}",
                     *expression
                 );
@@ -121,7 +120,7 @@ int main(int argument_count, char* arguments[]) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            journal_component().log_and_log("shutdown signal received");
+            journal_component().log_main("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -131,7 +130,7 @@ int main(int argument_count, char* arguments[]) {
                 registry.autocomplete_values()
             )
         ); !ready) {
-        journal_component().log_and_print(
+        journal_component().log_print(
             "Failed to signal journal readiness. Error: {}",
             ready.error().system_error
         );
@@ -139,7 +138,7 @@ int main(int argument_count, char* arguments[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        journal_component().log_and_print(
+        journal_component().log_print(
             "Journal pipe failed. Error: {}",
             result.error().system_error
         );
@@ -150,6 +149,6 @@ int main(int argument_count, char* arguments[]) {
         return 1;
     }
 
-    journal_component().log_and_log("program terminated");
+    journal_component().log_main("program terminated");
     return 0;
 }

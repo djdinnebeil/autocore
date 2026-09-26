@@ -25,7 +25,7 @@ bool write_bytes(
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        log.log_and_print(
+        log.log_print(
             "Failed to create config directory: {}",
             error.message()
         );
@@ -33,7 +33,7 @@ bool write_bytes(
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        log.log_and_print("Failed to create {}", path.string());
+        log.log_print("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
@@ -45,15 +45,14 @@ bool write_bytes(
 
 int main(int argc, char* argv[]) {
     ac::Component spotify_config {"spotify_config"};
-    spotify_config.connect_to_logger();
-    spotify_config.log_and_log("spotify_config.exe started");
+    spotify_config.log_main("spotify_config.exe started");
 
     const bool initialize =
         ac::config::components_request::is_initialize_run(argc, argv);
     const auto path = ac::paths::config_directory() / "spotify.ini";
     std::error_code error;
     if (std::filesystem::exists(path, error)) {
-        spotify_config.log_and_print(
+        spotify_config.log_print(
             "config/spotify.ini already exists.\n"
             "Tokens still use spotify_oauth.exe."
         );
@@ -64,7 +63,7 @@ int main(int argc, char* argv[]) {
         if (!write_bytes(spotify_config, path, spotify::defaults::ini_text)) {
             return 1;
         }
-        spotify_config.log_and_print(
+        spotify_config.log_print(
             "Wrote {}.\nTokens still use spotify_oauth.exe.",
             path.string()
         );
@@ -75,7 +74,7 @@ int main(int argc, char* argv[]) {
               << spotify::defaults::directory << "]: ";
     std::string input;
     if (!std::getline(std::cin, input)) {
-        spotify_config.log_and_print("Failed to read Spotify directory.");
+        spotify_config.log_print("Failed to read Spotify directory.");
         return 1;
     }
     const auto directory = trim(input);
@@ -88,7 +87,7 @@ int main(int argc, char* argv[]) {
         )) {
         return 1;
     }
-    spotify_config.log_and_print(
+    spotify_config.log_print(
         "Wrote {}.\nTokens still use spotify_oauth.exe.",
         path.string()
     );

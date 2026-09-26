@@ -53,7 +53,7 @@ bool itunes_client::initialize_attempt() {
         });
     }
     catch (const std::exception& exception) {
-        itunes_component.log_and_print(
+        itunes_component.log_print(
             "Failed to dispatch iTunes COM initialization: {}",
             exception.what()
         );
@@ -68,7 +68,7 @@ bool itunes_client::initialize_on_com_thread() {
 
     HRESULT result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(result)) {
-        itunes_component.log_and_print("Failed to initialize COM library.");
+        itunes_component.log_print("Failed to initialize COM library.");
         return false;
     }
     com_apartment_initialized = true;
@@ -76,7 +76,7 @@ bool itunes_client::initialize_on_com_thread() {
     CLSID clsid;
     result = CLSIDFromProgID(L"iTunes.Application", &clsid);
     if (FAILED(result)) {
-        itunes_component.log_and_print("Failed to get CLSID from ProgID.");
+        itunes_component.log_print("Failed to get CLSID from ProgID.");
         release_on_com_thread();
         return false;
     }
@@ -89,7 +89,7 @@ bool itunes_client::initialize_on_com_thread() {
         reinterpret_cast<void**>(&itunes_app)
     );
     if (FAILED(result)) {
-        itunes_component.log_and_print("Failed to create iTunes COM instance.");
+        itunes_component.log_print("Failed to create iTunes COM instance.");
         release_on_com_thread();
         return false;
     }

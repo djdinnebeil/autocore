@@ -91,9 +91,20 @@ Clone vs `dist/` stays in Locked: two audiences.
   `.vcxproj` files import `..\..\..\..\msbuild\AutoCore.props`.
 - `app/core/` — `auto_core.dll` source, `include/ac_api.hpp`, nested
   tests.
-- `app/main/` — `component/` (`auto_core.exe`), `config/` (`auto_core_config.exe`
-  and other Main helpers), and `components/` (`components_config.exe`,
-  `components_editor.exe`).
+- `app/main/` — Main family. `runtime/` is the `auto_core.exe` source
+  tree only; optional component executables stay under `app/components/`.
+  `editors/` holds executables that modify persistent operational data
+  (`components_editor.exe` owns `components.list`, `keymap_editor.exe`
+  owns `keymap.map`). `config/` holds configuration-management
+  executables (`auto_core_config.exe` owns `config/auto_core.ini`,
+  `components_config.exe` owns `config/components.ini`,
+  `keymap_config.exe` owns `config/keymap.ini`,
+  `crash_recovery_config.exe` owns `config/crash_recovery.ini`,
+  `shutdown_config.exe` owns `config/shutdown.ini`). `shared/` is code,
+  defaults, and helpers used by those executables and not generic enough
+  for `app/shared/` or `auto_core.dll`. `_editor.exe` edits operational
+  data. `_config.exe` manages settings. Those responsibilities stay
+  separate.
 - `app/shared/` — compile-time IPC protocols and `command_registry`.
   Runtime facilities stay in the core DLL.
 - `app/resources/` — shared `.ico`/`.rc`. Stays under `app/`.
@@ -131,7 +142,7 @@ Main must not know that component at compile time.
   Lines are `name`, `name on`, or `name off` (blank defaults to on;
   malformed values default to off). Names are case-sensitive and
   lowercase-only (`^[a-z][a-z0-9_]*$`). Invalid names are not normalized.
-  `logger`, `dash`, and `slash` may be listed; they are known specials, not
+  `dash` and `slash` may be listed; they are known specials, not
   v1 session children. The list is the enable switch when the file is
   readable. `discover_ac_executables` returns every valid `*_ac.exe` name
   from `bin_directory`, including those specials; the catalog split keeps
@@ -165,13 +176,18 @@ Main must not know that component at compile time.
 Every production child defines `dist/config/<name>.ini`, ships
 `<name>_config.exe`, and keeps typed defaults in that child's
 `shared/defaults.ixx`. Main host INIs are owned by helpers under
-`app/main/config/` and `app/main/components/`. `component_protocol` stays in `app/shared`.
+`app/main/config/`. `component_protocol` stays in `app/shared`.
 Name-specific protocols live under that child's `shared/`.
 
 - Only `_config.exe` writes `.ini` files. `auto_core.exe` and
-  `<name>_ac.exe` never create or rewrite them. `auto_core.ini` is an
-  existence sentinel written by `auto_core_config.exe` after the five
-  Main helpers succeed. `config/components.ini` is written only by
+  `<name>_ac.exe` never create or rewrite them. The presence of
+  `auto_core.ini` means Auto Core is initialized. There is no
+  `initialized` key. `auto_core_config.exe` writes that file after
+  `components_config.exe`, `keymap_config.exe`, `keymap_editor.exe`,
+  `shutdown_config.exe`, and `crash_recovery_config.exe` succeed, and
+  prompts for `[auto_core] warn_without_winkey_mapping` (default `true`).
+  Only `auto_core_config.exe` creates or rewrites it.
+  `config/components.ini` is written only by
   `components_config.exe`. `components.list` is written only by
   `components_editor.exe`. The config helper initializes missing
   `components.ini`, launches `<name>_config.exe` when `config/<name>.ini`
@@ -179,11 +195,15 @@ Name-specific protocols live under that child's `shared/`.
   `components_editor.exe` reconstructs `components.list` from installed
   `*_ac.exe` names that already have `config/<name>.ini`, using INI
   settings or compiled defaults. Targeted `--component <name>` requires
-  that INI to exist and does not prune missing names. There is no
+  that INI to exist and does not prune missing names.
+  `--component <name> --on` or `--off` rewrites that one entry to
+  explicit `on` or `off` and does not rebuild the list. `<name>_star.exe`
+  reads the list and launches that command; it does not write
+  `components.list`. There is no
   legacy `[components]` / `[list]` migration. Sync does not overwrite
   existing on/off values.
 - If an INI is missing or malformed, runtime uses in-memory defaults and
-  `log_and_print` (`Component::report_ini_unavailable` for children). The
+  `log_print` (`Component::report_ini_unavailable` for children). The
   file is not created. Per-key invalid values in a readable file keep that
   key's default and do not rewrite the file.
 - Tracked samples under `defaults/config/<name>.ini` must match
@@ -191,21 +211,27 @@ Name-specific protocols live under that child's `shared/`.
 - Nested project Target Names stay `<name>_ac`, `<name>_config`, and
   unsuffixed `spotify_oauth`.
 
-## Locked: pre-release logger status
+## Locked: local executable logs
 
-`logger_ac.exe` is feature-complete for the Auto Core pre-release and is in
-field-testing/maintenance status. Its logging API integration, millisecond
-source timestamps, per-component `.main.log` coverage, timestamp-aware named
-pipe protocol, centralized record format, synchronization, daily rollover,
-and lifecycle behavior are the pre-release implementation.
+Each executable writes `{date}_{name}.log` and `{date}_{name}.main.log` under
+`logs/components/<name>/`. `.main.log` is an exact subset of `.log`. The `nl`
+logging names use the same routes and leave the record open.
 
-Keep that implementation stable. Change `logger_ac.exe` before release only
-to address a concrete field-test defect, regression, reliability issue, or
-unmet pre-release requirement. Do not add speculative features, refactors, or
-optimizations during field testing.
-
-`log_merger_ac.exe` is a separate future project. It is not part of finalizing
-or maintaining the pre-release `logger_ac.exe` implementation.
+`config/logger.ini` is host configuration written by `logger_config.exe`
+(`app/components/logger/config`). The canonical keys are `directory = logs`,
+`merge_interval_seconds`, `merge_logs_on_shutdown`, and
+`write_logs_to_console`. A missing file keeps those defaults in memory.
+Main reports that and tells the operator to run `logger_config.exe`. The
+file is not created. `logger_ac.exe` incrementally merges `.main.log`
+files into `YYYY-MM-DD_main.log`. The hosted process does not merge on
+shutdown. After it has exited, shutdown `on` starts a detached
+`logger_ac.exe --once`. At most one `logger_ac.exe` may access
+`merge.state` and the merged daily log files at a time. Main enforces
+this during shutdown by waiting for the hosted logger to exit before
+launching `logger_ac.exe --once`. `merge_interval_seconds = 0` disables
+the hosted periodic logger without disabling `merge_logs_on_shutdown`;
+a detached `logger_ac.exe --once` may still run at shutdown. Components
+do not connect to it to send log lines.
 
 ## Current path
 
@@ -222,21 +248,19 @@ or maintaining the pre-release `logger_ac.exe` implementation.
   `*_ac.exe` is used by `components_editor.exe` to reconcile the catalog when
   `config/<name>.ini` exists, and by runtime only when an existing
   `components.list` is unreadable. The v1 control channel is
-  hello/catalog, then Main-to-child `invoke` and `shutdown`. Logger,
-  taskbar snapshot/cycling/`activate_*`, dash, slash, and Main-local
-  commands stay explicit specials. `logger`, `dash`, and `slash` may be
-  listed in `[components]`; that section is their enable switch. They are not
-  v1 session children. Discovery includes those specials; the catalog
-  split keeps them non-v1.
-- Done for pre-release: `logger_ac.exe` logging upgrade. The implementation is
-  feature-complete and has moved to field-testing/maintenance; further work is
-  limited to concrete defects, regressions, reliability issues, or unmet
-  pre-release requirements. `log_merger_ac.exe` remains future work.
+  hello/catalog, then Main-to-child `invoke` and `shutdown`. Taskbar
+  snapshot/cycling/`activate_*`, dash, slash, and Main-local commands stay
+  explicit specials. `dash` and `slash` may be listed in `[components]`;
+  that section is their enable switch. They are not v1 session children.
+  Discovery includes those specials; the catalog split keeps them non-v1.
+- Done: per-executable logs. `{date}_{name}.log` and `{date}_{name}.main.log`
+  are local. `logger_ac.exe` merges the `.main.log` files.
+  `logger_config.exe` writes `config/logger.ini`.
 - Done: host vs component INI contract. Host files are written only by
   Main `_config.exe` programs. Component INIs are generated only by
   `<name>_config.exe`. Nested `main` / `config` / `shared` trees land per
-  child session. Main lives under `app/main/component`,
-  `app/main/config`, and `app/main/components`.
+  child session. Main lives under `app/main/runtime`,
+  `app/main/editors`, `app/main/config`, and `app/main/shared`.
 - Remaining packaging: run
   [`scripts/build-all.ps1`](../scripts/build-all.ps1) on this PC. After
   it succeeds, delete `.git` and start a new project (`git init`,

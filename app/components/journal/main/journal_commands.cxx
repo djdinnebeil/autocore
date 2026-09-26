@@ -38,7 +38,7 @@ std::optional<int> prompt_for_upper_choice() {
         ac::console::focus_for_prompt_via_winkey();
 
     if (!target_window) {
-        journal_component().log_and_print(
+        journal_component().log_print(
             ac::console::error_message(target_window.error())
         );
         return std::nullopt;
@@ -60,7 +60,7 @@ std::optional<int> prompt_for_upper_choice() {
 
     upper = (std::max)(upper, 1);
 
-    journal_component().log_and_log("{}", upper);
+    journal_component().log_main("{}", upper);
 
     SetForegroundWindow(static_cast<HWND>(*target_window));
     return upper;
@@ -261,7 +261,7 @@ command_registry::Registry create_journal_command_registry() {
 
         const auto equals = trimmed_line.find('=');
         if (equals == std::string_view::npos) {
-            journal_component().log_and_print(
+            journal_component().log_print(
                 "Invalid journal alias line format: {}",
                 line
             );
@@ -275,14 +275,14 @@ command_registry::Registry create_journal_command_registry() {
         if (name.empty() ||
             expression.empty() ||
             name.find('(') != std::string::npos) {
-            journal_component().log_and_print(
+            journal_component().log_print(
                 "Invalid journal alias line format: {}",
                 line
             );
             continue;
         }
         if (registry.contains(name)) {
-            journal_component().log_and_print(
+            journal_component().log_print(
                 "Journal alias '{}' skipped because that command is reserved",
                 name
             );
@@ -291,7 +291,7 @@ command_registry::Registry create_journal_command_registry() {
 
         auto action = registry.resolve(expression);
         if (!action) {
-            journal_component().log_and_print(
+            journal_component().log_print(
                 "Journal alias '{}' skipped because '{}' is unknown",
                 name,
                 expression

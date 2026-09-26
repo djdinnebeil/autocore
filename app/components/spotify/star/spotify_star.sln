@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_star", "spotify_star.vcxproj", "{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Debug|x64.ActiveCfg = Debug|x64
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Debug|x64.Build.0 = Debug|x64
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Debug|x86.ActiveCfg = Debug|Win32
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Debug|x86.Build.0 = Debug|Win32
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Release|x64.ActiveCfg = Release|x64
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Release|x64.Build.0 = Release|x64
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Release|x86.ActiveCfg = Release|Win32
+		{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C1D9E42-3A68-4F05-B2D7-8E4A6C1F0B35}
+	EndGlobalSection
+EndGlobal

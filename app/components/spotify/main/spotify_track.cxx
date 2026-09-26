@@ -72,14 +72,14 @@ void Spotify::get_current_song() {
             is_playing = false;
         }
         else {
-            spotify_component.log_and_print("{} status code", response.status_code);
+            spotify_component.log_print("{} status code", response.status_code);
         }
         return;
     }
     auto song_details = parse(response.text);
     is_playing = song_details["is_playing"];
     if (!song_details["item"].contains("name")) {
-        spotify_component.log_and_log("djai++ is talking");
+        spotify_component.log_main("djai++ is talking");
         last_status_code = 15;
         return;
     }
@@ -90,8 +90,8 @@ void Spotify::get_current_song() {
         return;
     }
     calculate_remaining_song_duration_ms(song_details);
-    spotify_component.lognl_and_lognl("now playing: ");
-    spotify_component.log_and_print(current_song);
+    spotify_component.lognl_main("now playing: ");
+    spotify_component.log_print(current_song);
     last_song = current_song;
     song_history.push_back(current_song);
     track_spotify_history(meta);
@@ -147,7 +147,7 @@ std::string Spotify::get_user_queue() {
             Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
         );
         if (response.status_code != 200) {
-            spotify_component.log_and_print("Failed to retrieve queue");
+            spotify_component.log_print("Failed to retrieve queue");
             return "";
         }
         json queue_details = parse(response.text);
@@ -167,7 +167,7 @@ std::string Spotify::get_user_queue() {
         return output.str();
     }
     catch (...) {
-        spotify_component.log_and_print("An exception occurred in get_user_queue");
+        spotify_component.log_print("An exception occurred in get_user_queue");
         return "";
     }
 }
@@ -185,7 +185,7 @@ bool Spotify::download_album_cover() {
         Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
     );
     if (response.status_code != 200) {
-        spotify_component.log_and_print("Failed to retrieve song");
+        spotify_component.log_print("Failed to retrieve song");
         return "";
     }
     auto song_details = parse(response.text);

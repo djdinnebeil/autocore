@@ -774,7 +774,6 @@ int wmain(int argument_count, wchar_t* arguments[]) {
 
         SetConsoleTitleW(dash_window_title);
         ac::Component dash_component {"dash"};
-        dash_component.connect_to_logger();
         {
             const auto ini_path = ac::paths::config_directory() / "dash.ini";
             if (!ac::ini::read(ini_path)) {

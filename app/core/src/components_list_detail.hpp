@@ -2,14 +2,13 @@
  * \file components_list_detail.hpp
  * \brief Pure parse of `components.list` `[components]` and `*_ac.exe` discovery.
  *
- * Shared by the DLL (`logging::config::enabled`) and Main. Included by
+ * Shared by the DLL logging configuration and Main. Included by
  * Catch2 tests. Not a module interface.
  *
  * Names are case-sensitive and lowercase-only. Invalid names are not
  * normalized. `discover_ac_executables` returns every valid `*_ac.exe`
- * name, including known specials (`logger`, `dash`, `slash`). Callers
- * split those three into `ParseResult.specials`; they are never v1 host
- * children.
+ * name, including known specials (`dash`, `slash`). Callers split those
+ * two into `ParseResult.specials`; they are never v1 host children.
  */
 #pragma once
 
@@ -26,8 +25,7 @@
 
 namespace ac::config::components_list {
 
-    inline constexpr std::array<std::string_view, 3> specials {
-        "logger",
+    inline constexpr std::array<std::string_view, 2> specials {
         "dash",
         "slash"
     };
@@ -63,6 +61,12 @@ namespace ac::config::components_list {
         return false;
     }
 
+    enum class ListedEnablement {
+        enabled,
+        disabled,
+        unavailable
+    };
+
     [[nodiscard]]
     inline bool special_enabled(
         const ParseResult& result,
@@ -77,6 +81,26 @@ namespace ac::config::components_list {
             }
         }
         return false;
+    }
+
+    /**
+     * \brief Classifies one name from an already loaded parse.
+     *
+     * `!result.ok` is unavailable. A successful parse treats blank or `on`
+     * as enabled. `off`, a malformed value, or a missing name is disabled.
+     */
+    [[nodiscard]]
+    inline ListedEnablement listed_enablement(
+        const ParseResult& result,
+        const std::string_view name
+    ) noexcept {
+        if (!result.ok) {
+            return ListedEnablement::unavailable;
+        }
+        const bool on = is_special_name(name)
+            ? special_enabled(result, name)
+            : std::ranges::find(result.enabled, name) != result.enabled.end();
+        return on ? ListedEnablement::enabled : ListedEnablement::disabled;
     }
 
     [[nodiscard]]

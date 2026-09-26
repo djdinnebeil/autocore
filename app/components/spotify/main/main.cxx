@@ -25,7 +25,7 @@ import <Windows.h>;
  * \brief Ends the Spotify process and performs necessary cleanup.
  */
 void end_spotify() {
-    spotify_component.log_and_log("shutdown signal received");
+    spotify_component.log_main("shutdown signal received");
     stop_spotify_monitor();
 }
 /**
@@ -51,7 +51,7 @@ int main() {
     }
 
     if (!ac::taskbar::connect()) {
-        spotify_component.log_and_print(
+        spotify_component.log_print(
             "Unable to receive the native taskbar snapshot from Auto Core."
         );
     }
@@ -84,7 +84,7 @@ int main() {
                 .switch_player = &spotify_switch_player,
                 .download_album_cover = &spotify_download_album_cover,
                 .unknown_named = [](const std::string_view name) {
-                    spotify_component.log_and_print("Unknown Spotify command: {}", name);
+                    spotify_component.log_print("Unknown Spotify command: {}", name);
                 }
             },
             protocol_failed
@@ -95,7 +95,7 @@ int main() {
                     registry.autocomplete_values()
                 )
             ); !hello) {
-            spotify_component.log_and_print(
+            spotify_component.log_print(
                 "Failed to send Spotify hello. Error: {}",
                 hello.error().system_error
             );
@@ -103,7 +103,7 @@ int main() {
         }
         else if (const auto result = dispatcher.process(ac_spotify_pipe);
             !result) {
-            spotify_component.log_and_print(
+            spotify_component.log_print(
                 "Spotify pipe failed. Error: {}",
                 result.error().system_error
             );
@@ -113,7 +113,7 @@ int main() {
         }
     }
     else {
-        spotify_component.log_and_print(
+        spotify_component.log_print(
             "Failed to connect to Spotify pipe. Error: {}",
             connection.error().system_error
         );
@@ -121,7 +121,7 @@ int main() {
 
     stop_spotify_monitor();
 
-    spotify_component.log_and_log("program terminated");
+    spotify_component.log_main("program terminated");
 
     return exit_code;
 }

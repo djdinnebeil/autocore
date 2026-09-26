@@ -15,16 +15,16 @@ import auto_core.core.formatting;
 export namespace ac {
     /** \brief Selects the destinations for a component message. */
     enum class OutputRoute {
-        /** Write only to the component's local file log. */
+        /** Write only to the comprehensive component log. */
         component,
-        /** Write to the component log and queue for the central logger. */
+        /** Write to the comprehensive log and the component main-log subset. */
         component_and_main,
-        /** Write to the component log, central logger, and stdout. */
+        /** Write to both local logs and the active console. */
         component_main_and_console
     };
 
     /**
-     * \brief Coordinates local logging, central logging, console output, and
+     * \brief Coordinates local logging, console output, and
      * clipboard-based text insertion for one named component.
      *
      * Output routing is synchronized per component. Narrow text is UTF-8;
@@ -38,7 +38,7 @@ export namespace ac {
          * directories and events.
          */
         AC_API explicit Component(std::string_view name);
-        /** \brief Closes the central logger connection, if any. */
+        /** \brief Closes the local component logs. */
         AC_API ~Component() noexcept;
 
         /**
@@ -49,7 +49,7 @@ export namespace ac {
         /**
          * \brief Reports a missing or malformed `config/<name>.ini`.
          *
-         * Uses `log_and_print`. Directs the user to `<name>_config.exe`.
+         * Uses `log_print`. Directs the user to `<name>_config.exe`.
          * States that built-in defaults are in use and the file will not be
          * created. Does not write the INI.
          *
@@ -72,18 +72,6 @@ export namespace ac {
         AC_API const clock::DateTime& session_start() const noexcept;
 
         /**
-         * \brief Starts asynchronous central logging when globally enabled.
-         *
-         * Connection failure is recorded in the component log and stderr.
-         */
-        AC_API void connect_to_logger();
-        /**
-         * \brief Queues a central-logger shutdown request when connected.
-         * \return True if the request was queued; false when not connected.
-         */
-        [[nodiscard]] AC_API bool request_logger_shutdown();
-
-        /**
          * \brief Writes UTF-8 text to the selected destinations.
          * \param message The message bytes.
          * \param route The destinations that receive the message.
@@ -98,29 +86,29 @@ export namespace ac {
         /**
          * \name Output convenience methods
          *
-         * `log` writes to the component log. `log_and_log` also queues for
-         * the central logger. `log_and_print` and `print` share the
-         * `component_main_and_console` route (log, central logger, and
-         * stdout). Names containing `nl` suppress the trailing newline.
+         * `log` writes to the comprehensive component log. `log_main` also
+         * writes the main-log subset. `log_print` and `print` share the
+         * `component_main_and_console` route (both local logs and stdout).
+         * Names containing `nl` suppress the trailing newline.
          * Narrow, wide, single-character, and formatted UTF-8 overloads are
          * provided. Formatting failures are reported to every destination.
          * \{
          */
         void log(std::string_view message) { write(message, OutputRoute::component); }
         void lognl(std::string_view message) { write(message, OutputRoute::component, false); }
-        void log_and_log(std::string_view message) { write(message, OutputRoute::component_and_main); }
-        void lognl_and_lognl(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
-        void log_and_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
-        void lognl_and_printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void log_main(std::string_view message) { write(message, OutputRoute::component_and_main); }
+        void lognl_main(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
+        void log_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
+        void lognl_print(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
         void print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
         void printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
 
         void log(std::wstring_view message) { write(message, OutputRoute::component); }
         void lognl(std::wstring_view message) { write(message, OutputRoute::component, false); }
-        void log_and_log(std::wstring_view message) { write(message, OutputRoute::component_and_main); }
-        void lognl_and_lognl(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
-        void log_and_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
-        void lognl_and_printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void log_main(std::wstring_view message) { write(message, OutputRoute::component_and_main); }
+        void lognl_main(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
+        void log_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
+        void lognl_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
         void print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
         void printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
 
@@ -151,22 +139,22 @@ export namespace ac {
         }
 
         template<typename... Args>
-        void log_and_log(const char* format_string, Args&&... args) {
+        void log_main(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_and_main, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void lognl_and_lognl(const char* format_string, Args&&... args) {
+        void lognl_main(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_and_main, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void log_and_print(const char* format_string, Args&&... args) {
+        void log_print(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_main_and_console, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void lognl_and_printnl(const char* format_string, Args&&... args) {
+        void lognl_print(const char* format_string, Args&&... args) {
             write_formatted(OutputRoute::component_main_and_console, false, format_string, std::forward<Args>(args)...);
         }
 

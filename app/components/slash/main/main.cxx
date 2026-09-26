@@ -300,7 +300,6 @@ int main(int argument_count, char* arguments[]) {
         ? std::string_view {arguments[1]}
         : slash::commands::report_and_empty_recycle_bin.name;
 
-    slash_component.connect_to_logger();
     {
         const auto ini_path = ac::paths::config_directory() / "slash.ini";
         if (!ac::ini::read(ini_path)) {
@@ -313,7 +312,7 @@ int main(int argument_count, char* arguments[]) {
     try {
         auto action = registry.resolve(command_name);
         if (!action) {
-            slash_component.log_and_print(
+            slash_component.log_print(
                 "Unknown Slash command: {}",
                 command_name
             );

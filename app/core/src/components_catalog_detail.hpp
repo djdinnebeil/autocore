@@ -11,6 +11,7 @@
 #include "components_list_detail.hpp"
 
 #include <algorithm>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -223,6 +224,118 @@ namespace ac::config::components_catalog {
     [[nodiscard]]
     inline std::string format(const Document& document) {
         return format_settings(document.settings);
+    }
+
+    /**
+     * \brief Rewrites one `[components]` entry to explicit `name on` or
+     *        `name off`. Other lines, comments, and order stay as they are.
+     *        A missing name is appended at the end of that section.
+     */
+    [[nodiscard]]
+    inline std::optional<std::string> set_listed_state(
+        const std::string_view text,
+        const std::string_view name,
+        const bool enabled
+    ) {
+        if (!components_list::is_valid_component_name(name)) {
+            return std::nullopt;
+        }
+
+        const std::string replacement =
+            std::string {name} + (enabled ? " on" : " off");
+        std::string output;
+        output.reserve(text.size() + replacement.size() + 16);
+        bool in_components = false;
+        bool saw_components = false;
+        bool found = false;
+        std::string_view line_break = "\n";
+
+        const auto append_replacement = [&]() {
+            if (!output.empty() && output.back() != '\n') {
+                output.append(line_break);
+            }
+            output += replacement;
+            output.append(line_break);
+        };
+
+        std::size_t line_start = 0;
+        while (line_start <= text.size()) {
+            if (line_start == text.size() &&
+                line_start != 0 &&
+                text.back() == '\n') {
+                break;
+            }
+
+            const auto line_end = text.find('\n', line_start);
+            const auto raw_length = line_end == std::string_view::npos
+                ? text.size() - line_start
+                : line_end - line_start;
+            auto raw = text.substr(line_start, raw_length);
+            const bool crlf = !raw.empty() && raw.back() == '\r';
+            if (crlf) {
+                raw.remove_suffix(1);
+            }
+            if (line_end != std::string_view::npos) {
+                line_break = crlf ? "\r\n" : "\n";
+            }
+
+            const auto trimmed = components_list::trim_list_line(raw);
+            const bool skip = trimmed.empty() ||
+                trimmed.starts_with('#') ||
+                trimmed.starts_with(';');
+            const bool section = !skip &&
+                trimmed.starts_with('[') &&
+                trimmed.ends_with(']');
+
+            if (section) {
+                const auto section_name = components_list::trim_list_line(
+                    trimmed.substr(1, trimmed.size() - 2)
+                );
+                if (in_components && !found) {
+                    append_replacement();
+                    found = true;
+                }
+                in_components = section_name == "components";
+                saw_components = saw_components || in_components;
+            }
+            else if (in_components && !skip) {
+                const auto split = trimmed.find_first_of(" \t");
+                const auto entry_name = split == std::string_view::npos
+                    ? trimmed
+                    : components_list::trim_list_line(trimmed.substr(0, split));
+                if (entry_name == name) {
+                    output += replacement;
+                    if (line_end != std::string_view::npos) {
+                        output.append(line_break);
+                    }
+                    found = true;
+                    if (line_end == std::string_view::npos) {
+                        break;
+                    }
+                    line_start = line_end + 1;
+                    continue;
+                }
+            }
+
+            output.append(text.data() + line_start, raw_length);
+            if (line_end == std::string_view::npos) {
+                break;
+            }
+            output.push_back('\n');
+            line_start = line_end + 1;
+        }
+
+        if (!found) {
+            if (!saw_components) {
+                if (!output.empty() && output.back() != '\n') {
+                    output.append(line_break);
+                }
+                output += "[components]";
+                output.append(line_break);
+            }
+            append_replacement();
+        }
+        return output;
     }
 
     inline void apply_sort(Document& document) {
