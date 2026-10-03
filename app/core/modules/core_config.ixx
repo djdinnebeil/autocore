@@ -7,6 +7,8 @@
  * A missing or malformed file keeps the defaults in memory and does not
  * write the file. Only `auto_core_config.exe` creates or rewrites
  * `auto_core.ini`. File existence is the initialization marker.
+ * `[auto_core] logging` is family logging for `auto_core.exe` and is not
+ * loaded here.
  */
 module;
 
@@ -21,21 +23,12 @@ export namespace ac::config {
     /**
      * \brief Values from `[auto_core]` after initialization.
      *
-     * `warn_without_winkey_mapping` defaults to true. Only lowercase `false`
+     * `warn_without_winkey_mapping` defaults to on. Only lowercase `off`
      * turns the warning off. Any other value keeps the default.
      */
     struct CoreSettings {
         bool warn_without_winkey_mapping;
     };
-
-    /**
-     * \brief Writes `journal/journal_choices.ini` once if it is missing.
-     *
-     * Creates the journal data directory if needed. Existing live files are
-     * never overwritten. Does not read repo `defaults/`. Called only from
-     * `journal_config.exe`.
-     */
-    AC_API void seed_missing_journal_choices();
 
     /**
      * \brief Loads `config/auto_core.ini` once in this process.

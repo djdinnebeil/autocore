@@ -7,13 +7,14 @@ module journal_title;
 import std;
 import auto_core.core.clock;
 import auto_core.core.encoding;
-import auto_core.core.ini;
 import auto_core.core.keyboard;
-import auto_core.core.paths;
 import journal_clock;
-import journal_cloud;
+import journal_cloud_client;
 import journal_component;
-import journal_database;
+import journal_db_client;
+import journal_db_protocol;
+import journal_episode_format;
+import journal_series_map;
 
 namespace {
 
@@ -60,57 +61,36 @@ std::wstring foreground_window_title() {
     return title;
 }
 
-std::optional<std::string> journal_setting(std::string_view name) {
-    const auto document = ac::ini::read(
-        ac::paths::config_directory() / "journal.ini"
-    );
-    if (!document) {
-        return std::nullopt;
-    }
-    if (const auto value = document->find("journal", name)) {
-        return std::string {*value};
-    }
-    return std::nullopt;
-}
-
-std::string trim_copy(std::string_view value) {
-    const auto first = value.find_first_not_of(" \t");
-    if (first == std::string_view::npos) {
-        return {};
-    }
-    const auto last = value.find_last_not_of(" \t");
-    return std::string {value.substr(first, last - first + 1)};
-}
-
-std::string ascii_lower(std::string value) {
-    for (char& character : value) {
-        if (character >= 'A' && character <= 'Z') {
-            character = static_cast<char>(character + ('a' - 'A'));
-        }
-    }
-    return value;
-}
-
-bool remote_sync_enabled() {
-    const std::string value = ascii_lower(
-        trim_copy(journal_setting("remote_sync").value_or(""))
-    );
-    return value == "enable" || value == "enabled";
-}
-
 std::string episode_title() {
-    const std::string series = trim_copy(journal_setting("series").value_or(""));
-    const auto episode = journal_database::take_next_episode(series);
+    // Allocation does not rewrite series.map. Snapshot freshness is owned by
+    // journal_series.exe.
+    const auto active = journal::series_map::read_active(
+        journal::series_map::file_path()
+    );
+    const auto choice = journal::series_map::choose_allocate(active);
+    auto episode = journal::db::allocate_episode(choice.empty_key ? "" : choice.name);
+    if (!episode && !choice.empty_key &&
+        journal::db::is_unknown_series(episode.error())) {
+        episode = journal::db::allocate_episode("");
+    }
     if (!episode) {
         journal_component().log_print("{}", episode.error());
         return {};
     }
 
     const std::string name_and_number = std::format(
-        "{} {}", episode->name, episode->number
+        "{} {}",
+        episode->name,
+        journal::format_episode_number(episode->allocated, episode->padding)
     );
-    if (remote_sync_enabled()) {
-        update_string_in_firebase(name_and_number);
+    if (journal::cloud::service_running()) {
+        if (const auto pushed = journal::cloud::push(
+                episode->name,
+                episode->next_episode
+            );
+            !pushed) {
+            journal_component().log_print("{}", pushed.error());
+        }
     }
 
     return std::format(

@@ -8,7 +8,7 @@ module;
 module spotify_oauth;
 
 import std;
-import auto_core.core.ini;
+import spotify_token_store;
 
 #pragma comment(lib, "Shell32.lib")
 #pragma comment(lib, "bcrypt.lib")
@@ -344,187 +344,25 @@ namespace {
         return reinterpret_cast<std::intptr_t>(result) > 32;
     }
 
-    bool ensure_data_directory(
-        const SpotifyOAuthConfig& config,
-        std::string& error_message
-    ) {
-        const std::filesystem::path token_directory =
-            config.token_path.parent_path();
-
-        if (token_directory.empty()) {
-            return true;
-        }
-
-        std::error_code error;
-
-        std::filesystem::create_directories(
-            token_directory,
-            error
-        );
-
-        if (error) {
-            error_message =
-                "Unable to create token directory: " +
-                error.message();
-
-            return false;
-        }
-
-        return true;
-    }
-
-    bool write_text_file(
-        const std::filesystem::path& path,
-        std::string_view contents,
-        std::string& error_message
-    ) {
-        std::ofstream output_file(path);
-
-        if (!output_file.is_open()) {
-            error_message =
-                "Unable to open file: " + path.string();
-
-            return false;
-        }
-
-        output_file << contents;
-
-        if (!output_file) {
-            error_message =
-                "An error occurred while writing: " +
-                path.string();
-
-            return false;
-        }
-
-        return true;
-    }
-
-    std::string ascii_lower(std::string text) {
-        for (char& character : text) {
-            character = static_cast<char>(
-                std::tolower(static_cast<unsigned char>(character))
-            );
-        }
-
-        return text;
-    }
-
-    bool device_name_equals_ignore_case(
-        std::string_view left,
-        std::string_view right
-    ) {
-        if (left.size() != right.size()) {
-            return false;
-        }
-
-        for (std::size_t i = 0; i < left.size(); ++i) {
-            if (
-                std::tolower(static_cast<unsigned char>(left[i])) !=
-                std::tolower(static_cast<unsigned char>(right[i]))
-            ) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    void upsert_device(
-        std::vector<std::pair<std::string, std::string>>& devices,
-        std::string name,
-        std::string id
-    ) {
-        name = ascii_lower(std::move(name));
-
-        for (auto& [device_name, device_id] : devices) {
-            if (device_name_equals_ignore_case(device_name, name)) {
-                device_name = std::move(name);
-                device_id = std::move(id);
-                return;
-            }
-        }
-
-        devices.emplace_back(std::move(name), std::move(id));
-    }
-
-    bool write_sp_config(
-        const SpotifyOAuthConfig& config,
-        const std::vector<std::pair<std::string, std::string>>& devices,
-        std::string& error_message
-    ) {
-        std::ostringstream config_contents;
-        config_contents
-            << "[auth]\nclient_id = " << config.client_id << '\n';
-
-        if (!devices.empty()) {
-            config_contents << "\n[devices]\n";
-            for (const auto& [name, id] : devices) {
-                config_contents << name << " = " << id << '\n';
-            }
-        }
-
-        return write_text_file(
-            config.config_path,
-            config_contents.str(),
-            error_message
-        );
-    }
-
-    std::vector<std::pair<std::string, std::string>> load_devices(
-        const std::filesystem::path& config_path
-    ) {
-        if (const auto document = ac::ini::read(config_path)) {
-            return document->settings("devices");
-        }
-
-        return {};
-    }
-
     bool save_authorization_files(
-        const SpotifyOAuthConfig& config,
         const SpotifyAuthorizationSession& session,
         std::string& error_message
     ) {
-        if (!ensure_data_directory(config, error_message)) {
+        const auto authorization_time = std::chrono::system_clock::now();
+        spotify::tokens::TokenState state;
+        state.access_token = session.access_token;
+        state.refresh_token = session.refresh_token;
+        state.authorized_at = std::chrono::system_clock::to_time_t(authorization_time);
+        state.refresh_expires_at = std::chrono::system_clock::to_time_t(
+            authorization_time + std::chrono::days(179)
+        );
+
+        spotify::tokens::TokenSession file_lock;
+        if (!file_lock || !file_lock.store(state)) {
+            error_message = "Unable to write tokens.map.";
             return false;
         }
-
-        const auto authorization_time =
-            std::chrono::system_clock::now();
-
-        const std::time_t authorization_timestamp =
-            std::chrono::system_clock::to_time_t(
-                authorization_time
-            );
-
-        const std::time_t refresh_token_expiration_timestamp =
-            std::chrono::system_clock::to_time_t(
-                authorization_time + std::chrono::days(179)
-            );
-
-        std::ostringstream token_contents;
-        token_contents
-            << "; Machine-local. Do not copy this file.\n"
-            << "[tokens]\n"
-            << "access_token = " << session.access_token << '\n'
-            << "refresh_token = " << session.refresh_token << '\n'
-            << "authorized_at = " << authorization_timestamp << '\n'
-            << "refresh_expires_at = "
-            << refresh_token_expiration_timestamp << '\n';
-
-        if (!write_text_file(
-            config.token_path,
-            token_contents.str(),
-            error_message
-        )) {
-            return false;
-        }
-
-        std::vector<std::pair<std::string, std::string>> devices =
-            load_devices(config.config_path);
-
-        return write_sp_config(config, devices, error_message);
+        return true;
     }
 
     bool exchange_authorization_code(
@@ -751,7 +589,6 @@ namespace {
             }
 
             if (!save_authorization_files(
-                config_,
                 session_,
                 error_message
             )) {
@@ -885,7 +722,9 @@ SpotifyAuthorizationResult SpotifyOAuth::authorize() {
         std::cout
             << "Authorization link:\n"
             << authorization_link
-            << '\n';
+            << '\n'
+            << "Waiting for Spotify authorization...\n"
+            << "Press Ctrl+C or close this window to abort.\n";
 
         while (!session.complete.load(
             std::memory_order_acquire
@@ -906,238 +745,5 @@ SpotifyAuthorizationResult SpotifyOAuth::authorize() {
     return {
         session.status,
         std::move(session.message)
-    };
-}
-
-SpotifyAuthorizationResult SpotifyOAuth::register_devices() {
-    if (config_.client_id.empty()) {
-        return {
-            SpotifyAuthorizationStatus::invalid_configuration,
-            "Client ID cannot be empty."
-        };
-    }
-
-    const auto tokens = ac::ini::read(config_.token_path);
-    if (!tokens) {
-        return {
-            SpotifyAuthorizationStatus::invalid_configuration,
-            "Token file is missing. Generate new tokens first."
-        };
-    }
-
-    const auto loaded_access = tokens->find("tokens", "access_token");
-    const auto loaded_refresh = tokens->find("tokens", "refresh_token");
-    const auto refresh_expires_at =
-        tokens->find("tokens", "refresh_expires_at");
-
-    if (
-        !loaded_refresh ||
-        loaded_refresh->empty()
-    ) {
-        return {
-            SpotifyAuthorizationStatus::invalid_configuration,
-            "Refresh token is missing. Generate new tokens first."
-        };
-    }
-
-    std::string access_token =
-        loaded_access ? std::string {*loaded_access} : std::string {};
-    std::string refresh_token {*loaded_refresh};
-
-    const cpr::Response refresh_response = cpr::Post(
-        cpr::Url { std::string(token_endpoint) },
-        cpr::Header {
-            {
-                "Content-Type",
-                "application/x-www-form-urlencoded"
-            }
-        },
-        cpr::Payload {
-            {"grant_type", "refresh_token"},
-            {"refresh_token", refresh_token},
-            {"client_id", config_.client_id}
-        }
-    );
-
-    if (refresh_response.status_code != 200) {
-        try {
-            const nlohmann::json refresh_json =
-                nlohmann::json::parse(refresh_response.text);
-
-            if (
-                refresh_json.contains("error") &&
-                refresh_json["error"] == "invalid_grant"
-            ) {
-                return {
-                    SpotifyAuthorizationStatus::token_exchange_failed,
-                    "Refresh token is no longer valid. "
-                    "Generate new tokens first."
-                };
-            }
-        }
-        catch (const nlohmann::json::exception&) {
-        }
-
-        return {
-            SpotifyAuthorizationStatus::token_exchange_failed,
-            "Spotify token refresh failed with status code "
-                + std::to_string(refresh_response.status_code)
-                + ". Response: "
-                + refresh_response.text
-        };
-    }
-
-    try {
-        const nlohmann::json refresh_json =
-            nlohmann::json::parse(refresh_response.text);
-
-        if (
-            !refresh_json.contains("access_token") ||
-            !refresh_json["access_token"].is_string()
-        ) {
-            return {
-                SpotifyAuthorizationStatus::token_exchange_failed,
-                "Spotify did not return a valid access token."
-            };
-        }
-
-        access_token = refresh_json["access_token"].get<std::string>();
-
-        if (
-            refresh_json.contains("refresh_token") &&
-            refresh_json["refresh_token"].is_string() &&
-            !refresh_json["refresh_token"].get<std::string>().empty()
-        ) {
-            refresh_token =
-                refresh_json["refresh_token"].get<std::string>();
-        }
-    }
-    catch (const nlohmann::json::exception& exception) {
-        return {
-            SpotifyAuthorizationStatus::token_exchange_failed,
-            "Unable to parse Spotify token response: "
-                + std::string(exception.what())
-        };
-    }
-
-    const std::time_t now = std::chrono::system_clock::to_time_t(
-        std::chrono::system_clock::now()
-    );
-    const std::string refresh_expires_text =
-        refresh_expires_at && !refresh_expires_at->empty()
-            ? std::string {*refresh_expires_at}
-            : std::to_string(now);
-
-    std::ostringstream token_contents;
-    token_contents
-        << "; Machine-local. Do not copy this file.\n"
-        << "[tokens]\n"
-        << "access_token = " << access_token << '\n'
-        << "refresh_token = " << refresh_token << '\n'
-        << "authorized_at = " << now << '\n'
-        << "refresh_expires_at = " << refresh_expires_text << '\n';
-
-    std::string error_message;
-
-    if (!ensure_data_directory(config_, error_message)) {
-        return {
-            SpotifyAuthorizationStatus::token_save_failed,
-            std::move(error_message)
-        };
-    }
-
-    if (!write_text_file(
-        config_.token_path,
-        token_contents.str(),
-        error_message
-    )) {
-        return {
-            SpotifyAuthorizationStatus::token_save_failed,
-            std::move(error_message)
-        };
-    }
-
-    const cpr::Response devices_response = cpr::Get(
-        cpr::Url { "https://api.spotify.com/v1/me/player/devices" },
-        cpr::Header {
-            {"Authorization", "Bearer " + access_token},
-            {"Content-Type", "application/json"}
-        }
-    );
-
-    if (devices_response.status_code != 200) {
-        return {
-            SpotifyAuthorizationStatus::device_request_failed,
-            "Spotify device request failed with status code "
-                + std::to_string(devices_response.status_code)
-                + ". Response: "
-                + devices_response.text
-        };
-    }
-
-    std::vector<std::pair<std::string, std::string>> devices =
-        load_devices(config_.config_path);
-
-    try {
-        const nlohmann::json devices_json =
-            nlohmann::json::parse(devices_response.text);
-
-        if (
-            !devices_json.contains("devices") ||
-            !devices_json["devices"].is_array()
-        ) {
-            return {
-                SpotifyAuthorizationStatus::device_request_failed,
-                "Spotify did not return a device list."
-            };
-        }
-
-        for (const auto& device : devices_json["devices"]) {
-            if (
-                !device.contains("name") ||
-                !device.contains("id") ||
-                !device["name"].is_string() ||
-                !device["id"].is_string()
-            ) {
-                continue;
-            }
-
-            upsert_device(
-                devices,
-                device["name"].get<std::string>(),
-                device["id"].get<std::string>()
-            );
-        }
-    }
-    catch (const nlohmann::json::exception& exception) {
-        return {
-            SpotifyAuthorizationStatus::device_request_failed,
-            "Unable to parse Spotify device response: "
-                + std::string(exception.what())
-        };
-    }
-
-    if (!write_sp_config(config_, devices, error_message)) {
-        return {
-            SpotifyAuthorizationStatus::token_save_failed,
-            std::move(error_message)
-        };
-    }
-
-    std::ostringstream summary;
-    summary << "Registered Spotify devices:\n";
-
-    if (devices.empty()) {
-        summary << "(none available)\n";
-    }
-    else {
-        for (const auto& [name, id] : devices) {
-            summary << name << " = " << id << '\n';
-        }
-    }
-
-    return {
-        SpotifyAuthorizationStatus::success,
-        summary.str()
     };
 }

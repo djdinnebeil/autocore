@@ -21,12 +21,15 @@ The default suite also includes `[windows-integration]` tests. These create
 uniquely named local pipes and verify both numeric and named iTunes command
 routing without starting Auto Core or iTunes.
 
-The completed refactor baseline is 37 test cases with 138 assertions. Coverage
+The current suite is 70 test cases with 311 assertions. Coverage
 includes:
 
-- configuration resolution and malformed-value behavior;
+- configuration resolution, directory resolution, and malformed-value behavior;
+- song-template parsing, the verified token catalog, and default-template rendering;
+- `library.format` loading and `column_count` serialization;
 - queue and track formatting;
 - history recording and draining;
+- listening-credit rules for the existing 5-second monitor wakes;
 - stable protocol values and command names;
 - named-command registry construction and dispatch;
 - playback, removal, and retry coordination through fakes;
@@ -38,6 +41,12 @@ Tests that require the installed iTunes application must use the `[live]` tag.
 Normal automated runs must exclude them with `~[live]`. A live test must state
 whether it starts iTunes, changes playback, modifies the library, or touches a
 media file.
+
+The supported song-format tokens are `{name}`, `{artist}`, `{album}`, and
+`{duration}`. Adding another token requires a live probe of the installed
+iTunes COM interface first. The probe must show the property name, the
+returned `VARIANT` type, and the rendered sample. A token that has not been
+probed is not part of the catalog.
 
 The fake removal tests verify coordination and status reporting only. They do
 not invoke iTunes `Delete` or move a real file to the Recycle Bin. Real deletion

@@ -1414,17 +1414,21 @@ ac::main::components::Session ac::main::components::initialize() {
         );
     }
 
-    const bool host_logger =
-        ac::main::components::detail::host_periodic_logger(
-            ac::logging::config::merge_interval_seconds()
+    if (ac::logging::config::logger_ini_missing()) {
+        auto_core.log_print(
+            "config/logger.ini is missing. Run logger_config.exe to "
+            "generate it. Using built-in defaults; the file will not be "
+            "created."
         );
+    }
+    auto_core.lognl_main(
+        std::string {ac::logging::config::logger_configuration_report()}
+    );
+
     std::vector<std::string> remaining;
     remaining.reserve(parsed.enabled.size());
     bool start_taskbar_first = false;
     for (const auto& name : parsed.enabled) {
-        if (name == "logger" && !host_logger) {
-            continue;
-        }
         if (name == "taskbar") {
             start_taskbar_first = true;
         }

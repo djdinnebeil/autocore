@@ -6,7 +6,7 @@
  * other side is empty or unknown. Unknown expressions log at load and again
  * on press of that side. A blank binding (`key =`), `primary | secondary`, and omitted keys stay out of the map (the
  * physical key passes through); after a successful load they print "hasn't
- * been set" unless `silence_nonset_warning` is `true`. `keymap_editor.exe`
+ * been set" unless `silence_nonset_warning` is `on`. `keymap_editor.exe`
  * writes `keymap.map` when missing. File-load failure installs a two-key
  * emergency map in memory and does not write the file.
  */

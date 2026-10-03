@@ -8,6 +8,7 @@ to update the logger and initialize logging when the component starts.
 export module spotify_component;
 
 import auto_core.core.component;
+import auto_core.core.logging.config;
 
 import auto_core.core.pipes;
 import <Windows.h>;
@@ -17,7 +18,10 @@ import <Windows.h>;
  *
  * This logger is used to log messages specific to the Spotify component.
  */
-export ac::Component spotify_component("spotify");
+export ac::Component spotify_component(
+    "spotify",
+    ac::logging::config::LoggingScope {"spotify"}
+);
 
 /**
  * \brief Updates the Spotify logger.

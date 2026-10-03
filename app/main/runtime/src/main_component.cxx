@@ -2,13 +2,18 @@ module auto_core.main.application;
 
 import std;
 import auto_core.core.console;
+import auto_core.core.logging.config;
 import auto_core.core.paths;
 
 import <Windows.h>;
 
 import auto_core.main.components;
+import auto_core.main.taskbar;
 
-ac::Component auto_core {"auto_core"};
+ac::Component auto_core {
+    "auto_core",
+    ac::logging::config::LoggingScope {"auto_core"}
+};
 
 bool ac::main::create_process(
     const std::filesystem::path& executable_path,
@@ -133,6 +138,7 @@ namespace {
 void close_program_impl(const bool allow_recovery_prompt) {
     auto_core.log_main("close_program()");
     ac::main::program_closing = true;
+    taskbar.end_cycle_session();
     if (ac::main::keyboard_hook != NULL) {
         UnhookWindowsHookEx(ac::main::keyboard_hook);
         ac::main::keyboard_hook = NULL;

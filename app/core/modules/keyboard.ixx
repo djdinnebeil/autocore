@@ -60,16 +60,18 @@ export namespace ac::keyboard {
      * press with `release_winkey()`, including when `SendInput` fails and
      * is reported through `ac::error`. Interactive cycling state lives in
      * Main, not in this DLL.
+     * \return `true` when Windows accepts the generated key-down event.
      */
-    AC_API void press_and_hold_winkey();
+    AC_API [[nodiscard]] bool press_and_hold_winkey();
     /**
      * \brief Sends a Windows-key release for a hold started by
      * `press_and_hold_winkey()`.
      *
      * A failed `SendInput` is reported through `ac::error`. The caller
      * still owns the hold session.
+     * \return `true` when Windows accepts the generated key-up event.
      */
-    AC_API void release_winkey();
+    AC_API [[nodiscard]] bool release_winkey();
     /**
      * \brief Sends Shift+Enter to insert a linebreak without submitting
      * common chat-style text fields.

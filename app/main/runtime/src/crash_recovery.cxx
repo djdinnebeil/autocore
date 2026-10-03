@@ -5,7 +5,7 @@ import std;
 import auto_core.core.clock;
 import auto_core.core.ini;
 import auto_core.main.application;
-import auto_core.main.logger;
+import auto_core.main.logging;
 import auto_core.core.paths;
 
 import <Windows.h>;
@@ -185,7 +185,7 @@ void restart_program(const std::string& error_report) {
     );
 
     close_program_noninteractive();
-    shutdown_logger_component();
+    shutdown_logging();
     ExitProcess(1);
 }
 

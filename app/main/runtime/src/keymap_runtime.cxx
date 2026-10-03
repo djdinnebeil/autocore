@@ -101,7 +101,7 @@ static KeymapSettings keymap_settings() {
             "missing keys; the file will not be rewritten."
         );
     }
-    else if (*silence != "true" && *silence != "false") {
+    else if (*silence != "on" && *silence != "off") {
         auto_core.log_print(
             "config/keymap.ini contains an invalid value. Run "
             "keymap_config.exe to repair it. Using built-in defaults for "
@@ -109,7 +109,7 @@ static KeymapSettings keymap_settings() {
         );
     }
 
-    return { silence == "true" };
+    return { silence == "on" };
 }
 
 static std::string autocomplete_contents(

@@ -21,6 +21,9 @@
     <ClCompile Include="..\shared\defaults.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\server_data_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\core\modules\encoding.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

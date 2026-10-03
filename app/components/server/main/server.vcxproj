@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\clipboard.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\ini.ixx" />
@@ -159,20 +160,16 @@
     <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\core\modules\thread.ixx" />
-    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\server_data_detail.cxx" />
     <ClCompile Include="server_logging.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
-  <ItemGroup>
-    <ServerDocumentRoot Include="$(AutoCoreRootDir)defaults\server\*" />
-  </ItemGroup>
-  <Target Name="CopyServerDocumentRoot" AfterTargets="Link" BeforeTargets="PostBuildEvent">
-    <MakeDir Directories="$(AutoCoreDistDir)components\server\" />
-    <Copy SourceFiles="@(ServerDocumentRoot)" DestinationFolder="$(AutoCoreDistDir)components\server\" SkipUnchangedFiles="true" Condition="'@(ServerDocumentRoot)' != ''" />
-  </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

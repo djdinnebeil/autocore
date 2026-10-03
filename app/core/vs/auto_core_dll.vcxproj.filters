@@ -69,10 +69,16 @@
     <ClCompile Include="..\modules\pipes.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\modules\shell.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\error.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\pipes.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\shell.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\paths.ixx">

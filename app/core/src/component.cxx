@@ -1,3 +1,7 @@
+module;
+
+#include "console_route_detail.hpp"
+
 module auto_core.core.component;
 
 import :console_writer;
@@ -12,51 +16,128 @@ import auto_core.core.logging.config;
 
 namespace ac {
 
+    namespace {
+        std::atomic_bool disabled_notice_emitted {false};
+
+        struct OwnedScope {
+            std::string name;
+            ac::logging::config::LoggingFallback fallback;
+        };
+    }
+
     class Component::Impl {
     public:
         explicit Impl(const std::string_view component_name)
             : session_start(ac::clock::get_local_datetime()),
+              name(component_name) {
+        }
+
+        Impl(
+            const std::string_view component_name,
+            const ac::logging::config::LoggingScope scope
+        )
+            : session_start(ac::clock::get_local_datetime()),
               name(component_name),
-              component_logger(
-                  component_name,
-                  ac::logging::config::components_directory() / component_name,
-                  session_start
-              ) {
+              scope(OwnedScope {std::string {scope.name}, scope.fallback}) {
         }
 
         const ac::clock::DateTime session_start;
         std::string name;
+        std::optional<OwnedScope> scope;
         std::mutex routing_mutex;
-        ac::component_detail::ComponentLogger component_logger;
+        std::unique_ptr<ac::component_detail::ComponentLogger> component_logger;
         ac::component_detail::ConsoleWriter console_writer;
         ac::component_detail::TextInserter text_inserter;
+
+        [[nodiscard]]
+        bool component_logging_on() const {
+            if (ac::logging::config::disable_all()) {
+                return false;
+            }
+            if (!scope) {
+                return ac::logging::config::component_logging_default();
+            }
+            return ac::logging::config::component_logging_enabled({
+                scope->name,
+                scope->fallback
+            });
+        }
+
+        [[nodiscard]]
+        bool file_logging_on() const {
+            return component_logging_on() &&
+                ac::logging::config::write_logs_to_files();
+        }
+
+        void ensure_file_logger() {
+            if (component_logger) {
+                return;
+            }
+            component_logger = std::make_unique<ac::component_detail::ComponentLogger>(
+                name,
+                ac::logging::config::components_directory() / name,
+                session_start
+            );
+        }
+
+        void emit_disabled_notice_if_needed() {
+            if (ac::logging::config::disable_all() || component_logging_on()) {
+                return;
+            }
+            if (disabled_notice_emitted.exchange(true)) {
+                return;
+            }
+            const std::string notice_name = scope ? scope->name : name;
+            console_writer.write(
+                "Logging is disabled for " + notice_name + ".",
+                true
+            );
+        }
 
         void write_message(
             const std::string_view message,
             const bool newline,
             const OutputRoute route
         ) {
+            emit_disabled_notice_if_needed();
+
+            const bool log_print =
+                route == OutputRoute::component_main_and_console;
+            const bool user_facing =
+                route == OutputRoute::user_facing ||
+                (log_print &&
+                    ac::logging::config::log_print_mode() ==
+                        ac::logging::config::LogPrintMode::print);
+            const bool main_subset =
+                route != OutputRoute::component;
+
+            const auto decision = ac::component_detail::decide_sinks({
+                .disable_all = ac::logging::config::disable_all(),
+                .component_logging = component_logging_on(),
+                .write_logs_to_files = ac::logging::config::write_logs_to_files(),
+                .write_logs_to_console =
+                    ac::logging::config::write_logs_to_console(),
+                .user_facing = user_facing,
+                .main_subset = main_subset,
+                .notice_already_emitted = true
+            });
+
             const auto event_time = ac::clock::get_local_datetime();
             const std::string timestamp =
                 ac::clock::format_log_timestamp(event_time);
-            const bool main_worthy =
-                route == OutputRoute::component_and_main ||
-                route == OutputRoute::component_main_and_console;
 
             std::scoped_lock lock(routing_mutex);
-            component_logger.write(
-                timestamp,
-                event_time.date_iso,
-                message,
-                main_worthy,
-                newline
-            );
-
-            const bool explicit_console =
-                route == OutputRoute::component_main_and_console;
-            const bool configured_console =
-                ac::logging::config::write_logs_to_console();
-            if (explicit_console || configured_console) {
+            if (decision.write_files) {
+                ensure_file_logger();
+                component_logger->write(
+                    timestamp,
+                    event_time.date_iso,
+                    message,
+                    decision.write_main,
+                    newline
+                );
+            }
+            if (decision.write_console) {
                 console_writer.write(message, newline);
             }
         }
@@ -64,6 +145,13 @@ namespace ac {
 
     Component::Component(const std::string_view name)
         : impl_(std::make_unique<Impl>(name)) {
+    }
+
+    Component::Component(
+        const std::string_view name,
+        const ac::logging::config::LoggingScope scope
+    )
+        : impl_(std::make_unique<Impl>(name, scope)) {
     }
 
     Component::~Component() noexcept = default;
@@ -155,7 +243,7 @@ namespace ac {
     }
 
     void Component::report_error(const std::string_view message) {
-        write(message, OutputRoute::component_main_and_console);
+        write(message, OutputRoute::user_facing);
     }
 
     void Component::insert_text_replacing_clipboard(
@@ -361,13 +449,21 @@ namespace ac {
     }
 
     void Component::update_log_file() {
+        impl_->emit_disabled_notice_if_needed();
+        if (!impl_->file_logging_on()) {
+            return;
+        }
         std::scoped_lock lock(impl_->routing_mutex);
-        impl_->component_logger.update_file();
+        impl_->ensure_file_logger();
+        impl_->component_logger->update_file();
     }
 
     void Component::flush() {
         std::scoped_lock lock(impl_->routing_mutex);
-        impl_->component_logger.flush();
+        if (!impl_->component_logger) {
+            return;
+        }
+        impl_->component_logger->flush();
     }
 
 }

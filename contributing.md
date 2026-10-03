@@ -10,10 +10,9 @@ Beta testers follow the same path: build, then run `dist\bin\auto_core.exe`.
    [docs/new-component.md](docs/new-component.md), and
    [docs/building.md](docs/building.md).
 3. Do not commit `dist/` (live config, keymap, Spotify, journal, taskbar,
-   server extras, logs, crash dumps, writer, notes) or `*.local.ixx` /
-   `*.local.ini`. Tracked portable defaults live in
-   [`defaults/`](defaults/) (documentation and tests only; Auto Core does
-   not read them).
+   server files, logs, crash dumps, writer, notes) or `*.local.ixx` /
+   `*.local.ini`. Portable defaults are compiled in each child's
+   `shared/defaults.ixx` and in `app/main/shared/defaults.ixx`.
 
 ## Build
 
@@ -29,8 +28,10 @@ linker searches `lib/auto_core.lib`. There is no root `.sln`. After Link,
 Windows PowerShell runs
 [`scripts/copy-dist-dlls.ps1`](scripts/copy-dist-dlls.ps1), which copies
 vendor runtime DLLs from `third_party/*/bin/` and `lib/auto_core.dll` into
-`dist/bin/` (`dist/` stays gitignored). Building `server_ac.exe` copies
-`defaults/server/` into `dist/components/server/`.
+`dist/bin/` (`dist/` stays gitignored). The build does not plant the Server
+data directory. `server_editor.exe --seed` creates missing `port.id` and
+`document_root.id`. `server_builder.exe` creates missing starter files
+under a relative document root (default `dist/components/server/site`).
 
 ## Adding a component
 

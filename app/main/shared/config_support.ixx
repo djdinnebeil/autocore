@@ -155,27 +155,6 @@ export namespace ac::main::config {
     }
 
     [[nodiscard]]
-    inline std::optional<bool> prompt_bool(
-        const std::string_view label,
-        const bool suggestion
-    ) {
-        const auto line = prompt_text(label, suggestion ? "true" : "false");
-        if (!line) {
-            return std::nullopt;
-        }
-        if (*line == "true" || *line == "on") {
-            return true;
-        }
-        if (*line == "false" || *line == "off") {
-            return false;
-        }
-        std::cout << "Enter true or false. Using " << *line << " is invalid; "
-                     "keeping "
-                  << (suggestion ? "true" : "false") << ".\n";
-        return suggestion;
-    }
-
-    [[nodiscard]]
     inline int run_and_wait(
         const std::filesystem::path& executable_path,
         const std::wstring& extra_arguments = {}

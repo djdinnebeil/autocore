@@ -13,9 +13,11 @@ export module spotify_client;
 import std;
 import auto_core.core.thread;
 import spotify_component;
+import spotify_token_store;
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
+import spotify_song_template;
 
 using json = nlohmann::json;
 export extern HWND spotify_window_hwnd;
@@ -38,7 +40,6 @@ struct SongMetadata {
 };
 
 std::string get_datetime_stamp_local();
-void track_spotify_history_update_or_insert(const SongMetadata& meta);
 void track_spotify_history(const SongMetadata& meta);
 std::string ascii_lower(std::string text);
 bool device_name_equals_ignore_case(
@@ -72,6 +73,13 @@ public:
     bool check_timerate();
     void extract_tokens();
     bool refresh_tokens();
+    enum class TokenRefreshAttempt {
+        ready,
+        interactive,
+        transient_failure
+    };
+    TokenRefreshAttempt attempt_token_refresh();
+    void launch_spotify_oauth();
     int pause_song();
     int play_song();
     int music_song_count;
@@ -84,8 +92,14 @@ public:
     int song_history_index = 0;
     int string_array_size = 52;
     std::array<std::string, 52> song_history_array;
-    void load_config();
+    void load_client_id();
     std::string authorization_header;
+    void load_devices_from_disk();
+    void load_tokens_from_disk();
+    void apply_token_state(const spotify::tokens::TokenState& state);
+    bool ensure_configured_devices();
+    std::expected<std::string, std::string> discover_current_devices();
+    void report_authorization_required();
     std::string content_type;
     std::string content_length;
     bool is_playing;
@@ -93,15 +107,11 @@ public:
     void post_next_or_prev(std::string url);
     bool is_spotify_open();
     void start_playback_on_desktop();
-    std::string format_song_title_user_queue(const json& song_details);
+    std::string format_track_title(const json& track);
     SongMetadata extract_song_metadata(const json& song_details);
-    std::string format_song_title(const SongMetadata& meta);
     std::string format_artist_name(const json& artists);
     void calculate_remaining_song_duration_ms(const json& song_details);
-    void update_devices();
     void activate();
-    void save_config();
-    void save_tokens();
     std::string first_configured_device_id() const;
     bool end_thread = false;
 
@@ -111,13 +121,20 @@ public:
     std::mutex refresh_token_mutex;
     bool reauthorization_required = false;
     bool reauthorization_warning_logged  = false;
+    bool auto_launch_oauth = false;
+    bool oauth_auto_launch_attempted = false;
 
     bool tokens_extracted = false;
+    bool token_cache_reread = false;
+    bool authorization_required_logged = false;
+    bool devices_cache_reread = false;
+    bool devices_unavailable_logged = false;
     void check_refresh_token_expiration();
-
-    std::filesystem::path tokens_path;
-    std::filesystem::path config_path;
+    spotify::song::Compiled song_format {};
+    std::string song_format_error;
     std::vector<std::pair<std::string, std::string>> devices;
 };
 
+export void start_spotify_device_requests();
+export void stop_spotify_device_requests();
 export extern Spotify ac_spotify;

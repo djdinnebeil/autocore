@@ -5,6 +5,7 @@ import auto_core.core.component;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.key_codes;
+import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 
@@ -45,6 +46,7 @@ std::string mappings_seed() {
 } // namespace
 
 int main() {
+    ac::shell::set_process_app_user_model_id();
     keymap_editor.log_main("keymap_editor.exe started");
 
     const auto path = ac::paths::keymap_file();

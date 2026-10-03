@@ -4,8 +4,10 @@ import auto_core.core.ini;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
+import components_editor_request;
 
 import <iostream>;
+import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
@@ -137,19 +139,62 @@ int configuration_mode() {
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
     crash_recovery_config.log_main("crash_recovery_config.exe started");
 
-    std::error_code error;
-    if (std::filesystem::exists(ini_path(), error)) {
-        return configuration_mode();
+    const auto launch =
+        ac::config::components_request::parse_config_launch(argc, argv);
+    if (!launch) {
+        return 1;
     }
+
+    std::error_code error;
+    const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
         crash_recovery_config.log_print(
             "Failed to inspect {}",
             ini_path().string()
         );
         return 1;
+    }
+
+    namespace req = ac::config::components_request;
+    req::log_config_request(crash_recovery_config, *launch);
+    if (launch->seed) {
+        if (present) {
+            req::log_seed_skipped(
+                crash_recovery_config,
+                "config/crash_recovery.ini"
+            );
+            return 0;
+        }
+        req::log_writing_defaults(crash_recovery_config);
+        if (!write_response(defaults::crash_default_response)) {
+            crash_recovery_config.log_print(
+                "Failed to write {}.",
+                ini_path().string()
+            );
+            return 1;
+        }
+        req::log_configuration_initialized(crash_recovery_config);
+        return 0;
+    }
+
+    if (launch->init) {
+        if (present) {
+            req::log_initialization_skipped(
+                crash_recovery_config,
+                "config/crash_recovery.ini"
+            );
+            return 0;
+        }
+        req::log_configuration_missing(crash_recovery_config);
+        return first_time();
+    }
+
+    if (present) {
+        return configuration_mode();
     }
     return first_time();
 }

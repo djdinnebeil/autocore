@@ -26,8 +26,8 @@ automation) can attach. Elevation mismatches are documented in
 
 `dist/` is gitignored. Do not share or copy:
 
-- `dist/spotify/` — Spotify tokens (`spotify_tokens.ini`, `spotify_codes.ini`)
-- `dist/journal/` — `journals.db` and `journal_choices.ini`
+- `dist/components/spotify/` — Spotify `client.id` and `tokens.map` (`spotify_codes.ini`, `spotify_tokens.ini`, and `spotify_history.db` are ignored)
+- `dist/components/journal/` — `series.db`, `series.map`, `firebase.id`, and per-factory alias `.list` files
 - Dash vault at `%LOCALAPPDATA%\Auto Core\dash.vault`
 - `.env` files, logs, crash dumps, writer notes, or a private
   `bindings.local.ini`
@@ -37,10 +37,12 @@ Spotify tokens are machine-local; see [docs/spotify.md](docs/spotify.md).
 
 ## Local file server
 
-`server_ac.exe` serves `[server] document_root` on **loopback only**
-(`http://127.0.0.1:<port>/`). There is no authentication. Do not point
-`document_root` at secrets. Do not change the bind to a LAN address.
-See [docs/server.md](docs/server.md).
+`server_ac.exe` serves the directory named by `document_root.id` on
+**loopback only** (`http://127.0.0.1:<port>/`). `port.id` supplies the
+port. There is no authentication. Files reached through a symbolic link
+or junction inside that root are still served. Do not point the document
+root at secrets. Do not change the bind to a LAN address. See
+[docs/server.md](docs/server.md).
 
 ## Privilege and IPC
 

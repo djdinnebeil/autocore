@@ -16,7 +16,7 @@ Auto Core keymap
 
 playback monitor
     -> current-track endpoint
-    -> in-memory history and spotify_history.db
+    -> in-memory history and history.db through spotify_db.exe
 ```
 
 Auto Core owns the server side of the local named pipe and launches
@@ -74,29 +74,87 @@ paths respectively.
 
 ## Authorization
 
-`spotify_config.exe` owns `config/spotify.ini` (`[spotify] directory`, default
-`spotify`). Run `spotify_oauth.exe` to authorize and register Connect devices.
-OAuth does not write `spotify.ini`. Missing or malformed INI: `spotify_ac.exe`
-uses `shared/defaults.ixx` and `report_ini_unavailable`. Relative directory
-paths resolve against the installation root; an absolute path is used as-is.
+`spotify_config.exe` owns `config/spotify.ini`. The compiled default is:
 
-The oauth helper then presents a menu:
+```ini
+[spotify]
+directory = components\spotify
+auto_launch_oauth = off
+logging = on
+```
 
-1. Generate new tokens. Enter a Spotify client ID and local port. The helper
-   starts a loopback HTTP listener at `http://127.0.0.1:<port>/callback`,
-   opens the authorization page using Authorization Code with PKCE, exchanges
-   the returned code, and writes `spotify_codes.ini` and `spotify_tokens.ini`
-   under the configured Spotify data directory (default `spotify/`, which is
-   `dist/spotify` when run from `dist`).
-   Existing `[devices]` keys are preserved.
-2. Retrieve current devices. Reads `client_id` from `spotify_codes.ini` in that
-   directory. If that
-   value is missing, the helper reports it and returns to the menu. Otherwise
-   it refreshes the access token, calls the Spotify devices endpoint, and
-   upserts each Connect device into `[devices]` using Spotify's `name` in
-   lowercase as the key and `id` as the value. Existing keys are updated,
-   including renaming a mixed-case key to lowercase. Names not in the
-   response are kept. Duplicate names keep the last ID received.
+`directory` is the portable data folder. Relative paths resolve against the
+installation root; an absolute path is used as-is. A missing or empty
+`directory` uses `<installation_root>/components/spotify`.
+`auto_launch_oauth` is stored as lowercase `on` or `off`. `true` enables and
+`false` disables. A missing, empty, or any other value stays `off`.
+`spotify_ac.exe` reads the setting once at startup. A later Configure edit
+applies the next time that process starts. The setting does not launch OAuth
+when the process starts. `off` means a missing authorization is reported and
+`spotify_oauth.exe` is not started. It does not disable refresh of an
+authorization that is already stored in `tokens.map`.
+
+Run `spotify_oauth.exe` to authorize. It does not register Connect devices
+and it does not refresh tokens for the running component. OAuth does not write
+`spotify.ini` or `client.id`. Missing or malformed INI: `spotify_ac.exe` uses
+`shared/defaults.ixx` and `report_ini_unavailable`.
+
+The oauth helper presents:
+
+```text
+spotify_oauth
+
+1. Authorize Spotify
+2. Abort
+```
+
+An unknown menu entry asks again. Abort and end-of-input return exit code 2.
+Authorize Spotify reads `client.id` and does not prompt for it or launch
+`spotify_editor.exe`. A missing or blank ID is an authorization failure
+(exit 1) and leaves `tokens.map` unchanged. A usable ID continues to the
+local-port prompt. The helper starts a loopback HTTP listener at
+`http://127.0.0.1:<port>/callback`, opens the authorization page using
+Authorization Code with PKCE, and then displays:
+
+```text
+Waiting for Spotify authorization...
+Press Ctrl+C or close this window to abort.
+```
+
+During that wait it does not read an abort command from stdin. Ctrl+C,
+Ctrl+Break, and closing the window exit 2 and do not write `tokens.map`.
+A completed exchange writes a complete `tokens.map` (`access_token`,
+`refresh_token`, `authorized_at`, `refresh_expires_at`) under the configured
+Spotify data directory (default `components/spotify`, which is
+`dist/components/spotify` when run from `dist`) and exits 0. Browser,
+callback, and token failures exit 1. There is no device mode and no
+runtime-refresh mode.
+
+`spotify_config.exe`, `spotify_star.exe`, and `spotify_ac.exe` (only when
+`auto_launch_oauth` is `on`) each start `spotify_oauth.exe` with
+`CREATE_NEW_CONSOLE` and wait until that process ends. Other Star actions
+stay on the Star console.
+
+`spotify_editor.exe` is the only writer of `client.id` and `devices.list`:
+
+```text
+spotify_editor
+
+1. Set client ID
+2. Retrieve current devices
+3. Exit
+```
+
+Set client ID, and `spotify_editor.exe --client-id`, both prompt
+`Enter Spotify client ID:`. From the menu, empty input does not replace an
+existing id. From `--client-id`, empty input leaves a usable id unchanged and
+writes a blank file only when no usable id is stored. `spotify_editor.exe --seed`
+creates a blank `client.id` when the file is missing and does not change an
+existing file.
+Retrieve current devices asks the running `spotify_ac.exe` for the current
+Connect records and writes `devices.list`. It does not call Spotify and it
+does not read `tokens.map`. If `spotify_ac.exe` is not running, the editor
+reports that and leaves `devices.list` unchanged.
 
 There is no client secret. The same Spotify developer application and
 `client_id` can be used on every machine.
@@ -115,17 +173,79 @@ The relevant Spotify references are the
 [queue endpoint](https://developer.spotify.com/documentation/web-api/reference/get-queue),
 and [transfer-playback endpoint](https://developer.spotify.com/documentation/web-api/reference/transfer-a-users-playback).
 
-The component refreshes its access token after approximately 55 minutes using
-`client_id` and the stored refresh token. Spotify refresh tokens expire six
+`spotify_ac.exe` refreshes its access token after approximately 55 minutes.
+It reads `client.id` and the refresh token from `tokens.map`, then replaces
+that same file. Spotify refresh tokens expire six
 months after the original authorization; refreshing does not extend that
 lifetime. The helper records a local expiration marker 179 days after
 authorization. The component warns seven days before that marker and requires
 reauthorization when it expires or Spotify returns `invalid_grant`.
 
-Run `spotify_oauth.exe` once on each machine after upgrading: option 1 for tokens,
-then option 2 so `spotify_codes.ini` receives the current Connect names and IDs.
+`auto_launch_oauth` applies only to that existing interactive failure: the
+token file is still incomplete, the local refresh expiration is missing or in
+the past, or the refresh returns 400 `invalid_grant`. A usable access token,
+a successful refresh, the seven-day warning, and other HTTP results, including
+429 and a 400 that is not `invalid_grant`, do not start OAuth. When the
+setting is `on`, `refresh_tokens` starts `spotify_oauth.exe` once, waits, and
+reloads tokens before deciding again. It does not start another OAuth process
+for that failure. The attempt clears only after a later refresh succeeds, so
+a future expiration or `invalid_grant` can launch again. Restarting
+`spotify_ac.exe` also clears it. When the setting is `off`, the component
+keeps the diagnostic that `spotify_oauth.exe` must be run and does not start it.
 
-Do not copy `spotify_tokens.ini` between machines. Each machine must run
+`auto_launch_oauth` applies only to that existing interactive failure: the
+token file is still incomplete, the local refresh expiration is missing or in
+the past, or the refresh returns 400 `invalid_grant`. A usable access token,
+a successful refresh, the seven-day warning, and other HTTP results, including
+429 and a 400 that is not `invalid_grant`, do not start OAuth. When the
+setting is `on`, `refresh_tokens` starts `spotify_oauth.exe` in a new console
+once, waits, and reloads tokens before deciding again. It does not start
+another OAuth process for that failure. The attempt clears only after a later
+refresh succeeds, so a future expiration or `invalid_grant` can launch again.
+Restarting `spotify_ac.exe` also clears it. When the setting is `off`, the
+component keeps the diagnostic that `spotify_oauth.exe` must be run and does
+not start it. The compiled default is `off`.
+
+`--seed` writes the compiled INI when `spotify.ini` is missing, leaves an
+existing INI unchanged, and then seeds a missing `history.db`, `song.format`,
+and blank `client.id`. It never prompts, never creates `tokens.map`, and never
+launches OAuth. If the client ID is blank or `tokens.map` is absent, it logs
+that the files were seeded and
+`Spotify initialization incomplete: User Authorization has not been completed.`
+It does not log `Spotify initialization complete.`
+
+`--init` prompts for a missing INI. Enter on the OAuth question stores `off`.
+An existing INI is not rewritten. A missing `history.db` asks
+`Create the listening database? [Y/n]:` and yes runs `spotify_db.exe --seed`.
+A missing `song.format` runs `spotify_formatter.exe --init`. A missing or
+blank `client.id` explains that the Spotify component requires user
+authorization and offers `spotify_editor.exe --client-id`. The user may leave
+the ID blank. OAuth starts only when the client ID is usable and `tokens.map`
+is absent. It runs in its own console, and the parent waits. If both files
+are already present, initialization does not prompt for the client ID and
+does not contact Spotify.
+
+`--init --seed` seeds the INI and those three files first, without prompts,
+then continues with the client-ID and OAuth steps. A seeded blank `client.id`
+is still an incomplete client configuration, so the interactive offer still
+runs.
+
+After `--init` or `--init --seed`, the config executable logs one final line:
+`Spotify initialization complete.` or
+`Spotify initialization incomplete: User Authorization has not been completed.`
+OAuth success is the complete line. A blank client ID, OAuth abort (exit 2),
+and OAuth failure (exit 1) are the incomplete line. `spotify_config.exe` still
+returns 0 in those cases so Auto Core initialization can continue. That return
+value means the config process finished. It does not mean Spotify
+authorization succeeded. Failure to write a file or to start a helper returns
+1. No-argument `spotify_config.exe` edits the INI only and does not seed
+stores or run OAuth. Direct `spotify_formatter.exe` on a missing INI still
+runs `spotify_config.exe --init`. `--seed` and `--init` on the database,
+formatter, and editor require a readable INI and do not launch config
+themselves.
+
+Older `spotify_codes.ini`, `spotify_tokens.ini`, and `spotify_history.db` files
+are ignored. Do not copy `tokens.map` between machines. Each machine must run
 `spotify_oauth.exe` so it receives its own refresh token. A second PKCE login on
 another machine does not revoke the first machine's tokens. Sharing one
 refresh token file can invalidate the other copy: PKCE refresh often rotates
@@ -134,56 +254,128 @@ receives `invalid_grant`.
 
 ## Local files
 
-Paths are relative to the directory containing the executables, normally
-`dist`, unless `config/spotify.ini` sets an absolute `[spotify] directory`:
+`config/spotify.ini` lives under the installation `config` directory. The other
+Spotify files live in the resolved `[spotify] directory`. The compiled default
+is `<installation_root>/components/spotify` (`dist/components/spotify` when
+Auto Core runs from `dist`):
 
 | File | Format and purpose |
 | --- | --- |
-| `config/spotify.ini` | `[spotify] directory` (portable default `spotify`). Live file is under gitignored `dist/`; tracked sample is [`defaults/config/spotify.ini`](../defaults/config/spotify.ini). Auto Core never reads `defaults/`. Written only by `spotify_config.exe`. Missing or malformed: `spotify_ac.exe` uses `shared/defaults.ixx` and `report_ini_unavailable`; oauth does not write this file. |
-| `spotify/spotify_codes.ini` | INI with `[auth] client_id` and `[devices]` keys named by Spotify Connect. Written by `spotify_oauth.exe` (option 1 preserves devices; option 2 registers them) and updated by `spotify_ac.exe` when Connect names or IDs change. |
-| `spotify/spotify_tokens.ini` | INI `[tokens]` section: access token, refresh token, `authorized_at`, and `refresh_expires_at`. Written by `spotify_oauth.exe` and refreshed by `spotify_ac.exe`. Machine-local; do not copy to another PC. |
-| `spotify/spotify_history.db` | SQLite listening-history database. |
+| `config/spotify.ini` | `[spotify] directory` (portable default `components\spotify`), `auto_launch_oauth` (default `off`), and `logging` (default `on`) from `shared/defaults.ixx`. Live file is under gitignored `dist/`. Written only by `spotify_config.exe`. `auto_launch_oauth` is read once by `spotify_ac.exe` and does not launch OAuth at startup. Missing or malformed: `spotify_ac.exe` uses `shared/defaults.ixx` and `report_ini_unavailable`; oauth does not write this file. A 0 exit from `spotify_config.exe` means that process finished. The log line states whether Spotify authorization was completed. |
+| `<spotify directory>/song.format` | Song-line template only, with no INI wrapper. Compiled default `[{name}] [{duration}] [{artist}] [{album}]`. Written only by `spotify_formatter.exe`. `spotify_ac.exe` reads it once and does not rewrite it. A missing, unreadable, or invalid file uses that compiled default in memory. `--seed` writes that default when the file is missing and does not overwrite an existing file. |
+| `<spotify directory>/client.id` | Whole file is the Spotify client id, with surrounding whitespace ignored. Written only by `spotify_editor.exe`. Read by `spotify_oauth.exe` for the initial authorization and by `spotify_ac.exe` for the refresh POST. A missing file and a blank or whitespace-only file are both incomplete. `--seed` creates a blank file when it is missing. |
+| `<spotify directory>/devices.list` | `name = id` lines. Names are matched in lowercase and the last id wins. Written only by `spotify_editor.exe` from records returned by the running `spotify_ac.exe`. Read by `spotify_ac.exe`. |
+| `<spotify directory>/tokens.map` | `access_token`, `refresh_token`, `authorized_at`, and `refresh_expires_at`. Written by `spotify_oauth.exe` after a new authorization and by `spotify_ac.exe` when it refreshes. Initialization does not create, overwrite, or revalidate it. Its absence means Spotify user authorization has not completed. Machine-local; do not copy to another PC. |
+| `<spotify directory>/history.db` | SQLite listening history. Created and owned by `spotify_db.exe`. `spotify_ac.exe` does not open it. `--seed` creates it when it is missing. Interactive `--init` asks first. |
 | `keymap/components/spotify.keymap_commands.txt` | Generated canonical runtime-command manifest. |
 | `cover.jpg` | Album art written relative to the component's current working directory and overwritten on the next successful download. |
 
-`spotify_codes.ini` and `spotify_tokens.ini` contain secrets. They must not be committed,
+`client.id` and `tokens.map` contain secrets. They must not be committed,
 logged, or shared. Their current plain-text storage is a known security
-limitation.
+limitation. `spotify_codes.ini`, `spotify_tokens.ini`, and `spotify_history.db`
+are ignored.
 
 ## Track formatting and history
 
-Tracks and queue entries are formatted as:
+`spotify_formatter.exe` is the sole writer of `<spotify directory>/song.format`.
+The file contains only the template. `spotify_ac.exe` compiles it once at
+startup and applies that one template to the current track and to each queue
+title. It does not launch the formatter and does not rewrite the file.
+
+A missing file or a missing Spotify directory uses the compiled default. An
+unreadable, oversized, or invalid file is logged, and the compiled default is
+used. On read, one terminal LF, CRLF, or CR is stripped; any remaining CR or
+LF is invalid. The formatter writes the template with no trailing newline.
+The file must be valid UTF-8 and at most 4096 bytes. Empty text, unknown
+tokens, and unclosed placeholders are invalid. There is no brace escaping.
+
+The compiled default is:
 
 ```text
-[name] [artist 1, artist 2] [album] [minutes:seconds]
+[{name}] [{duration}] [{artist}] [{album}]
 ```
+
+With that default, a track is still:
+
+```text
+[name] [minutes:seconds] [artist 1, artist 2] [album]
+```
+
+Artists are joined with `", "` before the template is applied. A single
+artist is the name alone. `{duration}` is `duration_ms / 1000` truncated to
+seconds, then unpadded minutes, a colon, and zero-padded seconds (`0:00`,
+`0:01`, `90:00`). It is not raw milliseconds.
+
+Tokens read fields already present on the track object from the current
+currently-playing and queue responses:
+
+| Token | Source | Render |
+| --- | --- | --- |
+| `{name}` | `name` | string, or empty when missing |
+| `{artist}` | `artists[].name` | joined with `", "` |
+| `{album}` | `album.name` | string, or empty when missing |
+| `{duration}` | `duration_ms` | local `m:ss` |
+| `{track_number}` | `track_number` | decimal, including `0` |
+| `{disc_number}` | `disc_number` | decimal, including `0` |
+| `{release_date}` | `album.release_date` | string as returned |
+| `{explicit}` | `explicit` | `true` or `false`; empty when missing |
+| `{id}` | `id` | string, or empty when missing |
+| `{uri}` | `uri` | string, or empty when missing |
+| `{album_type}` | `album.album_type` | string, or empty when missing |
+
+The formatter previews those tokens with fixed sample metadata and does not
+call Spotify. If `config/spotify.ini` is missing, it runs
+`spotify_config.exe --init` once, waits, and continues only when that INI is
+readable. That `--init` follows the Spotify initialization contract, including
+client-ID configuration and OAuth when those steps are still required. An
+existing unreadable INI is reported and is not passed to `--init`.
+`spotify_formatter.exe --seed` and `--init` require a readable INI and do not
+launch `spotify_config.exe`. `--seed` writes the compiled template only when
+`song.format` is missing. `--init` runs the format prompt only when the file
+is missing. `cancel` writes nothing.
+
+`spotify_star.exe` lists Manage client and devices, Authorize Spotify, then
+Format song. Authorize Spotify starts `spotify_oauth.exe` in a new console
+and waits. The star menu does not write `song.format`, `client.id`,
+`devices.list`, or `tokens.map`. `spotify_db.exe` is not a Star action.
+
+The formatted string is the in-memory current-track and queue-title identity.
+`last_song`, print history, and the 52-entry queue ring compare that string.
+Two different tracks can therefore collapse when a template omits the fields
+that distinguish them. `history.db` does not use the formatted title. A conflict increments `playcount` and updates `last_played`, and leaves `duration` unchanged.
+It still upserts on `(name, artist, album)`, with `artist` stored as the
+`", "` join and duration stored as integer seconds.
 
 The monitor normally polls every 15 seconds, shortens the wait near the end of
 a track, and wakes early after a next-track command. A newly formatted current
-track is appended to in-memory history and upserted into `spotify_history.db` using
-`(name, artist, album)` as its identity. The database must already contain a
-compatible `track_history` table with a uniqueness constraint that supports
-that conflict target; schema creation and migration are not currently owned by
-the component.
+track is appended to in-memory history and sent to `spotify_db.exe`, which
+upserts `history.db` on `(name, artist, album)`. `spotify_db.exe` with no
+arguments is the database manager. If `history.db` is missing, the menu
+offers to create it. If the file exists, the menu offers `SELECT *` from
+`track_history`. `spotify_db.exe --serve` creates the data directory and the
+`track_history` table when they are missing. Playback continues if that
+request fails.
 
 `spotify_print_songs` drains the in-memory history. Restarting the component also
 clears that memory, but does not clear the SQLite database.
 
 ## Device and desktop behavior
 
-Configured Connect devices live under `[devices]` in `spotify_codes.ini`. Keys are
-Spotify Connect names stored in lowercase:
+Configured Connect devices live in `devices.list`. Names are stored in
+lowercase, and a name may contain `=`:
 
-```ini
-[devices]
+```text
 iphone = 71c59fb04f1dee04b8c63204cf8458f259ae4274
 desktop = 7e25f03bb115bd0fffd363b0f4a2b820f6cbc7e9
 ```
 
-`spotify_oauth.exe` option 2 is the registration path. `spotify_ac.exe` keeps the same
-keys current: matching names update their IDs and are rewritten in lowercase,
-new names are appended, and names absent from the current API response are
-left in place. If two devices share a name, the last ID received wins.
+`spotify_editor.exe` writes that file from the records returned by the running
+`spotify_ac.exe`. The runtime queries Spotify, lowercases names, and keeps the
+last id when names collide. Names absent from that response are not kept.
+The runtime does not write `devices.list`. Queue, current track, next,
+previous, and album art do not require the device file. A device command with
+an empty cache rereads `devices.list` once and, if it is still empty, reports
+`No Spotify devices are configured.` once per process.
 
 `get_device_code("desktop")` returns the stored Spotify device ID for that
 exact key, or an empty string when the key is missing or still empty.
@@ -207,8 +399,10 @@ waits for the desktop window, and transfers playback to that local device.
 - Most Web API calls currently have no component-level timeout or retry policy.
 - Spotify state is shared between the pipe thread and monitor; token refresh is
   mutex-protected, but the broader client is not yet a serial executor.
-- Device keys in `spotify_codes.ini` are Spotify Connect names stored in lowercase;
-  the history schema is not created or migrated.
+- Device names in `devices.list` are Spotify Connect names stored in lowercase.
+  The database manager creates `history.db` only when that option is chosen,
+  or when `spotify_db.exe --seed` runs and the file is missing.
+  `spotify_db.exe --serve` creates the file when the service starts.
 - Album art uses an implicit working-directory path.
 - No live Spotify or OAuth flow was exercised as part of the contract test
   suite.
@@ -221,8 +415,17 @@ waits for the desktop window, and transfers playback to that local device.
 | `spotify_commands.cxx` | Canonical component command actions and text insertion. |
 | `spotify_auth.cxx` | Credential loading, token refresh, and reauthorization policy. |
 | `spotify_playback.cxx` | Playback and Spotify Connect device operations. |
-| `spotify_track.cxx` | Current-track and queue retrieval, metadata formatting, and album art. |
-| `spotify_history.cxx` | SQLite listening-history persistence. |
+| `spotify_track.cxx` | Current-track and queue retrieval, template application, and album art. |
+| `shared/song_template.ixx` | Generic `{token}` parse, validation, compile, and apply. |
+| `shared/song_catalog.ixx` | Spotify token names, artist joining, duration rendering, and track JSON values. |
+| `formatter/main.cxx` | `spotify_formatter.exe`, the only writer of `song.format`. |
+| `spotify_history.cxx` | History request to `spotify_db.exe`. |
+| `spotify_devices.cxx` | Private device-list request for `spotify_editor.exe`. |
+| `spotify_db_client.ixx` | `spotify_ac.exe` client for `history.db`. |
+| `shared/application_data.ixx` | `client.id` and `devices.list` parse and serialize. |
+| `shared/token_store.ixx` | `tokens.map` parse, serialize, and coordinated replace. |
+| `editor/main.cxx` | `spotify_editor.exe`, the only writer of `client.id` and `devices.list`. |
+| `db/main.cxx` | `spotify_db.exe` no-argument database manager, `--serve`, and `--seed`, the only owner of `history.db`. |
 | `spotify_monitor.ixx` | Playback-monitor ownership, timing, wakeup, and shutdown. |
 | `spotify_windows.cxx` | Desktop activation and Spotify-window detection. |
 | `spotify_registry.*` | Canonical named-command registry and production action binding. |
@@ -235,12 +438,15 @@ share one per-child mutex on the control pipe.
 
 ## Verification status
 
-The contract baseline passes 9 Catch2 test cases with 66 assertions. Coverage
+The contract baseline passes 44 Catch2 test cases with 209 assertions. Coverage
 includes stable protocol resources and values, canonical command names,
-registry construction and dispatch, and numeric/named routing through real
-local Windows pipes. The Release x64 `spotify_ac.exe` build also passes.
+registry construction and dispatch, numeric/named routing through real
+local Windows pipes, song-format compile, render, load, and replace
+behavior, `client.id`, `devices.list`, and `tokens.map` parsing, and the
+`auto_launch_oauth` parse and launch decision. The Release x64
+`spotify_ac.exe` and `spotify_config.exe` builds also pass.
 
 The non-live suite does not contact Spotify, start the desktop client, change
-playback, write OAuth state, download art, insert text, or modify the history
-database. Build commands and test tags are documented in
+playback, write `tokens.map`, open `history.db`, download art, or insert text.
+Build commands and test tags are documented in
 `app/components/spotify/tests/TESTING.md`.

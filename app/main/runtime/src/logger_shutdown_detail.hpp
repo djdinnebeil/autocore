@@ -5,7 +5,6 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
 #include <string_view>
 
 namespace ac::main::components::detail {
@@ -26,14 +25,6 @@ namespace ac::main::components::detail {
         const std::chrono::milliseconds configured
     ) noexcept {
         return configured;
-    }
-
-    /** Interval 0 does not start the hosted periodic logger. */
-    [[nodiscard]]
-    inline bool host_periodic_logger(
-        const std::uint64_t merge_interval_seconds
-    ) noexcept {
-        return merge_interval_seconds >= 1;
     }
 
     /** `--once` is launched only after the hosted logger has exited. */

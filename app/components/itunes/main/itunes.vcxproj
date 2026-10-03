@@ -154,7 +154,11 @@
     <ClCompile Include="..\..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\shared\itunes_protocol.ixx" />
+    <ClCompile Include="..\shared\itunes_db_protocol.ixx" />
+    <ClCompile Include="itunes_db_client.ixx" />
+    <ClCompile Include="itunes_db_client.cxx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\core\modules\thread.ixx" />
@@ -178,6 +182,9 @@
     <ClCompile Include="itunes_pipe.ixx" />
     <ClCompile Include="itunes_pipe.cxx" />
     <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\song_template_detail.cxx" />
+    <ClCompile Include="..\shared\library_format_detail.cxx" />
+    <ClCompile Include="..\shared\itunes_metadata_detail.cxx" />
     <ClCompile Include="main.cxx" />
     <ClCompile Include="itunes_component.ixx" />
     <ClCompile Include="itunes_removal.ixx" />
@@ -187,6 +194,9 @@
     <ClInclude Include="itunes_config_detail.hpp" />
     <ClInclude Include="itunes_formatting_detail.hpp" />
     <ClInclude Include="itunes_track_detail.hpp" />
+    <ClInclude Include="..\shared\song_template_detail.hpp" />
+    <ClInclude Include="..\shared\library_format_detail.hpp" />
+    <ClInclude Include="..\shared\itunes_metadata_detail.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ItunesKeymapCommand Include="itunes_next_song" />
@@ -202,7 +212,10 @@
     <WriteLinesToFile File="$(AutoCoreDistDir)keymap\components\itunes.keymap_commands.txt" Lines="@(ItunesKeymapCommand)" Overwrite="true" Encoding="UTF-8" />
   </Target>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

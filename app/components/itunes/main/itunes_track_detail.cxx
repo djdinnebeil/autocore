@@ -1,7 +1,7 @@
 #include "itunes_track_detail.hpp"
 
-#include <iomanip>
-#include <sstream>
+#include "../shared/itunes_metadata_detail.hpp"
+#include "../shared/song_template_detail.hpp"
 
 namespace itunes::track::detail {
 
@@ -11,15 +11,26 @@ namespace itunes::track::detail {
         const std::wstring_view album,
         const int duration_seconds
     ) {
-        std::wostringstream duration;
-        duration << duration_seconds / 60 << ':'
-                 << std::setw(2) << std::setfill(L'0')
-                 << duration_seconds % 60;
-
-        std::wostringstream output;
-        output << '[' << name << "] [" << artist << "] [" << album
-               << "] [" << duration.str() << ']';
-        return output.str();
+        const std::wstring duration =
+            itunes::metadata::detail::render_duration(duration_seconds);
+        return itunes::song::detail::apply(
+            itunes::song::detail::default_compiled(),
+            [&](const std::string_view token) -> std::wstring {
+                if (token == "name") {
+                    return std::wstring {name};
+                }
+                if (token == "artist") {
+                    return std::wstring {artist};
+                }
+                if (token == "album") {
+                    return std::wstring {album};
+                }
+                if (token == "duration") {
+                    return duration;
+                }
+                return {};
+            }
+        );
     }
 
     bool record_history(

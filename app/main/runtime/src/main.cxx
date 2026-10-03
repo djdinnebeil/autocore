@@ -9,13 +9,15 @@ import <Windows.h>;
 
 import auto_core.core.config;
 import auto_core.core.paths;
+import auto_core.core.shell;
 
 import auto_core.main.application;
 import auto_core.main.components;
 import auto_core.main.crash_recovery;
 import auto_core.main.keyboard_input;
 import auto_core.main.keymap.runtime;
-import auto_core.main.logger;
+import auto_core.main.logging;
+import auto_core.core.logging.config;
 import auto_core.main.program_ready;
 import auto_core.main.shutdown_events;
 
@@ -76,21 +78,19 @@ namespace {
     }
 
     [[nodiscard]]
-    bool components_list_exists() {
-        std::error_code error;
-        return std::filesystem::exists(
-            ac::paths::components_list_file(),
-            error
-        );
-    }
-
-    [[nodiscard]]
-    int run_and_wait(const std::filesystem::path& executable_path) {
+    int run_and_wait(
+        const std::filesystem::path& executable_path,
+        const std::wstring_view arguments = {}
+    ) {
         STARTUPINFOW startup_info {};
         startup_info.cb = sizeof(startup_info);
         PROCESS_INFORMATION process_info {};
         std::wstring command_line =
             L"\"" + executable_path.wstring() + L"\"";
+        if (!arguments.empty()) {
+            command_line += L' ';
+            command_line += arguments;
+        }
         if (!CreateProcessW(
                 executable_path.c_str(),
                 command_line.data(),
@@ -121,37 +121,44 @@ namespace {
     }
 
     [[nodiscard]]
-    bool ensure_auto_core_initialized() {
-        if (auto_core_ini_exists()) {
+    bool prepare_logging(const bool first_run) {
+        ac::logging::config::resolve();
+
+        if (first_run) {
+            if (ac::logging::config::logging_ini_missing()) {
+                std::cerr << "config/logging.ini was not created.\n";
+                return false;
+            }
+            if (!ac::logging::config::disable_all() &&
+                ac::logging::config::component_logging_default() &&
+                ac::logging::config::write_logs_to_files()) {
+                auto_core.log("Logging initialized");
+            }
+            auto_core.log("Auto Core initialization started");
             return true;
         }
-        const auto helper =
-            ac::paths::bin_directory() / "auto_core_config.exe";
-        std::cout
-            << "config/auto_core.ini is missing. Launching auto_core_config.exe.\n";
-        if (run_and_wait(helper) != 0 || !auto_core_ini_exists()) {
-            std::cerr
-                << "Auto Core is not initialized. "
-                   "config/auto_core.ini was not created.\n";
-            return false;
+
+        if (ac::logging::config::logging_ini_missing()) {
+            auto_core.log_print(
+                "config/logging.ini is missing; using built-in logging defaults."
+            );
         }
         return true;
     }
 
     [[nodiscard]]
-    bool ensure_components_initialized() {
-        if (components_list_exists()) {
+    bool ensure_auto_core_initialized() {
+        if (auto_core_ini_exists()) {
             return true;
         }
         const auto helper =
-            ac::paths::bin_directory() / "components_editor.exe";
+            ac::paths::bin_directory() / "auto_core_init.exe";
         std::cout
-            << "components.list is missing. Launching "
-               "components_editor.exe.\n";
-        if (run_and_wait(helper) != 0 || !components_list_exists()) {
+            << "config/auto_core.ini is missing. Launching auto_core_init.exe.\n";
+        if (run_and_wait(helper) != 0 || !auto_core_ini_exists()) {
             std::cerr
-                << "components.list was not created. "
-                   "Auto Core cannot start without a component catalog.\n";
+                << "Auto Core is not initialized. "
+                   "config/auto_core.ini was not created.\n";
             return false;
         }
         return true;
@@ -186,16 +193,18 @@ namespace {
  * \return `1` if the user declines crash continue; otherwise `0`.
  */
 int main() {
+    ac::shell::set_process_app_user_model_id();
 
     if (!acquire_instance_mutex()) {
         std::cerr << "Failed to acquire the Auto Core instance lock\n";
         return 1;
     }
 
-    if (!ensure_auto_core_initialized()) {
+    const bool first_run = !auto_core_ini_exists();
+    if (first_run && !ensure_auto_core_initialized()) {
         return 1;
     }
-    if (!ensure_components_initialized()) {
+    if (!prepare_logging(first_run)) {
         return 1;
     }
 
@@ -214,7 +223,7 @@ int main() {
     enable_automatic_crash_recovery();
 
     initialize_application_runtime();
-    initialize_logger_component();
+    initialize_logging();
 
     auto component_session =
         ac::main::components::initialize();
@@ -222,7 +231,7 @@ int main() {
     initialize_keymap();
     announce_program_ready();
     run_message_loop();
-    shutdown_logger_component();
+    shutdown_logging();
 
     return 0;
 }

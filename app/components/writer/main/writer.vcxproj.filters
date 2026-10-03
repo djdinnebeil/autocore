@@ -16,6 +16,8 @@
     <ClCompile Include="writer_commands.ixx"><Filter>Header Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\shared\command_registry.ixx"><Filter>Header Files</Filter></ClCompile>
     <ClCompile Include="..\shared\writer_protocol.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\shared\writer_notepad.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\shared\writer_notepad.cxx"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\core\modules\clipboard.ixx"><Filter>Header Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\core\modules\clock.ixx"><Filter>Header Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\core\modules\component.ixx"><Filter>Header Files</Filter></ClCompile>

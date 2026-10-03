@@ -5,6 +5,11 @@
  * See docs/itunes.md for privilege limits and reconnection. `ac_itunes` is the
  * process-wide client; mutexes and `itunes_condition` coordinate the monitor.
  */
+module;
+
+#include "../shared/library_format_detail.hpp"
+#include "../shared/song_template_detail.hpp"
+
 export module itunes_client;
 
 import std;
@@ -19,6 +24,8 @@ struct TrackInfo {
     std::wstring album;
     int duration {};
     std::wstring location;
+    bool has_database_id = false;
+    long database_id = 0;
 };
 
 export class itunes_client final :
@@ -40,9 +47,24 @@ public:
     std::wstring get_current_track() override;
     [[nodiscard]] bool has_current_track() const noexcept override;
     [[nodiscard]] std::filesystem::path remove_current_track() override;
-    int tab_end = 3;
-    bool auto_start = false;
+    itunes::library_format::detail::LibraryFormat library_format {};
+    bool auto_start = true;
+    std::filesystem::path data_directory;
+    itunes::song::detail::Compiled song_format;
     void set_config();
+
+    struct ListeningSample {
+        bool has_track = false;
+        std::int64_t track_id = 0;
+        std::wstring title;
+        std::wstring artist;
+        std::wstring album;
+        int duration_seconds = 0;
+        int position_seconds = 0;
+        bool playing = false;
+    };
+
+    [[nodiscard]] ListeningSample capture_listening_sample();
 
 private:
     [[nodiscard]] bool initialize_on_com_thread();
@@ -54,7 +76,7 @@ private:
     [[nodiscard]] int get_current_playback_position_on_com_thread();
     [[nodiscard]] CComPtr<IDispatch> get_current_track_com_object_on_com_thread();
     [[nodiscard]] TrackInfo get_track_info_on_com_thread();
-    [[nodiscard]] std::wstring get_current_track_on_com_thread();
+    [[nodiscard]] std::wstring get_current_track_on_com_thread(ListeningSample* sample);
     void start_itunes_thread();
 
     itunes::runtime::serial_executor com_executor;

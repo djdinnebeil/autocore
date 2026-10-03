@@ -58,6 +58,15 @@
     <ClCompile Include="spotify_history.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="spotify_devices.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spotify_db_client.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spotify_db_client.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="spotify_http.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -89,6 +98,18 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\spotify_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\application_data.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\token_store.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\devices_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\db_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\shared\command_registry.ixx">

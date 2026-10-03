@@ -39,6 +39,12 @@
     <ClCompile Include="wake_logging.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\wake_history_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wake_capture.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\core\modules\encoding.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -57,9 +63,20 @@
     <ClCompile Include="..\..\..\core\modules\pipes.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\wake_protocol.ixx">
+    <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\defaults.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\wake_history_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wake_capture.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">

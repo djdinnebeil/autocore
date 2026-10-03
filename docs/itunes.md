@@ -63,18 +63,165 @@ The component reads `dist/config/itunes.ini`:
 
 ```ini
 [itunes]
-auto_start = true
-tab_end = 4
+directory = components/itunes
+auto_start = on
+logging = on
 ```
 
 | Setting | Default | Behavior |
 | --- | ---: | --- |
-| `auto_start` | `false` | Only lowercase `true` or `false` is applied. Any other present value keeps the default. |
-| `tab_end` | `3` | Stops queue-item formatting when this numbered tab is reached. A malformed integer preserves the current/default value. |
+| `directory` | `components/itunes` | iTunes component-data directory. A relative path resolves against the installation root, so the default is `<installation_root>/components/itunes`. An absolute path is used as-is. A missing or empty value uses that default. The directory is not created when the INI is read or written. |
+| `auto_start` | `on` | Only lowercase `on` or `off` is applied. Any other present value keeps the default. |
+| `logging` | `on` | `on` or `off`. Enter during initialization accepts the bracketed value. |
 
-The distributed sample uses `auto_start = false` and `tab_end = 3`. Only
-`itunes_config.exe` writes `itunes.ini`. Missing or malformed: `itunes_ac.exe`
-calls `report_ini_unavailable` and uses `shared/defaults.ixx` in memory.
+Only `itunes_config.exe` writes `itunes.ini`. `--seed` and `--init --seed`
+are the same noninteractive walk. A missing INI is written from the compiled
+text. An existing INI is left unchanged. The command then runs
+`itunes_db.exe --seed` and `itunes_formatter.exe --seed`. `--init` walks the
+same stores. A missing INI is prompted and written. An existing INI is
+skipped. It then runs `itunes_db.exe --seed` and
+`itunes_formatter.exe --init`. Initialization never rewrites a store that
+already exists. Enter accepts the bracketed default. `cancel` or EOF during
+a prompt returns `1` and does not write that store or launch the remaining
+owners. No-argument launch configures the INI only: it prompts with the
+stored values and rewrites the file, and it does not launch the database or
+the formatter. A leftover `tab_end` key is ignored. These commands do not
+update `components.list`.
+
+Missing or malformed: `itunes_ac.exe` calls `report_ini_unavailable` and uses
+`shared/defaults.ixx` in memory, including the default directory.
+
+## Song format
+
+The song line is a template file, not an INI key:
+
+```text
+<itunes directory>/song.format
+```
+
+With the compiled directory that is
+`<installation_root>/components/itunes/song.format`. The file contents are
+the template itself. The compiled default, used when the file is missing, is:
+
+```text
+[{name}] [{artist}] [{album}] [{duration}]
+```
+
+`itunes_formatter.exe` is the sole writer. It reads `itunes.ini` to resolve
+`directory`. `--seed` and `--init` require a readable INI and do not fall
+back to the compiled directory. `--seed` creates a missing `song.format`
+from the compiled template and leaves an existing file unchanged. `--init`
+prompts for a missing `song.format` and skips an existing one. The
+no-argument menu shows the supported tokens and a sample line, and writes
+`song.format` only after the user accepts a valid template. Cancel or EOF
+in that menu leaves an existing file unchanged. The write goes to
+`song.format.new` and then replaces the destination. The formatter creates
+the data directory only as part of that save. If `config/itunes.ini` is
+missing, the menu runs `itunes_config.exe --init`, waits, and continues
+only when that process succeeds and the INI can be read. An existing but
+unreadable INI is reported and is not passed to `--init`.
+
+`itunes_ac.exe` compiles the template once at startup. A missing file uses
+the compiled default. An unreadable, oversized, or invalid file is logged,
+and the compiled default is used. Runtime does not rewrite `song.format` and
+does not launch `itunes_formatter.exe`.
+
+Supported tokens are the fields already checked against iTunes COM:
+
+| Token | COM property | Value | Render |
+| --- | --- | --- | --- |
+| `{name}` | `Name` | `VT_BSTR` | raw string |
+| `{artist}` | `Artist` | `VT_BSTR` | raw string |
+| `{album}` | `Album` | `VT_BSTR` | raw string |
+| `{duration}` | `Duration` | `VT_I4` seconds | local `m:ss` |
+
+`Location` is still read for track removal and is not a format token.
+`Duration` is always read because remaining time uses it. `Name`, `Artist`,
+and `Album` are always read so listening history can store track metadata.
+The song template still inserts a token only when that template references
+it. Any other format token is rejected. A further format token is added only
+after a live check of the installed iTunes COM interface confirms its
+property name, `VARIANT` type, and renderer. `TrackDatabaseID` is read for
+listening-history identity and is not a format token.
+
+## Library columns
+
+Copied iTunes Library rows use a separate file:
+
+```text
+<itunes directory>/library.format
+```
+
+With the compiled directory that is
+`<installation_root>/components/itunes/library.format`. The file controls
+how many left-to-right columns are retained from tab-delimited iTunes
+Library rows copied through the Clipboard, and how those columns are
+rendered. The compiled default is:
+
+```text
+format = [column]
+column_count = 4
+```
+
+`column_count` is a positive integer. `1` keeps the first column, `2` keeps
+the first two, and `4` keeps the first four. Columns after `column_count`
+are ignored. A row with fewer columns keeps the fields that
+are present. A tab is a field boundary even when one side is empty, so a
+trailing retained tab is an empty column.
+
+`format` has two forms. `column` is the only reserved word.
+
+One `column` token surrounds each retained column with one literal byte on
+each side, then joins the results with one space. `[column]` renders
+`Song<TAB>Artist` as `[Song] [Artist]`. `{column}` uses braces. An empty
+row is one empty field, so the default format renders it as `[]`.
+
+Two `column` tokens join the raw fields with the text between them. That
+text must contain exactly one non-space, non-tab character. Spaces and tabs
+around that character are kept. `column - column` renders
+`Song<TAB>Artist<TAB>Album` as `Song - Artist - Album`. An empty row emits
+an empty string. Any other expression is invalid.
+
+`itunes_formatter.exe` is the sole writer of `library.format` and of
+`song.format`. `--seed` creates a missing `library.format` from the compiled
+default and leaves an existing file unchanged. `--init` prompts for a
+missing `library.format` (`format`, then `column_count`) and skips an
+existing file. Its menu is:
+
+```text
+1. Format song
+2. Configure library columns
+3. Exit
+```
+
+Configure library columns prompts for the format, then the column count,
+showing the stored valid values or the compiled defaults. Empty input keeps
+the shown value. Invalid input is rejected and asked again. `cancel` or EOF
+writes nothing. After both values are accepted, the formatter writes the
+complete file through `library.format.new`. The formatter creates the data
+directory only as part of that save. `itunes_ac.exe` reads the file at
+startup, compiles the format once, and does not rewrite it. A missing file
+or a missing assignment uses that field's default without a log. An
+existing file that cannot be read is logged and uses both defaults. An
+invalid `format` or `column_count` is logged and falls back only that field.
+
+## Star
+
+`itunes_star.exe` delegates and writes neither store. With `itunes.ini`
+present and the component enabled, the shared menu is:
+
+```text
+itunes
+1. Configure
+2. Format song
+3. Disable
+4. Exit
+```
+
+When the INI is missing, item 1 is Initialize (`itunes_config.exe --init`).
+Format song launches `itunes_formatter.exe`, which then offers song
+formatting and library column configuration. Enable or Disable follows the
+current `components.list` state and is performed by `components_editor.exe`.
 
 ## Canonical runtime commands
 
@@ -86,7 +233,7 @@ Canonical component commands are case-sensitive and use the lowercase
 | --- | --- |
 | `itunes_play_pause` | Toggles playback and refreshes the current-track history. |
 | `itunes_next_song` | Advances to the next track and wakes the playback monitor. |
-| `itunes_print_next_up` | Reads tab-separated queue text from the clipboard, formats each row with brackets through `tab_end`, and inserts the result while preserving the clipboard through the component insertion facility. |
+| `itunes_print_next_up` | Reads tab-separated queue text from the clipboard, retains `column_count` columns, applies the compiled `library.format` expression, and inserts the result while preserving the clipboard through the component insertion facility. |
 | `itunes_print_songs` | Refreshes the current track, inserts the accumulated history, and clears that in-memory history. |
 | `itunes_stop_song` | Preserves the existing stop sequence (`Stop`, two `PlayPause` calls), refreshes the current track, and inserts its formatted value. |
 | `itunes_remove_song` | Removes the current track from iTunes and then attempts to move its local file to the Windows Recycle Bin. See [Track removal safety](#track-removal-safety). |
@@ -104,16 +251,116 @@ wire values are compatibility-sensitive and covered by characterization tests.
 
 ## Track history and formatting
 
-The component formats a track as:
+With the default template the component formats a track as:
 
 ```text
-[name] [artist] [album] [minutes:seconds]
+[name] [artist] [album] [m:ss]
 ```
 
-History is held only in the `itunes_ac.exe` process. Consecutive observations
-of the same formatted track are not duplicated. `itunes_print_songs` drains
-the history, so a later call reports only tracks observed after the previous
-drain. Restarting the component clears the history.
+`245` seconds is `4:05`, `5` is `0:05`, and `0` is `0:00`. History identity
+is that formatted string, so a different `song.format` changes which
+observations count as the same track. History is held only in the
+`itunes_ac.exe` process. Consecutive observations of the same formatted
+track are not duplicated. `itunes_print_songs` drains the history, so a
+later call reports only tracks observed after the previous drain.
+Restarting the component clears the history.
+
+That in-memory history is separate from `history.db`.
+
+## Listening history database
+
+`itunes_db.exe` is the only iTunes executable that opens SQLite. It owns
+`<itunes directory>/history.db`. `itunes_ac.exe` does not open that file and
+does not link SQLite. `itunes_db.exe` is not a component and is not listed in
+`components.list`. It does not poll iTunes.
+
+With no arguments, `itunes_db.exe` is the database manager. If `history.db`
+is missing, the menu offers to create a listening database. If the file
+exists, `Select *` prints listening-history rows in chronological order.
+`itunes_db.exe --serve` creates the data directory and the database when
+`itunes_ac.exe` starts it, then accepts one client on `ac_itunes_db_pipe`
+using `ac.itunes.db.v1`. That pipe is a private iTunes contract, not
+`ac.component.v1`. SQL stays off the pipe. `itunes_db.exe --seed` requires a
+readable `itunes.ini`. It creates a missing `history.db` with the current
+empty schema and does not open an existing database. `itunes_config.exe --seed` and `--init` delegate that creation.
+
+`itunes_ac.exe` launches `itunes_db.exe --serve` and shuts it down on exit.
+The existing playback monitor remains the timing source. Both normal sleeps
+stay at about five seconds: one while iTunes is playing, and one while it is
+not. Near the end of a track the playing sleep is still `min(remaining, 5)`.
+A playback change still wakes the thread early, including `itunes_next_song`.
+The monitor does not gain another loop, timer, or watcher.
+
+Each sample that has a readable `TrackDatabaseID` is sent as `observe`:
+
+```text
+track_id
+title
+artist
+album
+duration_seconds
+credit_seconds
+observed_at
+```
+
+Playback position is used only inside `itunes_ac.exe` to calculate
+`credit_seconds`. If the track id cannot be read, the sample is logged and
+skipped. Tracks are not identified by title, artist, and album. If no track
+is current, nothing is sent and the open history row is left unchanged.
+
+`tracks` stores `track_id`, `title`, `artist`, `album`, `duration_seconds`,
+`first_seen_at`, and `last_seen_at`. `listening_history` stores `id`,
+`track_id`, `started_at`, `last_observed_at`, `ended_at`, and
+`listened_seconds`, with a foreign key to `tracks`. There is no aggregate
+table. Total time for a song is `SUM(listened_seconds) GROUP BY track_id`.
+
+A listening-history row accumulates approximate listening time while the
+same track remains the current observed track. Pauses, stops, seeks,
+restarts, and repeats of that same track remain in the row. Observing a
+different track closes the row. Returning to an earlier track later creates
+a new row. `itunes_db.exe` remembers only the currently open row. It does
+not search older rows and it does not detect pause, seek, or repeat mode.
+The same `TrackDatabaseID` after a repeat keeps receiving credit on the
+current row, including a shortened end-of-track interval.
+
+Credit follows the wait that just finished:
+
+```text
+normal 5-second playing observation
+    credit the scheduled sleep, which is 5 seconds or the shorter
+    min(remaining, 5) interval
+
+5-second idle observation with position < 5
+    credit the current playback position
+
+5-second idle observation with position >= 5
+    credit 5 seconds
+
+special Auto Core wake
+    synchronize track identity
+    credit 0
+
+not playing
+    credit 0
+```
+
+A zero credit still updates the open row when the track id is present. A
+special wake from one track to another closes the previous row and opens
+the new one immediately, with `listened_seconds` of 0. The next timed
+observation applies the normal credit. An observed track change sets the
+previous row's `ended_at` to that sample's `observed_at`.
+
+The database records approximate observed listening duration, not exact
+media-player telemetry. Direct use of `iTunes.exe` can be wrong by about
+one poll because Auto Core sees the result at the next wake. This prototype
+does not reconstruct seeks, pauses, or repeat mode, does not reconcile
+iTunes play counts or last-played values, does not synchronize the iTunes
+library, and does not continue an open row across process restarts.
+
+A clean `itunes_db.exe --serve` shutdown sets `ended_at` on the open row to
+the shutdown time. The next Auto Core run starts a new history row even if
+the same song is still selected. A row left open by an abnormal exit is
+sealed on the next database open with `ended_at = last_observed_at`.
 
 Queue formatting is clipboard-driven and independent of the iTunes COM queue.
 Each input line is split conceptually at tabs, carriage returns are removed,
@@ -172,16 +419,26 @@ criteria are tracked in the project [`TODO.md`](TODO.md).
 | `itunes_client.ixx`, `itunes_client.cxx` | Public automation facade, component state, and client lifetime. |
 | `itunes_com.cxx` | Bounded initialization, COM-owner lifecycle, and current-track COM lookup. |
 | `itunes_playback.cxx` | Playback commands and player-state queries. |
-| `itunes_track.cxx` | Track metadata retrieval, remaining-duration calculation, formatting, and history recording. |
-| `itunes_monitor.ixx`, `itunes_monitor.cxx` | Playback-change notification and periodic monitoring. |
+| `itunes_track.cxx` | Track metadata retrieval, `TrackDatabaseID`, remaining-duration calculation, formatting, and history recording. |
+| `itunes_monitor.ixx`, `itunes_monitor.cxx` | Playback-change notification, periodic monitoring, and listening-credit reports. |
+| `itunes_db_client.ixx`, `itunes_db_client.cxx` | `itunes_ac.exe` client for `itunes_db.exe`. |
+| `shared/itunes_db_protocol.ixx` | Private `ac.itunes.db.v1` observation pipe. |
+| `shared/listening_credit.hpp` | Credit for one existing monitor wake. |
+| `db/main.cxx` | `itunes_db.exe` database manager and `--serve`. |
+| `db/itunes_sqlite.ixx`, `db/itunes_sqlite.cxx` | `history.db` schema and the open listening row. Compiled only into `itunes_db.exe`. |
 | `itunes_runtime.ixx`, `itunes_runtime.cxx` | Serial executor, injectable runtime boundaries, retry policy, and command coordination. |
 | `itunes_pipe.ixx`, `itunes_pipe.cxx` | Numeric and named pipe-command registration and dispatch. |
 | `itunes_registry.ixx`, `itunes_registry.cxx`, `itunes_registry_default.cxx` | Named-command registry construction and production action binding. |
 | `itunes_commands.cxx` | User-facing history and queue command behavior. |
 | `itunes_removal.ixx`, `itunes_removal.cxx` | iTunes library deletion and Windows Recycle Bin adapter. |
-| `itunes_config.cxx`, `itunes_config_detail.*` | Configuration loading and pure setting resolution. |
+| `itunes_config.cxx`, `itunes_config_detail.*` | Configuration loading, directory resolution, and pure setting resolution. |
+| `shared/song_template_detail.*` | Generic `{token}` parse, compile, and apply. |
+| `shared/itunes_metadata_detail.*` | Verified iTunes token catalog and duration rendering. |
+| `shared/defaults.ixx` | Compiled `itunes.ini` text and the default song template. |
+| `shared/library_format_detail.*` | `library.format` load, format compile, and serialization. |
+| `formatter/main.cxx`, `formatter/entry.cxx` | `itunes_formatter.exe` editor for `song.format` and `library.format`. `entry.cxx` holds `main`. |
 | `itunes_formatting_detail.*` | Pure queue-item formatting. |
-| `itunes_track_detail.*` | Pure track formatting and history operations. |
+| `itunes_track_detail.*` | Default track formatting and history operations. |
 | `itunes_component.ixx` | Component logging identity and logger refresh declaration. |
 | `main.cxx` | Component process startup, pipe loop, and orderly shutdown. |
 
@@ -189,7 +446,7 @@ criteria are tracked in the project [`TODO.md`](TODO.md).
 
 The completed refactor passed:
 
-- 37 Catch2 test cases with 138 assertions;
+- 49 Catch2 test cases with 205 assertions;
 - Release x64 builds of `itunes_ac.exe` and `auto_core.exe`;
 - real Auto Core integration checks for startup, playback commands, history and
   queue output, monitor polling, reconnection, and clean shutdown.

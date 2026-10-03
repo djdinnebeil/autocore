@@ -167,6 +167,7 @@
     <ClCompile Include="..\..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\components\taskbar\shared\taskbar_protocol.ixx" />
     <ClCompile Include="..\..\..\core\modules\thread.ixx" />
@@ -181,7 +182,7 @@
     <ClCompile Include="..\..\..\components\slash\shared\slash_protocol.ixx" />
     <ClCompile Include="..\modules\shutdown_events.ixx" />
     <ClCompile Include="..\modules\dash_component.ixx" />
-    <ClCompile Include="..\modules\logger_init.ixx" />
+    <ClCompile Include="..\modules\logging_init.ixx" />
     <ClCompile Include="..\modules\main_component.ixx" />
     <ClCompile Include="..\modules\key_codes.ixx" />
     <ClCompile Include="..\modules\keyboard_input.ixx" />
@@ -196,7 +197,7 @@
     <ClCompile Include="..\src\keymap_runtime.cxx" />
     <ClCompile Include="..\src\shutdown_events.cxx" />
     <ClCompile Include="..\src\dash_component.cxx" />
-    <ClCompile Include="..\src\logger_init.cxx" />
+    <ClCompile Include="..\src\logging_init.cxx" />
     <ClCompile Include="..\src\main_component.cxx" />
     <ClCompile Include="..\src\keyboard_input.cxx" />
     <ClCompile Include="..\src\main_taskbar.cxx" />
@@ -207,7 +208,10 @@
     <ClInclude Include="..\..\..\core\src\components_list_detail.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

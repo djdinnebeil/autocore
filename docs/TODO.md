@@ -9,8 +9,11 @@ Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main
 
 Each executable still writes `{date}_{name}.log` and `{date}_{name}.main.log`.
 `logger_ac.exe` appends new main-log records to `YYYY-MM-DD_main.log`.
-`config/logger.ini` sets `directory`, `merge_interval_seconds`,
-`merge_logs_on_shutdown`, and `write_logs_to_console`. The shutdown merge
+`config/logging.ini` sets `disable_all`, `directory`,
+`write_logs_to_files`, `write_logs_to_console`, `log_print_mode`, and
+`component_logging_default`. Each family INI sets `logging` (`on` except Dash `off`).
+`config/logger.ini` sets
+`merge_interval_seconds` and `merge_logs_on_shutdown`. The shutdown merge
 is a detached `logger_ac.exe --once` after the hosted logger has exited.
 
 ## Done: keymap_config.exe
@@ -25,35 +28,25 @@ missing. Runtime never writes those INI files. Autocomplete catalogs under
 A later console editor (stock Windows console vs opening `mappings.ini`
 in an editor vs a custom line editor) remains optional follow-up.
 
-## Parked: journal_config.exe and writer_config.exe menus
+## Parked: journal_config.exe menu
 
 **Status:** Deferred helper finetune
 
-`journal_config.exe` and `writer_config.exe` already prompt for data
-directories when the live INI is missing. They own those files; Main does not
-seed `journal.ini` or `writer.ini`. Extra menus are later work, not a
-clone or beta-tester blocker.
+`journal_config.exe` prompts for `journal.ini` when that file is missing and
+then launches each Journal data owner. It still writes only `journal.ini`.
+Extra menus beyond Journal settings are later work, not a clone or
+beta-tester blocker.
 
-## Parked: slash.ini extras
+## Parked: wake event filters
 
-**Status:** Schema defined; extra keys deferred
+**Status:** History directory landed; filters still deferred
 
-`config/slash.ini` is an empty `[slash]` section (`shared/defaults.ixx`). Do
-not add silence-mode or other tunables until slash needs them.
+`[wake] directory` owns `current.event`, `previous.event`, and `wake_events.log`.
+Ordinary Wake logs still follow `logging.ini`.
 
-## Parked: wake.ini extras
-
-**Status:** Schema defined; extra keys deferred
-
-Wake extras already live under `logs/components/wake/` (`wake_latest.log`,
-`wake_previous.log`, `wake_master.log`) next to the daily wake log.
-`config/wake.ini` is an empty `[wake]` section so the shared config contract
-applies.
-
-Later, that file can hold filters to exclude certain system wake events, an
-`enabled` switch (`on` / `off`, with `true` / `false` accepted as aliases),
-and an optional path for the master log (default remains the logger
-components/wake directory). Do not relocate the master log in this phase.
+Later, `wake.ini` can hold filters to exclude certain system wake events and
+an `enabled` switch (`on` / `off`, with `true` / `false` accepted as aliases)
+for the history capture itself. Do not add those keys until Wake needs them.
 
 ## Encapsulate interactive taskbar cycling
 

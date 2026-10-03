@@ -133,7 +133,9 @@ void MainTaskbarState::end_cycle_session() {
         cycle_index = 0;
     }
     else if (switch_set) {
-        ac::taskbar::end_native_cycle();
+        if (!ac::taskbar::end_native_cycle()) {
+            return;
+        }
     }
     switch_set = false;
 }
@@ -303,6 +305,16 @@ void MainTaskbarState::activate_configured(
     const std::string_view name
 ) {
     if (try_activate_configured(name)) return;
+    if (const auto path = ac::taskbar::configured_window_executable_path(name);
+        path && *path == L"::runtime::") {
+        auto_core.log_print(
+            "Windows Notepad activation requires runtime executable-path "
+            "resolution, which has not been implemented yet. If Notepad "
+            "functionality is needed, move Notepad to taskbar positions 1 "
+            "through 10."
+        );
+        return;
+    }
     emulate_configured(name);
 }
 

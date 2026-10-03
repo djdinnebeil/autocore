@@ -1,6 +1,6 @@
 #include "catch_amalgamated.hpp"
-#include "../../components/logger/main/logger_session_detail.hpp"
-#include "../../components/logger/main/merge_detail.hpp"
+#include "../../components/log_merger/main/logger_session_detail.hpp"
+#include "../../components/log_merger/main/merge_detail.hpp"
 #include "../src/console_route_detail.hpp"
 
 #include <fstream>
@@ -226,9 +226,34 @@ TEST_CASE("Interval zero does not schedule a periodic merge", "[logging][merge]"
 }
 
 TEST_CASE("log and log_main reach the console only through the flag", "[logging][console]") {
-    using ac::component_detail::console_write_count;
-    CHECK(console_write_count(false, false) == 0);
-    CHECK(console_write_count(false, true) == 1);
-    CHECK(console_write_count(true, false) == 1);
-    CHECK(console_write_count(true, true) == 1);
+    using ac::component_detail::SinkRequest;
+    using ac::component_detail::decide_sinks;
+
+    const auto quiet = decide_sinks({
+        .component_logging = true,
+        .write_logs_to_files = true,
+        .write_logs_to_console = false
+    });
+    const auto mirrored = decide_sinks({
+        .component_logging = true,
+        .write_logs_to_files = true,
+        .write_logs_to_console = true
+    });
+    const auto user_facing = decide_sinks({
+        .component_logging = true,
+        .write_logs_to_files = true,
+        .write_logs_to_console = false,
+        .user_facing = true
+    });
+    const auto both = decide_sinks({
+        .component_logging = true,
+        .write_logs_to_files = true,
+        .write_logs_to_console = true,
+        .user_facing = true
+    });
+
+    CHECK_FALSE(quiet.write_console);
+    CHECK(mirrored.write_console);
+    CHECK(user_facing.write_console);
+    CHECK(both.write_console);
 }

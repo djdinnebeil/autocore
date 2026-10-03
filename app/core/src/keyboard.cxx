@@ -125,21 +125,21 @@ namespace ac::keyboard {
         send_number_to_winkey(position == 10 ? 0 : position);
     }
 
-    void press_and_hold_winkey() {
+    bool press_and_hold_winkey() {
         INPUT input = {};
         input.type = INPUT_KEYBOARD;
         input.ki.wVk = VK_RWIN;
 
-        send_keyboard_inputs(&input, 1, "Windows-key press");
+        return send_keyboard_inputs(&input, 1, "Windows-key press");
     }
 
-    void release_winkey() {
+    bool release_winkey() {
         INPUT input = {};
         input.type = INPUT_KEYBOARD;
         input.ki.wVk = VK_RWIN;
         input.ki.dwFlags = KEYEVENTF_KEYUP;
 
-        send_keyboard_inputs(&input, 1, "Windows-key release");
+        return send_keyboard_inputs(&input, 1, "Windows-key release");
     }
 
     bool send_linebreak() {

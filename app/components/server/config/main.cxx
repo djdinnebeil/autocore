@@ -1,19 +1,24 @@
 #include <Windows.h>
-#include <shellapi.h>
+
+#include "../shared/server_data_detail.hpp"
 
 import std;
 import auto_core.core.component;
-import auto_core.core.encoding;
+import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
 import server_defaults;
 import components_editor_request;
 
 import <iostream>;
+import auto_core.core.shell;
 
 namespace {
 
-ac::Component server_config {"server_config"};
+ac::Component server_config {
+    "server_config",
+    ac::logging::config::LoggingScope {"server"}
+};
 
 std::string_view trim(std::string_view value) {
     const auto first = value.find_first_not_of(" \t");
@@ -24,107 +29,45 @@ std::string_view trim(std::string_view value) {
     return value.substr(first, last - first + 1);
 }
 
-std::optional<int> parse_port(std::string_view value) {
-    int parsed_port = 0;
-    const auto result = std::from_chars(
-        value.data(),
-        value.data() + value.size(),
-        parsed_port
+struct Settings {
+    std::string directory {server::defaults::directory};
+    bool logging = true;
+};
+
+Settings load_settings() {
+    Settings settings;
+    const auto document = ac::ini::read(
+        ac::paths::config_directory() / "server.ini"
     );
-    if (result.ec == std::errc {} &&
-        result.ptr == value.data() + value.size() &&
-        parsed_port >= 1 &&
-        parsed_port <= 65535) {
-        return parsed_port;
+    if (!document) {
+        return settings;
     }
-    return std::nullopt;
-}
-
-int read_port(const ac::ini::Document& document) {
-    if (const auto value = document.find("server", "port")) {
-        if (const auto parsed = parse_port(*value)) {
-            return *parsed;
+    if (const auto value = document->find("server", "directory");
+        value && !trim(*value).empty()) {
+        settings.directory = std::string {trim(*value)};
+    }
+    if (const auto value = document->find("server", "logging")) {
+        if (*value == "off" || *value == "false") {
+            settings.logging = false;
+        }
+        else if (*value == "on" || *value == "true") {
+            settings.logging = true;
+        }
+        else {
+            settings.logging = ac::logging::config::component_logging_default();
         }
     }
-    return server::defaults::port;
+    return settings;
 }
 
-std::string stored_document_root(const ac::ini::Document& document) {
-    const auto value = document.find("server", "document_root");
-    if (!value || value->empty()) {
-        return std::string {server::defaults::document_root};
-    }
-    return std::string {*value};
+std::filesystem::path resolved_directory(std::string_view stored) {
+    return server::data::resolve_directory(
+        stored,
+        ac::paths::installation_root()
+    );
 }
 
-std::optional<ac::ini::Document> read_server_ini() {
-    return ac::ini::read(ac::paths::config_directory() / "server.ini");
-}
-
-int current_port() {
-    if (const auto document = read_server_ini()) {
-        return read_port(*document);
-    }
-    return server::defaults::port;
-}
-
-std::string current_stored_document_root() {
-    if (const auto document = read_server_ini()) {
-        return stored_document_root(*document);
-    }
-    return std::string {server::defaults::document_root};
-}
-
-std::filesystem::path resolved_document_root(std::string_view stored) {
-    std::filesystem::path configured {
-        ac::encoding::to_utf16(stored)
-    };
-    if (configured.is_relative()) {
-        configured = ac::paths::installation_root() / configured;
-    }
-    return configured.lexically_normal();
-}
-
-std::optional<int> prompt_port(int default_port) {
-    while (true) {
-        std::cout << "Port [" << default_port << "]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return std::nullopt;
-        }
-
-        const auto value = trim(input);
-        if (value.empty()) {
-            return default_port;
-        }
-        if (const auto parsed = parse_port(value)) {
-            return parsed;
-        }
-        std::cout
-            << "Enter an integer from 1 to 65535, or leave blank for "
-            << default_port
-            << ".\n";
-    }
-}
-
-std::optional<std::string> prompt_document_root(
-    std::string_view displayed_default,
-    std::string_view stored_default
-) {
-    std::cout << "Server document root [" << displayed_default << "]: ";
-    std::string input;
-    if (!std::getline(std::cin, input)) {
-        return std::nullopt;
-    }
-
-    const auto directory = trim(input);
-    if (directory.empty()) {
-        return std::string {stored_default};
-    }
-    return std::string {directory};
-}
-
-bool write_server_ini(std::string_view document_root, int port) {
+bool write_server_ini(const Settings& settings) {
     std::error_code error;
     std::filesystem::create_directories(ac::paths::config_directory(), error);
     if (error) {
@@ -141,7 +84,10 @@ bool write_server_ini(std::string_view document_root, int port) {
         server_config.log_print("Failed to create {}", path.string());
         return false;
     }
-    const auto contents = server::defaults::ini_for(document_root, port);
+    const auto contents = server::defaults::ini_for(
+        settings.directory,
+        settings.logging
+    );
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
@@ -149,6 +95,129 @@ bool write_server_ini(std::string_view document_root, int port) {
         return false;
     }
     return true;
+}
+
+bool cancelled(const std::string_view value) {
+    if (value != "cancel") {
+        return false;
+    }
+    server_config.log_print("Cancelled.");
+    return true;
+}
+
+std::string lower_token(std::string_view value) {
+    std::string token {value};
+    for (char& character : token) {
+        if (character >= 'A' && character <= 'Z') {
+            character = static_cast<char>(character - 'A' + 'a');
+        }
+    }
+    return token;
+}
+
+std::optional<std::string> prompt_init_directory() {
+    std::cout
+        << "Server directory ["
+        << server::defaults::directory
+        << "]: ";
+    std::string input;
+    if (!std::getline(std::cin, input)) {
+        return std::nullopt;
+    }
+    const auto directory = trim(input);
+    if (cancelled(directory)) {
+        return std::nullopt;
+    }
+    if (directory.empty()) {
+        return std::string {server::defaults::directory};
+    }
+    return std::string {directory};
+}
+
+std::optional<bool> prompt_init_logging() {
+    while (true) {
+        std::cout << "Enable logging [on]: ";
+        std::string input;
+        if (!std::getline(std::cin, input)) {
+            return std::nullopt;
+        }
+        const auto value = trim(input);
+        if (cancelled(value)) {
+            return std::nullopt;
+        }
+        if (value.empty()) {
+            return true;
+        }
+        const auto token = lower_token(value);
+        if (token == "on") {
+            return true;
+        }
+        if (token == "off") {
+            return false;
+        }
+        std::cout << "Enter on or off.\n";
+    }
+}
+
+enum class SiteChoice {
+    yes,
+    no,
+    cancelled
+};
+
+SiteChoice prompt_default_site() {
+    while (true) {
+        std::cout << "Create default site files in the document root? [Y/n]: ";
+        std::string input;
+        if (!std::getline(std::cin, input)) {
+            return SiteChoice::cancelled;
+        }
+        const auto value = trim(input);
+        if (cancelled(value)) {
+            return SiteChoice::cancelled;
+        }
+        if (value.empty() || value == "y" || value == "Y") {
+            return SiteChoice::yes;
+        }
+        if (value == "n" || value == "N") {
+            return SiteChoice::no;
+        }
+        std::cout << "Enter Y or n.\n";
+    }
+}
+
+std::optional<std::string> prompt_directory(std::string_view current) {
+    std::cout << "Server data directory [" << current << "]: ";
+    std::string input;
+    if (!std::getline(std::cin, input)) {
+        return std::nullopt;
+    }
+    const auto directory = trim(input);
+    if (directory.empty()) {
+        return std::string {current};
+    }
+    return std::string {directory};
+}
+
+std::optional<bool> prompt_logging(const bool current) {
+    while (true) {
+        std::cout << "Enable logging? [" << (current ? "Y/n" : "y/N") << "]: ";
+        std::string input;
+        if (!std::getline(std::cin, input)) {
+            return std::nullopt;
+        }
+        const auto value = trim(input);
+        if (value.empty()) {
+            return current;
+        }
+        if (value == "y" || value == "Y") {
+            return true;
+        }
+        if (value == "n" || value == "N") {
+            return false;
+        }
+        std::cout << "Enter Y or n.\n";
+    }
 }
 
 bool ensure_server_ini(const bool prompt) {
@@ -167,99 +236,152 @@ bool ensure_server_ini(const bool prompt) {
         return false;
     }
 
-    if (!prompt) {
-        return write_server_ini(
-            std::string {server::defaults::document_root},
-            server::defaults::port
-        );
+    Settings settings;
+    if (prompt) {
+        const auto directory = prompt_directory(server::defaults::directory);
+        if (!directory) {
+            return false;
+        }
+        const auto logging = prompt_logging(true);
+        if (!logging) {
+            return false;
+        }
+        settings.directory = *directory;
+        settings.logging = *logging;
     }
-
-    const auto directory = prompt_document_root(".\\components\\server", server::defaults::document_root);
-    if (!directory) {
-        return false;
-    }
-    const auto port = prompt_port(server::defaults::port);
-    if (!port) {
-        return false;
-    }
-
-    return write_server_ini(*directory, *port);
+    return write_server_ini(settings);
 }
 
-void show_port() {
-    std::cout << "Port: " << current_port() << '\n';
-}
-
-void set_port() {
-    const auto port = prompt_port(current_port());
-    if (!port) {
-        return;
-    }
-    if (!write_server_ini(current_stored_document_root(), *port)) {
-        server_config.log_print("Failed to write config/server.ini port.");
-        return;
-    }
-    server_config.log_print("Port stored as {}.", *port);
-}
-
-void show_document_root() {
-    const auto stored = current_stored_document_root();
+void show_directory() {
+    const auto settings = load_settings();
     std::cout
-        << "document_root: " << stored << '\n'
-        << "Resolved path: " << resolved_document_root(stored).string()
-        << '\n';
+        << "directory: " << settings.directory << '\n'
+        << "Resolved path: " << resolved_directory(settings.directory).string()
+        << '\n'
+        << "logging: " << (settings.logging ? "on" : "off") << '\n';
 }
 
-void set_document_root() {
-    const auto stored = current_stored_document_root();
-    const auto directory = prompt_document_root(stored, stored);
+bool set_directory() {
+    auto settings = load_settings();
+    const auto directory = prompt_directory(settings.directory);
     if (!directory) {
-        return;
+        return false;
     }
-    if (!write_server_ini(*directory, current_port())) {
-        server_config.log_print(
-            "Failed to write config/server.ini document_root."
-        );
-        return;
+    const auto logging = prompt_logging(settings.logging);
+    if (!logging) {
+        return false;
     }
-    server_config.log_print("document_root stored as {}.", *directory);
+    settings.directory = *directory;
+    settings.logging = *logging;
+    if (!write_server_ini(settings)) {
+        server_config.log_print("Failed to write config/server.ini.");
+        return false;
+    }
+    server_config.log_print("directory stored as {}.", settings.directory);
+    return true;
 }
 
-void open_folder(const std::filesystem::path& directory) {
+std::wstring quote_argument(std::wstring_view value) {
+    std::wstring quoted;
+    quoted.reserve(value.size() + 2);
+    quoted.push_back(L'"');
+    quoted.append(value);
+    quoted.push_back(L'"');
+    return quoted;
+}
+
+int launch_owner(
+    const std::wstring_view executable_name,
+    const std::wstring_view arguments
+) {
+    const auto executable_path = ac::paths::bin_directory() / executable_name;
     std::error_code error;
-    std::filesystem::create_directories(directory, error);
-    if (error) {
-        server_config.log_print(
-            "Failed to create {}: {}",
-            directory.string(),
-            error.message()
-        );
-        return;
+    const bool present = std::filesystem::exists(executable_path, error);
+    if (error || !present) {
+        server_config.log_print("Missing {}.", executable_path.string());
+        return 1;
     }
 
-    const HINSTANCE result = ShellExecuteW(
-        nullptr,
-        L"open",
-        directory.c_str(),
-        nullptr,
-        nullptr,
-        SW_SHOWNORMAL
-    );
-    if (reinterpret_cast<std::intptr_t>(result) <= 32) {
-        server_config.log_print("Failed to open {}", directory.string());
+    std::wstring command =
+        quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(arguments);
+    STARTUPINFOW startup {};
+    startup.cb = sizeof(startup);
+    const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    const HANDLE error_handle = GetStdHandle(STD_ERROR_HANDLE);
+    const bool share_stdio =
+        input != nullptr && input != INVALID_HANDLE_VALUE &&
+        output != nullptr && output != INVALID_HANDLE_VALUE &&
+        error_handle != nullptr && error_handle != INVALID_HANDLE_VALUE;
+    if (share_stdio) {
+        SetHandleInformation(input, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+        SetHandleInformation(output, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+        SetHandleInformation(error_handle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT);
+        startup.dwFlags = STARTF_USESTDHANDLES;
+        startup.hStdInput = input;
+        startup.hStdOutput = output;
+        startup.hStdError = error_handle;
     }
+    PROCESS_INFORMATION process {};
+    if (!CreateProcessW(
+            executable_path.c_str(),
+            command.data(),
+            nullptr,
+            nullptr,
+            TRUE,
+            0,
+            nullptr,
+            executable_path.parent_path().c_str(),
+            &startup,
+            &process
+        )) {
+        server_config.log_print("Unable to start {}.", executable_path.string());
+        return 1;
+    }
+
+    CloseHandle(process.hThread);
+    WaitForSingleObject(process.hProcess, INFINITE);
+    DWORD exit_code = 1;
+    if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
+        CloseHandle(process.hProcess);
+        server_config.log_print(
+            "Unable to read the exit code from {}.",
+            executable_path.string()
+        );
+        return 1;
+    }
+    CloseHandle(process.hProcess);
+    const int code = static_cast<int>(exit_code);
+    if (code != 0) {
+        server_config.log_print("{} exited {}.", executable_path.string(), code);
+    }
+    return code;
 }
 
-void print_menu() {
-    std::cout
-        << "\nserver_config\n"
-        << "  1. Show port\n"
-        << "  2. Set port\n"
-        << "  3. Show document_root\n"
-        << "  4. Set document_root\n"
-        << "  5. Open document_root folder\n"
-        << "  6. Exit\n"
-        << "> ";
+int launch_owned_seed() {
+    if (const int editor = launch_owner(L"server_editor.exe", L"--seed");
+        editor != 0) {
+        return editor;
+    }
+    return launch_owner(L"server_builder.exe", L"--seed");
+}
+
+int launch_owned_init() {
+    if (const int editor = launch_owner(L"server_editor.exe", L"--init");
+        editor != 0) {
+        return editor;
+    }
+    switch (prompt_default_site()) {
+    case SiteChoice::yes:
+        return launch_owner(L"server_builder.exe", L"--seed");
+    case SiteChoice::no:
+        server_config.log_print("Default site files were not requested.");
+        return 0;
+    case SiteChoice::cancelled:
+        return 1;
+    }
+    return 1;
 }
 
 void activate_own_console() {
@@ -275,52 +397,113 @@ void activate_own_console() {
     (void)SetFocus(console);
 }
 
+void print_menu() {
+    const auto settings = load_settings();
+    std::cout
+        << "\nserver_config\n"
+        << "  directory = " << settings.directory << "\n"
+        << "  logging = " << (settings.logging ? "on" : "off") << "\n"
+        << "  1. Show directory\n"
+        << "  2. Set directory\n"
+        << "  3. Exit\n"
+        << "> ";
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
+    std::setvbuf(stdin, nullptr, _IONBF, 0);
+    ac::shell::set_process_app_user_model_id();
     server_config.log_main("server_config.exe started");
 
-    const bool initialize =
-        ac::config::components_request::is_initialize_run(argc, argv);
-    if (!ensure_server_ini(!initialize)) {
+    const auto launch =
+        ac::config::components_request::parse_config_launch(argc, argv);
+    if (!launch) {
+        return 1;
+    }
+
+    const auto path = ac::paths::config_directory() / "server.ini";
+    std::error_code error;
+    const bool present = std::filesystem::exists(path, error);
+    if (error) {
+        server_config.log_print("Failed to inspect {}", path.string());
+        return 1;
+    }
+
+    namespace req = ac::config::components_request;
+    req::log_config_request(server_config, *launch);
+    if (launch->seed) {
+        if (present) {
+            req::log_seed_skipped(server_config, "config/server.ini");
+        }
+        else {
+            req::log_writing_defaults(server_config);
+            if (!ensure_server_ini(false)) {
+                server_config.log_print(
+                    "Server configuration was not initialized."
+                );
+                return 1;
+            }
+            req::log_configuration_initialized(server_config);
+        }
+        return launch_owned_seed();
+    }
+
+    if (launch->init) {
+        if (present) {
+            req::log_initialization_skipped(server_config, "config/server.ini");
+        }
+        else {
+            req::log_configuration_missing(server_config);
+            const auto directory = prompt_init_directory();
+            if (!directory) {
+                server_config.log_print(
+                    "Server configuration was not initialized."
+                );
+                return 1;
+            }
+            const auto logging = prompt_init_logging();
+            if (!logging) {
+                server_config.log_print(
+                    "Server configuration was not initialized."
+                );
+                return 1;
+            }
+            if (!write_server_ini(Settings {*directory, *logging})) {
+                server_config.log_print(
+                    "Server configuration was not initialized."
+                );
+                return 1;
+            }
+            req::log_configuration_initialized(server_config);
+        }
+        return launch_owned_init();
+    }
+
+    if (!ensure_server_ini(true)) {
         server_config.log_print("Server configuration was not initialized.");
         return 1;
     }
 
-    if (initialize) {
-        server_config.log_main("server.ini initialized");
-        return ac::config::components_request::run_component_update("server");
-    }
-
     activate_own_console();
-    show_port();
-    show_document_root();
+    show_directory();
 
     while (true) {
         print_menu();
         std::string choice;
         if (!std::getline(std::cin, choice)) {
-            return ac::config::components_request::run_component_update("server");
+            return 0;
         }
         if (choice == "1") {
-            show_port();
+            show_directory();
         }
         else if (choice == "2") {
-            set_port();
+            if (!set_directory()) {
+                return 1;
+            }
         }
-        else if (choice == "3") {
-            show_document_root();
-        }
-        else if (choice == "4") {
-            set_document_root();
-        }
-        else if (choice == "5") {
-            open_folder(
-                resolved_document_root(current_stored_document_root())
-            );
-        }
-        else if (choice == "6" || choice == "q" || choice == "Q") {
-            return ac::config::components_request::run_component_update("server");
+        else if (choice == "3" || choice == "q" || choice == "Q") {
+            return 0;
         }
         else {
             std::cout << "Unknown option.\n";

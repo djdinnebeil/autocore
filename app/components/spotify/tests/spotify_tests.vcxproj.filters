@@ -46,6 +46,33 @@
     <ClCompile Include="spotify_registry_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\core\modules\paths.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\application_data.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\token_store.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spotify_application_data_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\defaults.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\song_template.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\song_catalog.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spotify_song_format_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="spotify_oauth_config_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="spotify_pipe_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>

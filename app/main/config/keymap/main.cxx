@@ -4,8 +4,10 @@ import auto_core.core.ini;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
+import components_editor_request;
 
 import <iostream>;
+import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
@@ -31,7 +33,7 @@ KeymapFlags current_flags() {
         return flags;
     }
     flags.silence_nonset_warning =
-        document->find("keymap", "silence_nonset_warning") == "true";
+        document->find("keymap", "silence_nonset_warning") == "on";
     return flags;
 }
 
@@ -48,14 +50,14 @@ void show_settings() {
     std::cout
         << "Current config/keymap.ini\n"
         << "  silence_nonset_warning = "
-        << (flags.silence_nonset_warning ? "true" : "false")
+        << (flags.silence_nonset_warning ? "on" : "off")
         << '\n';
 }
 
 [[nodiscard]]
 std::optional<KeymapFlags> prompt_flags(const KeymapFlags& suggestion) {
     KeymapFlags flags = suggestion;
-    const auto silence = cfg::prompt_bool(
+    const auto silence = cfg::prompt_on_off(
         "silence_nonset_warning",
         suggestion.silence_nonset_warning
     );
@@ -134,16 +136,50 @@ int configuration_mode() {
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
     keymap_config.log_main("keymap_config.exe started");
 
-    std::error_code error;
-    if (std::filesystem::exists(ini_path(), error)) {
-        return configuration_mode();
+    const auto launch =
+        ac::config::components_request::parse_config_launch(argc, argv);
+    if (!launch) {
+        return 1;
     }
+
+    std::error_code error;
+    const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
         keymap_config.log_print("Failed to inspect {}", ini_path().string());
         return 1;
+    }
+
+    namespace req = ac::config::components_request;
+    req::log_config_request(keymap_config, *launch);
+    if (launch->seed) {
+        if (present) {
+            req::log_seed_skipped(keymap_config, "config/keymap.ini");
+            return 0;
+        }
+        req::log_writing_defaults(keymap_config);
+        if (!write_flags({})) {
+            keymap_config.log_print("Failed to write {}.", ini_path().string());
+            return 1;
+        }
+        req::log_configuration_initialized(keymap_config);
+        return 0;
+    }
+
+    if (launch->init) {
+        if (present) {
+            req::log_initialization_skipped(keymap_config, "config/keymap.ini");
+            return 0;
+        }
+        req::log_configuration_missing(keymap_config);
+        return first_time();
+    }
+
+    if (present) {
+        return configuration_mode();
     }
     return first_time();
 }

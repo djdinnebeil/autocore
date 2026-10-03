@@ -6,12 +6,12 @@ import writer_protocol;
 command_registry::Registry create_writer_command_registry() {
     command_registry::Registry registry;
     registry.add(
-        std::string {ac::protocol::writer::select_and_insert_gpt_prompt.name},
-        writer_actions::select_and_insert_gpt_prompt
+        std::string {ac::protocol::writer::select_and_insert_session_prompt.name},
+        writer_actions::select_and_insert_session_prompt
     );
     registry.add(
         std::string {ac::protocol::writer::create_new_note_in_notepad.name},
-        writer_actions::create_new_note_in_notepad
+        writer_actions::create_or_open_daily_note_in_notepad
     );
     registry.add(
         std::string {ac::protocol::writer::launch_task_list.name},

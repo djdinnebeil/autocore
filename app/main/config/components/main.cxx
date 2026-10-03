@@ -1,18 +1,18 @@
 #include "../../../core/src/components_catalog_detail.hpp"
-#include "../../../core/src/components_list_detail.hpp"
 
 import std;
 import auto_core.core.component;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
+import components_editor_request;
 
 import <iostream>;
+import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
 namespace catalog = ac::config::components_catalog;
-namespace list = ac::config::components_list;
 
 namespace {
 
@@ -21,11 +21,6 @@ ac::Component components_config {"components_config"};
 [[nodiscard]]
 std::filesystem::path ini_path() {
     return ac::paths::config_directory() / "components.ini";
-}
-
-[[nodiscard]]
-std::filesystem::path component_ini_path(const std::string_view name) {
-    return ac::paths::config_directory() / (std::string {name} + ".ini");
 }
 
 [[nodiscard]]
@@ -90,11 +85,6 @@ std::optional<catalog::Settings> load_settings() {
 }
 
 [[nodiscard]]
-std::vector<std::string> discovered_names() {
-    return list::discover_ac_executables(ac::paths::bin_directory());
-}
-
-[[nodiscard]]
 std::optional<catalog::Settings> prompt_settings(
     const catalog::Settings& suggestion
 ) {
@@ -139,32 +129,6 @@ void show_settings(const catalog::Settings& settings) {
         << '\n';
 }
 
-void initialize_missing_component_inis() {
-    for (const auto& name : discovered_names()) {
-        std::error_code error;
-        const auto path = component_ini_path(name);
-        if (file_exists(path, error)) {
-            continue;
-        }
-        if (error) {
-            components_config.log_print(
-                "Failed to inspect {}",
-                path.string()
-            );
-            continue;
-        }
-        const auto helper = std::string {name} + "_config.exe";
-        std::cout << "config/" << name << ".ini is missing. Launching "
-                  << helper << ".\n";
-        if (cfg::run_config_exe(helper, L"--initialize") != 0) {
-            components_config.log_print(
-                "{} did not complete successfully.",
-                helper
-            );
-        }
-    }
-}
-
 [[nodiscard]]
 int offer_sync() {
     const auto run_sync = cfg::prompt_on_off("Run components_editor.exe", true);
@@ -185,13 +149,7 @@ int offer_sync() {
 }
 
 [[nodiscard]]
-int after_settings_written() {
-    initialize_missing_component_inis();
-    return offer_sync();
-}
-
-[[nodiscard]]
-int initialize_files() {
+int initialize_files(const bool offer_editor) {
     std::cout
         << "Component configuration is missing. Create it using the defaults.\n";
     const auto settings = prompt_settings(default_settings());
@@ -201,19 +159,15 @@ int initialize_files() {
     if (!write_settings(*settings)) {
         return 1;
     }
-    return after_settings_written();
+    if (!offer_editor) {
+        return 0;
+    }
+    return offer_sync();
 }
 
 [[nodiscard]]
 int configuration_mode() {
     auto settings = load_settings();
-    if (!settings) {
-        return 1;
-    }
-    if (after_settings_written() != 0) {
-        return 1;
-    }
-    settings = load_settings();
     if (!settings) {
         return 1;
     }
@@ -237,7 +191,7 @@ int configuration_mode() {
             if (!write_settings(*updated)) {
                 return 1;
             }
-            if (after_settings_written() != 0) {
+            if (offer_sync() != 0) {
                 return 1;
             }
             settings = load_settings();
@@ -250,7 +204,7 @@ int configuration_mode() {
             if (!write_settings(default_settings())) {
                 return 1;
             }
-            if (after_settings_written() != 0) {
+            if (offer_sync() != 0) {
                 return 1;
             }
             settings = load_settings();
@@ -275,10 +229,12 @@ int configuration_mode() {
 } // namespace
 
 int main(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
     components_config.log_main("components_config.exe started");
 
-    if (argc > 1) {
-        components_config.log_print("Unknown argument: {}", argv[1]);
+    const auto launch =
+        ac::config::components_request::parse_config_launch(argc, argv);
+    if (!launch) {
         return 1;
     }
 
@@ -291,8 +247,36 @@ int main(int argc, char* argv[]) {
         );
         return 1;
     }
+
+    namespace req = ac::config::components_request;
+    req::log_config_request(components_config, *launch);
+    if (launch->seed) {
+        if (ini_present) {
+            req::log_seed_skipped(components_config, "config/components.ini");
+            return 0;
+        }
+        req::log_writing_defaults(components_config);
+        if (!write_settings(default_settings())) {
+            return 1;
+        }
+        req::log_configuration_initialized(components_config);
+        return 0;
+    }
+
+    if (launch->init) {
+        if (ini_present) {
+            req::log_initialization_skipped(
+                components_config,
+                "config/components.ini"
+            );
+            return 0;
+        }
+        req::log_configuration_missing(components_config);
+        return initialize_files(false);
+    }
+
     if (ini_present) {
         return configuration_mode();
     }
-    return initialize_files();
+    return initialize_files(true);
 }

@@ -2,10 +2,10 @@
  * \file journal_protocol.ixx
  * \brief Shared journal component protocol and typed commands.
  *
- * Product command tokens are implemented in `journal_ac.exe`. Person-name
- * print-choice aliases live in `journal/journal_choices.ini` under the
- * configured journal data directory and expand only when `keymap.map`
- * names them.
+ * Product command tokens are implemented in `journal_ac.exe`. Print-choice
+ * and insert aliases live in per-factory `.list` files under the configured
+ * journal data directory. `journal_builder.exe` writes them.
+ * `journal_ac.exe` reads them at startup.
  */
 export module journal_protocol;
 

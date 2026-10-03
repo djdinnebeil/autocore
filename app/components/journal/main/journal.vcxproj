@@ -129,7 +129,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>auto_core.lib;libcurl.lib;cpr.lib;sqlite3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
@@ -139,9 +139,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\console.ixx" />
-    <ClCompile Include="..\..\..\core\modules\core_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\..\core\modules\error.ixx" />
     <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
@@ -154,23 +154,37 @@
     <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
-    <ClCompile Include="journal_database.ixx" />
-    <ClCompile Include="journal_database.cxx" />
+    <ClCompile Include="..\shared\journal_episode_format.ixx" />
+    <ClCompile Include="..\shared\journal_series_map.ixx" />
+    <ClCompile Include="..\shared\journal_remote_sync.ixx" />
+    <ClCompile Include="..\shared\journal_cloud_protocol.ixx" />
+    <ClCompile Include="..\shared\journal_db_protocol.ixx" />
+    <ClCompile Include="..\shared\journal_db_session.ixx" />
+    <ClCompile Include="..\shared\journal_db_session.cxx" />
+    <ClCompile Include="journal_db_client.ixx" />
+    <ClCompile Include="journal_db_client.cxx" />
+    <ClCompile Include="journal_cloud_client.ixx" />
+    <ClCompile Include="journal_cloud_client.cxx" />
     <ClCompile Include="..\shared\journal_protocol.ixx" />
-    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\journal_factories.ixx" />
+    <ClCompile Include="..\shared\journal_factories.cxx" />
+    <ClCompile Include="..\shared\journal_extended_hours.ixx" />
+    <ClCompile Include="..\shared\journal_extended_hours.cxx" />
+    <ClCompile Include="..\..\..\core\src\clock_formatting.cxx" />
     <ClCompile Include="journal_clock.ixx" />
     <ClCompile Include="journal_clock.cxx" />
     <ClCompile Include="journal_commands.ixx" />
     <ClCompile Include="journal_commands.cxx" />
     <ClCompile Include="journal_component.ixx" />
-    <ClCompile Include="journal_cloud.ixx" />
-    <ClCompile Include="journal_cloud.cxx" />
     <ClCompile Include="journal_title.ixx" />
     <ClCompile Include="journal_title.cxx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

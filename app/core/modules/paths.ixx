@@ -150,6 +150,20 @@ export namespace ac::paths {
         journal_directory();
 
     /**
+     * \brief Returns the Wake operational-history directory.
+     *
+     * Reads `[wake] directory` from `config/wake.ini`. A relative path is
+     * resolved against the installation root. An absolute path is used
+     * as-is. A missing file, missing key, or empty value keeps
+     * `<installation root>/components/wake`. The live file is not rewritten.
+     * Cached for the process lifetime. The directory is not created or
+     * validated.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        wake_directory();
+
+    /**
      * \brief Returns the Writer data directory.
      *
      * Reads `[writer] directory` from `config/writer.ini`. A relative path
@@ -166,10 +180,11 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer notes directory.
      *
-     * Reads `[writer] notes_directory` from `config/writer.ini`. A relative
-     * path is resolved against the installation root. An absolute path is
-     * used as-is. A missing file, missing key, or empty value keeps
-     * `<installation root>/notes`. The live file is not rewritten.
+     * Reads `[writer] notes_subdirectory` from `config/writer.ini`. The
+     * value must be relative: no root-name and no root-directory. A
+     * relative value is resolved against `writer_directory()`. A missing
+     * file, missing key, empty value, or non-relative value keeps
+     * `<writer directory>/notes`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.
      */

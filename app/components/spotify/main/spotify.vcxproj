@@ -137,7 +137,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libcurl.lib;cpr.lib;sqlite3.lib;civetweb.lib;civetweb-cpp.lib;auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl.lib;cpr.lib;civetweb.lib;civetweb-cpp.lib;auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
@@ -153,7 +153,12 @@
     <ClCompile Include="..\..\..\core\modules\keyboard.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\shared\spotify_protocol.ixx" />
+    <ClCompile Include="..\shared\application_data.ixx" />
+    <ClCompile Include="..\shared\token_store.ixx" />
+    <ClCompile Include="..\shared\devices_protocol.ixx" />
+    <ClCompile Include="..\shared\db_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\core\modules\thread.ixx" />
@@ -162,6 +167,9 @@
     <ClCompile Include="spotify_client.cxx" />
     <ClCompile Include="spotify_client.ixx" />
     <ClCompile Include="spotify_commands.cxx" />
+    <ClCompile Include="spotify_devices.cxx" />
+    <ClCompile Include="spotify_db_client.ixx" />
+    <ClCompile Include="spotify_db_client.cxx" />
     <ClCompile Include="spotify_history.cxx" />
     <ClCompile Include="spotify_http.ixx" />
     <ClCompile Include="spotify_playback.cxx" />
@@ -174,6 +182,8 @@
     <ClCompile Include="spotify_pipe.ixx" />
     <ClCompile Include="spotify_pipe.cxx" />
     <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\song_template.ixx" />
+    <ClCompile Include="..\shared\song_catalog.ixx" />
     <ClCompile Include="main.cxx" />
     <ClCompile Include="spotify_component.ixx" />
   </ItemGroup>
@@ -189,7 +199,10 @@
     <WriteLinesToFile File="$(AutoCoreDistDir)keymap\components\spotify.keymap_commands.txt" Lines="@(SpotifyKeymapCommand)" Overwrite="true" Encoding="UTF-8" />
   </Target>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="TESTING.md" />

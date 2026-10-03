@@ -11,12 +11,12 @@ import auto_core.core.pipes;
 import auto_core.taskbar;
 import command_registry;
 import taskbar_commands;
-import taskbar_config_protocol;
 import taskbar_logging;
 import taskbar_protocol;
 import component_protocol;
 
 import <Windows.h>;
+import auto_core.core.shell;
 
 namespace {
     constexpr std::wstring_view authority_mutex_name =
@@ -54,238 +54,6 @@ namespace {
         bool acquired_ {};
     };
 
-    class ConfigDiscoveryServer {
-    public:
-        ConfigDiscoveryServer() = default;
-        ConfigDiscoveryServer(const ConfigDiscoveryServer&) = delete;
-        ConfigDiscoveryServer& operator=(const ConfigDiscoveryServer&) = delete;
-
-        ~ConfigDiscoveryServer() {
-            stop();
-        }
-
-        void start() {
-            bool expected = false;
-            if (!running_.compare_exchange_strong(expected, true)) return;
-            thread_ = std::thread([this] { run(); });
-        }
-
-        void stop() noexcept {
-            if (!running_.exchange(false)) return;
-            {
-                const std::scoped_lock lock {pipe_mutex_};
-                if (active_pipe_ != INVALID_HANDLE_VALUE) {
-                    (void)CancelIoEx(active_pipe_, nullptr);
-                }
-            }
-            if (thread_.joinable()) thread_.join();
-        }
-
-    private:
-        void send_discovery(ac::pipes::Pipe& pipe) {
-            const auto discovered =
-                ac::taskbar::discover_taskbar_applications();
-            if (!discovered) {
-                (void)ac::pipes::send_string(
-                    pipe, std::string {"error:"} + discovered.error()
-                );
-                return;
-            }
-
-            if (!ac::pipes::send_string(
-                    pipe, ac::protocol::taskbar_config::success) ||
-                !ac::pipes::send_string(
-                    pipe, std::to_string(discovered->size()))) {
-                return;
-            }
-
-            for (const auto& application : *discovered) {
-                if (!ac::pipes::send_string(
-                        pipe, std::to_string(application.ordinal)) ||
-                    !ac::pipes::send_string(pipe, application.display_name) ||
-                    !ac::pipes::send_string(pipe, application.automation_id) ||
-                    !ac::pipes::send_string(pipe, application.application_id)) {
-                    return;
-                }
-            }
-        }
-
-        void serve(ac::pipes::Pipe& pipe) {
-            ac::pipes::CommandDispatcher dispatcher;
-            dispatcher.set_command(
-                ac::protocol::taskbar_config::to_wire(
-                    ac::protocol::taskbar_config::Request::discover_all
-                ),
-                [&] {
-                    send_discovery(pipe);
-                    dispatcher.request_stop();
-                }
-            );
-            (void)dispatcher.process(pipe);
-        }
-
-        void run() {
-            while (running_.load()) {
-                auto created = ac::pipes::create_pipe_server(
-                    std::wstring {ac::protocol::taskbar_config::pipe_name}
-                );
-                if (!created) return;
-                ac::pipes::Pipe pipe = std::move(*created);
-                const HANDLE handle = static_cast<HANDLE>(
-                    pipe.native_handle()
-                );
-                {
-                    const std::scoped_lock lock {pipe_mutex_};
-                    active_pipe_ = handle;
-                }
-
-                const BOOL connected = ConnectNamedPipe(handle, nullptr);
-                const DWORD connect_error = connected
-                    ? ERROR_SUCCESS
-                    : GetLastError();
-                if (running_.load() &&
-                    (connected || connect_error == ERROR_PIPE_CONNECTED)) {
-                    serve(pipe);
-                    // DisconnectNamedPipe discards unread buffered data. Wait
-                    // until the configuration client has consumed the full
-                    // discovery response before closing this pipe instance.
-                    (void)FlushFileBuffers(handle);
-                }
-                (void)DisconnectNamedPipe(handle);
-                {
-                    const std::scoped_lock lock {pipe_mutex_};
-                    if (active_pipe_ == handle) {
-                        active_pipe_ = INVALID_HANDLE_VALUE;
-                    }
-                }
-            }
-        }
-
-        std::atomic_bool running_ {false};
-        std::mutex pipe_mutex_;
-        HANDLE active_pipe_ {INVALID_HANDLE_VALUE};
-        std::thread thread_;
-    };
-
-    int write_manifest(
-        const command_registry::Registry& registry,
-        const std::filesystem::path& destination
-    ) {
-        std::set<std::string> commands;
-        for (const std::string& value : registry.autocomplete_values()) {
-            commands.insert(value);
-        }
-
-        const std::filesystem::path applications =
-            ac::paths::taskbar_directory();
-        std::error_code error;
-        if (std::filesystem::is_directory(applications, error)) {
-            for (std::filesystem::directory_iterator iterator(
-                     applications, error
-                 );
-                 !error && iterator !=
-                     std::filesystem::directory_iterator {};
-                 iterator.increment(error)) {
-                if (!iterator->is_regular_file(error) ||
-                    iterator->path().extension() != ".ini") {
-                    continue;
-                }
-
-                std::ifstream input(iterator->path());
-                std::string section;
-                std::string line;
-                while (std::getline(input, line)) {
-                    const auto first = line.find_first_not_of(" \t\r");
-                    if (first == std::string::npos ||
-                        line[first] == ';' || line[first] == '#') {
-                        continue;
-                    }
-                    const auto last = line.find_last_not_of(" \t\r");
-                    const std::string_view value {line.data() + first,
-                                                  last - first + 1};
-                    if (value.starts_with('[') && value.ends_with(']')) {
-                        section = value.substr(1, value.size() - 2);
-                        std::ranges::transform(
-                            section, section.begin(), [](unsigned char ch) {
-                                return static_cast<char>(std::tolower(ch));
-                            }
-                        );
-                        continue;
-                    }
-                    if (section != "commands") continue;
-                    const auto equals = value.find('=');
-                    if (equals == std::string_view::npos) continue;
-                    std::string key {value.substr(0, equals)};
-                    while (!key.empty() &&
-                           std::isspace(static_cast<unsigned char>(key.back()))) {
-                        key.pop_back();
-                    }
-                    std::ranges::transform(
-                        key, key.begin(), [](unsigned char ch) {
-                            return static_cast<char>(std::tolower(ch));
-                        }
-                    );
-                    if (key != "activate") continue;
-
-                    std::string_view aliases = value.substr(equals + 1);
-                    std::size_t alias_first {};
-                    while (alias_first <= aliases.size()) {
-                        const auto separator = aliases.find('|', alias_first);
-                        std::string alias {aliases.substr(
-                            alias_first,
-                            separator == std::string_view::npos
-                                ? std::string_view::npos
-                                : separator - alias_first
-                        )};
-                        const auto alias_begin =
-                            alias.find_first_not_of(" \t\r");
-                        if (alias_begin != std::string::npos) {
-                            const auto alias_end =
-                                alias.find_last_not_of(" \t\r");
-                            commands.insert(alias.substr(
-                                alias_begin, alias_end - alias_begin + 1
-                            ));
-                        }
-                        if (separator == std::string_view::npos) break;
-                        alias_first = separator + 1;
-                    }
-                }
-            }
-        }
-
-        if (commands.contains("activate_file_explorer")) {
-            commands.insert("activate_folder");
-        }
-        if (commands.contains("activate_google_chrome")) {
-            commands.insert("activate_chrome");
-        }
-        if (commands.contains("activate_visual_studio")) {
-            commands.insert("activate_visual");
-        }
-        if (commands.contains("activate_visual_studio_code")) {
-            commands.insert("activate_vs_code");
-        }
-        if (commands.contains("activate_zoom_workplace")) {
-            commands.insert("activate_zoom");
-        }
-
-        std::filesystem::path temporary = destination;
-        temporary += ".tmp";
-        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-        if (!output) return 1;
-
-        for (const std::string& value : commands) {
-            output << value << '\n';
-        }
-        output.close();
-        if (!output) return 1;
-
-        return MoveFileExW(
-            temporary.c_str(),
-            destination.c_str(),
-            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-        ) ? 0 : 1;
-    }
 
     std::string joined_applications(
         const std::vector<std::string>& applications
@@ -306,7 +74,7 @@ namespace {
                 "positions 1 through 10. Auto Core will use direct console "
                 "window activation as a fallback, which can occasionally "
                 "have higher latency. Set "
-                "warn_without_winkey_mapping = false under [auto_core] in "
+                "warn_without_winkey_mapping = off under [auto_core] in "
                 "config/auto_core.ini to silence this warning."
             );
         }
@@ -331,7 +99,7 @@ namespace {
             if (cached) {
                 taskbar_component().log_main(
                     "Using cached taskbar positions from "
-                    "taskbar/cached_positions.ini. Native Win+N mappings were not "
+                    "taskbar/winkey_map.cache. Native Win+N mappings were not "
                     "verified against the live taskbar."
                 );
             }
@@ -379,6 +147,7 @@ namespace {
 }
 
 int main(const int argument_count, char* arguments[]) {
+    ac::shell::set_process_app_user_model_id();
     ac::config::initialize_core_settings();
     if (!ac::config::core_settings_report().empty()) {
         taskbar_component().log_print(
@@ -387,25 +156,25 @@ int main(const int argument_count, char* arguments[]) {
         );
     }
     auto registry = create_taskbar_command_registry();
-    std::optional<DWORD> standalone_parent;
-    if (argument_count == 3 &&
-        std::string_view {arguments[1]} ==
-            "--standalone-config-authority") {
-        unsigned long parsed {};
-        const std::string_view value {arguments[2]};
-        const auto converted = std::from_chars(
-            value.data(), value.data() + value.size(), parsed
-        );
-        if (converted.ec != std::errc {} ||
-            converted.ptr != value.data() + value.size() || parsed == 0) {
+    if (argument_count == 2 &&
+        std::string_view {arguments[1]} == "--refresh-cache") {
+        const auto ini_path = ac::paths::config_directory() / "taskbar.ini";
+        if (!ac::ini::read(ini_path)) {
+            std::error_code exists_error;
+            const bool present =
+                std::filesystem::exists(ini_path, exists_error);
+            taskbar_component().report_ini_unavailable(
+                present && !exists_error
+            );
+        }
+        if (!ac::taskbar::refresh_winkey_cache()) {
+            taskbar_component().log_print(
+                "Unable to refresh winkey_map.cache."
+            );
             return 1;
         }
-        standalone_parent = static_cast<DWORD>(parsed);
-    }
-    if (argument_count == 3 &&
-        std::string_view {arguments[1]} ==
-            "--generate-keymap-command-registry") {
-        return write_manifest(registry, arguments[2]);
+        taskbar_component().log_main("Refreshed winkey_map.cache.");
+        return 0;
     }
     if (argument_count == 3 &&
         std::string_view {arguments[1]} == "--inspect-snapshot") {
@@ -493,35 +262,6 @@ int main(const int argument_count, char* arguments[]) {
     }
     AuthorityGuard authority_guard;
 
-    if (standalone_parent) {
-        if (!ac::taskbar::wait_for_initial_snapshot(
-                std::chrono::seconds {5})) {
-            taskbar_component().log_print(
-                "Timed out waiting for the standalone taskbar snapshot."
-            );
-            return 1;
-        }
-
-        ConfigDiscoveryServer config_server;
-        config_server.start();
-        taskbar_component().log_main(
-            "Standalone taskbar configuration authority is ready."
-        );
-
-        const HANDLE parent = OpenProcess(
-            SYNCHRONIZE, FALSE, *standalone_parent
-        );
-        if (parent == nullptr) {
-            taskbar_component().log_print(
-                "Unable to monitor taskbar_config.exe. Error: {}",
-                GetLastError()
-            );
-            return 1;
-        }
-        (void)WaitForSingleObject(parent, INFINITE);
-        CloseHandle(parent);
-        return 0;
-    }
 
     auto connection = ac::pipes::connect_to_pipe_server(
         ac::protocol::component::pipe_name("taskbar")
@@ -553,8 +293,6 @@ int main(const int argument_count, char* arguments[]) {
     );
     report_taskbar_mappings(snapshot);
 
-    ConfigDiscoveryServer config_server;
-    config_server.start();
 
     if (const auto ready = ac::pipes::send_string(
             control_pipe,

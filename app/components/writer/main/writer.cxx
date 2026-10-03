@@ -9,18 +9,18 @@ import writer_component;
 
 namespace {
 
-const std::filesystem::path& gpt_prompts_file() {
+const std::filesystem::path& session_prompts_file() {
     static const std::filesystem::path path =
-        ac::paths::writer_directory() / "gpt_prompts.txt";
+        ac::paths::writer_directory() / "session_prompts.list";
     return path;
 }
 
-std::optional<std::vector<std::string>> load_gpt_prompts() {
-    std::ifstream input(gpt_prompts_file());
+std::optional<std::vector<std::string>> load_session_prompts() {
+    std::ifstream input(session_prompts_file());
     if (!input) {
         writer_component().log_print(
-            "Unable to open GPT prompts file: {}",
-            gpt_prompts_file().string()
+            "Unable to open session prompts file: {}",
+            session_prompts_file().string()
         );
         return std::nullopt;
     }
@@ -44,26 +44,26 @@ std::optional<std::vector<std::string>> load_gpt_prompts() {
 
     if (input.bad()) {
         writer_component().log_print(
-            "Unable to read GPT prompts file: {}",
-            gpt_prompts_file().string()
+            "Unable to read session prompts file: {}",
+            session_prompts_file().string()
         );
         return std::nullopt;
     }
     if (prompts.empty()) {
         writer_component().log_print(
-            "GPT prompts file contains no prompts: {}",
-            gpt_prompts_file().string()
+            "Session prompts file contains no prompts: {}",
+            session_prompts_file().string()
         );
         return std::nullopt;
     }
     return prompts;
 }
 
-std::optional<std::string> select_gpt_prompt(
+std::optional<std::string> select_session_prompt(
     const std::vector<std::string>& prompts
 ) {
     std::ostringstream menu;
-    menu << "Select a GPT prompt:\n";
+    menu << "Select a session prompt:\n";
     for (std::size_t index = 0; index < prompts.size(); ++index) {
         menu << std::format("{}. {}\n", index + 1, prompts[index]);
     }
@@ -73,7 +73,7 @@ std::optional<std::string> select_gpt_prompt(
     std::string input;
     while (std::getline(std::cin, input)) {
         writer_component().log_main(
-            "GPT prompt selection: {}", input
+            "Session prompt selection: {}", input
         );
         std::size_t selection = 0;
         const char* const first = input.data();
@@ -87,12 +87,12 @@ std::optional<std::string> select_gpt_prompt(
     }
 
     writer_component().log_print(
-        "GPT prompt selection cancelled: input closed"
+        "Session prompt selection cancelled: input closed"
     );
     return std::nullopt;
 }
 
-void select_and_insert_gpt_prompt_worker() {
+void select_and_insert_session_prompt_worker() {
     const auto target_window = ac::console::focus_for_prompt_via_winkey();
     if (!target_window) {
         writer_component().log_print(
@@ -101,11 +101,11 @@ void select_and_insert_gpt_prompt_worker() {
         return;
     }
 
-    const auto prompts = load_gpt_prompts();
+    const auto prompts = load_session_prompts();
     if (!prompts) {
         return;
     }
-    const auto prompt = select_gpt_prompt(*prompts);
+    const auto prompt = select_session_prompt(*prompts);
     if (!prompt) {
         return;
     }
@@ -119,14 +119,14 @@ void select_and_insert_gpt_prompt_worker() {
 
 } // namespace
 
-void writer_actions::select_and_insert_gpt_prompt() {
-    writer_component().log_main("select_and_insert_gpt_prompt()");
+void writer_actions::select_and_insert_session_prompt() {
+    writer_component().log_main("select_and_insert_session_prompt()");
 
     static std::atomic_bool selection_in_progress = false;
     bool expected = false;
     if (!selection_in_progress.compare_exchange_strong(expected, true)) {
         writer_component().log_print(
-            "GPT prompt selection is already active"
+            "Session prompt selection is already active"
         );
         return;
     }
@@ -139,7 +139,7 @@ void writer_actions::select_and_insert_gpt_prompt() {
             } guard {selection_in_progress};
 
             ac::thread::run_with_exception_handling(
-                select_and_insert_gpt_prompt_worker,
+                select_and_insert_session_prompt_worker,
                 writer_component()
             );
         });

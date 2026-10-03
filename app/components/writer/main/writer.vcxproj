@@ -65,6 +65,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\clipboard.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\console.ixx" />
@@ -81,6 +82,8 @@
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\shared\writer_protocol.ixx" />
+    <ClCompile Include="..\shared\writer_notepad.ixx" />
+    <ClCompile Include="..\shared\writer_notepad.cxx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="writer_component.ixx" />
     <ClCompile Include="writer_commands.ixx" />
@@ -91,7 +94,10 @@
     <ClCompile Include="tasks.cxx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
-  <ItemGroup><ResourceCompile Include="..\..\..\resources\resource.rc" /></ItemGroup>
+  <ItemGroup><ResourceCompile Include="..\..\..\resources\resource.rc">
+  <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+  <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+</ResourceCompile></ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

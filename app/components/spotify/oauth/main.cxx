@@ -1,31 +1,44 @@
 import std;
 import spotify_oauth;
+import spotify_application_data;
 import auto_core.core.component;
-import auto_core.core.ini;
-import auto_core.core.paths;
+import auto_core.core.logging.config;
 
-ac::Component spotify_oauth_log {"spotify_oauth"};
+import <Windows.h>;
+import auto_core.core.shell;
 
-std::string load_client_id(const std::filesystem::path& config_path) {
-    const auto document = ac::ini::read(config_path);
-    if (!document) {
-        return {};
+ac::Component spotify_oauth_log {
+    "spotify_oauth",
+    ac::logging::config::LoggingScope {"spotify"}
+};
+
+BOOL WINAPI oauth_console_control(DWORD event) {
+    switch (event) {
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+            ::ExitProcess(2);
+            return TRUE;
+        default:
+            return FALSE;
     }
-
-    const auto client_id = document->find("auth", "client_id");
-    if (!client_id) {
-        return {};
-    }
-
-    return std::string {*client_id};
 }
 
-int run_generate_tokens(SpotifyOAuthConfig config) {
-    std::cout << "Enter Spotify client ID: ";
-    std::getline(std::cin, config.client_id);
+int run_authorize() {
+    const auto client_id = spotify::data::load_client_id();
+    if (!client_id) {
+        spotify_oauth_log.log_print(
+            "Spotify authorization failed. The client ID is not configured."
+        );
+        return 1;
+    }
 
+    SpotifyOAuthConfig config;
+    config.client_id = *client_id;
     std::cout << "Enter local server port: ";
-    std::getline(std::cin, config.port_number);
+    if (!std::getline(std::cin, config.port_number)) {
+        return 2;
+    }
 
     spotify_oauth_log.log_main("Spotify authorization started");
     SpotifyOAuth oauth(std::move(config));
@@ -43,65 +56,29 @@ int run_generate_tokens(SpotifyOAuthConfig config) {
     return 0;
 }
 
-int run_register_devices(SpotifyOAuthConfig config) {
-    spotify_oauth_log.log_main("Spotify device registration started");
-    SpotifyOAuth oauth(std::move(config));
-    const auto result = oauth.register_devices();
-
-    if (!result.succeeded()) {
-        spotify_oauth_log.log_print(
-            "Spotify device registration failed:\n{}",
-            result.message
-        );
-        return 1;
-    }
-
-    spotify_oauth_log.log_print("{}", result.message);
-    return 0;
-}
-
 int main() {
+    ac::shell::set_process_app_user_model_id();
+    ::SetConsoleCtrlHandler(oauth_console_control, TRUE);
     spotify_oauth_log.log_main("spotify_oauth.exe started");
-    std::cout
-        << "spotify_oauth.exe does not write config/spotify.ini. "
-           "Run spotify_config.exe if that file is missing.\n";
-
-    SpotifyOAuthConfig config;
-
-    const auto& data_directory = ac::paths::spotify_directory();
-
-    config.token_path = data_directory / "spotify_tokens.ini";
-    config.config_path = data_directory / "spotify_codes.ini";
 
     while (true) {
         std::cout
-            << "1. Generate new tokens\n"
-            << "2. Retrieve current devices\n"
+            << "spotify_oauth\n"
+            << "\n"
+            << "1. Authorize Spotify\n"
+            << "2. Abort\n"
             << "Select option: ";
 
         std::string option;
-        std::getline(std::cin, option);
-
+        if (!std::getline(std::cin, option)) {
+            return 2;
+        }
         if (option == "1") {
-            return run_generate_tokens(std::move(config));
+            return run_authorize();
         }
-
         if (option == "2") {
-            config.client_id = load_client_id(config.config_path);
-
-            if (config.client_id.empty()) {
-                spotify_oauth_log.log_print(
-                    "client_id is missing from {}.\n"
-                    "Generate new tokens first, then try again.",
-                    config.config_path.filename().string()
-                );
-                continue;
-            }
-
-            return run_register_devices(std::move(config));
+            return 2;
         }
-
         spotify_oauth_log.log_print("Unknown option.");
-        return 1;
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files"><UniqueIdentifier>{34D815B9-C22F-4E55-8E7F-10E206862ABA}</UniqueIdentifier></Filter>
+    <Filter Include="Resource Files"><UniqueIdentifier>{22C93216-31B6-4E14-8AC4-D02A907BF70D}</UniqueIdentifier></Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="enum_windows.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClInclude Include="enum_windows.h"><Filter>Source Files</Filter></ClInclude>
+  </ItemGroup>
+  <ItemGroup><ResourceCompile Include="..\..\..\resources\resource.rc"><Filter>Resource Files</Filter></ResourceCompile></ItemGroup>
+</Project>

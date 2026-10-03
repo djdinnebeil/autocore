@@ -34,6 +34,7 @@
     <ClCompile Include="..\modules\logging_config.ixx" />
     <ClCompile Include="..\modules\paths.ixx" />
     <ClCompile Include="..\modules\pipes.ixx" />
+    <ClCompile Include="..\modules\shell.ixx" />
     <ClCompile Include="..\modules\thread.ixx" />
     <ClCompile Include="..\modules\text_inserter.ixx" />
     <ClCompile Include="..\taskbar\core_taskbar.ixx" />
@@ -56,6 +57,7 @@
     <ClCompile Include="..\src\paths.cxx" />
     <ClCompile Include="..\src\spotify_config_detail.cxx" />
     <ClCompile Include="..\src\pipes.cxx" />
+    <ClCompile Include="..\src\shell.cxx" />
     <ClCompile Include="..\src\text_inserter.cxx" />
     <ClCompile Include="..\taskbar\taskbar.cxx" />
   </ItemGroup>

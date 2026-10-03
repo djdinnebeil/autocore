@@ -9,10 +9,21 @@ import std;
 import auto_core.core.pipes;
 import wake_logging;
 import component_protocol;
+import auto_core.core.shell;
 
-int main() {
+int main(const int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
+    const bool snapshot =
+        argc == 2 && std::string_view {argv[1]} == "--snapshot";
+    if (argc != 1 && !snapshot) {
+        return 1;
+    }
+
     log_init();
-    log_last_wake();
+    const int captured = log_last_wake();
+    if (snapshot) {
+        return captured;
+    }
 
     auto connection = ac::pipes::connect_to_pipe_server(
         ac::protocol::component::pipe_name("wake")

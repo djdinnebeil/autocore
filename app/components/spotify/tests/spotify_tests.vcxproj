@@ -71,6 +71,15 @@
     <ClCompile Include="spotify_http_tests.cxx" />
     <ClCompile Include="spotify_protocol_tests.cxx" />
     <ClCompile Include="spotify_registry_tests.cxx" />
+    <ClCompile Include="..\..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\shared\application_data.ixx" />
+    <ClCompile Include="..\shared\token_store.ixx" />
+    <ClCompile Include="spotify_application_data_tests.cxx" />
+    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\song_template.ixx" />
+    <ClCompile Include="..\shared\song_catalog.ixx" />
+    <ClCompile Include="spotify_song_format_tests.cxx" />
+    <ClCompile Include="spotify_oauth_config_tests.cxx" />
     <ClCompile Include="spotify_pipe_tests.cxx" />
     <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
   </ItemGroup>

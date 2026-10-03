@@ -5,9 +5,11 @@
 import std;
 
 import auto_core.core.pipes;
+import auto_core.core.shell;
 import itunes_protocol;
 import itunes_component;
 import itunes_client;
+import itunes_db_client;
 import itunes_monitor;
 import itunes_pipe;
 import itunes_removal;
@@ -30,8 +32,15 @@ void end_itunes() {
 }
 
 int main(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
     const auto registry = create_itunes_command_registry();
     log_init();
+    if (const auto database = itunes::db::start_service(); !database) {
+        itunes_component.log("{}", database.error());
+    }
+    struct DatabaseServiceGuard {
+        ~DatabaseServiceGuard() { itunes::db::shutdown_service(); }
+    } database_service_guard;
     ac_itunes.set_config();
     ac::pipes::Pipe ac_itunes_pipe;
     auto connection = ac::pipes::connect_to_pipe_server(

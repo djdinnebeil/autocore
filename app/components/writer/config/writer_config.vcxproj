@@ -138,7 +138,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\core_config.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\..\core\modules\error.ixx" />
@@ -150,7 +152,10 @@
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

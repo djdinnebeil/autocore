@@ -71,7 +71,16 @@
     <ClCompile Include="..\src\configured_directory.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\shared\components_editor_request.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\component_star.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\tests\clock_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tests\component_star_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="..\tests\core_config_tests.cxx">

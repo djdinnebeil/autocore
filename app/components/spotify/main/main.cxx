@@ -10,7 +10,9 @@ import std;
 import spotify_component;
 import spotify_client;
 import spotify_monitor;
+import spotify_db_client;
 import auto_core.core.pipes;
+import auto_core.core.shell;
 import spotify_protocol;
 import command_registry;
 import spotify_registry;
@@ -36,9 +38,22 @@ void end_spotify() {
  * \return Exit code of the process.
  */
 int main() {
+    ac::shell::set_process_app_user_model_id();
     const auto registry = create_spotify_command_registry();
     int exit_code = 0;
     log_init();
+
+    if (const auto database = spotify::db::start_service(); !database) {
+        spotify_component.log("{}", database.error());
+    }
+    struct DatabaseServiceGuard {
+        ~DatabaseServiceGuard() { spotify::db::shutdown_service(); }
+    } database_service_guard;
+
+    start_spotify_device_requests();
+    struct DeviceRequestGuard {
+        ~DeviceRequestGuard() { stop_spotify_device_requests(); }
+    } device_request_guard;
 
     {
         const auto ini_path = ac::paths::config_directory() / "spotify.ini";
@@ -48,6 +63,11 @@ int main() {
                 std::filesystem::exists(ini_path, exists_error);
             spotify_component.report_ini_unavailable(present && !exists_error);
         }
+    }
+
+    if (!ac_spotify.song_format_error.empty()) {
+        spotify_component.log_print("{}", ac_spotify.song_format_error);
+        spotify_component.log_print("Using the compiled Spotify song format.");
     }
 
     if (!ac::taskbar::connect()) {

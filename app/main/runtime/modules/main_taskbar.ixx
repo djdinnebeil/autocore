@@ -45,13 +45,14 @@ public:
 
     /** Same key advances the cycle; any other key ends it. */
     void switch_windows(int keycode);
+    /** Cancels the current cycle, releasing Win only for a native session. */
+    void end_cycle_session();
     /** Native Win+position activate or native cycle. `false` falls through to emulate. */
     [[nodiscard]] bool try_activate_configured(std::string_view name);
     /** Native first, then emulate (launch / restore / minimize / cycle). */
     void activate_configured(std::string_view name);
 
 private:
-    void end_cycle_session();
     void emulate_configured(std::string_view name);
     void begin_emulated_cycle(
         std::string_view name,

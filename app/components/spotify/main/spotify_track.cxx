@@ -10,6 +10,7 @@ import spotify_component;
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
+import spotify_song_catalog;
 
 using std::stoll;
 using namespace cpr;
@@ -28,19 +29,7 @@ json parse(const std::string& s) {
  * \return Formatted artist name(s) as a std::string.
  */
 std::string Spotify::format_artist_name(const json& artists) {
-    std::string artist {};
-    if (artists.size() == 1) {
-        artist = artists[0]["name"];
-    }
-    else {
-        for (size_t i = 0; i < artists.size(); ++i) {
-            artist += artists[i]["name"];
-            if (i < artists.size() - 1) {
-                artist += ", ";
-            }
-        }
-    }
-    return artist;
+    return spotify::catalog::join_artists(artists);
 }
 
 SongMetadata Spotify::extract_song_metadata(const json& song_details) {
@@ -85,7 +74,7 @@ void Spotify::get_current_song() {
     }
 
     SongMetadata meta = extract_song_metadata(song_details["item"]);
-    std::string current_song = format_song_title(meta);
+    std::string current_song = format_track_title(song_details["item"]);
     if (current_song == last_song) {
         return;
     }
@@ -112,24 +101,8 @@ void Spotify::calculate_remaining_song_duration_ms(const json& song_details) {
  * \param song_details JSON object containing song details.
  * \return Formatted song title as a std::string.
  */
-std::string Spotify::format_song_title(const SongMetadata& meta) {
-    std::ostringstream output;
-    std::ostringstream dur;
-    dur << meta.duration_seconds / 60 << ":" << std::setw(2) << std::setfill('0') << meta.duration_seconds % 60;
-    output << '[' << meta.name << "] [" << meta.artist << "] [" << meta.album << "] [" << dur.str() << ']';
-    return output.str();
-}
-
-std::string Spotify::format_song_title_user_queue(const json& song_details) {
-    const std::string name = song_details["name"];
-    const std::string artist = format_artist_name(song_details["artists"]);
-    const std::string album = song_details["album"]["name"];
-    int duration = song_details["duration_ms"] / 1000;
-    std::ostringstream output;
-    std::ostringstream dur;
-    dur << duration / 60 << ":" << std::setw(2) << std::setfill('0') << duration % 60;
-    output << '[' << name << "] [" << artist << "] [" << album << "] [" << dur.str() << ']';
-    return output.str();
+std::string Spotify::format_track_title(const json& track) {
+    return spotify::catalog::format_track(song_format, track);
 }
 
 /**
@@ -154,11 +127,11 @@ std::string Spotify::get_user_queue() {
         std::ostringstream output;
         std::string current_song;
         if (!queue_details["currently_playing"].is_null()) {
-            current_song = format_song_title_user_queue(queue_details["currently_playing"]);
+            current_song = format_track_title(queue_details["currently_playing"]);
             song_history_contains(current_song);
         }
         for (const auto& item : queue_details["queue"]) {
-            std::string song = format_song_title_user_queue(item);
+            std::string song = format_track_title(item);
             if (!song_history_contains(song)) {
                 output << song << '\n';
             }

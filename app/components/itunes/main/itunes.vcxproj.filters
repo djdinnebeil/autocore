@@ -48,10 +48,28 @@
     <ClCompile Include="itunes_track_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\song_template_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\library_format_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\itunes_metadata_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="itunes_commands.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itunes_formatting_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\itunes_db_protocol.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_db_client.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itunes_db_client.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itunes_monitor.ixx">
@@ -138,6 +156,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="itunes_track_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\song_template_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\library_format_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\itunes_metadata_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "../shared/library_format_detail.hpp"
+
 #include <string>
 #include <string_view>
 
@@ -11,7 +13,8 @@ namespace itunes::formatting::detail {
 
     [[nodiscard]] std::string format_queue_item(
         std::string_view input,
-        int tab_end
+        const itunes::library_format::detail::CompiledLibraryFormat& format,
+        int column_count
     );
 
 } // namespace itunes::formatting::detail

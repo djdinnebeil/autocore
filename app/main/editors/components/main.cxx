@@ -8,6 +8,7 @@ import auto_core.main.config_support;
 import auto_core.main.defaults;
 
 import <iostream>;
+import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
@@ -281,6 +282,7 @@ int single_component_update(const std::string_view name) {
 struct EditorArguments {
     std::string component;
     std::optional<bool> enabled;
+    bool seed {false};
 };
 
 [[nodiscard]]
@@ -316,7 +318,18 @@ std::optional<EditorArguments> parse_arguments(const int argc, char* argv[]) {
             saw_off = true;
             continue;
         }
+        if (argument == "--seed") {
+            arguments.seed = true;
+            continue;
+        }
         std::cerr << "Unknown argument: " << argument << '\n';
+        return std::nullopt;
+    }
+
+    if (arguments.seed &&
+        (!arguments.component.empty() || saw_on || saw_off)) {
+        std::cerr
+            << "--seed cannot be combined with --component, --on, or --off.\n";
         return std::nullopt;
     }
 
@@ -340,11 +353,28 @@ std::optional<EditorArguments> parse_arguments(const int argc, char* argv[]) {
 } // namespace
 
 int main(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
     components_editor.log_main("components_editor.exe started");
 
     const auto arguments = parse_arguments(argc, argv);
     if (!arguments) {
         return 1;
+    }
+    if (arguments->seed) {
+        std::error_code error;
+        const bool list_present = file_exists(list_path(), error);
+        if (error) {
+            components_editor.log_print(
+                "Failed to inspect {}",
+                list_path().string()
+            );
+            return 1;
+        }
+        if (list_present) {
+            components_editor.log_print("components.list already exists.");
+            return 0;
+        }
+        return full_synchronize();
     }
     if (arguments->enabled) {
         return set_explicit_state(

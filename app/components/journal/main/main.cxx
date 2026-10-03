@@ -5,11 +5,15 @@ import auto_core.core.ini;
 import auto_core.core.paths;
 import auto_core.taskbar;
 import command_registry;
+import journal_cloud_client;
 import journal_commands;
 import journal_component;
+import journal_db_client;
+import journal_remote_sync;
 import component_protocol;
 
 import <Windows.h>;
+import auto_core.core.shell;
 
 namespace {
 
@@ -42,6 +46,7 @@ int write_manifest(
 } // namespace
 
 int main(int argument_count, char* arguments[]) {
+    ac::shell::set_process_app_user_model_id();
     auto registry = create_journal_command_registry();
 
     if (argument_count == 3 &&
@@ -52,9 +57,17 @@ int main(int argument_count, char* arguments[]) {
 
     journal_component().log_main("journal_ac.exe started");
 
+    if (const auto database = journal::db::start_service(); !database) {
+        journal_component().log("{}", database.error());
+    }
+    struct DatabaseServiceGuard {
+        ~DatabaseServiceGuard() { journal::db::shutdown_service(); }
+    } database_service_guard;
+
     {
         const auto ini_path = ac::paths::config_directory() / "journal.ini";
-        if (!ac::ini::read(ini_path)) {
+        const auto document = ac::ini::read(ini_path);
+        if (!document) {
             std::error_code exists_error;
             const bool present =
                 std::filesystem::exists(ini_path, exists_error);
@@ -62,7 +75,16 @@ int main(int argument_count, char* arguments[]) {
                 present && !exists_error
             );
         }
+        else if (const auto remote_sync = document->find("journal", "remote_sync");
+                 remote_sync && journal::remote_sync::enabled(*remote_sync)) {
+            if (const auto cloud = journal::cloud::start_service(); !cloud) {
+                journal_component().log("{}", cloud.error());
+            }
+        }
     }
+    struct CloudServiceGuard {
+        ~CloudServiceGuard() { journal::cloud::shutdown_service(); }
+    } cloud_service_guard;
 
     if (!ac::taskbar::connect()) {
         journal_component().log_print(

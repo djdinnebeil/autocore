@@ -16,12 +16,13 @@ app/components/example/
 ```
 
 The component root holds those folders only. Optional `tests/` (own `.sln`) if
-the child has Catch2 tests. Extra executables (Spotify `oauth/`) are sibling
-folders with their own `.sln`.
+the child has Catch2 tests. Extra executables (Spotify `oauth/`, Server
+`builder/` for `server_builder.exe`) are sibling folders with their own
+`.sln`.
 
 Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_print`), uses those defaults in memory, and does **not** create the file.
 
-Lived example: [`app/components/server`](../app/components/server) (`main` / `config` / `shared/defaults.ixx`).
+Lived example: [`app/components/server`](../app/components/server) (`main` / `config` / `editor` / `builder` / `star` / `shared/defaults.ixx`).
 
 Do not use `dash` or `slash` as a new v1 list name (those are known specials). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the post-Link DLL copy. Those are toolchain requirements, not filesystem paths to type into the project.
 
@@ -333,7 +334,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
   project dirs, and `tests/` when present). Auto Core has no repository-root
   `.sln` and no component-root `.sln`.
 - `msbuild/AutoCore.props` only if you are changing shared build policy (this workflow does not)
-- Tracked samples under `defaults/` if the portable seed should mention the child (optional; rebuilds the DLL)
+- `shared/defaults.ixx` for that child's portable INI text
 
 **Normally remain local / ignored**
 
@@ -359,8 +360,8 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 
 ## Adding a New Auto Core Component
 
-1. **Source.** Create `app/components/<name>/main`, `config`, and `shared`. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}`, prompts and writes the INI only, then launches `components_editor.exe --component <name>`.
+1. **Source.** Create `app/components/<name>/main`, `config`, and `shared`. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `star/main.cxx` that calls `ac::component_star::run("<name>")`.
 2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `dist\bin\<name>_ac.exe` and `dist\bin\<name>_config.exe`.
-3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini` and register the name with `components_editor.exe --component <name>`, or append the name under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
+3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini`. Enable the name with `<name>_star.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
 
 Auto Core knows how to host a component. It does not need to know which components exist when `auto_core.exe` is compiled.

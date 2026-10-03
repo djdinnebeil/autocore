@@ -132,13 +132,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>auto_core.lib;sqlite3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\core\modules\core_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
+    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
     <ClCompile Include="..\..\..\core\modules\error.ixx" />
@@ -146,13 +147,16 @@
     <ClCompile Include="..\..\..\core\modules\ini.ixx" />
     <ClCompile Include="..\..\..\core\modules\paths.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\journal_auto_select.ixx" />
+    <ClCompile Include="..\shared\journal_remote_sync.ixx" />
     <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
-    <ClCompile Include="..\main\journal_database.ixx" />
-    <ClCompile Include="..\main\journal_database.cxx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

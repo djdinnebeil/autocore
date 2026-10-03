@@ -1,11 +1,16 @@
 /**
  * \file wake_logging.ixx
- * \brief Wake-event logging for `wake_ac.exe`.
+ * \brief Wake-event capture for `wake_ac.exe`.
  *
  * `log_last_wake` runs `powercfg /lastwake` and compares the output against
- * the previous capture under the configured log directory's
- * `components/wake/` folder.
+ * `previous.event` under `[wake] directory`. Those history files are
+ * operational state. Ordinary component logs still follow `logging.ini`.
  */
+module;
+
+#include "wake_capture.hpp"
+#include "../shared/wake_history_detail.hpp"
+
 export module wake_logging;
 
 import std;
@@ -17,11 +22,10 @@ import auto_core.core.paths;
 
 namespace fs = std::filesystem;
 
-export ac::Component wake_component("wake");
-
-export void update_wake_component() {
-	wake_component.update_log_file();
-}
+export ac::Component wake_component(
+    "wake",
+    ac::logging::config::LoggingScope {"wake"}
+);
 
 export void log_init() {
 	wake_component.log_main("wake_ac.exe started");
@@ -35,114 +39,65 @@ export void log_init() {
 }
 
 /**
- * Captures `powercfg /lastwake` into `wake_latest.log`. On change, appends
- * to `wake_master.log` and updates `wake_previous.log`.
+ * Captures `powercfg /lastwake` and updates `current.event`. On a real
+ * change, appends to `wake_events.log` and updates `previous.event`.
+ *
+ * The command finishes before `current.event` is modified. A failed or
+ * empty capture leaves an existing `current.event` in place and creates
+ * any missing history file empty.
+ *
+ * \return `0` when the capture was applied or the empty-file fallback
+ *         succeeded. `1` when the directory or a history write fails.
  */
-export void log_last_wake() {
+export int log_last_wake() {
     wake_component.log(
         "Checking last wake log at {}",
         ac::clock::get_timestamp_with_seconds()
     );
 
-    const fs::path wake_directory =
-        ac::logging::config::components_directory() /
-        "wake";
-
-    fs::create_directories(wake_directory);
-
-    const fs::path previous_last_wake_file =
-        wake_directory / "wake_previous.log";
-
-    const fs::path current_last_wake_file =
-        wake_directory / "wake_latest.log";
-
-    const fs::path last_wake_log_file =
-        wake_directory / "wake_master.log";
-
-    {
-        std::ofstream current_last_wake_clear(
-            current_last_wake_file
+    const fs::path wake_directory = ac::paths::wake_directory();
+    std::error_code create_error;
+    fs::create_directories(wake_directory, create_error);
+    if (create_error) {
+        wake_component.log(
+            "Failed to create Wake directory: {}",
+            create_error.message()
         );
-
-        if (!current_last_wake_clear.is_open()) {
-            wake_component.log(
-                "Unable to clear '{}'.",
-                current_last_wake_file.string()
-            );
-
-            return;
-        }
+        wake_component.flush();
+        return 1;
     }
 
-    const std::string retrieve_last_wake_command =
-        std::format(
-            "powercfg /lastwake >> \"{}\"",
-            current_last_wake_file.string()
-        );
+    const auto captured = wake::capture_powercfg();
+    if (!captured) {
+        wake_component.log("Unable to capture the last wake event.");
+        const bool created =
+            wake::history::create_missing_history_files(wake_directory);
+        if (!created) {
+            wake_component.log("Unable to create Wake history files.");
+        }
+        wake_component.flush();
+        return created ? 0 : 1;
+    }
 
-    system(retrieve_last_wake_command.c_str());
-
-    std::ifstream previous_last_wake_stream(
-        previous_last_wake_file
+    const auto stamp = ac::clock::get_datetime();
+    const auto result = wake::history::apply_capture(
+        wake_directory,
+        *captured,
+        stamp
     );
-
-    std::string line;
-    std::ostringstream previous_last_wake_oss;
-
-    while (std::getline(previous_last_wake_stream, line)) {
-        previous_last_wake_oss << line << '\n';
+    if (result == wake::history::ApplyResult::failed) {
+        wake_component.log("Unable to update Wake history.");
+        wake_component.flush();
+        return 1;
     }
-
-    std::ifstream current_last_wake_stream(
-        current_last_wake_file
-    );
-
-    std::ostringstream current_last_wake_oss;
-
-    while (std::getline(current_last_wake_stream, line)) {
-        current_last_wake_oss << line << '\n';
-    }
-
-    const std::string previous_last_wake_str =
-        previous_last_wake_oss.str();
-
-    const std::string current_last_wake_str =
-        current_last_wake_oss.str();
-
-    if (current_last_wake_str != previous_last_wake_str) {
-        const std::string current_last_wake_output =
-            ac::clock::get_datetime() +
-            '\n' +
-            current_last_wake_str;
-
-        {
-            std::ofstream last_wake_log_stream(
-                last_wake_log_file,
-                std::ios::app
-            );
-
-            if (last_wake_log_stream.is_open()) {
-                last_wake_log_stream
-                    << current_last_wake_output;
-            }
-        }
-
-        {
-            std::ofstream previous_last_wake_update(
-                previous_last_wake_file
-            );
-
-            if (previous_last_wake_update.is_open()) {
-                previous_last_wake_update
-                    << current_last_wake_str;
-            }
-        }
-
+    if (result == wake::history::ApplyResult::recorded) {
         wake_component.lognl_main(
-            "wake state change detected at {}",
-            current_last_wake_output
+            "wake state change detected at {}\n{}",
+            stamp,
+            wake::history::normalize_body(*captured)
         );
     }
 
     wake_component.flush();
+    return 0;
 }

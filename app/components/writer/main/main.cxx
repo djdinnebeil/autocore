@@ -6,12 +6,48 @@ import command_registry;
 import writer_commands;
 import writer_component;
 import component_protocol;
+import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.paths;
 
 import <Windows.h>;
+import auto_core.core.shell;
 
 namespace {
+
+void report_invalid_notes_subdirectory() {
+    const auto document = ac::ini::read(
+        ac::paths::config_directory() / "writer.ini"
+    );
+    if (!document) {
+        return;
+    }
+    const auto value = document->find("writer", "notes_subdirectory");
+    if (!value || value->empty()) {
+        return;
+    }
+
+    bool relative = false;
+    try {
+        const std::filesystem::path configured {
+            ac::encoding::to_utf16(std::string {*value})
+        };
+        relative = !configured.empty() &&
+            !configured.has_root_name() &&
+            !configured.has_root_directory();
+    }
+    catch (...) {
+        relative = false;
+    }
+    if (relative) {
+        return;
+    }
+    writer_component().log_print(
+        "config/writer.ini has an invalid notes_subdirectory. "
+        "Using the notes folder under the Writer directory. "
+        "The file will not be rewritten."
+    );
+}
 
 int write_manifest(
     const command_registry::Registry& registry,
@@ -40,6 +76,7 @@ int write_manifest(
 } // namespace
 
 int main(int argument_count, char* arguments[]) {
+    ac::shell::set_process_app_user_model_id();
     auto registry = create_writer_command_registry();
 
     if (argument_count == 3 &&
@@ -59,6 +96,9 @@ int main(int argument_count, char* arguments[]) {
             writer_component().report_ini_unavailable(
                 present && !exists_error
             );
+        }
+        else {
+            report_invalid_notes_subdirectory();
         }
     }
 

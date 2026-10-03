@@ -11,12 +11,12 @@ import std;
 export namespace ac::main::defaults {
 
     constexpr bool warn_without_winkey_mapping = true;
+    constexpr bool auto_core_logging = true;
 
     constexpr std::string_view auto_core_ini =
-        "# The presence of this file indicates that Auto Core has been initialized.\n"
-        "\n"
         "[auto_core]\n"
-        "warn_without_winkey_mapping = true\n";
+        "warn_without_winkey_mapping = on\n"
+        "logging = on\n";
 
     constexpr std::string_view components_new_components = "on";
     constexpr bool components_sort = true;
@@ -56,35 +56,53 @@ export namespace ac::main::defaults {
         "delayed_shutdown_prompt = popup\n"
         "shutdown_timeout_ms = 2000\n";
 
-    constexpr std::string_view logger_directory = "logs";
+    constexpr bool logging_disable_all = false;
+    constexpr bool logging_write_logs_to_files = true;
+    constexpr std::string_view logging_directory = "logs";
+    constexpr bool logging_write_logs_to_console = false;
+    constexpr std::string_view logging_log_print_mode = "print";
+    constexpr bool logging_component_logging_default = true;
+
+    constexpr std::string_view logging_ini =
+        "[logging]\n"
+        "disable_all = off\n"
+        "directory = logs\n"
+        "write_logs_to_files = on\n"
+        "write_logs_to_console = off\n"
+        "log_print_mode = print\n"
+        "component_logging_default = on\n";
+
     constexpr std::uint64_t logger_merge_interval_seconds = 60;
     constexpr bool logger_merge_logs_on_shutdown = true;
-    constexpr bool logger_write_logs_to_console = false;
 
     constexpr std::string_view logger_ini =
         "[logger]\n"
-        "directory = logs\n"
         "merge_interval_seconds = 60\n"
         "merge_logs_on_shutdown = on\n"
-        "write_logs_to_console = off\n";
+        "logging = on\n";
 
     constexpr bool keymap_silence_nonset_warning = false;
 
     constexpr std::string_view keymap_ini =
         "[keymap]\n"
-        "silence_nonset_warning = false\n";
+        "silence_nonset_warning = off\n";
 
     [[nodiscard]]
-    inline std::string ini_for_auto_core(const bool warn) {
-        if (warn == warn_without_winkey_mapping) {
+    inline std::string ini_for_auto_core(
+        const bool warn,
+        const bool logging = auto_core_logging
+    ) {
+        if (warn == warn_without_winkey_mapping && logging == auto_core_logging) {
             return std::string {auto_core_ini};
         }
         return std::string {
-            "# The presence of this file indicates that Auto Core has been initialized.\n"
-            "\n"
             "[auto_core]\n"
-            "warn_without_winkey_mapping = false\n"
-        };
+            "warn_without_winkey_mapping = "
+        } + std::string {warn ? "on" : "off"} +
+            "\n"
+            "logging = " +
+            std::string {logging ? "on" : "off"} +
+            "\n";
     }
 
     [[nodiscard]]
@@ -122,35 +140,68 @@ export namespace ac::main::defaults {
     }
 
     [[nodiscard]]
-    inline std::string ini_for_logger(
+    inline std::string ini_for_logging(
+        const bool disable_all,
+        const bool write_logs_to_files,
         const std::string_view stored_directory,
-        const std::uint64_t merge_interval_seconds,
-        const bool merge_logs_on_shutdown,
-        const bool write_logs_to_console
+        const bool write_logs_to_console,
+        const std::string_view log_print_mode,
+        const bool component_logging_default
     ) {
         const std::string directory = stored_directory.empty()
-            ? std::string {logger_directory}
+            ? std::string {logging_directory}
             : std::string {stored_directory};
-        if (directory == logger_directory &&
-            merge_interval_seconds == logger_merge_interval_seconds &&
+        const std::string mode = log_print_mode == "log" ? "log" : "print";
+        if (disable_all == logging_disable_all &&
+            write_logs_to_files == logging_write_logs_to_files &&
+            directory == logging_directory &&
+            write_logs_to_console == logging_write_logs_to_console &&
+            mode == logging_log_print_mode &&
+            component_logging_default == logging_component_logging_default) {
+            return std::string {logging_ini};
+        }
+        return std::string {
+            "[logging]\n"
+            "disable_all = "
+        } + (disable_all ? "on" : "off") +
+            "\n"
+            "directory = " + directory +
+            "\n"
+            "write_logs_to_files = " +
+            (write_logs_to_files ? "on" : "off") +
+            "\n"
+            "write_logs_to_console = " +
+            (write_logs_to_console ? "on" : "off") +
+            "\n"
+            "log_print_mode = " + mode +
+            "\n"
+            "component_logging_default = " +
+            (component_logging_default ? "on" : "off") +
+            "\n";
+    }
+
+    [[nodiscard]]
+    inline std::string ini_for_logger(
+        const std::uint64_t merge_interval_seconds,
+        const bool merge_logs_on_shutdown,
+        const bool logging = true
+    ) {
+        if (merge_interval_seconds == logger_merge_interval_seconds &&
             merge_logs_on_shutdown == logger_merge_logs_on_shutdown &&
-            write_logs_to_console == logger_write_logs_to_console) {
+            logging) {
             return std::string {logger_ini};
         }
         return std::string {
             "[logger]\n"
-            "directory = "
-        } + directory +
-            "\n"
             "merge_interval_seconds = " +
             std::to_string(merge_interval_seconds) +
             "\n"
             "merge_logs_on_shutdown = " +
             (merge_logs_on_shutdown ? "on" : "off") +
+            "\nlogging = " +
+            (logging ? "on" : "off") +
             "\n"
-            "write_logs_to_console = " +
-            (write_logs_to_console ? "on" : "off") +
-            "\n";
+        };
     }
 
     [[nodiscard]]
@@ -160,7 +211,7 @@ export namespace ac::main::defaults {
         }
         return std::string {
             "[keymap]\n"
-            "silence_nonset_warning = true\n"
+            "silence_nonset_warning = on\n"
         };
     }
 

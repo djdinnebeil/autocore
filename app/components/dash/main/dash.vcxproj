@@ -87,6 +87,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\clipboard.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\console.ixx" />
@@ -102,11 +103,16 @@
     <ClCompile Include="..\..\..\core\modules\text_inserter.ixx" />
     <ClCompile Include="..\..\..\core\modules\thread.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
-    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\vault.ixx" />
+    <ClCompile Include="..\shared\vault_decrypt.ixx" />
+    <ClCompile Include="..\shared\hello.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

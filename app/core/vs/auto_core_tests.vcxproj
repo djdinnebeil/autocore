@@ -18,7 +18,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -71,7 +71,10 @@
     <ClCompile Include="..\src\configured_directory.cxx" />
     <ClCompile Include="..\src\logging_config_detail.cxx" />
     <ClCompile Include="..\src\spotify_config_detail.cxx" />
+    <ClCompile Include="..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\shared\component_star.ixx" />
     <ClCompile Include="..\tests\clock_tests.cxx" />
+    <ClCompile Include="..\tests\component_star_tests.cxx" />
     <ClCompile Include="..\tests\component_log_tests.cxx" />
     <ClCompile Include="..\tests\core_config_tests.cxx" />
     <ClCompile Include="..\tests\configured_directory_tests.cxx" />

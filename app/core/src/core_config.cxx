@@ -9,47 +9,9 @@ import std;
 import auto_core.core.ini;
 import auto_core.core.paths;
 
-import <iostream>;
-
 namespace ac::config {
 
     namespace {
-
-        bool write_if_missing(
-            const std::filesystem::path& path,
-            const std::string_view contents
-        ) {
-            std::error_code ec;
-            if (std::filesystem::exists(path, ec)) {
-                return true;
-            }
-            if (ec) {
-                std::cerr
-                    << "Failed to inspect "
-                    << path.string()
-                    << ": "
-                    << ec.message()
-                    << '\n';
-                return false;
-            }
-
-            std::ofstream output(path, std::ios::binary);
-            if (!output) {
-                std::cerr << "Failed to create " << path.string() << '\n';
-                return false;
-            }
-
-            output.write(
-                contents.data(),
-                static_cast<std::streamsize>(contents.size())
-            );
-            output.close();
-            if (!output) {
-                std::cerr << "Failed to write " << path.string() << '\n';
-                return false;
-            }
-            return true;
-        }
 
         constexpr CoreSettings default_settings {
             .warn_without_winkey_mapping = true
@@ -105,7 +67,7 @@ namespace ac::config {
                     .warn_without_winkey_mapping =
                         resolved.warn_without_winkey_mapping
                 };
-                if (*raw != "true" && *raw != "false") {
+                if (*raw != "on" && *raw != "off") {
                     report =
                         "config/auto_core.ini [auto_core] "
                         "warn_without_winkey_mapping is invalid. Run "
@@ -120,26 +82,6 @@ namespace ac::config {
             return value;
         }
 
-    }
-
-    void seed_missing_journal_choices() {
-        std::error_code ec;
-        std::filesystem::create_directories(
-            ac::paths::journal_directory(),
-            ec
-        );
-        if (ec) {
-            std::cerr
-                << "Failed to create journal directory: "
-                << ec.message()
-                << '\n';
-            return;
-        }
-
-        write_if_missing(
-            ac::paths::journal_directory() / "journal_choices.ini",
-            detail::journal_choices_ini
-        );
     }
 
     void initialize_core_settings() {

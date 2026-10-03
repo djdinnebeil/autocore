@@ -11,6 +11,7 @@ export module auto_core.core.component;
 import std;
 import auto_core.core.clock;
 import auto_core.core.formatting;
+import auto_core.core.logging.config;
 
 export namespace ac {
     /** \brief Selects the destinations for a component message. */
@@ -19,8 +20,17 @@ export namespace ac {
         component,
         /** Write to the comprehensive log and the component main-log subset. */
         component_and_main,
-        /** Write to both local logs and the active console. */
-        component_main_and_console
+        /**
+         * \brief `log_print`. Classified by `log_print_mode` before routing.
+         */
+        component_main_and_console,
+        /**
+         * \brief User-facing console output.
+         *
+         * Console remains available when logging is disabled. File and
+         * main-log output stay when the file sink is active.
+         */
+        user_facing
     };
 
     /**
@@ -33,11 +43,25 @@ export namespace ac {
     class Component {
     public:
         /**
-         * \brief Starts a named component session and opens its local log.
+         * \brief Starts a named component session.
+         *
+         * Construction does not read logging configuration or open log
+         * files. The first enabled file write opens `components/<name>/`.
          * \param name The component name used for `components/<name>/` log
          * directories and events.
          */
         AC_API explicit Component(std::string_view name);
+
+        /**
+         * \brief Starts a named session with an explicit logging scope.
+         *
+         * `name` is the log identity. `scope` selects the family INI and
+         * fallback. Absence of this overload means no family INI lookup.
+         */
+        AC_API Component(
+            std::string_view name,
+            ac::logging::config::LoggingScope scope
+        );
         /** \brief Closes the local component logs. */
         AC_API ~Component() noexcept;
 
@@ -87,8 +111,9 @@ export namespace ac {
          * \name Output convenience methods
          *
          * `log` writes to the comprehensive component log. `log_main` also
-         * writes the main-log subset. `log_print` and `print` share the
-         * `component_main_and_console` route (both local logs and stdout).
+         * writes the main-log subset. `log_print` is classified by
+         * `log_print_mode`. `print` is user-facing: console stays available,
+         * and file output follows the file sink.
          * Names containing `nl` suppress the trailing newline.
          * Narrow, wide, single-character, and formatted UTF-8 overloads are
          * provided. Formatting failures are reported to every destination.
@@ -100,8 +125,8 @@ export namespace ac {
         void lognl_main(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
         void log_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
         void lognl_print(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
-        void print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
-        void printnl(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void print(std::string_view message) { write(message, OutputRoute::user_facing); }
+        void printnl(std::string_view message) { write(message, OutputRoute::user_facing, false); }
 
         void log(std::wstring_view message) { write(message, OutputRoute::component); }
         void lognl(std::wstring_view message) { write(message, OutputRoute::component, false); }
@@ -109,8 +134,8 @@ export namespace ac {
         void lognl_main(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
         void log_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
         void lognl_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
-        void print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
-        void printnl(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
+        void print(std::wstring_view message) { write(message, OutputRoute::user_facing); }
+        void printnl(std::wstring_view message) { write(message, OutputRoute::user_facing, false); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
@@ -160,12 +185,12 @@ export namespace ac {
 
         template<typename... Args>
         void print(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_main_and_console, true, format_string, std::forward<Args>(args)...);
+            write_formatted(OutputRoute::user_facing, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         void printnl(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_main_and_console, false, format_string, std::forward<Args>(args)...);
+            write_formatted(OutputRoute::user_facing, false, format_string, std::forward<Args>(args)...);
         }
         /** \} */
 
@@ -287,7 +312,7 @@ export namespace ac {
             }
             catch (const std::exception& exception) {
                 write(std::string("Component format error: ") + exception.what(),
-                    OutputRoute::component_main_and_console);
+                    OutputRoute::user_facing);
                 return std::nullopt;
             }
         }

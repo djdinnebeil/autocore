@@ -18,6 +18,9 @@
     <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\server_data_detail.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\core\modules\clipboard.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

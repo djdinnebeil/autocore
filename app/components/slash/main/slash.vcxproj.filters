@@ -57,9 +57,6 @@
     <ClCompile Include="..\..\..\core\modules\paths.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\pipes.ixx">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\shared\command_registry.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

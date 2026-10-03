@@ -53,13 +53,11 @@
       <AdditionalDependencies>auto_core.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
-    <PostBuildEvent>
-      <Command>if not exist "$(AutoCoreDistDir)keymap\components" mkdir "$(AutoCoreDistDir)keymap\components"
-"$(TargetPath)" --generate-keymap-command-registry "$(AutoCoreDistDir)keymap\components\taskbar.keymap_commands.txt"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\modules\clock.ixx" />
+    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
+    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\component.ixx" />
     <ClCompile Include="..\..\..\core\modules\core_config.ixx" />
     <ClCompile Include="..\..\..\core\modules\console.ixx" />
@@ -70,7 +68,6 @@
     <ClCompile Include="..\..\..\core\modules\ini.ixx" />
     <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
-    <ClCompile Include="..\shared\taskbar_config_protocol.ixx" />
     <ClCompile Include="..\shared\taskbar_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
@@ -80,7 +77,10 @@
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\resources\resource.rc" />
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
+      <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

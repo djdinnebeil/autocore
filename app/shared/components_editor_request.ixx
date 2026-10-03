@@ -19,6 +19,8 @@ export namespace ac::config::components_request {
     inline constexpr std::string_view on_flag = "--on";
     inline constexpr std::string_view off_flag = "--off";
     inline constexpr std::string_view initialize_flag = "--initialize";
+    inline constexpr std::string_view init_flag = "--init";
+    inline constexpr std::string_view seed_flag = "--seed";
 
     enum class ListedState {
         unchanged,
@@ -26,10 +28,122 @@ export namespace ac::config::components_request {
         off
     };
 
+    /**
+     * \brief Flags for a `_config.exe` launch.
+     *
+     * `--init` is interactive initialization. `--initialize` is a
+     * compatibility alias of `--init`. `--seed` writes default
+     * configuration only when the owned file is missing. Order does
+     * not matter. `--init --seed` is the combined mode.
+     */
+    struct ConfigLaunch {
+        bool init {false};
+        bool seed {false};
+    };
+
+    template <typename Logger>
+    inline void log_config_request(
+        Logger& logger,
+        const ConfigLaunch& launch
+    ) {
+        if (launch.init && launch.seed) {
+            logger.log_print("Initialization requested with seed mode");
+            return;
+        }
+        if (launch.seed) {
+            logger.log_print("Seed requested");
+            return;
+        }
+        if (launch.init) {
+            logger.log_print("Initialization requested");
+        }
+    }
+
+    template <typename Logger>
+    inline void log_seed_skipped(
+        Logger& logger,
+        const std::string_view file
+    ) {
+        logger.log_print("Seed skipped; {} already exists", file);
+    }
+
+    template <typename Logger>
+    inline void log_initialization_skipped(
+        Logger& logger,
+        const std::string_view file
+    ) {
+        logger.log_print("Initialization skipped; {} already exists", file);
+    }
+
+    template <typename Logger>
+    inline void log_writing_defaults(Logger& logger) {
+        logger.log_print("Writing default configuration");
+    }
+
+    template <typename Logger>
+    inline void log_configuration_initialized(Logger& logger) {
+        logger.log_print("Configuration initialized successfully");
+    }
+
+    template <typename Logger>
+    inline void log_configuration_missing(Logger& logger) {
+        logger.log_print("Configuration file missing; starting initialization");
+    }
+
+    [[nodiscard]]
+    inline std::optional<ConfigLaunch> parse_config_launch(
+        const int argc,
+        char* argv[]
+    ) {
+        ConfigLaunch launch;
+        for (int i = 1; i < argc; ++i) {
+            const std::string_view argument {argv[i]};
+            if (argument == init_flag || argument == initialize_flag) {
+                launch.init = true;
+                continue;
+            }
+            if (argument == seed_flag) {
+                launch.seed = true;
+                continue;
+            }
+            std::cerr << "Unknown argument: " << argument << '\n';
+            return std::nullopt;
+        }
+        return launch;
+    }
+
+    [[nodiscard]]
+    inline std::optional<ConfigLaunch> parse_config_launch(
+        const int argc,
+        wchar_t* argv[]
+    ) {
+        ConfigLaunch launch;
+        for (int i = 1; i < argc; ++i) {
+            const std::wstring_view argument {argv[i]};
+            if (argument == L"--init" || argument == L"--initialize") {
+                launch.init = true;
+                continue;
+            }
+            if (argument == L"--seed") {
+                launch.seed = true;
+                continue;
+            }
+            std::wcerr << L"Unknown argument: " << argument << L'\n';
+            return std::nullopt;
+        }
+        return launch;
+    }
+
+    /**
+     * \brief True when `--init` or its `--initialize` alias is present.
+     *
+     * This is not a seed check. Seeding is `ConfigLaunch::seed`.
+     */
     [[nodiscard]]
     inline bool is_initialize_run(const int argc, char* argv[]) noexcept {
         for (int i = 1; i < argc; ++i) {
-            if (std::string_view {argv[i]} == initialize_flag) {
+            const std::string_view argument {argv[i]};
+            if (argument == init_flag || argument == initialize_flag) {
                 return true;
             }
         }
@@ -39,7 +153,8 @@ export namespace ac::config::components_request {
     [[nodiscard]]
     inline bool is_initialize_run(const int argc, wchar_t* argv[]) noexcept {
         for (int i = 1; i < argc; ++i) {
-            if (std::wstring_view {argv[i]} == L"--initialize") {
+            const std::wstring_view argument {argv[i]};
+            if (argument == L"--init" || argument == L"--initialize") {
                 return true;
             }
         }

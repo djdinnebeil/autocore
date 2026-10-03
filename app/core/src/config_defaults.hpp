@@ -14,10 +14,9 @@
 namespace ac::config::detail {
 
     inline constexpr std::string_view auto_core_ini =
-        "# The presence of this file indicates that Auto Core has been initialized.\n"
-        "\n"
         "[auto_core]\n"
-        "warn_without_winkey_mapping = true\n";
+        "warn_without_winkey_mapping = on\n"
+        "logging = on\n";
 
     inline constexpr std::string_view components_ini =
         "[settings]\n"
@@ -48,18 +47,8 @@ namespace ac::config::detail {
         "delayed_shutdown_prompt = popup\n"
         "shutdown_timeout_ms = 2000\n";
 
-    inline constexpr std::string_view journal_choices_ini =
-        "; Short names for keymap.map. The right-hand side is a journal factory\n"
-        "; expression. Unused names are not bound. journal_config.exe writes\n"
-        "; journal_choices.ini once if it is missing. An existing\n"
-        "; journal_choices.ini is never overwritten.\n"
-        "; Auto Core never reads repo defaults/.\n"
-        "\n"
-        "print_Tabby_choice = make_print_choice(\"Tabby\", 0, 1)\n"
-        "print_one_is_selected = print_and_insert_into_journal(\"1 is selected.\")\n";
-
     inline constexpr std::string_view keymap_ini =
         "[keymap]\n"
-        "silence_nonset_warning = false\n";
+        "silence_nonset_warning = off\n";
 
 } // namespace ac::config::detail

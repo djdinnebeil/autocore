@@ -69,9 +69,10 @@ machine-specific drive letter.
 
 Developers clone and build. End users run a configured `dist/` tree. There is
 no installer yet; see [README.md](../README.md). `dist/` is gitignored.
-Tracked portable defaults live in [`defaults/`](../defaults/) (repo
-`defaults/X` is the sample for runtime `dist/X`). Do not commit personal
-runtime data; see [CONTRIBUTING.md](../CONTRIBUTING.md).
+Portable defaults are compiled in each child's `shared/defaults.ixx` and in
+[`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx) for Main
+host INIs. Do not commit personal runtime data; see
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Locked: folder layout
 
@@ -108,7 +109,6 @@ Clone vs `dist/` stays in Locked: two audiences.
 - `app/shared/` — compile-time IPC protocols and `command_registry`.
   Runtime facilities stay in the core DLL.
 - `app/resources/` — shared `.ico`/`.rc`. Stays under `app/`.
-- `defaults/` — tracked samples for runtime `dist/X`. Never loaded.
 - `dist/` — gitignored assembled runtime for end users. Nested live
   dirs are documented in README, not locked here.
 - `docs/` — developer documentation. STRATEGY is current truth.
@@ -150,10 +150,10 @@ Main must not know that component at compile time.
   `config/components.ini` (`[settings]` only: `new_components`,
   `sort_components`, `remove_missing_components`) and launches missing
   `<name>_config.exe` programs. `components_editor.exe` is the exclusive
-  writer of `components.list`. Child `_config.exe` programs write
-  `config/<name>.ini` and register with
-  `components_editor.exe --component <name>` after a successful write.
-  They never write `components.ini` or `components.list`. A missing
+  writer of `components.list`.   Child `_config.exe` programs write
+  `config/<name>.ini` and do not launch `components_editor.exe`.
+  They never write `components.ini` or `components.list`.
+  `<name>_star.exe` is the user-facing enablement console. A missing
   `components.list` is reconstructible: Main launches no-arg
   `components_editor.exe` and fails startup if the list is still absent.
   Runtime scans `*_ac.exe` only when an existing `components.list` is
@@ -182,16 +182,31 @@ Name-specific protocols live under that child's `shared/`.
 - Only `_config.exe` writes `.ini` files. `auto_core.exe` and
   `<name>_ac.exe` never create or rewrite them. The presence of
   `auto_core.ini` means Auto Core is initialized. There is no
-  `initialized` key. `auto_core_config.exe` writes that file after
-  `components_config.exe`, `keymap_config.exe`, `keymap_editor.exe`,
-  `shutdown_config.exe`, and `crash_recovery_config.exe` succeed, and
-  prompts for `[auto_core] warn_without_winkey_mapping` (default `true`).
-  Only `auto_core_config.exe` creates or rewrites it.
+  `initialized` key. `auto_core.exe` checks that file first. If it is
+  missing, the installation is new. `auto_core_init.exe` asks only
+  for Auto Core configuration, then runs `auto_core_config.exe --seed`
+  or `--init`. `logger_init.exe` and `components_init.exe` then make
+  their own choices. The remaining owners are
+  `keymap_config.exe --seed`, `components_config.exe --seed`,
+  `shutdown_config.exe --seed`, `crash_recovery_config.exe --seed`,
+  `components_editor.exe --seed`, and `keymap_editor.exe`.
+  `logger_init.exe` launches `logging_config.exe` and
+  `logger_config.exe` and does not write those files.
+  `auto_core_config.exe` writes `auto_core.ini` from
+  `[auto_core] warn_without_winkey_mapping` (default `on`) and
+  `logging` (default `on`). `logging` is the family switch for
+  `auto_core.exe`. If a required step fails or the user cancels that
+  step, including Logger or Components initialization, and this run
+  created `auto_core.ini`, the orchestrator removes the file before
+  it exits. Only `auto_core_config.exe` creates or rewrites it.
   `config/components.ini` is written only by
   `components_config.exe`. `components.list` is written only by
-  `components_editor.exe`. The config helper initializes missing
-  `components.ini`, launches `<name>_config.exe` when `config/<name>.ini`
-  is missing, and may offer a no-arg `components_editor.exe` full sync.
+  `components_editor.exe`. `components_init.exe` launches
+  `<name>_config.exe` and does not write the list or any INI.
+  `components_config.exe` may offer a no-arg `components_editor.exe`
+  full sync after the user changes `components.ini`.
+  `components_editor.exe --seed` creates a missing list and leaves an
+  existing list unchanged.
   `components_editor.exe` reconstructs `components.list` from installed
   `*_ac.exe` names that already have `config/<name>.ini`, using INI
   settings or compiled defaults. Targeted `--component <name>` requires
@@ -206,8 +221,10 @@ Name-specific protocols live under that child's `shared/`.
   `log_print` (`Component::report_ini_unavailable` for children). The
   file is not created. Per-key invalid values in a readable file keep that
   key's default and do not rewrite the file.
-- Tracked samples under `defaults/config/<name>.ini` must match
-  `defaults.ixx`. Runtime never reads `defaults/`.
+- Portable INI text lives in each child's `shared/defaults.ixx`. Main host
+  INI text (`auto_core`, `components`, `keymap`, `shutdown`,
+  `crash_recovery`, `logging`, `logger`) lives in `app/main/shared/defaults.ixx`.
+  `<name>_config.exe --seed` writes a missing live INI from that text.
 - Nested project Target Names stay `<name>_ac`, `<name>_config`, and
   unsuffixed `spotify_oauth`.
 
@@ -217,12 +234,31 @@ Each executable writes `{date}_{name}.log` and `{date}_{name}.main.log` under
 `logs/components/<name>/`. `.main.log` is an exact subset of `.log`. The `nl`
 logging names use the same routes and leave the record open.
 
-`config/logger.ini` is host configuration written by `logger_config.exe`
-(`app/components/logger/config`). The canonical keys are `directory = logs`,
-`merge_interval_seconds`, `merge_logs_on_shutdown`, and
-`write_logs_to_console`. A missing file keeps those defaults in memory.
-Main reports that and tells the operator to run `logger_config.exe`. The
-file is not created. `logger_ac.exe` incrementally merges `.main.log`
+`config/logging.ini` is the shared logging policy written by
+`logging_config.exe` (`app/main/config/logging`). The canonical keys, in
+file order, are `disable_all = off`, `directory = logs`,
+`write_logs_to_files = on`, `write_logs_to_console = off`,
+`log_print_mode = print`, and `component_logging_default = on`.
+`disable_all` stops logging-controlled file and console output.
+`write_logs_to_files` and `write_logs_to_console` are the two sinks.
+`log_print_mode` classifies `log_print` as `log` or `print` before those
+sinks. Family logging is `config/<scope>.ini` `[<scope>] logging`.
+A normal missing key uses `component_logging_default`. Dash uses scope
+`dash` with fallback off, so a missing key is off. A `Component` with no
+scope does not read a component INI. A relative `directory` resolves from
+the installation root. On a new installation, `logger_init.exe` asks
+`logging_config.exe` to create a missing `logging.ini`. On an established installation, a missing
+`logging.ini` keeps those defaults in memory. Main warns, and the file
+is not created.
+
+`config/logger.ini` is merger configuration written by `logger_config.exe`
+(`app/components/log_merger/config`). The canonical keys are
+`merge_interval_seconds` and `merge_logs_on_shutdown`. A missing file
+keeps those defaults in memory. Main reports that and tells the operator
+to run `logger_config.exe`. The file is not created. `logger_ac.exe`,
+like every other executable, uses the shared `logging.ini` directory for
+its local logs and for merged output. `logger.ini` controls only when
+merging occurs. `logger_ac.exe` incrementally merges `.main.log`
 files into `YYYY-MM-DD_main.log`. The hosted process does not merge on
 shutdown. After it has exited, shutdown `on` starts a detached
 `logger_ac.exe --once`. At most one `logger_ac.exe` may access
@@ -236,8 +272,8 @@ do not connect to it to send log lines.
 ## Current path
 
 - Done: Phase 0; living [docs/STRATEGY.md](STRATEGY.md) plus `AGENTS.md`
-  pointer. Clone-vs-end-user `dist/` inventory is done (`defaults/`
-  mirror, `dist/` gitignored). Readiness docs, vendor runtime
+  pointer. Clone-vs-end-user `dist/` inventory is done (`dist/`
+  gitignored). Readiness docs, vendor runtime
   DLLs under `third_party/<dependency>/bin/`, and copy into `dist/bin/` on
   build via `scripts/copy-dist-dlls.ps1`. Folder layout is locked.
 - Done: generic component host. A normal component is an executable that
@@ -255,6 +291,7 @@ do not connect to it to send log lines.
   Discovery includes those specials; the catalog split keeps them non-v1.
 - Done: per-executable logs. `{date}_{name}.log` and `{date}_{name}.main.log`
   are local. `logger_ac.exe` merges the `.main.log` files.
+  `logging_config.exe` writes `config/logging.ini`.
   `logger_config.exe` writes `config/logger.ini`.
 - Done: host vs component INI contract. Host files are written only by
   Main `_config.exe` programs. Component INIs are generated only by

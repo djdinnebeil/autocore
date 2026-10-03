@@ -26,7 +26,7 @@ export namespace ac::taskbar {
 
     /** How the current process-local snapshot was produced. */
     enum class SnapshotSource : std::uint8_t {
-        /** Built from `taskbar/cached_positions.ini` without a live UI
+        /** Built from `taskbar/winkey_map.cache` without a live UI
             Automation pass. */
         configured,
         /** Built from a completed UI Automation discovery. */
@@ -61,17 +61,6 @@ export namespace ac::taskbar {
         std::vector<std::string> applications;
     };
 
-    /** On-demand metadata for one application button anywhere on the primary
-        taskbar. `native_position` is present only for positions 1 through 10.
-        Discovery performs UI Automation and is reserved for taskbar_ac.exe. */
-    struct DiscoveredTaskbarApplication {
-        std::size_t ordinal {};
-        std::optional<Position> native_position;
-        std::string automation_id;
-        std::string application_id;
-        std::string display_name;
-    };
-
     /** A friendly public command supplied by application configuration. */
     struct ConfiguredActivationCommand {
         std::string command;
@@ -93,6 +82,19 @@ export namespace ac::taskbar {
     /** Starts taskbar_ac.exe's session authority and the asynchronous initial
         calculation. Calling this more than once in the authority process is
         harmless. */
+    /**
+     * \brief Replaces `winkey_map.cache` from one live taskbar discovery.
+     *
+     * Resolves the Taskbar directory through the existing configuration
+     * path. An unavailable `config/taskbar.ini` uses the compiled default
+     * directory. Does not start the snapshot authority or the control pipe.
+     * `mode = cache` does not select the existing cache.
+     *
+     * \return `false` when live discovery fails or the cache file cannot be
+     * replaced. A previous cache file is left in place.
+     */
+    [[nodiscard]] AC_API bool refresh_winkey_cache();
+
     [[nodiscard]] AC_API bool start_authority();
 
     /**
@@ -145,6 +147,12 @@ export namespace ac::taskbar {
     [[nodiscard]] AC_API std::optional<std::wstring>
         configured_fallback_executable_path(std::string_view application);
 
+    /** Returns the configured `[window] executable_path`, including the
+        `::runtime::` sentinel. Empty when the application is absent.
+        This performs no file I/O or IPC. */
+    [[nodiscard]] AC_API std::optional<std::wstring>
+        configured_window_executable_path(std::string_view application);
+
     /** Returns whether the application has a process-local snapshot route,
         including applications with no native Win+position mapping. */
     [[nodiscard]] AC_API bool application_is_configured(
@@ -188,8 +196,9 @@ export namespace ac::taskbar {
         Win. No cycling state is retained by the DLL. */
     [[nodiscard]] AC_API bool advance_native_cycle(Position position);
 
-    /** Releases Win for Main's current cycling session. */
-    AC_API void end_native_cycle() noexcept;
+    /** Releases Win for Main's current cycling session. Returns whether the
+        generated key-up event was accepted. */
+    [[nodiscard]] AC_API bool end_native_cycle() noexcept;
 
     /** Returns metadata for the process-local immutable snapshot. */
     [[nodiscard]] AC_API SnapshotInfo snapshot_info() noexcept;
@@ -199,11 +208,4 @@ export namespace ac::taskbar {
         inspection output, not the activation hot path. */
     [[nodiscard]] AC_API std::vector<TaskbarSlotInfo>
         first_ten_taskbar_slots();
-
-    /** Performs an on-demand traversal of all primary-taskbar application
-        buttons. This authority-only operation is used by taskbar_ac.exe for the
-        standalone configuration wizard and is never part of activation. */
-    [[nodiscard]] AC_API
-        std::expected<std::vector<DiscoveredTaskbarApplication>, std::string>
-        discover_taskbar_applications();
 }

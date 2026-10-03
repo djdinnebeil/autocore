@@ -249,6 +249,41 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
+        wake_directory() {
+        static const std::filesystem::path directory = [] {
+            const std::filesystem::path default_directory =
+                installation_root() / "components" / "wake";
+
+            const auto document = ac::ini::read(
+                config_directory() / "wake.ini"
+            );
+            if (!document) {
+                return default_directory;
+            }
+
+            const auto value = document->find("wake", "directory");
+            if (!value) {
+                return default_directory;
+            }
+
+            try {
+                return ac::paths::detail::resolve_configured_directory(
+                    std::filesystem::path {
+                        ac::encoding::to_utf16(*value)
+                    },
+                    default_directory,
+                    installation_root()
+                );
+            }
+            catch (...) {
+                return default_directory;
+            }
+        }();
+
+        return directory;
+    }
+
+    const std::filesystem::path&
         writer_directory() {
         static const std::filesystem::path directory = [] {
             const std::filesystem::path default_directory =
@@ -286,32 +321,34 @@ namespace ac::paths {
     const std::filesystem::path&
         notes_directory() {
         static const std::filesystem::path directory = [] {
-            const std::filesystem::path default_directory =
-                installation_root() / "notes";
+            const std::filesystem::path fallback =
+                writer_directory() / "notes";
 
             const auto document = ac::ini::read(
                 config_directory() / "writer.ini"
             );
             if (!document) {
-                return default_directory;
+                return fallback;
             }
 
-            const auto value = document->find("writer", "notes_directory");
-            if (!value) {
-                return default_directory;
+            const auto value = document->find("writer", "notes_subdirectory");
+            if (!value || value->empty()) {
+                return fallback;
             }
 
             try {
-                return ac::paths::detail::resolve_configured_directory(
-                    std::filesystem::path {
-                        ac::encoding::to_utf16(*value)
-                    },
-                    default_directory,
-                    installation_root()
-                );
+                const std::filesystem::path configured {
+                    ac::encoding::to_utf16(std::string {*value})
+                };
+                if (configured.empty() ||
+                    configured.has_root_name() ||
+                    configured.has_root_directory()) {
+                    return fallback;
+                }
+                return (writer_directory() / configured).lexically_normal();
             }
             catch (...) {
-                return default_directory;
+                return fallback;
             }
         }();
 

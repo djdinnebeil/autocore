@@ -8,6 +8,7 @@ import std;
 import auto_core.core.thread;
 import spotify_component;
 import spotify_http;
+import spotify_application_data;
 import <json.hpp>;
 import <cpr/cpr.h>;
 import <chrono>;
@@ -18,58 +19,86 @@ using namespace cpr;
 json parse(const std::string& s);
 void start_spotify_desktop_playback();
 
-/**
- * \brief Upserts Spotify Connect devices into [devices] using Spotify's names.
- */
-void Spotify::update_devices() {
-    std::string url = "https://api.spotify.com/v1/me/player/devices";
-    auto response = Get(
-        Url {url},
-        Header {{"Authorization", authorization_header},{"Content-Type", content_type}}
-    );
-    bool devices_changed = false;
-    auto devices_json = parse(response.text);
-    if (!devices_json.contains("devices") || !devices_json["devices"].is_array()) {
-        return;
-    }
-
-    for (const auto& device : devices_json["devices"]) {
-        if (!device.contains("name") || !device.contains("id")) {
-            continue;
-        }
-        if (!device["name"].is_string() || !device["id"].is_string()) {
-            continue;
-        }
-
-        const std::string device_name =
-            ascii_lower(device["name"].get<std::string>());
-        const std::string device_id = device["id"].get<std::string>();
-
-        bool found = false;
-        for (auto& [name, id] : devices) {
-            if (device_name_equals_ignore_case(name, device_name)) {
-                if (name != device_name) {
-                    name = device_name;
-                    devices_changed = true;
-                }
-                if (id != device_id) {
-                    id = device_id;
-                    devices_changed = true;
-                }
-                found = true;
-                break;
+bool Spotify::ensure_configured_devices() {
+    const auto usable = [this] {
+        for (const auto& [name, id] : devices) {
+            (void)name;
+            if (!id.empty()) {
+                return true;
             }
         }
+        return false;
+    };
+    if (!usable() && !devices_cache_reread) {
+        devices_cache_reread = true;
+        load_devices_from_disk();
+    }
+    if (usable()) {
+        return true;
+    }
+    if (!devices_unavailable_logged) {
+        devices_unavailable_logged = true;
+        spotify_component.log_print("No Spotify devices are configured.");
+    }
+    return false;
+}
 
-        if (!found) {
-            devices.emplace_back(device_name, device_id);
-            devices_changed = true;
+std::expected<std::string, std::string> Spotify::discover_current_devices() {
+    if (!refresh_tokens()) {
+        return std::unexpected("Spotify authorization required.");
+    }
+    const cpr::Response response = cpr::Get(
+        cpr::Url {"https://api.spotify.com/v1/me/player/devices"},
+        cpr::Header {
+            {"Authorization", "Bearer " + access_token},
+            {"Content-Type", content_type}
+        }
+    );
+    if (response.status_code != 200) {
+        return std::unexpected(std::format(
+            "Spotify device request failed: Status Code {} - {}",
+            response.status_code,
+            response.text
+        ));
+    }
+    std::vector<spotify::data::Device> found;
+    try {
+        const json devices_json = parse(response.text);
+        if (!devices_json.contains("devices") || !devices_json["devices"].is_array()) {
+            return std::unexpected("Spotify did not return a device list.");
+        }
+        for (const auto& device : devices_json["devices"]) {
+            if (!device.contains("name") || !device.contains("id")) {
+                continue;
+            }
+            if (!device["name"].is_string() || !device["id"].is_string()) {
+                continue;
+            }
+            const std::string name = spotify::data::ascii_lower(device["name"].get<std::string>());
+            const std::string id = device["id"].get<std::string>();
+            if (name.empty() || id.empty()) {
+                continue;
+            }
+            const auto existing = std::find_if(
+                found.begin(),
+                found.end(),
+                [&](const spotify::data::Device& entry) { return entry.name == name; }
+            );
+            if (existing == found.end()) {
+                found.push_back(spotify::data::Device {name, id});
+            }
+            else {
+                existing->id = id;
+            }
         }
     }
-
-    if (devices_changed) {
-        save_config();
+    catch (const json::exception& exception) {
+        return std::unexpected(std::format(
+            "Unable to parse Spotify device response: {}",
+            exception.what()
+        ));
     }
+    return spotify::data::serialize_devices(found);
 }
 
 /**
@@ -119,7 +148,9 @@ void Spotify::start_playback_on_desktop() {
         return;
     }
 
-    update_devices();
+    if (!ensure_configured_devices()) {
+        return;
+    }
 
     const std::string device_id = first_configured_device_id();
     if (device_id.empty()) {
@@ -138,7 +169,9 @@ void Spotify::switch_player() {
     if (!refresh_tokens()) {
         return;
     }
-    update_devices();
+    if (!ensure_configured_devices()) {
+        return;
+    }
     std::string url = "https://api.spotify.com/v1/me/player";
     auto response = Get(
         Url {url},

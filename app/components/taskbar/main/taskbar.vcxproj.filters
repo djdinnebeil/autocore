@@ -19,7 +19,6 @@
     <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx"><Filter>Core Modules</Filter></ClCompile>
     <ClCompile Include="..\..\..\shared\command_registry.ixx"><Filter>Core Modules</Filter></ClCompile>
     <ClCompile Include="..\shared\taskbar_protocol.ixx"><Filter>Protocols</Filter></ClCompile>
-    <ClCompile Include="..\shared\taskbar_config_protocol.ixx"><Filter>Protocols</Filter></ClCompile>
     <ClCompile Include="taskbar_commands.ixx"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="taskbar_commands.cxx"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="taskbar_logging.ixx"><Filter>Source Files</Filter></ClCompile>

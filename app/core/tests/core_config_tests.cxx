@@ -16,36 +16,42 @@ TEST_CASE("Core configuration keeps the winkey warning by default", "[core-confi
     CHECK(settings.warn_without_winkey_mapping);
 }
 
-TEST_CASE("Core configuration keeps the winkey warning when true", "[core-config][unit]") {
+TEST_CASE("Core configuration keeps the winkey warning when on", "[core-config][unit]") {
     const auto settings = detail::resolve({
-        .warn_without_winkey_mapping = "true"
+        .warn_without_winkey_mapping = "on"
     });
 
     CHECK(settings.warn_without_winkey_mapping);
 }
 
-TEST_CASE("Core configuration silences the winkey warning only for false", "[core-config][unit]") {
+TEST_CASE("Core configuration silences the winkey warning only for off", "[core-config][unit]") {
     const auto settings = detail::resolve({
-        .warn_without_winkey_mapping = "false"
+        .warn_without_winkey_mapping = "off"
     });
 
     CHECK_FALSE(settings.warn_without_winkey_mapping);
 }
 
 TEST_CASE("Core configuration keeps the winkey warning for invalid values", "[core-config][unit]") {
-    const auto settings = detail::resolve({
+    CHECK(detail::resolve({
         .warn_without_winkey_mapping = "no"
-    });
-
-    CHECK(settings.warn_without_winkey_mapping);
+    }).warn_without_winkey_mapping);
+    CHECK(detail::resolve({
+        .warn_without_winkey_mapping = "true"
+    }).warn_without_winkey_mapping);
+    CHECK(detail::resolve({
+        .warn_without_winkey_mapping = "false"
+    }).warn_without_winkey_mapping);
 }
 
 TEST_CASE("Portable config defaults match the documented keys", "[core-config][unit]") {
     CHECK(detail::auto_core_ini ==
-        "# The presence of this file indicates that Auto Core has been initialized.\n"
-        "\n"
         "[auto_core]\n"
-        "warn_without_winkey_mapping = true\n");
+        "warn_without_winkey_mapping = on\n"
+        "logging = on\n");
+    CHECK(detail::auto_core_ini.find(
+        "The presence of this file"
+    ) == std::string_view::npos);
     CHECK(detail::auto_core_ini.find("initialized =") == std::string_view::npos);
     CHECK(detail::components_ini.find("[settings]") !=
         std::string_view::npos);
@@ -71,13 +77,9 @@ TEST_CASE("Portable config defaults match the documented keys", "[core-config][u
         std::string_view::npos);
     CHECK(detail::shutdown_ini.find("shutdown_timeout_ms = 2000") !=
         std::string_view::npos);
-    CHECK(detail::journal_choices_ini.find("print_Tabby_choice =") !=
-        std::string_view::npos);
-    CHECK(detail::journal_choices_ini.find("print_one_is_selected =") !=
-        std::string_view::npos);
     CHECK(detail::keymap_ini ==
         "[keymap]\n"
-        "silence_nonset_warning = false\n");
+        "silence_nonset_warning = off\n");
     CHECK(detail::keymap_ini.find("trace_enabled") == std::string_view::npos);
 }
 
@@ -121,7 +123,6 @@ std::string read_default_ini(const std::filesystem::path& path) {
 TEST_CASE("Tracked defaults/ files match portable config defaults", "[core-config][unit]") {
     const auto repo = repository_root();
     const auto config = repo / "defaults" / "config";
-    const auto journal = repo / "defaults" / "components" / "journal";
 
     CHECK(read_default_ini(config / "auto_core.ini") ==
         detail::auto_core_ini);
@@ -133,6 +134,4 @@ TEST_CASE("Tracked defaults/ files match portable config defaults", "[core-confi
         detail::crash_recovery_ini);
     CHECK(read_default_ini(config / "shutdown.ini") == detail::shutdown_ini);
     CHECK(read_default_ini(config / "keymap.ini") == detail::keymap_ini);
-    CHECK(read_default_ini(journal / "journal_choices.ini") ==
-        detail::journal_choices_ini);
 }

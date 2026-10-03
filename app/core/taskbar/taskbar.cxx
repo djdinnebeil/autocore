@@ -27,6 +27,8 @@ namespace {
     constexpr std::uint32_t maximum_string_size = 64 * 1024;
     constexpr std::wstring_view pipe_path =
         LR"(\\.\pipe\AutoCore.Taskbar.v1)";
+    constexpr std::wstring_view cache_mutex_name =
+        L"Local\\AutoCore.Taskbar.WinkeyCache.v1";
     constexpr std::wstring_view application_button_class =
         L"Taskbar.TaskListButtonAutomationPeer";
     constexpr std::wstring_view application_id_prefix = L"Appid: ";
@@ -269,7 +271,7 @@ namespace {
         return std::nullopt;
     }
 
-    void load_application_file(
+    void load_taskbar_application(
         Configuration& config,
         const std::filesystem::path& path
     ) {
@@ -355,7 +357,7 @@ namespace {
         }
     }
 
-    void load_application_files(Configuration& config) {
+    void load_taskbar_applications(Configuration& config) {
         const auto directory = ac::paths::taskbar_applications_directory();
         std::error_code error;
         if (!std::filesystem::is_directory(directory, error)) return;
@@ -365,16 +367,16 @@ namespace {
              !error && iterator != std::filesystem::directory_iterator {};
              iterator.increment(error)) {
             if (!iterator->is_regular_file(error)) continue;
-            if (ascii_lower(iterator->path().extension().string()) == ".ini") {
+            if (ascii_lower(iterator->path().extension().string()) == ".map") {
                 files.push_back(iterator->path());
             }
         }
         std::ranges::sort(files);
-        for (const auto& file : files) load_application_file(config, file);
+        for (const auto& file : files) load_taskbar_application(config, file);
     }
 
     std::filesystem::path positions_cache_file() {
-        return ac::paths::taskbar_directory() / "cached_positions.ini";
+        return ac::paths::taskbar_directory() / "winkey_map.cache";
     }
 
     void parse_position_assignment(
@@ -438,7 +440,31 @@ namespace {
         }
     }
 
-    void write_positions_cache(const Configuration& config) {
+    class CacheWriteMutex {
+    public:
+        CacheWriteMutex() = default;
+        CacheWriteMutex(const CacheWriteMutex&) = delete;
+        CacheWriteMutex& operator=(const CacheWriteMutex&) = delete;
+
+        ~CacheWriteMutex() {
+            if (acquired_) ReleaseMutex(handle_);
+            if (handle_ != nullptr) CloseHandle(handle_);
+        }
+
+        [[nodiscard]] bool acquire() {
+            handle_ = CreateMutexW(nullptr, FALSE, cache_mutex_name.data());
+            if (handle_ == nullptr) return false;
+            const DWORD result = WaitForSingleObject(handle_, 30000);
+            acquired_ = result == WAIT_OBJECT_0 || result == WAIT_ABANDONED;
+            return acquired_;
+        }
+
+    private:
+        HANDLE handle_ {};
+        bool acquired_ {};
+    };
+
+    bool replace_positions_cache(const Configuration& config) {
         std::vector<std::pair<std::uint8_t, std::string>> rows;
         for (const auto& [application, position] : config.fallback_positions) {
             if (!position.valid()) continue;
@@ -457,10 +483,11 @@ namespace {
         const auto destination = positions_cache_file();
         std::error_code error;
         std::filesystem::create_directories(destination.parent_path(), error);
+        if (error) return false;
         std::filesystem::path temporary = destination;
         temporary += ".tmp";
         std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-        if (!output) return;
+        if (!output) return false;
         output.write(
             contents.data(),
             static_cast<std::streamsize>(contents.size())
@@ -468,7 +495,7 @@ namespace {
         output.close();
         if (!output) {
             std::filesystem::remove(temporary, error);
-            return;
+            return false;
         }
         if (!MoveFileExW(
                 temporary.c_str(),
@@ -476,7 +503,21 @@ namespace {
                 MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
             )) {
             std::filesystem::remove(temporary, error);
+            return false;
         }
+        return true;
+    }
+
+    bool write_positions_cache(const Configuration& config) {
+        CacheWriteMutex cache_mutex;
+        if (!cache_mutex.acquire()) {
+            ac::error::log(
+                "Unable to acquire the taskbar cache write lock. "
+                "winkey_map.cache was not replaced.\n"
+            );
+            return false;
+        }
+        return replace_positions_cache(config);
     }
 
     Configuration load_configuration() {
@@ -511,7 +552,7 @@ namespace {
                 }
             }
         }
-        load_application_files(config);
+        load_taskbar_applications(config);
         load_positions_cache(config);
         return config;
     }
@@ -674,105 +715,6 @@ namespace {
             current = std::move(next);
         }
         return slots;
-    }
-
-    std::expected<
-        std::vector<ac::taskbar::DiscoveredTaskbarApplication>,
-        std::string
-    > calculate_all_taskbar_applications() {
-        const HRESULT initialized = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-        if (FAILED(initialized)) {
-            return std::unexpected(std::format(
-                "CoInitializeEx failed: 0x{:08X}",
-                static_cast<unsigned int>(initialized)
-            ));
-        }
-        struct ComGuard { ~ComGuard() { CoUninitialize(); } } guard;
-
-        const HWND taskbar = FindWindowW(L"Shell_TrayWnd", nullptr);
-        if (taskbar == nullptr) {
-            return std::unexpected("Shell_TrayWnd was not found");
-        }
-
-        ComPtr<IUIAutomation> automation;
-        HRESULT result = CoCreateInstance(
-            CLSID_CUIAutomation, nullptr, CLSCTX_INPROC_SERVER,
-            IID_PPV_ARGS(&automation)
-        );
-        if (FAILED(result)) {
-            return std::unexpected("Unable to create UI Automation");
-        }
-
-        ComPtr<IUIAutomationElement> root;
-        result = automation->ElementFromHandle(taskbar, &root);
-        if (FAILED(result) || root == nullptr) {
-            return std::unexpected("Unable to obtain the taskbar UIA root");
-        }
-
-        VARIANT class_value;
-        VariantInit(&class_value);
-        class_value.vt = VT_BSTR;
-        class_value.bstrVal = SysAllocString(application_button_class.data());
-        if (class_value.bstrVal == nullptr) {
-            return std::unexpected("Unable to allocate the UIA class condition");
-        }
-
-        ComPtr<IUIAutomationCondition> class_condition;
-        result = automation->CreatePropertyCondition(
-            UIA_ClassNamePropertyId, class_value, &class_condition
-        );
-        VariantClear(&class_value);
-        if (FAILED(result)) {
-            return std::unexpected("Unable to create the UIA class condition");
-        }
-
-        ComPtr<IUIAutomationElement> current;
-        result = root->FindFirst(
-            TreeScope_Descendants, class_condition.Get(), &current
-        );
-        if (FAILED(result) || current == nullptr) {
-            return std::unexpected("No taskbar application button was found");
-        }
-
-        ComPtr<IUIAutomationTreeWalker> walker;
-        result = automation->get_RawViewWalker(&walker);
-        if (FAILED(result)) {
-            return std::unexpected("Unable to create the raw UIA tree walker");
-        }
-
-        constexpr std::size_t maximum_buttons = 4096;
-        std::vector<ac::taskbar::DiscoveredTaskbarApplication> applications;
-        while (current != nullptr && applications.size() < maximum_buttons) {
-            const std::wstring automation_id =
-                current_automation_id(current.Get());
-            if (automation_id.starts_with(application_id_prefix)) {
-                const std::size_t ordinal = applications.size() + 1;
-                applications.push_back(
-                    ac::taskbar::DiscoveredTaskbarApplication {
-                        .ordinal = ordinal,
-                        .native_position = ordinal <= 10
-                            ? std::optional<ac::taskbar::Position> {
-                                ac::taskbar::Position {
-                                    static_cast<std::uint8_t>(ordinal)
-                                }
-                            }
-                            : std::nullopt,
-                        .automation_id = to_utf8(automation_id),
-                        .application_id = to_utf8(automation_id.substr(
-                            application_id_prefix.size()
-                        )),
-                        .display_name = to_utf8(current_name(current.Get()))
-                    }
-                );
-            }
-
-            ComPtr<IUIAutomationElement> next;
-            if (FAILED(walker->GetNextSiblingElement(current.Get(), &next))) {
-                break;
-            }
-            current = std::move(next);
-        }
-        return applications;
     }
 
     bool application_ids_equal(
@@ -1139,7 +1081,7 @@ namespace {
                 std::move(*calculated)
             );
             store_cached_positions(authority_configuration, *snapshot);
-            write_positions_cache(authority_configuration);
+            (void)write_positions_cache(authority_configuration);
             publish(std::move(snapshot));
         }
         calculation_running.store(false);
@@ -1296,6 +1238,8 @@ namespace {
             return false;
         }
 
+        if (matcher.executable_path == L"::runtime::") return false;
+
         if (!matcher.process_name.empty() ||
             !matcher.executable_path.empty()) {
             DWORD process_id {};
@@ -1376,56 +1320,36 @@ namespace {
         }
         return {};
     }
-
-    void write_taskbar_keymap_manifest(const Configuration& config) {
-        std::set<std::string> commands {
-            "activate_auto_core",
-            "activate_powershell_in_admin",
-            "activate_wordpad",
-            "launch_gitbash",
-            "launch_powershell",
-            "refresh_taskbar_positions"
-        };
-        for (const auto& [application, definition] : config.applications) {
-            for (const std::string& command : definition.activation_commands) {
-                commands.insert(command);
-            }
-        }
-
-        std::string contents;
-        for (const std::string& command : commands) {
-            contents += command;
-            contents += '\n';
-        }
-
-        const auto destination =
-            ac::paths::keymap_components_directory() / "taskbar.keymap_commands.txt";
-        std::error_code error;
-        std::filesystem::create_directories(destination.parent_path(), error);
-        std::filesystem::path temporary = destination;
-        temporary += ".tmp";
-        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-        if (!output) return;
-        output.write(
-            contents.data(),
-            static_cast<std::streamsize>(contents.size())
-        );
-        output.close();
-        if (!output) {
-            std::filesystem::remove(temporary, error);
-            return;
-        }
-        if (!MoveFileExW(
-                temporary.c_str(),
-                destination.c_str(),
-                MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-            )) {
-            std::filesystem::remove(temporary, error);
-        }
-    }
 }
 
 namespace ac::taskbar {
+    bool refresh_winkey_cache() {
+        CacheWriteMutex cache_mutex;
+        if (!cache_mutex.acquire()) {
+            ac::error::log(
+                "Unable to acquire the taskbar cache write lock. "
+                "winkey_map.cache was not replaced.\n"
+            );
+            return false;
+        }
+
+        Configuration config = load_configuration();
+        const auto calculated = calculate_first_ten();
+        if (!calculated) {
+            ac::error::log(std::format(
+                "Unable to calculate taskbar positions: {}\n",
+                calculated.error()
+            ));
+            return false;
+        }
+
+        const auto snapshot = live_snapshot(
+            config, std::move(*calculated)
+        );
+        store_cached_positions(config, *snapshot);
+        return replace_positions_cache(config);
+    }
+
     bool start_authority() {
         bool expected = false;
         if (!authority_running.compare_exchange_strong(expected, true)) {
@@ -1433,7 +1357,6 @@ namespace ac::taskbar {
         }
 
         authority_configuration = load_configuration();
-        write_taskbar_keymap_manifest(authority_configuration);
         server_thread = std::thread(run_server);
 
         if (authority_configuration.mode == Mode::cache &&
@@ -1563,6 +1486,18 @@ namespace ac::taskbar {
             : std::optional<std::wstring> {found->second};
     }
 
+    std::optional<std::wstring> configured_window_executable_path(
+        const std::string_view application
+    ) {
+        const auto snapshot = local_snapshot.load();
+        if (!snapshot) return std::nullopt;
+        const auto found = snapshot->applications.find(
+            canonical_application_key(std::string {application})
+        );
+        if (found == snapshot->applications.end()) return std::nullopt;
+        return found->second.window_matcher.executable_path;
+    }
+
     bool application_is_configured(const std::string_view application) {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return false;
@@ -1644,7 +1579,7 @@ namespace ac::taskbar {
 
     bool begin_native_cycle(const Position position) {
         if (!position.valid()) return false;
-        ac::keyboard::press_and_hold_winkey();
+        if (!ac::keyboard::press_and_hold_winkey()) return false;
         ac::keyboard::send_taskbar_position_while_win_held(position.value);
         return true;
     }
@@ -1655,8 +1590,8 @@ namespace ac::taskbar {
         return true;
     }
 
-    void end_native_cycle() noexcept {
-        ac::keyboard::release_winkey();
+    bool end_native_cycle() noexcept {
+        return ac::keyboard::release_winkey();
     }
 
     SnapshotInfo snapshot_info() noexcept {
@@ -1699,10 +1634,5 @@ namespace ac::taskbar {
             return slot.position.value;
         });
         return result;
-    }
-
-    std::expected<std::vector<DiscoveredTaskbarApplication>, std::string>
-    discover_taskbar_applications() {
-        return calculate_all_taskbar_applications();
     }
 }

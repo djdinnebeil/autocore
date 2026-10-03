@@ -11,35 +11,60 @@ process only.
 
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
-2. If `config/auto_core.ini` is missing, launch `auto_core_config.exe` and wait.
-   That helper runs the five configuration programs, prompts for
-   `warn_without_winkey_mapping`, and writes `auto_core.ini` only after they
-   succeed. Presence of the file means Auto Core is initialized. There is no
-   `initialized` key. If the file still does not exist, exit `1`. If
-   `components.list` is missing, launch `components_editor.exe` (full catalog
-   reconstruction) and wait. Main does not write that file. If the list is
-   still missing, exit `1`.
-3. Load `[auto_core] warn_without_winkey_mapping` from `config/auto_core.ini`.
-   Missing or invalid values use `true` and are reported; the file is not
+2. If `config/auto_core.ini` is missing, the installation is new. Launch
+   `auto_core_init.exe` and wait. Its menu is `Auto Core` with
+   `1. Use defaults` and `2. Configure`. That choice runs only
+   `auto_core_config.exe --seed` or `auto_core_config.exe --init`. It then
+   launches `logger_init.exe`, which has its own menu (`1. Use defaults`,
+   `2. Configure`, `3. Disable logging`) and launches `logging_config.exe`
+   and `logger_config.exe`. Use defaults passes `--seed`. Configure passes
+   `--init`. Disable logging passes `--disable` to `logging_config.exe`,
+   which writes the compiled logging file with `disable_all = on`, and
+   `--seed` to `logger_config.exe`. Neither init executable writes an INI.
+   `components_init.exe` then shows its own defaults/configure menu.
+   The remaining owners are seeded: `keymap_config.exe`,
+   `components_config.exe`, `shutdown_config.exe`,
+   `crash_recovery_config.exe`, and `components_editor.exe --seed`, then
+   `keymap_editor.exe`. A failed or cancelled Logger or Components stage
+   stops initialization. After the orchestrator returns, resolve the shared
+   logging policy. If `logging.ini` is still missing, exit `1`.
+   `auto_core_config.exe` writes `auto_core.ini`. Presence of the file means
+   Auto Core is initialized. There is no `initialized` key. If a required
+   step fails or the user cancels that step, and this run created
+   `auto_core.ini`, the orchestrator removes the file before it exits.
+   If the file still does not exist, exit `1`. Startup
+   does not check `components.list` or `keymap.map`. A missing list is
+   reported later and discovered `*_ac.exe` names are enabled in memory.
+   The file is not created. A missing `keymap.map` installs the emergency
+   keymap in memory and is not created.
+3. If `auto_core.ini` already exists, resolve the shared logging policy
+   before any other startup log. A missing `logging.ini` uses built-in
+   defaults (`disable_all = off`, `directory = logs`,
+   `write_logs_to_files = on`, `write_logs_to_console = off`,
+   `log_print_mode = print`, `component_logging_default = on`), prints
+   `config/logging.ini is missing; using built-in logging defaults.`,
+   and does not create the file.
+4. Load `[auto_core] warn_without_winkey_mapping` from `config/auto_core.ini`.
+   Missing or invalid values use `on` and are reported; the file is not
    created.
-4. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
+5. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
-5. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
+6. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
    marker and continues; No exits (`1`) and leaves the marker so the next start
    asks again.
-6. Install the unhandled-exception restart filter.
-7. Capture `main_thread_id`, then install the low-level keyboard hook and
+7. Install the unhandled-exception restart filter.
+8. Capture `main_thread_id`, then install the low-level keyboard hook and
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
-8. Create the log directory and write Main's local session log.
-9. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled).
-10. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
+9. Create the log directory and write Main's local session log.
+10. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled). A missing `logger.ini` is reported here. Built-in merge defaults stay in memory and the file is not created.
+11. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
-11. Print the ready banner on a detached thread (weekday and
+12. Print the ready banner on a detached thread (weekday and
    `writer/task_list.txt`). A missing file is logged and the task section is
    omitted; an empty file prints "Nothing pending today."
-12. Enter the thread message loop.
+13. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two
@@ -92,7 +117,7 @@ map is not written back to `keymap.map`. Runtime does not create
 
 After a successful workspace, Main refreshes `keymap/keymap_commands.txt`
 from the command registry, including names advertised by started generic
-children. Journal aliases are advertised by `journal_ac.exe`.
+children. Journal aliases are advertised by `journal_ac.exe` after it reads its per-factory alias files.
 
 `keymap.map` lines are `key = primary | secondary`. `[...]` headers and `;` /
 `#` comments are ignored. A `|` inside `()` or quotes is not the action
@@ -106,7 +131,7 @@ empty. Both sides empty leaves the key unbound; it is not in
 `active_keymap` and is not logged as invalid. A missing line is the same as
 unbound. After a successful load, each `key_codes` name not in
 `active_keymap` prints `numpad 2 hasn't been set` (underscore in the INI
-name becomes a space), unless `silence_nonset_warning` is exactly `true`. Unbound keys are not Auto
+name becomes a space), unless `silence_nonset_warning` is exactly `on`. Unbound keys are not Auto
 Core's: the hook calls `CallNextHookEx`, so Windows and the focused app still
 see the physical key. A key with at least one filled side is in the map and
 eats the keystroke (`return 1`); an empty side is a no-op. Unknown command
@@ -117,7 +142,7 @@ opened, uses the emergency map. Unset messages are not printed after
 emergency fallback.
 
 Optional `config/keymap.ini` `[keymap] silence_nonset_warning` must be
-exactly `true` to skip the load-time unset messages. A missing file keeps
+exactly `on` to skip the load-time unset messages. A missing file keeps
 the flag off and is reported; the file is not created. Any other value
 leaves the flag off. See [configuration.md](configuration.md).
 
@@ -221,7 +246,7 @@ names. Server shutdown uses the control pipe.
 
 Boot-time children speak [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx).
 Main forwards keymap names from each child's hello catalog. Journal aliases
-live in `journal_choices.ini` and are advertised by `journal_ac.exe`.
+live in per-factory `.list` files and are advertised by `journal_ac.exe`.
 `launch_journal_config` is Main-local.
 
 Registering runtime commands and adding a new child project are in

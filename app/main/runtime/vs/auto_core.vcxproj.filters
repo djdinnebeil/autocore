@@ -30,7 +30,7 @@
     <ClCompile Include="..\src\shutdown_events.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\logger_init.cxx">
+    <ClCompile Include="..\src\logging_init.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main_component.cxx">
@@ -84,7 +84,7 @@
     <ClCompile Include="..\modules\shutdown_events.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\modules\logger_init.ixx">
+    <ClCompile Include="..\modules\logging_init.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="..\modules\main_component.ixx">

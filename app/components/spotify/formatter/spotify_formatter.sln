@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_formatter", "spotify_formatter.vcxproj", "{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Debug|x64.ActiveCfg = Debug|x64
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Debug|x64.Build.0 = Debug|x64
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Debug|x86.ActiveCfg = Debug|Win32
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Debug|x86.Build.0 = Debug|Win32
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Release|x64.ActiveCfg = Release|x64
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Release|x64.Build.0 = Release|x64
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Release|x86.ActiveCfg = Release|Win32
+		{B7C4E2A1-8F63-4D15-9E20-6A1C3F5D8B42}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D4E8A1C2-7B65-4F09-8C31-2A6E5B0D9F17}
+	EndGlobalSection
+EndGlobal

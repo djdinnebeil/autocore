@@ -21,20 +21,31 @@ The default suite also includes `[windows-integration]` tests. These create
 uniquely named local pipes and verify numeric and named Spotify command routing
 without starting Auto Core or `spotify_ac.exe`.
 
-The current baseline is 10 test cases with 74 assertions. Coverage includes:
+The current baseline is 44 test cases with 209 assertions. Coverage includes:
 
 - stable protocol values and resource names;
 - canonical runtime-command naming and uniqueness;
 - successful HTTP response classification across the full `2xx` range;
 - named-command registry construction and dispatch;
 - numeric and named command routing through real local Windows pipes;
-- unknown named commands and truncated named-command payloads.
+- unknown named commands and truncated named-command payloads;
+- song-format compile, token rendering, load fallback, and replace. The
+  format tests do not read `config/spotify.ini`, call Spotify, or launch
+  `spotify_formatter.exe`;
+- `client.id`, `devices.list`, and `tokens.map` parsing, including missing,
+  empty, malformed, and valid text, plus a `tokens.map` serialization
+  round-trip. Those tests do not write `tokens.map` or open `history.db`;
+- `auto_launch_oauth` parsing, compiled default `off`, and the pure launch
+  decision. Those tests do not start `spotify_oauth.exe` or contact Spotify.
+  Process checks for `--seed`, `--init`, and OAuth exit codes are separate
+  from this suite. A 0 from `spotify_config.exe` means that executable
+  finished; the log line states whether Spotify authorization was completed.
 
 Tests that require the Spotify service or installed desktop application must
 use the `[live]` tag. Normal automated runs must exclude them with `~[live]`.
 A live test must state whether it opens Spotify, changes playback, transfers an
 active device, downloads album art, writes credentials or tokens, inserts text,
-or modifies `spotify_history.db`.
+or modifies `history.db`.
 
 The component contract, authorization files, command behavior, persistence,
 and known limitations are documented in `docs/spotify.md`.

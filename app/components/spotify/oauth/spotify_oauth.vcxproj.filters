@@ -21,10 +21,13 @@
     <ClCompile Include="spotify_oauth.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\ini.ixx">
+    <ClCompile Include="..\..\..\core\modules\paths.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\paths.ixx">
+    <ClCompile Include="..\shared\application_data.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\token_store.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

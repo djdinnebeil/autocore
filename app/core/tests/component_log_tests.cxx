@@ -170,27 +170,113 @@ TEST_CASE(
 }
 
 TEST_CASE(
-    "log and log_main use the routes that consult write_logs_to_console",
+    "Sink routing follows family logging, sinks, and log_print class",
     "[component][logging]"
 ) {
-    using ac::OutputRoute;
-    using ac::component_detail::console_write_count;
+    using ac::component_detail::SinkRequest;
+    using ac::component_detail::decide_sinks;
 
-    CHECK(OutputRoute::component != OutputRoute::component_main_and_console);
-    CHECK(OutputRoute::component_and_main !=
-        OutputRoute::component_main_and_console);
-    CHECK(console_write_count(
-            OutputRoute::component == OutputRoute::component_main_and_console,
-            false
-        ) == 0);
-    CHECK(console_write_count(
-            OutputRoute::component_and_main ==
-                OutputRoute::component_main_and_console,
-            true
-        ) == 1);
-    CHECK(console_write_count(
-            OutputRoute::component_main_and_console ==
-                OutputRoute::component_main_and_console,
-            false
-        ) == 1);
+    const SinkRequest logging_on {
+        .disable_all = false,
+        .component_logging = true,
+        .write_logs_to_files = true,
+        .write_logs_to_console = false,
+        .user_facing = false,
+        .main_subset = false
+    };
+    const auto files_only = decide_sinks(logging_on);
+    CHECK_FALSE(files_only.emit_notice);
+    CHECK(files_only.write_files);
+    CHECK_FALSE(files_only.write_main);
+    CHECK_FALSE(files_only.write_console);
+
+    SinkRequest console_too = logging_on;
+    console_too.write_logs_to_console = true;
+    console_too.main_subset = true;
+    const auto both = decide_sinks(console_too);
+    CHECK(both.write_files);
+    CHECK(both.write_main);
+    CHECK(both.write_console);
+
+    SinkRequest no_files = logging_on;
+    no_files.write_logs_to_files = false;
+    no_files.write_logs_to_console = true;
+    const auto console_without_files = decide_sinks(no_files);
+    CHECK_FALSE(console_without_files.write_files);
+    CHECK_FALSE(console_without_files.write_main);
+    CHECK(console_without_files.write_console);
+
+    SinkRequest killed = logging_on;
+    killed.disable_all = true;
+    killed.write_logs_to_console = true;
+    const auto suppressed = decide_sinks(killed);
+    CHECK_FALSE(suppressed.emit_notice);
+    CHECK_FALSE(suppressed.write_files);
+    CHECK_FALSE(suppressed.write_console);
+
+    SinkRequest family_off = logging_on;
+    family_off.component_logging = false;
+    family_off.write_logs_to_files = false;
+    family_off.write_logs_to_console = false;
+    const auto notice = decide_sinks(family_off);
+    CHECK(notice.emit_notice);
+    CHECK_FALSE(notice.write_files);
+    CHECK_FALSE(notice.write_console);
+
+    SinkRequest noticed = family_off;
+    noticed.notice_already_emitted = true;
+    CHECK_FALSE(decide_sinks(noticed).emit_notice);
+
+    SinkRequest user_facing = family_off;
+    user_facing.user_facing = true;
+    user_facing.main_subset = true;
+    user_facing.notice_already_emitted = true;
+    const auto printed = decide_sinks(user_facing);
+    CHECK(printed.write_console);
+    CHECK_FALSE(printed.write_files);
+    CHECK_FALSE(printed.write_main);
+
+    SinkRequest user_files = logging_on;
+    user_files.user_facing = true;
+    user_files.main_subset = true;
+    const auto printed_files = decide_sinks(user_files);
+    CHECK(printed_files.write_console);
+    CHECK(printed_files.write_files);
+    CHECK(printed_files.write_main);
+
+    SinkRequest print_mode_off = logging_on;
+    print_mode_off.user_facing = true;
+    print_mode_off.write_logs_to_files = false;
+    print_mode_off.write_logs_to_console = false;
+    const auto print_mode = decide_sinks(print_mode_off);
+    CHECK(print_mode.write_console);
+    CHECK_FALSE(print_mode.write_files);
+}
+
+TEST_CASE(
+    "Component construction does not open log files",
+    "[component][logging]"
+) {
+    const std::string name = "log_defer_probe";
+    const auto directory =
+        ac::logging::config::components_directory() / name;
+    std::filesystem::remove_all(directory);
+
+    {
+        ac::Component component {name};
+        CHECK_FALSE(std::filesystem::exists(directory));
+        component.log("after-construct");
+    }
+
+    const bool file_logging =
+        !ac::logging::config::disable_all() &&
+        ac::logging::config::component_logging_default() &&
+        ac::logging::config::write_logs_to_files();
+    if (file_logging) {
+        CHECK(std::filesystem::exists(directory));
+    }
+    else {
+        CHECK_FALSE(std::filesystem::exists(directory));
+    }
+    std::filesystem::remove_all(directory);
 }

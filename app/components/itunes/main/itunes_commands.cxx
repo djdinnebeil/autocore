@@ -81,6 +81,7 @@ void print_itunes_songs() {
 std::string replace_tabs_with_brackets(const std::string& input) {
     return itunes::formatting::detail::format_queue_item(
         input,
-        ac_itunes.tab_end
+        ac_itunes.library_format.compiled,
+        ac_itunes.library_format.column_count
     );
 }
