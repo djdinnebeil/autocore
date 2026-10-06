@@ -156,7 +156,7 @@ those files and fills whatever is still missing.
 
 ## `server_ac.exe`
 
-Source: `app/components/server/main`.
+Source: `app/components/server/runtime`.
 
 1. Resolve `[server] directory`.
 2. Read and validate `port.id`. Missing, empty, malformed, or outside

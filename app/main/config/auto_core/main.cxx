@@ -45,10 +45,10 @@ bool current_logging(const bool fallback) {
     if (!value) {
         return fallback;
     }
-    if (*value == "off" || *value == "false") {
+    if (*value == "off") {
         return false;
     }
-    if (*value == "on" || *value == "true") {
+    if (*value == "on") {
         return true;
     }
     return fallback;

@@ -1,0 +1,4 @@
+console=new
+context=foreground
+argv=none
+launch_dash

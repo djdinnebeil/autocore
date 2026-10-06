@@ -8,7 +8,7 @@
  */
 module;
 
-#include "../main/itunes_config_detail.hpp"
+#include "../runtime/itunes_config_detail.hpp"
 #include "../shared/itunes_metadata_detail.hpp"
 #include "../shared/library_format_detail.hpp"
 #include "../shared/song_template_detail.hpp"

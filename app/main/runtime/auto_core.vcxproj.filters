@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="components">
+      <UniqueIdentifier>{8F3A1C20-6B44-4E91-9D12-0A7E5C4B31F8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="keyboard">
+      <UniqueIdentifier>{2D6E8A14-9C57-4B30-A1F6-7E8D0C2B45A9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lifecycle">
+      <UniqueIdentifier>{5B91E7D3-4A28-4F16-8C70-3D1A9E6F82B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="taskbar">
+      <UniqueIdentifier>{E4C72A08-1F65-4D93-B2E8-6A0C5D7F19B3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_commands.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="components\ac_components.cxx">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\ac_components.ixx">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\main_component.cxx">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\main_component.ixx">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\key_codes.ixx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\keyboard_input.cxx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\keyboard_input.ixx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\keymap.ixx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\keymap_runtime.cxx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard\keymap_runtime.ixx">
+      <Filter>keyboard</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\crash_recovery.cxx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\crash_recovery.ixx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\logging_init.cxx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\logging_init.ixx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\program_ready.cxx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\program_ready.ixx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\shutdown_events.cxx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\shutdown_events.ixx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="taskbar\main_taskbar.cxx">
+      <Filter>taskbar</Filter>
+    </ClCompile>
+    <ClCompile Include="taskbar\main_taskbar.ixx">
+      <Filter>taskbar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\command_registry.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\protocols\component_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\components\taskbar\shared\taskbar_protocol.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_commands.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\system\clipboard.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\formatting\clock.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\diagnostics\crash_diagnostics.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\config\ini.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\config\logging_config.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\system\keyboard.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\system\thread.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\taskbar\core_taskbar.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\formatting\encoding.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\diagnostics\error.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\formatting\formatting.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\config\paths.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\system\pipes.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\component\component.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\console\console.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\config\core_config.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\oneshot_component.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\component\components_list_detail.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="keyboard\keymap_map_detail.hpp">
+      <Filter>keyboard</Filter>
+    </ClInclude>
+    <ClInclude Include="lifecycle\logger_shutdown_detail.hpp">
+      <Filter>lifecycle</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resources\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

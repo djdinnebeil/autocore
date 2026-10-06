@@ -34,7 +34,7 @@ namespace {
         if (!value) {
             return false;
         }
-        if (*value == "on" || *value == "true") {
+        if (*value == "on") {
             return true;
         }
         return false;

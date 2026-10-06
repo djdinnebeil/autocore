@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../main/itunes_config_detail.hpp"
+#include "../runtime/itunes_config_detail.hpp"
 
 #include <filesystem>
 
@@ -47,9 +47,13 @@ TEST_CASE("iTunes auto_start accepts only lowercase on and off", "[itunes][confi
     CHECK(detail::resolve({.auto_start = "on"}).auto_start);
 
     CHECK(detail::resolve({.auto_start = "ON"}).auto_start);
-    CHECK(detail::resolve({.auto_start = "true"}).auto_start);
-    CHECK(detail::resolve({.auto_start = "false"}).auto_start);
+    CHECK(detail::resolve({.auto_start = "yes"}).auto_start);
+    CHECK(detail::resolve({.auto_start = "no"}).auto_start);
     CHECK(detail::resolve({.auto_start = "1"}).auto_start);
+    CHECK_FALSE(detail::resolve({.auto_start = "true"}, {.auto_start = false})
+        .auto_start);
+    CHECK_FALSE(detail::resolve({.auto_start = "false"}, {.auto_start = false})
+        .auto_start);
     CHECK_FALSE(detail::resolve({.auto_start = "ON"}, {.auto_start = false})
         .auto_start);
     CHECK(detail::resolve({.auto_start = "ON"}, {.auto_start = true})

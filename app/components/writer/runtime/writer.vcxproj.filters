@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files"><UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier></Filter>
+    <Filter Include="Header Files"><UniqueIdentifier>{93995380-89BD-4B04-88EB-625FBE52EBFB}</UniqueIdentifier></Filter>
+    <Filter Include="Resource Files"><UniqueIdentifier>{67DA6AB6-F800-4C08-8B7A-83BB121AAD01}</UniqueIdentifier></Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="writer.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="notepad_notes.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="text_actions.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="tasks.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="writer_registry.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="writer_component.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="writer_commands.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\shared\command_registry.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\shared\writer_protocol.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\shared\writer_notepad.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\shared\writer_notepad.cxx"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\system\clipboard.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\component\component.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\console\console.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\config\core_config.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\diagnostics\error.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\config\ini.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\config\logging_config.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\config\paths.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\system\pipes.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\system\thread.ixx"><Filter>Header Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx"><Filter>Header Files</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup><ResourceCompile Include="..\..\..\resources\resource.rc"><Filter>Resource Files</Filter></ResourceCompile></ItemGroup>
+</Project>

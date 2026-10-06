@@ -2,6 +2,7 @@ import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.pipes;
+import auto_core.core.process;
 import journal_db_protocol;
 import journal_sqlite;
 import components_editor_request;
@@ -62,7 +63,7 @@ void fail_pipe(ac::pipes::CommandDispatcher& dispatcher, const std::string_view 
     dispatcher.request_stop();
 }
 
-int run_serve() {
+int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
         journal_db.log_print("Unable to create the journal database service mutex.");
@@ -88,7 +89,22 @@ int run_serve() {
     }
 
     bool shutdown = false;
-    while (!shutdown) {
+    std::atomic<bool> owner_dead {false};
+    std::atomic<ac::pipes::CommandDispatcher*> active_dispatcher {nullptr};
+    ac::process::OwnerWatch owner_watch;
+    if (owner != nullptr) {
+        owner_watch = ac::process::OwnerWatch(owner, [&] {
+            owner_dead.store(true);
+            if (auto* dispatcher = active_dispatcher.load()) {
+                dispatcher->request_stop();
+            }
+        });
+        if (!owner_watch.active()) {
+            journal_db.log_print("Unable to watch the journal database owner process.");
+            return 1;
+        }
+    }
+    while (!shutdown && !owner_dead.load()) {
         auto server = ac::pipes::create_pipe_server(std::wstring {journal::db::pipe_name});
         if (!server) {
             journal_db.log_print(
@@ -100,6 +116,9 @@ int run_serve() {
         ac::pipes::Pipe pipe = std::move(*server);
         if (ConnectNamedPipe(pipe.native_handle(), nullptr) == FALSE &&
             GetLastError() != ERROR_PIPE_CONNECTED) {
+            if (owner_dead.load()) {
+                break;
+            }
             journal_db.log_print(
                 "Unable to accept a journal database client. Error: {}",
                 GetLastError()
@@ -128,6 +147,7 @@ int run_serve() {
         }
 
         ac::pipes::CommandDispatcher dispatcher;
+        active_dispatcher.store(&dispatcher);
         dispatcher.set_command(
             journal::db::to_wire(journal::db::Request::allocate_episode),
             [&pipe, &store, &dispatcher] {
@@ -334,13 +354,18 @@ int run_serve() {
         // The next-command read fails with ERROR_BROKEN_PIPE when a short
         // client closes after its handshake or command. That is the end of
         // the session. Any other process failure is logged.
-        if (const auto result = dispatcher.process(pipe); !result && !shutdown) {
+        if (const auto result = dispatcher.process(pipe); !result && !shutdown &&
+            !owner_dead.load()) {
             if (result.error().system_error != ERROR_BROKEN_PIPE) {
                 journal_db.log_print(
                     "Journal database client failed. Error: {}",
                     result.error().system_error
                 );
             }
+        }
+        active_dispatcher.store(nullptr);
+        if (owner_dead.load()) {
+            break;
         }
     }
     return 0;
@@ -518,8 +543,21 @@ int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
     journal_db.log_main("journal_db.exe started");
-    if (argc == 2 && std::string_view {argv[1]} == "--serve") {
-        return run_serve();
+    if (argc >= 2 && std::string_view {argv[1]} == "--serve") {
+        void* owner = nullptr;
+        if (argc == 4 && std::string_view {argv[2]} == "--owner-handle") {
+            const auto handle = ac::process::parse_owner_handle(argv[3]);
+            if (!handle) {
+                std::cerr << "Invalid --owner-handle.\n";
+                return 1;
+            }
+            owner = *handle;
+        }
+        else if (argc != 2) {
+            std::cerr << "Usage: journal_db.exe [--serve | --seed | --init]\n";
+            return 1;
+        }
+        return run_serve(owner);
     }
 
     const auto launch =

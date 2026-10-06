@@ -86,10 +86,10 @@ PromptValues values_in_file(
     }
 
     if (const auto logging = document->find("itunes", "logging")) {
-        if (*logging == "off" || *logging == "false") {
+        if (*logging == "off") {
             values.logging = false;
         }
-        else if (*logging == "on" || *logging == "true") {
+        else if (*logging == "on") {
             values.logging = true;
         }
         else {

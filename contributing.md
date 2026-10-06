@@ -24,11 +24,12 @@ C++ workload is required. From the repository root:
 ```
 
 Or follow the MSBuild order in [docs/building.md](docs/building.md). The
-linker searches `lib/auto_core.lib`. There is no root `.sln`. After Link,
-Windows PowerShell runs
-[`scripts/copy-dist-dlls.ps1`](scripts/copy-dist-dlls.ps1), which copies
-vendor runtime DLLs from `third_party/*/bin/` and `lib/auto_core.dll` into
-`dist/bin/` (`dist/` stays gitignored). The build does not plant the Server
+linker searches `lib/auto_core.lib`. The repository workspace is
+`app/AutoCore.sln`. `auto_core_dll` publishes `lib/auto_core.dll` to
+`dist/bin/auto_core.dll`. [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1)
+copies vendor runtime DLLs from `third_party/*/bin/` into `dist/bin/` when
+those DLLs are added or updated. Builds do not run that script (`dist/`
+stays gitignored). The build does not plant the Server
 data directory. `server_editor.exe --seed` creates missing `port.id` and
 `document_root.id`. `server_builder.exe` creates missing starter files
 under a relative document root (default `dist/components/server/site`).
@@ -36,7 +37,7 @@ under a relative document root (default `dist/components/server/site`).
 ## Adding a component
 
 Follow [docs/new-component.md](docs/new-component.md): new project under
-`app/components/<name>/main/` (and `config/`, `shared/`), import
+`app/components/<name>/runtime/` (and `config/`, `shared/`), import
 `msbuild/AutoCore.props` as `..\..\..\..\msbuild\AutoCore.props`, advertise keymap names in the child's
 hello catalog, and bind them in live `dist/keymap.map`. A generic
 child does not need a Main `register_with` entry.
@@ -48,7 +49,7 @@ Build the DLL first, or use the tracked `lib/auto_core.dll`. Test
 `[live]` (`"~[live]"`). `build-all.ps1` does not build tests.
 
 ```powershell
-msbuild app\core\vs\auto_core_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
+msbuild app\core\tests\auto_core_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 .\obj\auto_core_tests\auto_core_tests.exe
 
 msbuild app\components\itunes\tests\itunes_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64

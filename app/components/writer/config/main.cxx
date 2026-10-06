@@ -70,10 +70,10 @@ Settings read_settings() {
         settings.notes = std::string {*value};
     }
     if (const auto value = document->find("writer", "logging")) {
-        if (*value == "off" || *value == "false") {
+        if (*value == "off") {
             settings.logging = false;
         }
-        else if (*value == "on" || *value == "true") {
+        else if (*value == "on") {
             settings.logging = true;
         }
         else {

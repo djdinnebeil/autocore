@@ -1,12 +1,11 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Build Auto Core Release x64 in the documented MSBuild order.
+  Build Auto Core Release x64 in the documented solution order.
 .DESCRIPTION
-  Locates an MSBuild installation supporting MSVC v145 / Visual Studio 2026
-  (version 18+) with vswhere and builds every production solution. Core DLL
-  first. Renames locked dist\ outputs so Link can replace them.
-  There is no root .sln.
+  Builds app\AutoCore.sln Release x64 with devenv.com. That solution build
+  is the shipped DLL and executables. Test projects are members and are not
+  built. Renames locked dist\ outputs so Link can replace them.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>
@@ -15,29 +14,11 @@ $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-function Find-MSBuild {
-    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-
-    if (-not (Test-Path $vswhere)) {
-        throw 'vswhere.exe not found. Install Visual Studio 2026 (version 18+) or Build Tools with the C++ build tools (MSVC v145).'
-    }
-
-    $found = & $vswhere `
-        -latest `
-        -prerelease `
-        -products * `
-        -version '[18.0,)' `
-        -requires Microsoft.Component.MSBuild `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -find 'MSBuild\**\Bin\MSBuild.exe' |
-        Select-Object -First 1
-
-    if ($found) {
-        return $found
-    }
-
-    throw 'Compatible MSBuild not found. Install Visual Studio 2026 (version 18+) or Build Tools with the C++ x64/x86 build tools (MSVC v145).'
+$DevenvCommand = Get-Command devenv.com -ErrorAction SilentlyContinue
+if (-not $DevenvCommand) {
+    throw 'devenv.com not found on PATH. Install Visual Studio and open a shell where devenv.com is available.'
 }
+$Devenv = $DevenvCommand.Source
 
 function Test-FileWritable {
     param([Parameter(Mandatory)][string]$Path)
@@ -68,9 +49,6 @@ function Unlock-DistFile {
         -Force -ErrorAction SilentlyContinue
 }
 
-$MSBuild = Find-MSBuild
-$Common = @('/m', '/nologo', '/t:Build', '/p:Configuration=Release', '/p:Platform=x64')
-
 # close_program does not wait for children. Leftover dist processes can
 # still map auto_core.dll and *_ac.exe; rename those outputs so Link can
 # replace them.
@@ -83,69 +61,16 @@ if (Test-Path -LiteralPath $DistDir) {
             Where-Object { $_.Extension -in '.exe', '.dll' } |
             ForEach-Object { Unlock-DistFile $_.FullName }
     }
-    $SymbolsDir = Join-Path $DistDir 'symbols'
-    if (Test-Path -LiteralPath $SymbolsDir) {
-        Get-ChildItem -LiteralPath $SymbolsDir -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
-            ForEach-Object { Unlock-DistFile $_.FullName }
-    }
+}
+
+$SymbolsDir = Join-Path $RepoRoot 'symbols'
+if (Test-Path -LiteralPath $SymbolsDir) {
+    Get-ChildItem -LiteralPath $SymbolsDir -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
+        ForEach-Object { Unlock-DistFile $_.FullName }
 }
 
 $Solutions = @(
-    'app\core\vs\auto_core_dll.sln'
-    'app\main\runtime\vs\auto_core.sln'
-    'app\main\config\auto_core\auto_core_config.sln'
-    'app\main\config\components\components_config.sln'
-    'app\main\editors\components\components_editor.sln'
-    'app\main\config\keymap\keymap_config.sln'
-    'app\main\editors\keymap\keymap_editor.sln'
-    'app\main\config\shutdown\shutdown_config.sln'
-    'app\main\config\crash_recovery\crash_recovery_config.sln'
-    'app\main\config\logging\logging_config.sln'
-    'app\main\init\auto_core\auto_core_init.sln'
-    'app\main\init\logger\logger_init.sln'
-    'app\main\init\components\components_init.sln'
-    'app\components\log_merger\config\logger_config.sln'
-    'app\components\dash\main\dash.sln'
-    'app\components\dash\config\dash_config.sln'
-    'app\components\dash\editor\dash_editor.sln'
-    'app\components\dash\star\dash_star.sln'
-    'app\components\itunes\main\itunes.sln'
-    'app\components\itunes\config\itunes_config.sln'
-    'app\components\itunes\star\itunes_star.sln'
-    'app\components\itunes\db\itunes_db.sln'
-    'app\components\journal\main\journal.sln'
-    'app\components\journal\config\journal_config.sln'
-    'app\components\journal\star\journal_star.sln'
-    'app\components\journal\builder\journal_builder.sln'
-    'app\components\journal\clock\journal_clock.sln'
-    'app\components\journal\db\journal_db.sln'
-    'app\components\journal\series\journal_series.sln'
-    'app\components\journal\cloud\journal_cloud.sln'
-    'app\components\log_merger\main\logger.sln'
-    'app\components\log_merger\star\logger_star.sln'
-    'app\components\server\main\server.sln'
-    'app\components\server\config\server_config.sln'
-    'app\components\server\editor\server_editor.sln'
-    'app\components\server\builder\server_builder.sln'
-    'app\components\server\star\server_star.sln'
-    'app\components\slash\main\slash.sln'
-    'app\components\slash\config\slash_config.sln'
-    'app\components\slash\star\slash_star.sln'
-    'app\components\spotify\main\spotify.sln'
-    'app\components\spotify\config\spotify_config.sln'
-    'app\components\spotify\oauth\spotify_oauth.sln'
-    'app\components\spotify\star\spotify_star.sln'
-    'app\components\taskbar\main\taskbar.sln'
-    'app\components\taskbar\config\taskbar_config.sln'
-    'app\components\taskbar\builder\taskbar_builder.sln'
-    'app\components\taskbar\star\taskbar_star.sln'
-    'app\components\wake\main\wake.sln'
-    'app\components\wake\config\wake_config.sln'
-    'app\components\wake\star\wake_star.sln'
-    'app\components\writer\main\writer.sln'
-    'app\components\writer\config\writer_config.sln'
-    'app\components\writer\editor\writer_editor.sln'
-    'app\components\writer\star\writer_star.sln'
+    'app\AutoCore.sln'
 )
 
 foreach ($solution in $Solutions) {
@@ -154,9 +79,9 @@ foreach ($solution in $Solutions) {
         throw "Missing solution: $solution"
     }
     Write-Host "Building $solution"
-    & $MSBuild $path @Common
+    & $Devenv $path /Build 'Release|x64'
     if ($LASTEXITCODE -ne 0) {
-        throw "MSBuild failed for $solution (exit $LASTEXITCODE)"
+        throw "devenv failed for $solution (exit $LASTEXITCODE)"
     }
 }
 

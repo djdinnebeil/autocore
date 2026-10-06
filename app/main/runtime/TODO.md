@@ -13,8 +13,9 @@ change that control flow here.
 
 **Status:** Deferred responsiveness
 
-`slash_component_command` waits with `WaitForSingleObject(..., INFINITE)` on
-the main thread after starting `slash_ac.exe`. Recycle-bin work can take long
+A one-shot descriptor with `wait=infinite` waits with
+`WaitForSingleObject(..., INFINITE)` on the main thread after starting the
+child. Slash uses that setting. Recycle-bin work can take long
 enough that posted keymap events sit until the child exits.
 
 Future work should wait off the message-loop thread, or use a bounded wait

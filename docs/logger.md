@@ -28,7 +28,7 @@ Offsets live in `logs/merge.state`, written only by `logger_ac.exe`. A missing s
 | `log_print_mode` | `print` (`log` or `print`). `log` classifies `log_print` as logging-controlled. `print` classifies it as user-facing |
 | `component_logging_default` | `on`. Fallback for a normal family with no valid `logging` key, and for a `Component` with no logging scope |
 
-Booleans are lowercase `on`/`off`. `true` is an alias for `on`, and `false` is an alias for `off`. A leftover `enabled` key is ignored. A missing or invalid `log_print_mode` uses `print`.
+Booleans are exactly `on` or `off`. Any other text is invalid. A missing or invalid `log_print_mode` uses `print`.
 
 `disable_all` is resolved first. When it is on, family INI files are not read. Otherwise an explicit scope reads `config/<scope>.ini` `[<scope>] logging`. A valid `on` or `off` wins. A missing or invalid value uses `component_logging_default`, then compiled on. Dash is the exception: its scope is `dash` with fallback off, so a missing or invalid `logging` key is off and `component_logging_default` is not consulted. A `Component` constructed without a scope does not read a component INI. `auto_core.exe` uses identity `auto_core` and scope `auto_core`, so it reads `config/auto_core.ini` `[auto_core] logging`. Main helpers such as `auto_core_init` and `auto_core_config` stay unscoped. Log identity and policy scope stay separate: `taskbar_config` logs under `components/taskbar_config/` and reads `config/taskbar.ini`.
 
@@ -42,12 +42,12 @@ A relative `directory` resolves from the installation root. `logger_ac.exe`, lik
 
 On a new installation (`config/auto_core.ini` missing), `auto_core_init.exe` launches `logger_init.exe` after the Auto Core configuration choice. `logger_init.exe` does not write `logging.ini` or `logger.ini`. Its menu is `1. Use defaults` (`logging_config.exe --seed` and `logger_config.exe --seed`), `2. Configure` (`--init` for both owners), and `3. Disable logging` (`logging_config.exe --disable` and `logger_config.exe --seed`). `--disable` writes the compiled logging file with `disable_all = on` when `logging.ini` is missing. Configure prompts `disable_all`, `directory`, `write_logs_to_files`, `write_logs_to_console`, `log_print_mode`, and `component_logging_default`. If `logging.ini` is not created, initialization stops and a newly created `auto_core.ini` is removed. Main then resolves the shared logging policy. On an established installation, a missing `logging.ini` uses the built-in defaults, Main prints `config/logging.ini is missing; using built-in logging defaults.`, and the file is not created.
 
-`config/logger.ini` is merger configuration plus the Logger family's `logging` key. `logger_config.exe` lives under [`app/components/log_merger/config`](../app/components/log_merger/config) and is the only writer. When the file is missing, Main prints that `logger_config.exe` should be run and that built-in defaults are in use. The file is not created. It does not set `directory`, `disable_all`, or `write_logs_to_console`.
+`config/logger.ini` is merger configuration plus the Logger family's `logging` key. `logger_config.exe` lives under [`app/components/logger/config`](../app/components/logger/config) and is the only writer. When the file is missing, Main prints that `logger_config.exe` should be run and that built-in defaults are in use. The file is not created. It does not set `directory`, `disable_all`, or `write_logs_to_console`.
 
 | Key | Default |
 | --- | --- |
 | `merge_interval_seconds` | `60` (`0` disables periodic merging while Logger stays hosted; invalid values use `60`) |
-| `merge_logs_on_shutdown` | `on` (`on`/`off`, with `true`/`false` aliases) |
+| `merge_logs_on_shutdown` | `on` (`on` or `off`; any other text is invalid and keeps `on`) |
 | `logging` | `on`. Logger family switch. A missing or invalid value uses `component_logging_default` |
 
 The shutdown merge is independent of the periodic interval. Local logs are still written when `logger_ac.exe` is disabled or absent.

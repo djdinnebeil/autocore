@@ -8,7 +8,7 @@
 export module spotify_application_data;
 
 import std;
-import auto_core.core.paths;
+import spotify_data_directory;
 
 export namespace spotify::data {
 
@@ -18,11 +18,11 @@ struct Device {
 };
 
 [[nodiscard]] inline std::filesystem::path client_id_path() {
-    return ac::paths::spotify_directory() / "client.id";
+    return spotify::data_directory() / "client.id";
 }
 
 [[nodiscard]] inline std::filesystem::path devices_list_path() {
-    return ac::paths::spotify_directory() / "devices.list";
+    return spotify::data_directory() / "devices.list";
 }
 
 [[nodiscard]] inline std::string_view trim_ws(std::string_view value) noexcept {

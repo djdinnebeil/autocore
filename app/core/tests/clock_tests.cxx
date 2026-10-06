@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../src/clock_formatting.hpp"
+#include "../formatting/clock_formatting.hpp"
 
 #include <array>
 #include <regex>
@@ -218,10 +218,6 @@ TEST_CASE("Public clock functions return valid local-time shapes", "[clock][inte
     const std::regex datetime_pattern {
         R"(^\d{4}-\d{2}-\d{2} at \d{2}:\d{2}:\d{2}$)"
     };
-    const std::regex log_timestamp_pattern {
-        R"(^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$)"
-    };
-
     const ac::clock::DateTime datetime = ac::clock::get_local_datetime();
     CHECK(std::regex_match(datetime.date_iso, date_iso_pattern));
     CHECK(std::regex_match(datetime.timestamp, timestamp_pattern));
@@ -243,18 +239,8 @@ TEST_CASE("Public clock functions return valid local-time shapes", "[clock][inte
         ac::clock::get_timestamp_with_seconds(),
         timestamp_seconds_pattern
     ));
-    CHECK(std::regex_match(
-        ac::clock::get_timestamp_with_milliseconds(),
-        timestamp_milliseconds_pattern
-    ));
-    CHECK(std::regex_match(
-        ac::clock::get_log_timestamp(),
-        log_timestamp_pattern
-    ));
-    CHECK(std::regex_match(
-        ac::clock::get_extended_timestamp(6),
-        timestamp_pattern
-    ));
+    CHECK(ac::clock::format_extended_timestamp(1, 30, 6) == "25:30");
+    CHECK(ac::clock::format_extended_timestamp(6, 30, 6) == "06:30");
     CHECK(std::regex_match(ac::clock::get_date_iso(), date_iso_pattern));
     CHECK(std::regex_match(ac::clock::get_datetime(), datetime_pattern));
     CHECK(std::regex_match(

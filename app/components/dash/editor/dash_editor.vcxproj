@@ -137,13 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\core\modules\clock.ixx" />
-    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
-    <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
-    <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
-    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
-    <ClCompile Include="..\..\..\core\modules\component.ixx" />
-    <ClCompile Include="..\..\..\core\modules\console.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx" />
+    <ClCompile Include="..\..\..\core\system\shell.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx" />
+    <ClCompile Include="..\..\..\core\config\logging_config.ixx" />
+    <ClCompile Include="..\..\..\core\component\component.ixx" />
+    <ClCompile Include="..\..\..\core\console\console.ixx" />
     <ClCompile Include="..\shared\vault.ixx" />
     <ClCompile Include="..\shared\vault_mutate.ixx" />
     <ClCompile Include="..\shared\hello.ixx" />

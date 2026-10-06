@@ -1,0 +1,2 @@
+wait=infinite
+report_and_empty_recycle_bin

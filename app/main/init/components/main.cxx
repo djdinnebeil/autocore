@@ -2,7 +2,7 @@
  * \file main.cxx
  * \brief Coordinates component configuration executables. Does not write files.
  */
-#include "../../../core/src/components_list_detail.hpp"
+#include "../../../core/component/components_list_detail.hpp"
 
 import std;
 import auto_core.core.component;

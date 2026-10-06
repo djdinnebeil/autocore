@@ -43,10 +43,12 @@ export namespace ac::main::defaults {
         "writer\n";
 
     constexpr std::string_view crash_default_response = "no";
+    constexpr bool crash_diagnostics = true;
 
     constexpr std::string_view crash_recovery_ini =
-        "[dialog]\n"
-        "default_response = no\n";
+        "[crash_recovery]\n"
+        "default_response = no\n"
+        "crash_diagnostics = on\n";
 
     constexpr std::string_view shutdown_prompt = "popup";
     constexpr unsigned shutdown_timeout_ms = 2000;
@@ -111,14 +113,21 @@ export namespace ac::main::defaults {
     }
 
     [[nodiscard]]
-    inline std::string ini_for_crash_recovery(const std::string_view response) {
-        if (response == crash_default_response) {
+    inline std::string ini_for_crash_recovery(
+        const std::string_view response,
+        const bool diagnostics = crash_diagnostics
+    ) {
+        if (response == crash_default_response &&
+            diagnostics == crash_diagnostics) {
             return std::string {crash_recovery_ini};
         }
         return std::string {
-            "[dialog]\n"
+            "[crash_recovery]\n"
             "default_response = "
-        } + std::string {response} + "\n";
+        } + std::string {response} +
+            "\ncrash_diagnostics = " +
+            (diagnostics ? "on" : "off") +
+            "\n";
     }
 
     [[nodiscard]]

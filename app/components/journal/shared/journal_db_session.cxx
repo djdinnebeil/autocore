@@ -19,9 +19,10 @@ std::optional<int> parse_int(const std::string_view text) {
     return value;
 }
 
-std::expected<ac::pipes::Pipe, std::string> connect() {
+std::expected<ac::pipes::Pipe, std::string> connect(void* const process = nullptr) {
     auto pipe = ac::pipes::connect_to_pipe_server(
-        std::wstring {journal::db::pipe_name}
+        std::wstring {journal::db::pipe_name},
+        process
     );
     if (!pipe) {
         return std::unexpected("Journal database request failed.");
@@ -81,8 +82,8 @@ std::expected<journal::db::Series, std::string> read_series(ac::pipes::Pipe& pip
 
 namespace journal::db::session {
 
-std::expected<void, std::string> probe() {
-    auto pipe = connect();
+std::expected<void, std::string> probe(void* const process) {
+    auto pipe = connect(process);
     if (!pipe) {
         return std::unexpected(pipe.error());
     }

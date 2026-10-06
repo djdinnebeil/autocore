@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{D4056118-237F-44EB-8DC6-180810ABF60B}</ProjectGuid>
+    <RootNamespace>autocoretests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="Shared">
+    <Import Project="..\..\..\msbuild\AutoCore.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(AutoCoreIntDir)$(ProjectName)\</OutDir>
+    <IntDir>$(AutoCoreIntDir)$(ProjectName)\intermediate\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <EnableModules>true</EnableModules>
+      <BuildStlModules>true</BuildStlModules>
+      <AdditionalIncludeDirectories>$(AutoCoreThirdPartyDir)catch2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\formatting\clock.ixx" />
+    <ClCompile Include="..\component\component.ixx" />
+    <ClCompile Include="..\formatting\encoding.ixx" />
+    <ClCompile Include="..\diagnostics\error.ixx" />
+    <ClCompile Include="..\formatting\formatting.ixx" />
+    <ClCompile Include="..\config\ini.ixx" />
+    <ClCompile Include="..\config\logging_config.ixx" />
+    <ClCompile Include="..\config\paths.ixx" />
+    <ClCompile Include="..\system\pipes.ixx" />
+    <ClCompile Include="..\formatting\clock_formatting.cxx" />
+    <ClCompile Include="..\config\core_config_detail.cxx" />
+    <ClCompile Include="..\config\configured_directory.cxx" />
+    <ClCompile Include="..\config\logging_config_detail.cxx" />
+    <ClCompile Include="..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\shared\component_star.ixx" />
+    <ClCompile Include="clock_tests.cxx" />
+    <ClCompile Include="component_star_tests.cxx" />
+    <ClCompile Include="component_log_tests.cxx" />
+    <ClCompile Include="core_config_tests.cxx" />
+    <ClCompile Include="crash_diagnostics_tests.cxx" />
+    <ClCompile Include="configured_directory_tests.cxx" />
+    <ClCompile Include="encoding_tests.cxx" />
+    <ClCompile Include="error_tests.cxx" />
+    <ClCompile Include="formatting_tests.cxx" />
+    <ClCompile Include="ini_tests.cxx" />
+    <ClCompile Include="logging_config_tests.cxx" />
+    <ClCompile Include="paths_tests.cxx" />
+    <ClCompile Include="pipes_tests.cxx" />
+    <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\formatting\clock_formatting.hpp" />
+    <ClInclude Include="..\component\components_list_detail.hpp" />
+    <ClInclude Include="..\diagnostics\crash_diagnostics_detail.hpp" />
+    <ClInclude Include="..\config\configured_directory.hpp" />
+    <ClInclude Include="..\config\installation_layout.hpp" />
+    <ClInclude Include="..\config\core_config_detail.hpp" />
+    <ClInclude Include="..\config\logging_config_detail.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\auto_core_dll.vcxproj">
+      <Project>{64b8a747-c87c-4338-b3b9-6d4f5a82d74a}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

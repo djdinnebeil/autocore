@@ -6,7 +6,7 @@ module;
 module spotify_sqlite;
 
 import std;
-import auto_core.core.paths;
+import spotify_data_directory;
 
 namespace {
 
@@ -80,7 +80,7 @@ Store::~Store() {
 }
 
 std::filesystem::path file_path() {
-    return ac::paths::spotify_directory() / "history.db";
+    return spotify::data_directory() / "history.db";
 }
 
 std::expected<Store, std::string> open() {

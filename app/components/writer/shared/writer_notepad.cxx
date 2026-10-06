@@ -5,6 +5,7 @@ import auto_core.core.component;
 import auto_core.core.clock;
 import auto_core.core.console;
 import auto_core.core.paths;
+import auto_core.core.process;
 import auto_core.taskbar;
 
 import <Windows.h>;
@@ -14,7 +15,7 @@ namespace {
 namespace fs = std::filesystem;
 
 std::optional<fs::path> daily_note_path(ac::Component& component) {
-    const fs::path notes_directory = ac::paths::notes_directory();
+    const fs::path notes_directory = ac::paths::writer_notes_directory();
     std::error_code error;
     fs::create_directories(notes_directory, error);
 
@@ -175,26 +176,19 @@ bool open_path_in_notepad(
     }
 
     const std::wstring arguments = L"\"" + path.wstring() + L"\"";
-    SHELLEXECUTEINFOW execution {
-        .cbSize = sizeof(SHELLEXECUTEINFOW),
-        .fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC,
-        .hwnd = nullptr,
-        .lpVerb = L"open",
-        .lpFile = L"notepad.exe",
-        .lpParameters = arguments.c_str(),
-        .lpDirectory = path.parent_path().c_str(),
-        .nShow = SW_SHOWNORMAL,
-    };
-    if (!ShellExecuteExW(&execution)) {
+    const auto launched = ac::process::shell_launch_outside_job(
+        L"open",
+        L"notepad.exe",
+        arguments,
+        path.parent_path().wstring()
+    );
+    if (!launched) {
         component.log_print(
-            "Unable to open text file '{}'. ShellExecute error: {}",
-            path.string(), GetLastError()
+            "Unable to open text file '{}'. Shell launch error: {}.",
+            path.string(),
+            launched.error().system_error
         );
         return false;
-    }
-    if (execution.hProcess != nullptr) {
-        (void)WaitForInputIdle(execution.hProcess, 1000);
-        CloseHandle(execution.hProcess);
     }
 
     const HWND target = wait_for_notepad_window(path);

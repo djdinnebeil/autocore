@@ -10,7 +10,7 @@
  */
 module;
 
-#include "../core/src/components_list_detail.hpp"
+#include "../core/component/components_list_detail.hpp"
 
 export module component_star;
 

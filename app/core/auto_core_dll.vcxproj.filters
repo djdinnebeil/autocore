@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="component">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="config">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="console">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="diagnostics">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="formatting">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="taskbar">
+      <UniqueIdentifier>{A1C0E001-0001-4000-8000-000000000007}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="component\component.ixx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\component_logger.ixx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\console_writer.ixx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\text_inserter.ixx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\component.cxx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\component_logger.cxx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\console_writer.cxx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="component\text_inserter.cxx"><Filter>component</Filter></ClCompile>
+    <ClCompile Include="config\core_config.ixx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\ini.ixx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\logging_config.ixx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\paths.ixx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\core_config.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\core_config_detail.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\configured_directory.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\ini.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\logging_config.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\logging_config_detail.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="config\paths.cxx"><Filter>config</Filter></ClCompile>
+    <ClCompile Include="console\console.ixx"><Filter>console</Filter></ClCompile>
+    <ClCompile Include="console\console.cxx"><Filter>console</Filter></ClCompile>
+    <ClCompile Include="diagnostics\crash_diagnostics.ixx"><Filter>diagnostics</Filter></ClCompile>
+    <ClCompile Include="diagnostics\error.ixx"><Filter>diagnostics</Filter></ClCompile>
+    <ClCompile Include="diagnostics\crash_diagnostics.cxx"><Filter>diagnostics</Filter></ClCompile>
+    <ClCompile Include="diagnostics\error.cxx"><Filter>diagnostics</Filter></ClCompile>
+    <ClCompile Include="formatting\clock.ixx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="formatting\encoding.ixx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="formatting\formatting.ixx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="formatting\clock.cxx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="formatting\clock_formatting.cxx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="formatting\encoding.cxx"><Filter>formatting</Filter></ClCompile>
+    <ClCompile Include="system\clipboard.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\keyboard.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\pipes.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\process.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\shell.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\thread.ixx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\clipboard.cxx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\keyboard.cxx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\pipes.cxx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\process.cxx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="system\shell.cxx"><Filter>system</Filter></ClCompile>
+    <ClCompile Include="taskbar\core_taskbar.ixx"><Filter>taskbar</Filter></ClCompile>
+    <ClCompile Include="taskbar\taskbar.cxx"><Filter>taskbar</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="component\components_catalog_detail.hpp"><Filter>component</Filter></ClInclude>
+    <ClInclude Include="component\components_list_detail.hpp"><Filter>component</Filter></ClInclude>
+    <ClInclude Include="component\console_route_detail.hpp"><Filter>component</Filter></ClInclude>
+    <ClInclude Include="config\configured_directory.hpp"><Filter>config</Filter></ClInclude>
+    <ClInclude Include="config\core_config_detail.hpp"><Filter>config</Filter></ClInclude>
+    <ClInclude Include="config\installation_layout.hpp"><Filter>config</Filter></ClInclude>
+    <ClInclude Include="config\logging_config_detail.hpp"><Filter>config</Filter></ClInclude>
+    <ClInclude Include="diagnostics\crash_diagnostics_detail.hpp"><Filter>diagnostics</Filter></ClInclude>
+    <ClInclude Include="formatting\clock_formatting.hpp"><Filter>formatting</Filter></ClInclude>
+  </ItemGroup>
+</Project>

@@ -287,10 +287,10 @@ JournalSettings load_settings() {
         }
     }
     if (const auto value = document->find("journal", "logging")) {
-        if (*value == "on" || *value == "true") {
+        if (*value == "on") {
             settings.logging = true;
         }
-        else if (*value == "off" || *value == "false") {
+        else if (*value == "off") {
             settings.logging = false;
         }
         else {

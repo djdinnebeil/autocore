@@ -1,0 +1,42 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash", "runtime\dash.vcxproj", "{A298396A-8A3C-42C0-BC89-339C30A155F1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_config", "config\dash_config.vcxproj", "{D2B6F9A7-E48C-4F6D-D013-71A24E5F6088}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_editor", "editor\dash_editor.vcxproj", "{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_star", "star\dash_star.vcxproj", "{214DA624-AF8A-4F13-A378-6D3876A14298}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A298396A-8A3C-42C0-BC89-339C30A155F1}.Debug|x64.ActiveCfg = Debug|x64
+		{A298396A-8A3C-42C0-BC89-339C30A155F1}.Debug|x64.Build.0 = Debug|x64
+		{A298396A-8A3C-42C0-BC89-339C30A155F1}.Release|x64.ActiveCfg = Release|x64
+		{A298396A-8A3C-42C0-BC89-339C30A155F1}.Release|x64.Build.0 = Release|x64
+		{D2B6F9A7-E48C-4F6D-D013-71A24E5F6088}.Debug|x64.ActiveCfg = Debug|x64
+		{D2B6F9A7-E48C-4F6D-D013-71A24E5F6088}.Debug|x64.Build.0 = Debug|x64
+		{D2B6F9A7-E48C-4F6D-D013-71A24E5F6088}.Release|x64.ActiveCfg = Release|x64
+		{D2B6F9A7-E48C-4F6D-D013-71A24E5F6088}.Release|x64.Build.0 = Release|x64
+		{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}.Debug|x64.ActiveCfg = Debug|x64
+		{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}.Debug|x64.Build.0 = Debug|x64
+		{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}.Release|x64.ActiveCfg = Release|x64
+		{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}.Release|x64.Build.0 = Release|x64
+		{214DA624-AF8A-4F13-A378-6D3876A14298}.Debug|x64.ActiveCfg = Debug|x64
+		{214DA624-AF8A-4F13-A378-6D3876A14298}.Debug|x64.Build.0 = Debug|x64
+		{214DA624-AF8A-4F13-A378-6D3876A14298}.Release|x64.ActiveCfg = Release|x64
+		{214DA624-AF8A-4F13-A378-6D3876A14298}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C623330-4B5A-4111-8232-BCABA4919DAC}
+	EndGlobalSection
+EndGlobal

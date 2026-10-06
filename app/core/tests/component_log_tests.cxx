@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../src/console_route_detail.hpp"
+#include "../component/console_route_detail.hpp"
 
 #include <filesystem>
 #include <fstream>

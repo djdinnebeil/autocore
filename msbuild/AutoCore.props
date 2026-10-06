@@ -9,7 +9,7 @@
     <AutoCoreMacroDir>$(AutoCoreAppDir)core\include\</AutoCoreMacroDir>
     <AutoCoreDistDir>$(AutoCoreRootDir)dist\</AutoCoreDistDir>
     <AutoCoreBinDir>$(AutoCoreDistDir)bin\</AutoCoreBinDir>
-    <AutoCoreSymbolsDir>$(AutoCoreDistDir)symbols\</AutoCoreSymbolsDir>
+    <AutoCoreSymbolsDir>$(AutoCoreRootDir)symbols\</AutoCoreSymbolsDir>
     <AutoCoreVendorIncludes>$(AutoCoreThirdPartyDir)civetweb\include;$(AutoCoreThirdPartyDir)cpr\include;$(AutoCoreThirdPartyDir)curl\include;$(AutoCoreThirdPartyDir)dbghelp\include;$(AutoCoreThirdPartyDir)json\include;$(AutoCoreThirdPartyDir)sqlite3\include;$(AutoCoreThirdPartyDir)taglib\include;$(AutoCoreThirdPartyDir)zlib\include</AutoCoreVendorIncludes>
     <AutoCoreVendorLibraries>$(AutoCoreThirdPartyDir)civetweb\lib;$(AutoCoreThirdPartyDir)cpr\lib;$(AutoCoreThirdPartyDir)curl\lib;$(AutoCoreThirdPartyDir)sqlite3\lib;$(AutoCoreThirdPartyDir)taglib\lib;$(AutoCoreThirdPartyDir)zlib\lib</AutoCoreVendorLibraries>
   </PropertyGroup>
@@ -66,7 +66,6 @@
     </BuildMacro>
   </ItemGroup>
   <Target Name="CopyDistRuntimeDlls" AfterTargets="Link" BeforeTargets="PostBuildEvent">
-    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(AutoCoreRootDir)scripts\copy-dist-dlls.ps1&quot;" />
     <PropertyGroup>
       <_AutoCoreOutDirFull>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_AutoCoreOutDirFull>
       <_AutoCoreBinDirFull>$([System.IO.Path]::GetFullPath('$(AutoCoreBinDir)'))</_AutoCoreBinDirFull>

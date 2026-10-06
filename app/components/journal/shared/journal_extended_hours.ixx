@@ -64,7 +64,7 @@ export namespace journal::extended_hours {
      *
      * An exact `+n` boundary (`hour == n` and `minute == 0`) renders
      * `(24 + n):00`. Every other minute uses
-     * `ac::clock::detail::format_extended_timestamp`.
+     * `ac::clock::format_extended_timestamp`.
      */
     [[nodiscard]]
     std::string format(const ExtendedHours& hours, int hour, int minute);

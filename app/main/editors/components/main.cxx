@@ -1,5 +1,5 @@
-#include "../../../core/src/components_catalog_detail.hpp"
-#include "../../../core/src/components_list_detail.hpp"
+#include "../../../core/component/components_catalog_detail.hpp"
+#include "../../../core/component/components_list_detail.hpp"
 
 import std;
 import auto_core.core.component;

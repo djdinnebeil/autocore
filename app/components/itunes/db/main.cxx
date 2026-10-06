@@ -4,6 +4,7 @@ import auto_core.core.ini;
 import auto_core.core.logging.config;
 import auto_core.core.paths;
 import auto_core.core.pipes;
+import auto_core.core.process;
 import itunes_db_protocol;
 import itunes_sqlite;
 
@@ -194,7 +195,7 @@ std::expected<std::int64_t, std::string> parse_int64(std::string_view text) {
     return value;
 }
 
-int run_serve() {
+int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
         itunes_db.log_print("Unable to create the iTunes database service mutex.");
@@ -239,8 +240,22 @@ int run_serve() {
         return 1;
     }
     ac::pipes::Pipe pipe = std::move(*server);
+    ac::pipes::CommandDispatcher dispatcher;
+    ac::process::OwnerWatch owner_watch;
+    if (owner != nullptr) {
+        owner_watch = ac::process::OwnerWatch(owner, [&dispatcher] {
+            dispatcher.request_stop();
+        });
+        if (!owner_watch.active()) {
+            itunes_db.log_print("Unable to watch the iTunes database owner process.");
+            return 1;
+        }
+    }
     if (ConnectNamedPipe(static_cast<HANDLE>(pipe.native_handle()), nullptr) == FALSE &&
         GetLastError() != ERROR_PIPE_CONNECTED) {
+        if (dispatcher.stop_requested()) {
+            return 0;
+        }
         itunes_db.log_print(
             "Unable to accept an iTunes database client. Error: {}",
             GetLastError()
@@ -259,7 +274,6 @@ int run_serve() {
         return 1;
     }
 
-    ac::pipes::CommandDispatcher dispatcher;
     dispatcher.set_command(
         itunes::db::to_wire(itunes::db::Request::observe),
         [&pipe, &store, &dispatcher] {
@@ -309,7 +323,13 @@ int run_serve() {
         }
     );
 
+    if (dispatcher.stop_requested()) {
+        return 0;
+    }
     if (const auto result = dispatcher.process(pipe); !result) {
+        if (dispatcher.stop_requested()) {
+            return 0;
+        }
         itunes_db.log_print(
             "iTunes database pipe failed. Error: {}",
             result.error().system_error
@@ -324,20 +344,43 @@ int run_serve() {
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     itunes_db.log_main("itunes_db.exe started");
-    if (argc > 2) {
-        std::cerr << "Usage: itunes_db.exe [--serve | --seed]\n";
-        return 1;
-    }
-    if (argc == 2) {
-        const std::string_view argument {argv[1]};
+    bool serve = false;
+    bool seed = false;
+    void* owner = nullptr;
+    for (int index = 1; index < argc; ++index) {
+        const std::string_view argument {argv[index]};
         if (argument == "--serve") {
-            return run_serve();
+            serve = true;
         }
-        if (argument == "--seed") {
-            return run_seed();
+        else if (argument == "--seed") {
+            seed = true;
         }
-        std::cerr << "Usage: itunes_db.exe [--serve | --seed]\n";
+        else if (argument == "--owner-handle") {
+            if (index + 1 >= argc) {
+                std::cerr << "Usage: itunes_db.exe [--serve | --seed] [--owner-handle <handle>]\n";
+                return 1;
+            }
+            const auto handle = ac::process::parse_owner_handle(argv[++index]);
+            if (!handle) {
+                std::cerr << "Invalid --owner-handle.\n";
+                return 1;
+            }
+            owner = *handle;
+        }
+        else {
+            std::cerr << "Usage: itunes_db.exe [--serve | --seed] [--owner-handle <handle>]\n";
+            return 1;
+        }
+    }
+    if (serve == seed) {
+        if (argc == 1) {
+            return run_menu();
+        }
+        std::cerr << "Usage: itunes_db.exe [--serve | --seed] [--owner-handle <handle>]\n";
         return 1;
     }
-    return run_menu();
+    if (seed) {
+        return run_seed();
+    }
+    return run_serve(owner);
 }

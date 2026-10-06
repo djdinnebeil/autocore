@@ -8,7 +8,7 @@
 | `notes_subdirectory` | `notes` |
 | `logging` | `on` |
 
-`directory` is resolved against the installation root. `notes_subdirectory` must be a relative path and is resolved against the Writer directory, not the installation root. The defaults resolve to `<installation_root>\writer` and `<installation_root>\writer\notes`. A missing, empty, or non-relative `notes_subdirectory` uses `<writer directory>\notes`. `writer_ac.exe` logs an invalid stored value and does not rewrite the file. An old `notes_directory` key is ignored.
+`directory` is resolved against the installation root. `notes_subdirectory` must be a relative path and is resolved against the Writer directory, not the installation root. The defaults resolve to `<installation_root>\writer` and `<installation_root>\writer\notes`. A missing, empty, or non-relative `notes_subdirectory` uses `<writer directory>\notes`. `writer_ac.exe` logs an invalid stored value and does not rewrite the file.
 
 Only `writer_config.exe` writes the INI. If it is missing or malformed, `writer_ac.exe` calls `report_ini_unavailable` and uses the compiled defaults in memory. It does not create the file and it does not launch `writer_config.exe` or `writer_editor.exe`.
 
@@ -119,6 +119,6 @@ writer
 
 ## Runtime
 
-`writer_ac.exe` keeps the keymap command `create_new_note_in_notepad`. That command starts `writer_editor.exe --daily-note` and does not create the note itself. `--daily-note` creates the day's note when that command runs, which creates the notes directory if the command needs it. Session prompt selection reads `session_prompts.list` and logs a missing or empty file. `launch_task_list` opens `task_list.txt` in Notepad and does not create it. A missing task list is logged by the ready banner and omitted; an empty file prints "Nothing pending today."
+`writer_ac.exe` keeps the keymap command `create_new_note_in_notepad`. That command starts `writer_editor.exe --daily-note` and does not create the note itself. `--daily-note` creates the day's note when that command runs, which creates the notes directory if the command needs it. Session prompt selection reads `session_prompts.list` and logs a missing or empty file. `launch_task_list` opens `task_list.txt` in Notepad and does not create it. Main's ready banner reads this file on purpose. It is a Main status line, not a Writer command. A missing task list is logged and omitted; an empty file prints "Nothing pending today."
 
 See [Runtime configuration](configuration.md).

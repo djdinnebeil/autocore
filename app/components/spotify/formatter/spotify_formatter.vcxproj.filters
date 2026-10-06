@@ -16,5 +16,11 @@
     <ClCompile Include="..\shared\song_catalog.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\data_directory.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\defaults.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

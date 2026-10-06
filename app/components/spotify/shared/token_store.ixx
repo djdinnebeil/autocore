@@ -8,7 +8,7 @@
 export module spotify_token_store;
 
 import std;
-import auto_core.core.paths;
+import spotify_data_directory;
 
 import <Windows.h>;
 
@@ -24,7 +24,7 @@ struct TokenState {
 };
 
 [[nodiscard]] inline std::filesystem::path path() {
-    return ac::paths::spotify_directory() / "tokens.map";
+    return spotify::data_directory() / "tokens.map";
 }
 
 [[nodiscard]] inline std::string_view trim_ws(std::string_view value) noexcept {

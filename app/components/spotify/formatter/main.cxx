@@ -12,6 +12,7 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
+import spotify_data_directory;
 import spotify_song_catalog;
 import spotify_song_template;
 
@@ -217,7 +218,7 @@ bool replace_song_format(
 } // namespace
 
 int edit_song_format() {
-    const auto format_path = ac::paths::spotify_directory() / "song.format";
+    const auto format_path = spotify::data_directory() / "song.format";
     std::error_code error;
     const bool existed = std::filesystem::exists(format_path, error);
     if (error) {
@@ -321,7 +322,7 @@ int run_seed() {
     if (require_readable_ini() != 0) {
         return 1;
     }
-    const auto format_path = ac::paths::spotify_directory() / "song.format";
+    const auto format_path = spotify::data_directory() / "song.format";
     std::error_code error;
     const bool exists = std::filesystem::exists(format_path, error);
     if (error) {
@@ -346,7 +347,7 @@ int run_init() {
     if (require_readable_ini() != 0) {
         return 1;
     }
-    const auto format_path = ac::paths::spotify_directory() / "song.format";
+    const auto format_path = spotify::data_directory() / "song.format";
     std::error_code error;
     const bool exists = std::filesystem::exists(format_path, error);
     if (error) {

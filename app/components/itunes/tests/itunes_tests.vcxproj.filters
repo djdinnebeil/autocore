@@ -23,10 +23,10 @@
     <ClCompile Include="..\..\..\shared\command_registry.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\pipes.ixx">
+    <ClCompile Include="..\..\..\core\system\pipes.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_config_detail.cxx">
+    <ClCompile Include="..\runtime\itunes_config_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\defaults.ixx">
@@ -41,28 +41,28 @@
     <ClCompile Include="..\shared\itunes_metadata_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_formatting_detail.cxx">
+    <ClCompile Include="..\runtime\itunes_formatting_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_track_detail.cxx">
+    <ClCompile Include="..\runtime\itunes_track_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_runtime.ixx">
+    <ClCompile Include="..\runtime\itunes_runtime.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_runtime.cxx">
+    <ClCompile Include="..\runtime\itunes_runtime.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_registry.ixx">
+    <ClCompile Include="..\runtime\itunes_registry.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_registry.cxx">
+    <ClCompile Include="..\runtime\itunes_registry.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_pipe.ixx">
+    <ClCompile Include="..\runtime\itunes_pipe.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\itunes_pipe.cxx">
+    <ClCompile Include="..\runtime\itunes_pipe.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itunes_config_tests.cxx">
@@ -100,7 +100,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\main\itunes_config_detail.hpp">
+    <ClInclude Include="..\runtime\itunes_config_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\song_template_detail.hpp">
@@ -115,10 +115,10 @@
     <ClInclude Include="..\shared\itunes_metadata_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\main\itunes_formatting_detail.hpp">
+    <ClInclude Include="..\runtime\itunes_formatting_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\main\itunes_track_detail.hpp">
+    <ClInclude Include="..\runtime\itunes_track_detail.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

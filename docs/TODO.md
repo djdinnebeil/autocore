@@ -45,7 +45,7 @@ beta-tester blocker.
 Ordinary Wake logs still follow `logging.ini`.
 
 Later, `wake.ini` can hold filters to exclude certain system wake events and
-an `enabled` switch (`on` / `off`, with `true` / `false` accepted as aliases)
+an `enabled` switch (`on` / `off` only)
 for the history capture itself. Do not add those keys until Wake needs them.
 
 ## Encapsulate interactive taskbar cycling

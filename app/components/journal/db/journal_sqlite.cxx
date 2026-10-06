@@ -5,7 +5,7 @@ module;
 module journal_sqlite;
 
 import std;
-import auto_core.core.paths;
+import journal_data_directory;
 
 namespace {
 
@@ -310,7 +310,7 @@ Store::~Store() {
 }
 
 std::filesystem::path file_path() {
-    return ac::paths::journal_directory() / "series.db";
+    return journal::data_directory() / "series.db";
 }
 
 std::expected<Store, std::string> open_at(const std::filesystem::path& path) {

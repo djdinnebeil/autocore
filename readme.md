@@ -41,7 +41,7 @@ To run the same build on another Windows 11 PC, copy the `dist/` folder, then re
 
 1. Clone or copy the repository onto Windows 11.
 2. Install Visual Studio **2026** (version **18+**) with the Desktop development with C++ workload (MSVC **v145**, C++23).
-3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). After Link, Windows PowerShell runs [`scripts/copy-dist-dlls.ps1`](scripts/copy-dist-dlls.ps1), which copies vendor runtime DLLs from `third_party/*/bin/` and `lib/auto_core.dll` into `dist/bin/`.
+3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). `auto_core_dll` publishes `lib/auto_core.dll` to `dist/bin/auto_core.dll`. When third-party runtime DLLs change, run [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy `third_party/*/bin/*.dll` into `dist/bin/`. Builds do not run that script.
 4. Shared paths live in [`msbuild/AutoCore.props`](msbuild/AutoCore.props) (repo-relative; a clone does not edit that file).
 
 The linker searches `lib/auto_core.lib`. `dist/` is gitignored.
@@ -110,7 +110,7 @@ Auto Core/
 ├─ NOTICE.md            Third-party library attribution
 ├─ CONTRIBUTING.md      How to build and extend
 ├─ SECURITY.md          Hook, secrets, how to report issues
-├─ scripts/             Repo build and post-Link copy scripts
+├─ scripts/             Repo build scripts and the manual vendor DLL refresh
 ├─ msbuild/             AutoCore.props (one level below repo root; not obj/)
 ├─ app/                 Build input (source, projects, resources). Not source-only
 │  ├─ components/       Child trees: <name>/main, config, shared (spotify + oauth; tests when present)
@@ -130,17 +130,22 @@ Auto Core/
 │  ├─ keymap/           keymap_commands.txt and components/ catalogs
 │  ├─ components/       Optional component data (journal, spotify, server)
 │  ├─ taskbar/          applications/*.map; winkey_map.cache
-│  ├─ writer/           session_prompts.list, task_list.txt, and notes/ (local)
-│  └─ symbols/          Debug symbol files, such as .pdb files
+│  └─ writer/           session_prompts.list, task_list.txt, and notes/ (local)
 ├─ docs/                Developer documentation
 ├─ lib/                 Canonical auto_core.dll and auto_core.lib
 ├─ obj/                 Gitignored IntDir, including test binaries
+├─ symbols/             Gitignored linker program databases (`.pdb`)
 └─ third_party/         Committed vendors (`<dependency>/`; product `include`, `lib`, `bin`; Catch2 at `catch2/`)
 ```
 
 `dist/` is gitignored runtime state. See [configuration](docs/configuration.md).
 
-Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `auto_core.lib` and `auto_core.dll`), and `dist/bin/` (executables and the runtime `auto_core.dll`). Shared Visual Studio settings live in `msbuild/`. Wipe `obj/` anytime; rebuilding the core DLL overwrites `lib/` in place.
+Crash reports, when enabled, are written under `dist/crash/` independently of
+normal logging. Open the Auto Core installation folder, open `crash`, and send
+only the requested event folder to the Auto Core team. A report contains
+diagnostic process information and is never uploaded automatically.
+
+Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `auto_core.lib` and `auto_core.dll`), `symbols/` (linker `.pdb` files), and `dist/bin/` (executables and the `auto_core.dll` published by `auto_core_dll`). Shared Visual Studio settings live in `msbuild/`. Wipe `obj/` anytime; rebuilding the core DLL overwrites `lib/` in place and publishes that DLL to `dist/bin/`.
 
 ## Dash
 

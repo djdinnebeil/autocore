@@ -1,4 +1,4 @@
-#include "../../runtime/src/keymap_map_detail.hpp"
+#include "../../runtime/keyboard/keymap_map_detail.hpp"
 
 import std;
 import auto_core.core.component;

@@ -137,14 +137,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\core\modules\clock.ixx" />
-    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
-    <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
-    <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
-    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
-    <ClCompile Include="..\..\..\core\modules\component.ixx" />
-    <ClCompile Include="..\..\..\core\modules\ini.ixx" />
-    <ClCompile Include="..\..\..\core\modules\paths.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx" />
+    <ClCompile Include="..\..\..\core\system\shell.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx" />
+    <ClCompile Include="..\..\..\core\config\logging_config.ixx" />
+    <ClCompile Include="..\..\..\core\component\component.ixx" />
+    <ClCompile Include="..\..\..\core\config\ini.ixx" />
+    <ClCompile Include="..\..\..\core\config\paths.ixx" />
     <ClCompile Include="..\shared\server_data_detail.cxx" />
     <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
     <ClCompile Include="..\..\..\shared\component_star.ixx" />

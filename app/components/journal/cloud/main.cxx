@@ -2,6 +2,7 @@ import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.pipes;
+import auto_core.core.process;
 import journal_cloud_http;
 import journal_cloud_protocol;
 import journal_firebase;
@@ -166,7 +167,7 @@ int run_menu() {
     }
 }
 
-int run_serve() {
+int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
         journal_cloud.log_print("Unable to create the journal cloud service mutex.");
@@ -196,8 +197,22 @@ int run_serve() {
         return 1;
     }
     ac::pipes::Pipe pipe = std::move(*server);
+    ac::pipes::CommandDispatcher dispatcher;
+    ac::process::OwnerWatch owner_watch;
+    if (owner != nullptr) {
+        owner_watch = ac::process::OwnerWatch(owner, [&dispatcher] {
+            dispatcher.request_stop();
+        });
+        if (!owner_watch.active()) {
+            journal_cloud.log_print("Unable to watch the journal cloud owner process.");
+            return 1;
+        }
+    }
     if (ConnectNamedPipe(pipe.native_handle(), nullptr) == FALSE &&
         GetLastError() != ERROR_PIPE_CONNECTED) {
+        if (dispatcher.stop_requested()) {
+            return 0;
+        }
         journal_cloud.log_print(
             "Unable to accept a journal cloud client. Error: {}",
             GetLastError()
@@ -215,7 +230,6 @@ int run_serve() {
         return 1;
     }
 
-    ac::pipes::CommandDispatcher dispatcher;
     dispatcher.set_command(
         journal::cloud::to_wire(journal::cloud::Request::push),
         [&pipe, &dispatcher] {
@@ -268,7 +282,13 @@ int run_serve() {
             dispatcher.request_stop();
         }
     );
+    if (dispatcher.stop_requested()) {
+        return 0;
+    }
     if (const auto result = dispatcher.process(pipe); !result) {
+        if (dispatcher.stop_requested()) {
+            return 0;
+        }
         journal_cloud.log_print(
             "Journal cloud pipe failed. Error: {}",
             result.error().system_error
@@ -284,8 +304,21 @@ int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
     journal_cloud.log_main("journal_cloud.exe started");
-    if (argc == 2 && std::string_view {argv[1]} == "--serve") {
-        return run_serve();
+    if (argc >= 2 && std::string_view {argv[1]} == "--serve") {
+        void* owner = nullptr;
+        if (argc == 4 && std::string_view {argv[2]} == "--owner-handle") {
+            const auto handle = ac::process::parse_owner_handle(argv[3]);
+            if (!handle) {
+                std::cerr << "Invalid --owner-handle.\n";
+                return 1;
+            }
+            owner = *handle;
+        }
+        else if (argc != 2) {
+            std::cerr << "Usage: journal_cloud.exe [--serve | --seed | --init]\n";
+            return 1;
+        }
+        return run_serve(owner);
     }
 
     const auto launch =

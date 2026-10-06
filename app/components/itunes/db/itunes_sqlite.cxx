@@ -2,7 +2,7 @@ module;
 
 #include <sqlite3.h>
 #include <Windows.h>
-#include "../main/itunes_config_detail.hpp"
+#include "../runtime/itunes_config_detail.hpp"
 
 module itunes_sqlite;
 

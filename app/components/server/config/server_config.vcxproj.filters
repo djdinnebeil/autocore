@@ -24,19 +24,19 @@
     <ClCompile Include="..\shared\server_data_detail.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\encoding.ixx">
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\error.ixx">
+    <ClCompile Include="..\..\..\core\diagnostics\error.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\formatting.ixx">
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\ini.ixx">
+    <ClCompile Include="..\..\..\core\config\ini.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\paths.ixx">
+    <ClCompile Include="..\..\..\core\config\paths.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -10,29 +10,30 @@ Tree (required):
 
 ```text
 app/components/example/
-  main/     → example.sln + example.vcxproj → example_ac.exe
-  config/   → example_config.sln + .vcxproj → example_config.exe
+  runtime/  → example.vcxproj → example_ac.exe
+  config/   → example_config.vcxproj → example_config.exe
   shared/   → example_protocol.ixx, defaults.ixx
+  Example.sln
 ```
 
-The component root holds those folders only. Optional `tests/` (own `.sln`) if
+The component root holds the family solution and those folders. Optional `tests/` if
 the child has Catch2 tests. Extra executables (Spotify `oauth/`, Server
-`builder/` for `server_builder.exe`) are sibling folders with their own
-`.sln`.
+`builder/` for `server_builder.exe`) are sibling folders. Add each `.vcxproj`
+to `Example.sln`. Do not add a solution per executable.
 
 Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_print`), uses those defaults in memory, and does **not** create the file.
 
-Lived example: [`app/components/server`](../app/components/server) (`main` / `config` / `editor` / `builder` / `star` / `shared/defaults.ixx`).
+Lived example: [`app/components/server`](../app/components/server) (`runtime` / `config` / `editor` / `builder` / `star` / `shared/defaults.ixx`).
 
-Do not use `dash` or `slash` as a new v1 list name (those are known specials). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the post-Link DLL copy. Those are toolchain requirements, not filesystem paths to type into the project.
+Do not use `dash` or `slash` as a new v1 list name (Main keeps those non-hosted). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the repo build scripts. Those are toolchain requirements, not filesystem paths to type into the project.
 
 Each heading is tagged **source**, **compile**, or **runtime configuration**.
 
 ## Project creation (source)
 
-Create **two** Console App projects (C++, Windows, Console; not CMake; no precompiled header). Place each solution and project in the same directory (`main/`, `config/`). There is no repository-root `.sln` and no files at the component root.
+Create **two** Console App projects (C++, Windows, Console; not CMake; no precompiled header). Place each project in its responsibility directory (`runtime/`, `config/`) and add both to `Example.sln` at the component root. The repository workspace is `app/AutoCore.sln`.
 
-1. **Runtime:** Name `example`. Location `<repo>\app\components\example\main`. Target Name later: `example_ac`.
+1. **Runtime:** Name `example`. Location `<repo>\app\components\example\runtime`. Target Name later: `example_ac`.
 2. **Config:** Name `example_config`. Location `<repo>\app\components\example\config`. Target Name: `example_config` (unsuffixed).
 
 Delete wizard `*.cpp` / `pch` files. Auto Core sources are `.cxx`. Add `shared/defaults.ixx` and `shared/example_protocol.ixx` (or keep using [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx) only if this child has no extra protocol).
@@ -125,7 +126,7 @@ Do not add library directories. Props already searches `lib\` and vendor libs. D
 
 ## Shared modules and resources (source)
 
-Add → Existing Item. These must compile (`ClCompile` / `ResourceCompile`). Paths are relative to `app\components\example\main\`.
+Add → Existing Item. These must compile (`ClCompile` / `ResourceCompile`). Paths are relative to `app\components\example\runtime\`.
 
 **Your files**
 
@@ -138,20 +139,20 @@ Add → Existing Item. These must compile (`ClCompile` / `ResourceCompile`). Pat
 - `..\..\..\shared\command_registry.ixx`
 - `..\..\..\shared\protocols\component_protocol.ixx`
 
-**Core module interfaces** (MSVC only builds `.ixx` files listed in this project; do not add `app\core\src\*.cxx`)
+**Core module interfaces** (MSVC only builds `.ixx` files listed in this project; do not add `app\core\*.cxx`)
 
-- `..\..\..\core\modules\clipboard.ixx`
-- `..\..\..\core\modules\clock.ixx`
-- `..\..\..\core\modules\component.ixx`
-- `..\..\..\core\modules\encoding.ixx`
-- `..\..\..\core\modules\error.ixx`
-- `..\..\..\core\modules\formatting.ixx`
-- `..\..\..\core\modules\ini.ixx`
-- `..\..\..\core\modules\keyboard.ixx`
-- `..\..\..\core\modules\logging_config.ixx`
-- `..\..\..\core\modules\paths.ixx`
-- `..\..\..\core\modules\pipes.ixx`
-- `..\..\..\core\modules\thread.ixx`
+- `..\..\..\core\system\clipboard.ixx`
+- `..\..\..\core\formatting\clock.ixx`
+- `..\..\..\core\component\component.ixx`
+- `..\..\..\core\formatting\encoding.ixx`
+- `..\..\..\core\diagnostics\error.ixx`
+- `..\..\..\core\formatting\formatting.ixx`
+- `..\..\..\core\config\ini.ixx`
+- `..\..\..\core\system\keyboard.ixx`
+- `..\..\..\core\config\logging_config.ixx`
+- `..\..\..\core\config\paths.ixx`
+- `..\..\..\core\system\pipes.ixx`
+- `..\..\..\core\system\thread.ixx`
 
 **Resource**
 
@@ -204,6 +205,9 @@ int main() {
     auto& component = example_component();
 
     const auto ini_path = ac::paths::config_directory() / "example.ini";
+    // A data directory is resolved in the component, for example
+    // example::data_directory() calling ac::paths::configured_directory.
+    // Do not add an example_directory() export to paths.ixx.
     if (const auto document = ac::ini::read(ini_path); !document) {
         component.report_ini_unavailable();
         // continue with example::defaults
@@ -263,18 +267,21 @@ int main() {
 `TerminationPolicy::force_allowed` as its second argument only when Main may
 use `TerminateProcess` after the shared shutdown deadline.
 
-See [`app/components/journal/main/main.cxx`](../app/components/journal/main/main.cxx) for a complete production child, including optional `--generate-keymap-command-registry`.
+See [`app/components/journal/runtime/main.cxx`](../app/components/journal/runtime/main.cxx) for a complete production child.
 
 Worker threads should enter through `ac::thread::run_with_exception_handling`.
 
-Optional post-build (editor aid only; not required for hosting):
+Main rewrites `dist\keymap\keymap_commands.txt` from the registry after hello.
+Do not add the component name to Main.
 
-```bat
-if not exist "$(AutoCoreDistDir)keymap\components" mkdir "$(AutoCoreDistDir)keymap\components"
-"$(TargetPath)" --generate-keymap-command-registry "$(AutoCoreDistDir)keymap\components\example.keymap_commands.txt"
-```
-
-Main rewrites `dist\keymap\keymap_commands.txt` from hello at startup.
+A one-shot component is the same executable name, plus `example_ac.oneshot.txt`
+copied next to `example_ac.exe`. Main will not host it on a control pipe.
+Enable it in `components.list`. The file lists command names and optional
+`console`, `context`, `wait`, and `argv` lines. Defaults are
+`console=default`, `context=none`, `wait=none`, and `argv=command`.
+`context=foreground` appends `--target <hwnd> --parent-pid <pid>`.
+`argv=none` does not pass the command name. `wait=infinite` blocks the
+main thread until the process exits.
 
 ## Build verification (compile)
 
@@ -297,7 +304,7 @@ or run `components_editor.exe` with no arguments to full-sync discovered
 example
 ```
 
-List `dash` or `slash` only as those known specials, not as a new v1 child. Do not hard-code extra names in [`app/core/src/config_defaults.hpp`](../app/core/src/config_defaults.hpp) unless they belong in the portable `components.list` seed.
+List `dash` or `slash` only as those known Main non-hosted names, not as a new v1 child. The portable seed is [`defaults/components.list`](../defaults/components.list). Do not hard-code ordinary component names into `auto_core.dll`.
 
 ## Bind a command (runtime configuration)
 
@@ -322,7 +329,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
 - Clone to any normal local path. Do not put that path in a committed `.vcxproj`.
 - One relative import: `..\..\..\..\msbuild\AutoCore.props`. `AutoCore.props` derives `dist`, `obj`, `app`, `lib`, and `third_party` from `$(MSBuildThisFileDirectory)`. It does not use `$(SolutionDir)`.
 - Do not set Additional Include Directories, Additional Library Directories, Output Directory, or Intermediate Directory for those trees.
-- Shared `.ixx` and `resource.rc` items stay relative (`..\..\..\core\modules\…`, `..\shared\defaults.ixx`).
+- Shared `.ixx` and `resource.rc` items stay relative (`..\..\..\core\…`, `..\shared\defaults.ixx`).
 
 ## Git / source-control rules
 
@@ -330,9 +337,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
 
 - `.vcxproj`, `.vcxproj.filters`
 - `main.cxx` and other source
-- A `.sln` next to each executable `.vcxproj` (`main/`, `config/`, extra
-  project dirs, and `tests/` when present). Auto Core has no repository-root
-  `.sln` and no component-root `.sln`.
+- The family `.sln` at the component root (`Example.sln`), plus `app/AutoCore.sln`, `app/core/Core.sln`, or `app/main/Main.sln` when the new project belongs there. Do not add a `.sln` beside each executable.
 - `msbuild/AutoCore.props` only if you are changing shared build policy (this workflow does not)
 - `shared/defaults.ixx` for that child's portable INI text
 
@@ -351,16 +356,16 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 - Leaving an absolute `C:\…\AutoCore.props` import, or **two** imports (absolute + relative).
 - Target Name `example` instead of `example_ac` (host looks for `example_ac.exe` next to `auto_core.exe`).
 - `print_example()` in `keymap.map`.
-- Adding `example` to `config_defaults.hpp` “so Main knows it” — that rebuilds the DLL and is not required.
+- Adding `example` to `auto_core.dll` “so Main knows it” — the host reads `components.list`, and that rebuild is not required.
 - A Project Reference / dependency from `auto_core.vcxproj` to the child.
-- Compiling `app\core\src\*.cxx` into the child (those live in the DLL).
+- Compiling `app\core\*.cxx` into the child (those live in the DLL).
 - Using `dash` or `slash` as a new v1 project name.
 - Building Debug and expecting `dist\` to match a Release host.
 - Editing Additional Include/Library Directories because Output Directory still looks like `x64\Release`.
 
 ## Adding a New Auto Core Component
 
-1. **Source.** Create `app/components/<name>/main`, `config`, and `shared`. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `star/main.cxx` that calls `ac::component_star::run("<name>")`.
+1. **Source.** Create `app/components/<name>/runtime`, `config`, and `shared`, plus `<Name>.sln` at the component root. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `star/main.cxx` that calls `ac::component_star::run("<name>")`.
 2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `dist\bin\<name>_ac.exe` and `dist\bin\<name>_config.exe`.
 3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini`. Enable the name with `<name>_star.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
 

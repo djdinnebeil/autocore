@@ -8,6 +8,7 @@ module;
 module spotify_oauth;
 
 import std;
+import auto_core.core.process;
 import spotify_token_store;
 
 #pragma comment(lib, "Shell32.lib")
@@ -332,16 +333,20 @@ namespace {
             authorization_link.end()
         };
 
-        const HINSTANCE result = ShellExecuteW(
-            nullptr,
+        const auto launched = ac::process::shell_launch_outside_job(
             L"open",
-            wide_link.c_str(),
-            nullptr,
-            nullptr,
-            SW_SHOWNORMAL
+            wide_link,
+            {},
+            {}
         );
-
-        return reinterpret_cast<std::intptr_t>(result) > 32;
+        if (!launched) {
+            std::cerr
+                << "Unable to open the Spotify authorization link. Error: "
+                << launched.error().system_error
+                << ".\n";
+            return false;
+        }
+        return true;
     }
 
     bool save_authorization_files(

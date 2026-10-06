@@ -29,10 +29,11 @@ export namespace ac::protocol::taskbar {
 
         /** Compiled command names that INI handlers must not replace.
             This is a reserved-name list, not a pipe-destination list.
-            `activate_auto_core` is invoked on the `taskbar_ac.exe` pipe.
-            `launch_powershell` and `launch_gitbash` run on Main.
-            `activate_wordpad` and `activate_powershell_in_admin` run on
-            Main so unmapped icons can emulate Win+position behavior. */
+            `activate_auto_core` is advertised by `taskbar_ac.exe`.
+            `launch_powershell` and `launch_gitbash` run in Main so the
+            foreground process can focus the new window.
+            `activate_wordpad` and `activate_powershell_in_admin` run in
+            Main because unmapped icons join Main's interactive cycle. */
         inline constexpr std::array authority {
             activate_auto_core,
             launch_powershell,

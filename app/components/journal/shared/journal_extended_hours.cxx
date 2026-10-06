@@ -2,13 +2,10 @@
  * \file journal_extended_hours.cxx
  * \brief Implements Journal extended-hour cutoff tokens.
  */
-module;
-
-#include "../../../core/src/clock_formatting.hpp"
-
 module journal_extended_hours;
 
-import auto_core.core.paths;
+import auto_core.core.clock;
+import journal_data_directory;
 
 namespace {
 
@@ -114,7 +111,7 @@ std::optional<ExtendedHours> parse_file(std::string_view text) {
 }
 
 std::filesystem::path file_path() {
-    return ac::paths::journal_directory() / "extended_hour.clock";
+    return journal::data_directory() / "extended_hour.clock";
 }
 
 ExtendedHours load() {
@@ -139,17 +136,11 @@ std::string format(const ExtendedHours& hours, const int hour, const int minute)
         return std::format("{:02}:00", 24 + hours.cutoff_hour);
     }
 
-    const ac::clock::detail::LocalTime time {
-        .year = 2000,
-        .month = 1,
-        .day = 1,
-        .day_of_week = 0,
-        .hour = hour,
-        .minute = minute,
-        .second = 0,
-        .millisecond = 0
-    };
-    return ac::clock::detail::format_extended_timestamp(time, hours.cutoff_hour);
+    return ac::clock::format_extended_timestamp(
+        hour,
+        minute,
+        hours.cutoff_hour
+    );
 }
 
 std::string range_description() {

@@ -1,7 +1,7 @@
 import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
-import auto_core.core.paths;
+import journal_data_directory;
 import journal_factories;
 import components_editor_request;
 
@@ -63,7 +63,7 @@ journal::factories::ReadAliasFile load_factory(
     journal::factories::FactoryId id
 ) {
     return journal::factories::read_alias_file(
-        journal::factories::alias_path(ac::paths::journal_directory(), id),
+        journal::factories::alias_path(journal::data_directory(), id),
         id
     );
 }
@@ -92,7 +92,7 @@ bool save_aliases(
     std::span<const journal::factories::AliasDefinition> aliases
 ) {
     const std::filesystem::path path = journal::factories::alias_path(
-        ac::paths::journal_directory(),
+        journal::data_directory(),
         id
     );
     const std::string text = journal::factories::serialize_alias_file(id, aliases);
@@ -359,7 +359,7 @@ int initialize_missing_factory(
     const journal::factories::FactoryDescriptor& descriptor
 ) {
     const std::filesystem::path path = journal::factories::alias_path(
-        ac::paths::journal_directory(),
+        journal::data_directory(),
         descriptor.id
     );
     std::error_code error;
@@ -459,7 +459,7 @@ int run_init() {
 
 int run_seed() {
     try {
-        const std::filesystem::path directory = ac::paths::journal_directory();
+        const std::filesystem::path directory = journal::data_directory();
         if (journal::factories::seed_missing_alias_files(directory) != 0) {
             journal_builder.log_print("Failed to create journal alias files.");
             return 1;

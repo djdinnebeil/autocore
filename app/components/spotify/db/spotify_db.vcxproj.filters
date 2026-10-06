@@ -27,22 +27,28 @@
     <ClCompile Include="..\shared\db_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\clock.ixx">
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\component.ixx">
+    <ClCompile Include="..\..\..\core\component\component.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\encoding.ixx">
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\formatting.ixx">
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\paths.ixx">
+    <ClCompile Include="..\..\..\core\config\paths.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\pipes.ixx">
+    <ClCompile Include="..\shared\data_directory.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\defaults.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\core\system\pipes.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

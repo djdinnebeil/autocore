@@ -103,10 +103,10 @@ Settings read_settings(const std::filesystem::path& path) {
         }
     }
     if (const auto logging = document->find("taskbar", "logging")) {
-        if (*logging == "on" || *logging == "true") {
+        if (*logging == "on") {
             settings.logging = true;
         }
-        else if (*logging == "off" || *logging == "false") {
+        else if (*logging == "off") {
             settings.logging = false;
         }
         else {

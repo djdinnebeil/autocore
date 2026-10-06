@@ -4,6 +4,7 @@ import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
 import spotify_application_data;
+import spotify_data_directory;
 import spotify_defaults;
 import components_editor_request;
 
@@ -185,10 +186,10 @@ bool stored_logging(const std::filesystem::path& path) {
     if (!value) {
         return ac::logging::config::component_logging_default();
     }
-    if (*value == "off" || *value == "false") {
+    if (*value == "off") {
         return false;
     }
-    if (*value == "on" || *value == "true") {
+    if (*value == "on") {
         return true;
     }
     return ac::logging::config::component_logging_default();
@@ -258,7 +259,7 @@ int seed_owned_files(ac::Component& log) {
 }
 
 int prompt_missing_stores(ac::Component& log) {
-    const auto directory = ac::paths::spotify_directory();
+    const auto directory = spotify::data_directory();
     const auto history = file_present(log, directory / "history.db");
     if (!history) {
         return 1;
@@ -319,7 +320,7 @@ int finish_authorization(ac::Component& log) {
 
     const auto tokens = file_present(
         log,
-        ac::paths::spotify_directory() / "tokens.map"
+        spotify::data_directory() / "tokens.map"
     );
     if (!tokens) {
         return 1;
@@ -350,7 +351,7 @@ int finish_authorization(ac::Component& log) {
 int report_seeded_authorization(ac::Component& log) {
     const auto tokens = file_present(
         log,
-        ac::paths::spotify_directory() / "tokens.map"
+        spotify::data_directory() / "tokens.map"
     );
     if (!tokens) {
         return 1;

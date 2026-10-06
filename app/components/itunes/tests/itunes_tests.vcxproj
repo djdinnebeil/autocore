@@ -62,20 +62,20 @@
     <ClCompile Include="..\shared\itunes_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
-    <ClCompile Include="..\..\..\core\modules\pipes.ixx" />
-    <ClCompile Include="..\main\itunes_config_detail.cxx" />
+    <ClCompile Include="..\..\..\core\system\pipes.ixx" />
+    <ClCompile Include="..\runtime\itunes_config_detail.cxx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="..\shared\song_template_detail.cxx" />
     <ClCompile Include="..\shared\library_format_detail.cxx" />
     <ClCompile Include="..\shared\itunes_metadata_detail.cxx" />
-    <ClCompile Include="..\main\itunes_formatting_detail.cxx" />
-    <ClCompile Include="..\main\itunes_track_detail.cxx" />
-    <ClCompile Include="..\main\itunes_runtime.ixx" />
-    <ClCompile Include="..\main\itunes_runtime.cxx" />
-    <ClCompile Include="..\main\itunes_registry.ixx" />
-    <ClCompile Include="..\main\itunes_registry.cxx" />
-    <ClCompile Include="..\main\itunes_pipe.ixx" />
-    <ClCompile Include="..\main\itunes_pipe.cxx" />
+    <ClCompile Include="..\runtime\itunes_formatting_detail.cxx" />
+    <ClCompile Include="..\runtime\itunes_track_detail.cxx" />
+    <ClCompile Include="..\runtime\itunes_runtime.ixx" />
+    <ClCompile Include="..\runtime\itunes_runtime.cxx" />
+    <ClCompile Include="..\runtime\itunes_registry.ixx" />
+    <ClCompile Include="..\runtime\itunes_registry.cxx" />
+    <ClCompile Include="..\runtime\itunes_pipe.ixx" />
+    <ClCompile Include="..\runtime\itunes_pipe.cxx" />
     <ClCompile Include="itunes_config_tests.cxx" />
     <ClCompile Include="itunes_song_format_tests.cxx" />
     <ClCompile Include="itunes_library_format_tests.cxx" />
@@ -89,12 +89,12 @@
     <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\main\itunes_config_detail.hpp" />
+    <ClInclude Include="..\runtime\itunes_config_detail.hpp" />
     <ClInclude Include="..\shared\song_template_detail.hpp" />
     <ClInclude Include="..\shared\library_format_detail.hpp" />
     <ClInclude Include="..\shared\itunes_metadata_detail.hpp" />
-    <ClInclude Include="..\main\itunes_formatting_detail.hpp" />
-    <ClInclude Include="..\main\itunes_track_detail.hpp" />
+    <ClInclude Include="..\runtime\itunes_formatting_detail.hpp" />
+    <ClInclude Include="..\runtime\itunes_track_detail.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TESTING.md" />

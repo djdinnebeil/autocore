@@ -27,11 +27,11 @@ std::filesystem::path ini_path() {
 
 [[nodiscard]]
 bool parse_on_off(const std::string_view text, bool& value) {
-    if (text == "on" || text == "true") {
+    if (text == "on") {
         value = true;
         return true;
     }
-    if (text == "off" || text == "false") {
+    if (text == "off") {
         value = false;
         return true;
     }

@@ -7,7 +7,7 @@ process only.
 
 ## Startup order
 
-[`main.cxx`](../app/main/runtime/src/main.cxx) runs this sequence:
+[`main.cxx`](../app/main/runtime/main.cxx) runs this sequence:
 
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
@@ -49,7 +49,7 @@ process only.
    created.
 5. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
-6. If `<exe>/crash/.crash` exists, prompt whether to continue. Yes removes the
+6. If `<installation_root>/crash/.crash` exists, prompt whether to continue. Yes removes the
    marker and continues; No exits (`1`) and leaves the marker so the next start
    asks again.
 7. Install the unhandled-exception restart filter.
@@ -62,8 +62,9 @@ process only.
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
 12. Print the ready banner on a detached thread (weekday and
-   `writer/task_list.txt`). A missing file is logged and the task section is
-   omitted; an empty file prints "Nothing pending today."
+   Writer's `task_list.txt`). That task section is an intentional Main
+   banner, not component dispatch. A missing file is logged and the task
+   section is omitted; an empty file prints "Nothing pending today."
 13. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
@@ -176,12 +177,17 @@ Auto Core restarts after an unhandled exception because it is the system
 keyboard manager. Recovery stays off until `check_for_previous_crash()`
 returns true.
 
-On a crash, Main writes `<exe>/crash/.crash`, copies `auto_core.exe` and
-`symbols/auto_core.pdb` into a dated `crash/<date>_crash` folder with
-`crash.log` (a same-day collision uses `<date>_crash_N`; copy failures are
-ignored), starts a new `auto_core.exe`, then runs `close_program()`, writes
-the local shutdown record, and `ExitProcess(1)`. If the marker or artifact directory
-cannot be written, the handler does not restart. See
+Every Auto Core executable initializes the shared `auto_core.dll` crash facility
+during its common Shell startup. With `[crash_recovery] crash_diagnostics = on`,
+an unhandled exception creates a collision-safe UTC/executable/PID folder under
+`<installation_root>/crash` containing `crash.txt` and a best-effort conservative
+`crash.dmp`. Diagnostics do not use normal logging and remain enabled when
+`[logging] disable_all = on`. Reports contain no copied executable, DLL, or PDB.
+
+Main separately preserves its recovery policy: it writes
+`<installation_root>/crash/.crash`, starts the installed `auto_core.exe`, then
+runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
+written, the handler does not restart. See
 [configuration.md](configuration.md) for `crash_recovery.ini`.
 
 `send_crash_command` is a diagnostic keymap name that forces this path.
@@ -219,25 +225,34 @@ control pipe.
    values are logged; those names are ignored or disabled. A missing file
    is reconstructed by `components_editor.exe` at startup; if that fails,
    Main exits. An unreadable existing file is reported and every valid
-   `*_ac.exe` beside Main is enabled. Known specials (`dash` and
-   `slash`) are not started as v1 children.
+   `*_ac.exe` beside Main is enabled. Main does not start `dash` or
+   `slash` as v1 children.
 2. If `taskbar` is enabled, start it and wait for hello, then attach the
    snapshot client. Snapshot failure keeps the control child.
 3. Create pipes and start every other enabled `{name}_ac.exe` without
-   waiting. Wait for those hellos in parallel (5s window). Failure disables
-   only that child (pipe closed, process terminated).
+   waiting. Each child is created suspended, assigned to its own job, and
+   resumed only after that assignment succeeds. If the job cannot be created
+   or the child cannot be placed in it, Main terminates the still-suspended
+   process and does not host that component. Wait for hellos in parallel
+   (5s window). Failure disables only that child (pipe closed, job terminated).
 
 The returned `Session` destructor calls `shutdown()` if it is still active.
 Shutdown requests are sent in reverse successful-start order before Main waits
-for any process. Main only offers OS termination for children whose hello
-declares `force_allowed`; graceful children can be left running.
+for any process. A component is finished only when its process has exited and
+its job has no active processes. Main calls `TerminateJobObject` only for
+children whose hello declares `force_allowed`. Graceful children are not
+force-terminated: Main duplicates the job handle into the living root process,
+or into a descendant opened and checked with `IsProcessInJob`, before it
+closes its own handle. Closing the last of those handles still ends any
+process left in the job. `logger_ac.exe --once --shutdown` is started outside
+these jobs and is not waited on.
 
-Dash is not started here; `launch_dash` runs on demand when `dash` is
-enabled in `components.list`. See
+One-shot components are not started here. An enabled name with
+`{name}_ac.oneshot.txt` beside `{name}_ac.exe` is launched when its
+command runs. Dash's file asks for a new console, the foreground HWND,
+and the parent PID, and does not wait. Slash's file passes the command
+on the command line and waits until the process exits. See
 [dash.md](dash.md) for the `--target` / `--parent-pid` launch line.
-
-Slash is launched per recycle-bin command when `slash` is listed enabled
-and has no long-lived pipe.
 
 Wake and server are generic v1 children. Wake has no advertised keymap
 names. Server shutdown uses the control pipe.
@@ -245,9 +260,11 @@ names. Server shutdown uses the control pipe.
 ## Generic children
 
 Boot-time children speak [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx).
-Main forwards keymap names from each child's hello catalog. Journal aliases
-live in per-factory `.list` files and are advertised by `journal_ac.exe`.
-`launch_journal_config` is Main-local.
+Main forwards keymap names from each child's hello catalog and from
+enabled `{name}_ac.oneshot.txt` files. Journal aliases live in per-factory
+`.list` files and are advertised by `journal_ac.exe`, including
+`launch_journal_config`. A new ordinary component does not require a Main
+source edit.
 
 Registering runtime commands and adding a new child project are in
 [development.md](development.md). Per-component product docs:

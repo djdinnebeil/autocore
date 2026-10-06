@@ -1,4 +1,4 @@
-#include "../../../core/src/components_catalog_detail.hpp"
+#include "../../../core/component/components_catalog_detail.hpp"
 
 import std;
 import auto_core.core.component;

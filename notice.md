@@ -4,8 +4,9 @@ Auto Core vendors libraries under `third_party/<dependency>/`. Product
 packages use `include/`, import libraries in `lib/`, and runtime DLLs in
 `bin/`. Catch2 is amalgamated test source at `third_party/catch2/`. This
 file is an attribution list, not a license grant for Auto Core itself. See
-[LICENSE](LICENSE) for Auto Core terms. A build copies
-`third_party/*/bin/*.dll` into `dist/` next to the executables.
+[LICENSE](LICENSE) for Auto Core terms. Run
+[`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy
+`third_party/*/bin/*.dll` into `dist/bin/` next to the executables.
 
 ## Catch2
 

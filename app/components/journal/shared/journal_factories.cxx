@@ -6,7 +6,7 @@ module journal_factories;
 
 import std;
 import auto_core.core.console;
-import auto_core.core.paths;
+import journal_data_directory;
 import auto_core.core.thread;
 import command_registry;
 import journal_component;
@@ -889,7 +889,7 @@ void register_factory_commands(command_registry::Registry& registry) {
 }
 
 void load_alias_commands(command_registry::Registry& registry) {
-    const std::filesystem::path directory = ac::paths::journal_directory();
+    const std::filesystem::path directory = journal::data_directory();
     std::vector<AliasDefinition> accepted;
     for (const FactoryDescriptor& descriptor : factory_descriptors) {
         const ReadAliasFile loaded = read_alias_file(

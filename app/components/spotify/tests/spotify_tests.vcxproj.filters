@@ -19,22 +19,22 @@
     <ClCompile Include="..\..\..\shared\command_registry.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\pipes.ixx">
+    <ClCompile Include="..\..\..\core\system\pipes.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\spotify_registry.ixx">
+    <ClCompile Include="..\runtime\spotify_registry.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\spotify_registry.cxx">
+    <ClCompile Include="..\runtime\spotify_registry.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\spotify_pipe.ixx">
+    <ClCompile Include="..\runtime\spotify_pipe.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\spotify_pipe.cxx">
+    <ClCompile Include="..\runtime\spotify_pipe.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main\spotify_http.ixx">
+    <ClCompile Include="..\runtime\spotify_http.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="spotify_http_tests.cxx">
@@ -46,7 +46,7 @@
     <ClCompile Include="spotify_registry_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\core\modules\paths.ixx">
+    <ClCompile Include="..\..\..\core\config\paths.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\application_data.ixx">
@@ -57,6 +57,9 @@
     </ClCompile>
     <ClCompile Include="spotify_application_data_tests.cxx">
       <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\data_directory.ixx">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\defaults.ixx">
       <Filter>Source Files</Filter>

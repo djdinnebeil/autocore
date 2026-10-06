@@ -1,5 +1,5 @@
-#include "catch_amalgamated.hpp"
-#include "../src/logging_config_detail.hpp"
+﻿#include "catch_amalgamated.hpp"
+#include "../config/logging_config_detail.hpp"
 
 namespace detail = ac::logging::config::detail;
 
@@ -8,7 +8,7 @@ TEST_CASE("Logging configuration applies explicit values", "[logging-config][uni
         {
             .disable_all = "on",
             .write_logs_to_files = "off",
-            .write_logs_to_console = "true",
+            .write_logs_to_console = "on",
             .log_print_mode = "log",
             .component_logging_default = "off",
             .directory = R"(D:\logs)"
@@ -73,7 +73,7 @@ TEST_CASE("Logging defaults keep files on, console off, and print mode", "[loggi
         std::string::npos);
 }
 
-TEST_CASE("Logging booleans accept on off true and false", "[logging-config][unit]") {
+TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     const auto on = detail::resolve_logging(
         {.disable_all = "on", .write_logs_to_files = "on"},
         R"(C:\logs)",
@@ -104,10 +104,12 @@ TEST_CASE("Logging booleans accept on off true and false", "[logging-config][uni
     CHECK(on.write_logs_to_files);
     CHECK_FALSE(off.disable_all);
     CHECK_FALSE(off.write_logs_to_files);
-    CHECK(truth.disable_all);
+    CHECK_FALSE(truth.disable_all);
     CHECK(truth.component_logging_default);
     CHECK_FALSE(falsity.disable_all);
-    CHECK_FALSE(falsity.component_logging_default);
+    CHECK(falsity.component_logging_default);
+    CHECK(truth.report.find("disable_all missing or invalid") !=
+        std::string::npos);
     CHECK_FALSE(invalid.disable_all);
     CHECK(invalid.write_logs_to_files);
     CHECK(invalid.report.find("disable_all missing or invalid") !=
@@ -146,17 +148,16 @@ TEST_CASE("Family logging uses the supplied fallback", "[logging-config][unit]")
     const std::optional<std::string_view> invalid {"yes"};
     const std::optional<std::string_view> on {"on"};
     const std::optional<std::string_view> off {"off"};
-    const std::optional<std::string_view> truth {"true"};
-    const std::optional<std::string_view> falsity {"false"};
+    const std::optional<std::string_view> unrecognized {"true"};
 
     CHECK(detail::resolve_component_logging(
         LoggingFallback::global_default, on, false));
     CHECK_FALSE(detail::resolve_component_logging(
         LoggingFallback::global_default, off, true));
-    CHECK(detail::resolve_component_logging(
-        LoggingFallback::off, truth, false));
     CHECK_FALSE(detail::resolve_component_logging(
-        LoggingFallback::off, falsity, true));
+        LoggingFallback::off, unrecognized, true));
+    CHECK(detail::resolve_component_logging(
+        LoggingFallback::global_default, unrecognized, true));
     CHECK(detail::resolve_component_logging(
         LoggingFallback::global_default, missing, true));
     CHECK_FALSE(detail::resolve_component_logging(
@@ -196,8 +197,10 @@ TEST_CASE("Logging console flag accepts documented booleans", "[logging-config][
 
     CHECK(on.write_logs_to_console);
     CHECK_FALSE(off.write_logs_to_console);
-    CHECK(truth.write_logs_to_console);
+    CHECK_FALSE(truth.write_logs_to_console);
     CHECK_FALSE(falsity.write_logs_to_console);
+    CHECK(truth.report.find("write_logs_to_console missing or invalid") !=
+        std::string::npos);
     CHECK_FALSE(invalid.write_logs_to_console);
     CHECK(invalid.report.find("write_logs_to_console missing or invalid") !=
         std::string::npos);
@@ -234,64 +237,4 @@ TEST_CASE("Empty logging directory uses paths default", "[logging-config][unit]"
     );
 
     CHECK(settings.directory == R"(C:\default)");
-}
-
-TEST_CASE("Logger interval accepts zero and sixty", "[logging-config][unit]") {
-    const auto disabled = detail::resolve_logger(
-        {.merge_interval_seconds = "0"}
-    );
-    const auto standard = detail::resolve_logger(
-        {.merge_interval_seconds = "60"}
-    );
-
-    CHECK(disabled.merge_interval_seconds == 0);
-    CHECK(standard.merge_interval_seconds == 60);
-}
-
-TEST_CASE("Invalid logger intervals use sixty", "[logging-config][unit]") {
-    const auto missing = detail::resolve_logger({});
-    const auto negative = detail::resolve_logger(
-        {.merge_interval_seconds = "-1"}
-    );
-    const auto malformed = detail::resolve_logger(
-        {.merge_interval_seconds = "soon"}
-    );
-    const auto trailing = detail::resolve_logger(
-        {.merge_interval_seconds = "60s"}
-    );
-
-    CHECK(missing.merge_interval_seconds == 60);
-    CHECK(negative.merge_interval_seconds == 60);
-    CHECK(malformed.merge_interval_seconds == 60);
-    CHECK(trailing.merge_interval_seconds == 60);
-    CHECK(missing.report.find("merge_interval_seconds missing or invalid") !=
-        std::string::npos);
-}
-
-TEST_CASE("Logger shutdown merge accepts documented booleans", "[logging-config][unit]") {
-    const auto missing = detail::resolve_logger({});
-    const auto on = detail::resolve_logger(
-        {.merge_logs_on_shutdown = "on"}
-    );
-    const auto off = detail::resolve_logger(
-        {.merge_logs_on_shutdown = "off"}
-    );
-    const auto truth = detail::resolve_logger(
-        {.merge_logs_on_shutdown = "true"}
-    );
-    const auto falsity = detail::resolve_logger(
-        {.merge_logs_on_shutdown = "false"}
-    );
-    const auto invalid = detail::resolve_logger(
-        {.merge_logs_on_shutdown = "yes"}
-    );
-
-    CHECK(missing.merge_logs_on_shutdown);
-    CHECK(on.merge_logs_on_shutdown);
-    CHECK_FALSE(off.merge_logs_on_shutdown);
-    CHECK(truth.merge_logs_on_shutdown);
-    CHECK_FALSE(falsity.merge_logs_on_shutdown);
-    CHECK(invalid.merge_logs_on_shutdown);
-    CHECK(invalid.report.find("merge_logs_on_shutdown missing or invalid") !=
-        std::string::npos);
 }

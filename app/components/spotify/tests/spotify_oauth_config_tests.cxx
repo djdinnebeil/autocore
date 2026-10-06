@@ -12,7 +12,7 @@ TEST_CASE("Missing Spotify auto_launch_oauth stays off", "[spotify][oauth][unit]
 
 TEST_CASE("Spotify auto_launch_oauth accepts on and off aliases", "[spotify][oauth][unit]") {
     CHECK(spotify::defaults::auto_launch_enabled("on"));
-    CHECK(spotify::defaults::auto_launch_enabled("true"));
+    CHECK_FALSE(spotify::defaults::auto_launch_enabled("true"));
     CHECK_FALSE(spotify::defaults::auto_launch_enabled("off"));
     CHECK_FALSE(spotify::defaults::auto_launch_enabled("false"));
 }

@@ -86,8 +86,8 @@ logging = on
 `directory` is the portable data folder. Relative paths resolve against the
 installation root; an absolute path is used as-is. A missing or empty
 `directory` uses `<installation_root>/components/spotify`.
-`auto_launch_oauth` is stored as lowercase `on` or `off`. `true` enables and
-`false` disables. A missing, empty, or any other value stays `off`.
+`auto_launch_oauth` is stored as `on` or `off`. A missing, empty, or any
+other value stays `off`.
 `spotify_ac.exe` reads the setting once at startup. A later Configure edit
 applies the next time that process starts. The setting does not launch OAuth
 when the process starts. `off` means a missing authorization is reported and

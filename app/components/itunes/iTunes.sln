@@ -1,0 +1,52 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37531.7 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes", "runtime\itunes.vcxproj", "{DA493774-197E-44A4-B44C-594967DAC1F0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_config", "config\itunes_config.vcxproj", "{E7C1A4B2-9F3D-4A18-8B6E-2C5D9F0A1B33}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_db", "db\itunes_db.vcxproj", "{C4E8A1D2-5B37-4F90-8A16-2D9C0E4B7F13}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_formatter", "formatter\itunes_formatter.vcxproj", "{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_star", "star\itunes_star.vcxproj", "{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_tests", "tests\itunes_tests.vcxproj", "{8A93D97D-8E16-4A5F-92E1-6559F3D50796}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA493774-197E-44A4-B44C-594967DAC1F0}.Debug|x64.ActiveCfg = Debug|x64
+		{DA493774-197E-44A4-B44C-594967DAC1F0}.Debug|x64.Build.0 = Debug|x64
+		{DA493774-197E-44A4-B44C-594967DAC1F0}.Release|x64.ActiveCfg = Release|x64
+		{DA493774-197E-44A4-B44C-594967DAC1F0}.Release|x64.Build.0 = Release|x64
+		{E7C1A4B2-9F3D-4A18-8B6E-2C5D9F0A1B33}.Debug|x64.ActiveCfg = Debug|x64
+		{E7C1A4B2-9F3D-4A18-8B6E-2C5D9F0A1B33}.Debug|x64.Build.0 = Debug|x64
+		{E7C1A4B2-9F3D-4A18-8B6E-2C5D9F0A1B33}.Release|x64.ActiveCfg = Release|x64
+		{E7C1A4B2-9F3D-4A18-8B6E-2C5D9F0A1B33}.Release|x64.Build.0 = Release|x64
+		{C4E8A1D2-5B37-4F90-8A16-2D9C0E4B7F13}.Debug|x64.ActiveCfg = Debug|x64
+		{C4E8A1D2-5B37-4F90-8A16-2D9C0E4B7F13}.Debug|x64.Build.0 = Debug|x64
+		{C4E8A1D2-5B37-4F90-8A16-2D9C0E4B7F13}.Release|x64.ActiveCfg = Release|x64
+		{C4E8A1D2-5B37-4F90-8A16-2D9C0E4B7F13}.Release|x64.Build.0 = Release|x64
+		{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}.Debug|x64.ActiveCfg = Debug|x64
+		{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}.Debug|x64.Build.0 = Debug|x64
+		{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}.Release|x64.ActiveCfg = Release|x64
+		{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}.Release|x64.Build.0 = Release|x64
+		{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}.Debug|x64.ActiveCfg = Debug|x64
+		{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}.Debug|x64.Build.0 = Debug|x64
+		{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}.Release|x64.ActiveCfg = Release|x64
+		{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}.Release|x64.Build.0 = Release|x64
+		{8A93D97D-8E16-4A5F-92E1-6559F3D50796}.Debug|x64.ActiveCfg = Release|x64
+		{8A93D97D-8E16-4A5F-92E1-6559F3D50796}.Release|x64.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CB7FE510-B4DC-4954-95DE-1BF7ADAE2855}
+	EndGlobalSection
+EndGlobal

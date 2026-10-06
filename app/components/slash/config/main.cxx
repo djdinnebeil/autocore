@@ -73,10 +73,10 @@ namespace {
         if (!value) {
             return ac::logging::config::component_logging_default();
         }
-        if (*value == "off" || *value == "false") {
+        if (*value == "off") {
             return false;
         }
-        if (*value == "on" || *value == "true") {
+        if (*value == "on") {
             return true;
         }
         return ac::logging::config::component_logging_default();

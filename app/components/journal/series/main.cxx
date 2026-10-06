@@ -3,10 +3,12 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
+import auto_core.core.process;
 import journal_auto_select;
 import journal_db_protocol;
 import journal_db_session;
 import journal_episode_format;
+import journal_data_directory;
 import journal_series_map;
 import components_editor_request;
 
@@ -363,27 +365,17 @@ std::expected<OwnedService, std::string> start_database() {
     std::wstring command =
         quote_argument(executable.wstring()) + L" " +
         quote_argument(L"--serve");
-    STARTUPINFOW startup {};
-    startup.cb = sizeof(startup);
-    PROCESS_INFORMATION process {};
-    if (!CreateProcessW(
-            executable.c_str(),
-            command.data(),
-            nullptr,
-            nullptr,
-            FALSE,
-            0,
-            nullptr,
-            executable.parent_path().c_str(),
-            &startup,
-            &process
-        )) {
+    auto process = ac::process::create_process_with_owner(
+        executable,
+        command,
+        executable.parent_path()
+    );
+    if (!process) {
         return std::unexpected("Unable to start journal_db.exe.");
     }
-    CloseHandle(process.hThread);
     OwnedService service;
-    service.process = process.hProcess;
-    const auto ready = journal::db::session::probe();
+    service.process = static_cast<HANDLE>(*process);
+    const auto ready = journal::db::session::probe(service.process);
     if (!ready) {
         if (!process_exited(service.process)) {
             TerminateProcess(service.process, 1);
@@ -419,7 +411,7 @@ int generate_missing_map() {
         return 0;
     }
 
-    const auto database_path = ac::paths::journal_directory() / "series.db";
+    const auto database_path = journal::data_directory() / "series.db";
     const bool database_present = std::filesystem::exists(database_path, error);
     if (error || !database_present) {
         print_error("series.db is missing. journal_db.exe owns that file.");

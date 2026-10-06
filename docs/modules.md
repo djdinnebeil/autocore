@@ -1,124 +1,149 @@
-# Module catalog
+# Module ledger
 
-C++23 `export module` units for Auto Core. Public contracts are Doxygen-style
-comments on the `.ixx` exports; read them in the IDE or at the source.
+Phase 1A discovery of every production `.ixx` under `app/`. This is not the frozen prerelease gate. Each row is **Observed**. The disposition column stays **pending** until the Core, Main, and Component reviews. A finding is not a conformance failure while its convention is still Proposed canonical.
 
-Implementation units (`.cxx` with `module Name;`) are omitted unless they are
-the only source for a module.
+Test projects are omitted. There are no `.ixx` files under `tests/`.
 
-## Core DLL (`app/core`)
+**C3 Proposed canonical.** Core modules use `auto_core.core.*`. Main modules use `auto_core.main.*`. Component modules and `app/shared` use bare names. Do not mass-rename before that rule is accepted. File stem versus declared name is recorded here and is not normative.
 
-| Module | Source | Role |
-| --- | --- | --- |
-| `auto_core.core.clipboard` | [`clipboard.ixx`](../app/core/modules/clipboard.ixx) | Unicode-only clipboard snapshot, restore, and paste |
-| `auto_core.core.clock` | [`clock.ixx`](../app/core/modules/clock.ixx) | Local date and time strings, including extended-day timestamps |
-| `auto_core.core.component` | [`component.ixx`](../app/core/modules/component.ixx) | Per-component logging, console output, text insertion, and `report_ini_unavailable` |
-| `auto_core.core.component:logger` | [`component_logger.ixx`](../app/core/modules/component_logger.ixx) | Internal local-file logger partition |
-| `auto_core.core.component:console_writer` | [`console_writer.ixx`](../app/core/modules/console_writer.ixx) | Internal stdout/stderr writer partition |
-| `auto_core.core.component:text_inserter` | [`text_inserter.ixx`](../app/core/modules/text_inserter.ixx) | Internal clipboard insertion partition |
-| `auto_core.core.console` | [`console.ixx`](../app/core/modules/console.ixx) | Console and window activation for prompts |
-| `auto_core.core.config` | [`core_config.ixx`](../app/core/modules/core_config.ixx) | Cached `auto_core.ini` `[auto_core] warn_without_winkey_mapping` |
-| `auto_core.core.encoding` | [`encoding.ixx`](../app/core/modules/encoding.ixx) | Strict UTF-8 / UTF-16 conversion |
-| `auto_core.core.error` | [`error.ixx`](../app/core/modules/error.ixx) | Best-effort stderr and `errors/errors.log` reporting |
-| `auto_core.core.formatting` | [`formatting.ixx`](../app/core/modules/formatting.ixx) | UTF-8 `std::format` with wide-text normalization |
-| `auto_core.core.ini` | [`ini.ixx`](../app/core/modules/ini.ixx) | Sectioned INI parse and file read |
-| `auto_core.core.keyboard` | [`keyboard.ixx`](../app/core/modules/keyboard.ixx) | `SendInput` helpers, including `VK_RWIN`+position |
-| `auto_core.core.logging.config` | [`logging_config.ixx`](../app/core/modules/logging_config.ixx) | Cached `logging.ini` policy (`disable_all`, both sinks, `log_print_mode`, `component_logging_default`) and `logger.ini` merge timing |
-| `auto_core.core.paths` | [`paths.ixx`](../app/core/modules/paths.ixx) | Process-lifetime `bin_directory` and `installation_root` |
-| `auto_core.core.pipes` | [`pipes.ixx`](../app/core/modules/pipes.ixx) | Named-pipe handles, string frames, and command dispatch |
-| `auto_core.core.shell` | [`shell.ixx`](../app/core/modules/shell.ixx) | Assigns process AppUserModelID `Djdinn.AutoCore` |
-| `auto_core.core.thread` | [`thread.ixx`](../app/core/modules/thread.ixx) | Thread-entry exception reporting |
-| `auto_core.taskbar` | [`core_taskbar.ixx`](../app/core/taskbar/core_taskbar.ixx) | Snapshot authority, client lookup, and native Win+position |
+- `prefixed match`: the module is `auto_core.*` and its last identifier equals the file stem.
+- `bare match`: the declared module name equals the file stem.
+- `partition`: `auto_core.core.component:<name>`.
+- `stem differs`: the declared name and the file stem are not the same identifier. `db_protocol.ixx` / `spotify_db_protocol` is the one C3 already names. The other stem differences are the rest of that list, including every `defaults.ixx`.
+- Main modules that are bare (`auto_core_initialization`, `logger_init_detail`, `logging_config_detail`) do not follow the `auto_core.main.*` scheme. **Inconsistent** with the proposed Main scheme, disposition pending.
 
-## Main executable (`app/main/runtime`)
+Layer, for every row:
 
-Process lifetime for `auto_core.exe` is [main.md](main.md).
+- Core public modules are the `auto_core.dll` surface. The three `component:` partitions are internal to that DLL.
+- `app/shared` is a compile-time contract.
+- `<component>/shared` is the contract between that Component and its subsystems.
+- `runtime/`, `db/`, `cloud/`, `oauth/` modules are internal to that executable.
+- `auto_core.core.paths` exports Writer and Taskbar directories. That is component-specific behavior in generic infrastructure. Finding against **C12 Inconsistent / Proposed canonical**. Disposition pending.
+- `auto_core.taskbar` is the intentional shared substrate. Not a second DLL.
+- Parallel database modules (`itunes_db_protocol`, `spotify_db_protocol`, `journal_db_protocol`, and the matching clients and `*_sqlite` modules) are an observation. **C16 Proposed canonical** keeps them separate.
 
-| Module | Source | Role |
-| --- | --- | --- |
-| `auto_core.main.application` | [`main_component.ixx`](../app/main/runtime/modules/main_component.ixx) | Main `Component`, process launch, F-lock, shutdown |
-| `auto_core.main.components` | [`ac_components.ixx`](../app/main/runtime/modules/ac_components.ixx) | Generic host: open `components.ini` `[components]`, hello, invoke, shutdown |
-| `auto_core.main.components.dash` | [`dash_component.ixx`](../app/main/runtime/modules/dash_component.ixx) | Launches `dash_ac.exe` |
-| `auto_core.main.components.slash` | [`slash_component.ixx`](../app/main/runtime/modules/slash_component.ixx) | Launches Slash recycle-bin commands |
-| `auto_core.main.components.taskbar` | [`taskbar_component.ixx`](../app/main/runtime/modules/taskbar_component.ixx) | Main-local taskbar launches and reserved control names |
-| `auto_core.main.crash_recovery` | [`crash_recovery.ixx`](../app/main/runtime/modules/crash_recovery.ixx) | Previous-crash dialog and restart handler |
-| `auto_core.main.key_codes` | [`key_codes.ixx`](../app/main/runtime/modules/key_codes.ixx) | Normalized virtual-key codes and `mappings.ini` names (`keys`, `resolve`) |
-| `auto_core.main.keyboard_input` | [`keyboard_input.ixx`](../app/main/runtime/modules/keyboard_input.ixx) | Low-level hook and main-thread dispatch |
-| `auto_core.main.keymap` | [`keymap.ixx`](../app/main/runtime/modules/keymap.ixx) | Active primary/secondary key bindings |
-| `auto_core.main.keymap.runtime` | [`keymap_runtime.ixx`](../app/main/runtime/modules/keymap_runtime.ixx) | File keymap, command registry, workspace files |
-| `auto_core.main.logging` | [`logging_init.ixx`](../app/main/runtime/modules/logging_init.ixx) | Creates the log directory and writes Main's local session records |
-| `auto_core.main.program_ready` | [`program_ready.ixx`](../app/main/runtime/modules/program_ready.ixx) | Startup status output |
-| `auto_core.main.shutdown_events` | [`shutdown_events.ixx`](../app/main/runtime/modules/shutdown_events.ixx) | Console and session shutdown |
-| `auto_core.main.taskbar` | [`main_taskbar.ixx`](../app/main/runtime/modules/main_taskbar.ixx) | Interactive cycling session owned by Main |
-| `auto_core.main.test_commands` | [`test_commands.ixx`](../app/main/runtime/modules/test_commands.ixx) | Diagnostic keymap commands |
+Protocol, configuration, and persistent-state relationships are not copied onto every defaults row. Those ledgers are [architecture.md](architecture.md), [configuration.md](configuration.md), and [persistent-state.md](persistent-state.md). `.cxx` evidence is folded into those ledgers when it changes a contract. `parse_legacy_line` in `app/main/runtime/keyboard/keymap_map_detail.hpp` is a brace parser for `keymap.map`. Production load calls `parse_line`. The brace parser is referenced from tests only. **Legacy.** It is a header, so it has no module row.
 
-## Shared (`app/shared` plus per-child `shared/`)
+| Path | Module | Family | Responsibility | Role | Principal exports | Imports | Naming | State | Disposition |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `app/components/dash/shared/defaults.ixx` | `dash_defaults` | dash | Portable defaults for `config/dash.ini`. | component shared | dash::defaults | std only | stem differs | Observed | pending |
+| `app/components/dash/shared/hello.ixx` | `dash_hello` | dash | Windows Hello verification for Dash retrieval and removal. | component shared | dash::hello | auto_core.core.console | stem differs | Observed | pending |
+| `app/components/dash/shared/vault.ixx` | `dash_vault` | dash | Dash vault format and read-side loading. | component shared | dash::vault | std only | stem differs | Observed | pending |
+| `app/components/dash/shared/vault_decrypt.ixx` | `dash_vault_decrypt` | dash | Decrypt a Dash secret for insertion. | component shared | dash::vault | std only | stem differs | Observed | pending |
+| `app/components/dash/shared/vault_mutate.ixx` | `dash_vault_mutate` | dash | Protect a Dash secret and publish the vault. | component shared | dash::vault | dash_vault | stem differs | Observed | pending |
+| `app/components/itunes/db/itunes_sqlite.ixx` | `itunes_sqlite` | itunes | Private SQLite store for iTunes `history.db`. | executable-internal | itunes::sqlite | itunes_db_protocol | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_client.ixx` | `itunes_client` | itunes | COM iTunes client. All COM create/access/release run on one owner thread. | executable-internal | itunes_client, ac_itunes, itunes_mutex, history_mtx, itunes_condition, itunes_playback_state_change | itunes_runtime | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_component.ixx` | `itunes_component` | itunes | `itunes_ac.exe` Component session. | executable-internal | itunes_component, update_itunes_component | auto_core.core.component, auto_core.core.logging.config | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_db_client.ixx` | `itunes_db_client` | itunes | `itunes_ac.exe` client for `itunes_db.exe --serve`. | executable-internal | itunes_db_protocol, itunes::db | std only | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_monitor.ixx` | `itunes_monitor` | itunes | Track-change monitor entry for iTunes. | executable-internal | itunes_next_song | std only | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_pipe.ixx` | `itunes_pipe` | itunes | Connects the iTunes wire protocol to injectable command actions. | executable-internal | itunes_pipe_actions, register_itunes_pipe_commands | auto_core.core.pipes, command_registry | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_registry.ixx` | `itunes_registry` | itunes | Runtime command registry for `itunes_ac.exe`. | executable-internal | itunes_command_actions, create_itunes_command_registry | command_registry | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_removal.ixx` | `itunes_removal` | itunes | Recycle-bin removal of the current iTunes track. | executable-internal | remove_itunes_song | std only | bare match | Observed | pending |
+| `app/components/itunes/runtime/itunes_runtime.ixx` | `itunes_runtime` | itunes | Testable coordination boundaries for iTunes component commands. | executable-internal | itunes::runtime | std only | bare match | Observed | pending |
+| `app/components/itunes/shared/defaults.ixx` | `itunes_defaults` | itunes | Portable defaults for `config/itunes.ini` and `song.format`. | component shared | itunes::defaults | std only | stem differs | Observed | pending |
+| `app/components/itunes/shared/itunes_db_protocol.ixx` | `itunes_db_protocol` | itunes | Private `ac.itunes.db.v1` contract between `itunes_ac.exe` and | component shared | itunes::db | std only | bare match | Observed | pending |
+| `app/components/itunes/shared/itunes_protocol.ixx` | `itunes_protocol` | itunes | Pipe contract and keymap names for `itunes_ac.exe`. | component shared | ac::protocol::itunes, itunes::commands | std only | bare match | Observed | pending |
+| `app/components/journal/cloud/journal_cloud_http.ixx` | `journal_cloud_http` | journal | Firebase HTTP used only by `journal_cloud.exe`. | executable-internal | journal::cloud::http | std only | bare match | Observed | pending |
+| `app/components/journal/db/journal_sqlite.ixx` | `journal_sqlite` | journal | Private SQLite store for `series.db`. | executable-internal | journal::sqlite | std only | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_clock.ixx` | `journal_clock` | journal | Journal extended timestamp from `extended_hour.clock`. | executable-internal | journal_clock | std only | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_cloud_client.ixx` | `journal_cloud_client` | journal | `journal_ac.exe` process owner for `journal_cloud.exe --serve`. | executable-internal | journal::cloud | std only | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_commands.ixx` | `journal_commands` | journal | Runtime command registry for `journal_ac.exe`. | executable-internal | create_journal_command_registry | command_registry | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_component.ixx` | `journal_component` | journal | `journal_ac.exe` Component session. | executable-internal | journal_component | auto_core.core.component, auto_core.core.logging.config | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_db_client.ixx` | `journal_db_client` | journal | `journal_ac.exe` process owner for `journal_db.exe --serve`. | executable-internal | journal::db | journal_db_protocol | bare match | Observed | pending |
+| `app/components/journal/runtime/journal_title.ixx` | `journal_title` | journal | Episode title insertion and new-file workflow. | executable-internal | journal_title | std only | bare match | Observed | pending |
+| `app/components/journal/shared/defaults.ixx` | `journal_defaults` | journal | Portable defaults for `config/journal.ini`. | component shared | journal::defaults | journal_remote_sync | stem differs | Observed | pending |
+| `app/components/journal/shared/journal_auto_select.ixx` | `journal_auto_select` | journal | Accepted `[journal] auto_select_new_series` values. | component shared | journal::auto_select | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_cloud_protocol.ixx` | `journal_cloud_protocol` | journal | Private `ac.journal.cloud.v1` contract between `journal_ac.exe` and | component shared | journal::cloud | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_data_directory.ixx` | `journal_data_directory` | journal | Resolved Journal data directory. | component shared | journal | auto_core.core.paths | bare match | Observed | pending |
+| `app/components/journal/shared/journal_db_protocol.ixx` | `journal_db_protocol` | journal | Private `ac.journal.db.v2` contract between Journal executables and | component shared | journal::db | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_db_session.ixx` | `journal_db_session` | journal | Short-lived `ac.journal.db.v2` calls. | component shared | journal::db::session | journal_db_protocol | bare match | Observed | pending |
+| `app/components/journal/shared/journal_episode_format.ixx` | `journal_episode_format` | journal | Zero-padding for a numeric episode count. | component shared | journal | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_extended_hours.ixx` | `journal_extended_hours` | journal | Journal extended-hour cutoff tokens. | component shared | journal::extended_hours | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_factories.ixx` | `journal_factories` | journal | Compiled Journal factories and runtime alias definitions. | component shared | journal::factories | command_registry | bare match | Observed | pending |
+| `app/components/journal/shared/journal_firebase.ixx` | `journal_firebase` | journal | `firebase.id` text and the Firebase JSON body. | component shared | journal::firebase | journal_data_directory | bare match | Observed | pending |
+| `app/components/journal/shared/journal_protocol.ixx` | `journal_protocol` | journal | Shared journal component protocol and typed commands. | component shared | ac::protocol::journal | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_remote_sync.ixx` | `journal_remote_sync` | journal | Accepted `[journal] remote_sync` values. | component shared | journal::remote_sync | std only | bare match | Observed | pending |
+| `app/components/journal/shared/journal_series_map.ixx` | `journal_series_map` | journal | Parse and render `series.map`. | component shared | journal::series_map | journal_data_directory, journal_episode_format | bare match | Observed | pending |
+| `app/components/logger/shared/logger_merge_config.ixx` | `logger_merge_config` | logger | Cached `config/logger.ini` merge policy for Logger and Main. | component shared | ac::logger::config | auto_core.core.ini, auto_core.core.paths | bare match | Observed | pending |
+| `app/components/server/runtime/server_logging.ixx` | `server_logging` | server | Component logging for `server_ac.exe`. | executable-internal | server_component, log_init | auto_core.core.component, auto_core.core.logging.config | bare match | Observed | pending |
+| `app/components/server/shared/default_site.ixx` | `server_default_site` | server | Compiled starter page for the Server document root. | component shared | server::default_site | std only | stem differs | Observed | pending |
+| `app/components/server/shared/defaults.ixx` | `server_defaults` | server | Portable defaults for `config/server.ini` and Server seed files. | component shared | server::defaults | std only | stem differs | Observed | pending |
+| `app/components/slash/config/slash_config_detail.ixx` | `slash_config_detail` | slash | Launch selection and interactive prompts for Slash configuration. | config-owner internal | slash::config | slash_defaults | bare match | Observed | pending |
+| `app/components/slash/runtime/music.ixx` | `music` | slash | Handles music-file metadata for the slash component. | executable-internal | format_music_file | path_utils | bare match | Observed | pending |
+| `app/components/slash/runtime/path_utils.ixx` | `path_utils` | slash | Provides path-handling utilities for the slash component. | executable-internal | extract_path_filename, extract_file_stem, extract_lowercase_extension | std only | bare match | Observed | pending |
+| `app/components/slash/shared/defaults.ixx` | `slash_defaults` | slash | Portable defaults for `config/slash.ini`. | component shared | slash::defaults | std only | stem differs | Observed | pending |
+| `app/components/slash/shared/slash_protocol.ixx` | `slash_protocol` | slash | Shared Slash component protocol. | component shared | ac::protocol::slash, slash::commands | std only | bare match | Observed | pending |
+| `app/components/spotify/db/spotify_sqlite.ixx` | `spotify_sqlite` | spotify | Private SQLite store for `history.db`. | executable-internal | spotify::sqlite | std only | bare match | Observed | pending |
+| `app/components/spotify/oauth/spotify_oauth.ixx` | `spotify_oauth` | spotify | Spotify OAuth authorization for `spotify_oauth.exe`. | executable-internal | SpotifyOAuthConfig, SpotifyAuthorizationStatus, SpotifyAuthorizationResult, SpotifyOAuth | std only | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_client.ixx` | `spotify_client` | spotify | Provides Spotify component support for the Auto Core application. This module defines the Spotify class with methods to control Spotify playback, retrieve so... | executable-internal | spotify_window_hwnd, start_spotify_device_requests, stop_spotify_device_requests, ac_spotify | auto_core.core.thread, spotify_component, spotify_token_store, spotify_song_template | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_component.ixx` | `spotify_component` | spotify | Provides logging support and initialization for the Spotify component. This module defines a custom logger for the Spotify component and provides functions t... | executable-internal | spotify_component, update_spotify_component, log_init | auto_core.core.component, auto_core.core.logging.config, auto_core.core.pipes | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_db_client.ixx` | `spotify_db_client` | spotify | `spotify_ac.exe` client for `spotify_db.exe --serve`. | executable-internal | spotify::db | std only | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_http.ixx` | `spotify_http` | spotify | Defines Spotify HTTP response classification. | executable-internal | spotify_http | std only | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_monitor.ixx` | `spotify_monitor` | spotify | Provides thread management and playback control for Spotify. | executable-internal | (see source) | auto_core.core.clock, spotify_client, spotify_component | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_pipe.ixx` | `spotify_pipe` | spotify | Connects the Spotify wire protocol to injectable command actions. | executable-internal | spotify_pipe_actions, register_spotify_pipe_commands | auto_core.core.pipes, command_registry | bare match | Observed | pending |
+| `app/components/spotify/runtime/spotify_registry.ixx` | `spotify_registry` | spotify | Runtime command registry for `spotify_ac.exe`. | executable-internal | spotify_command_actions, create_spotify_command_registry | command_registry | bare match | Observed | pending |
+| `app/components/spotify/shared/application_data.ixx` | `spotify_application_data` | spotify | Parse and serialize `client.id` and `devices.list`. | component shared | spotify::data | spotify_data_directory | stem differs | Observed | pending |
+| `app/components/spotify/shared/data_directory.ixx` | `spotify_data_directory` | spotify | Resolved Spotify data directory. | component shared | spotify | auto_core.core.paths, spotify_defaults | stem differs | Observed | pending |
+| `app/components/spotify/shared/db_protocol.ixx` | `spotify_db_protocol` | spotify | Private `ac.spotify.db.v1` contract between `spotify_ac.exe` and | component shared | spotify::db | std only | stem differs | Observed | pending |
+| `app/components/spotify/shared/defaults.ixx` | `spotify_defaults` | spotify | Portable defaults for `config/spotify.ini`. | component shared | spotify::defaults | std only | stem differs | Observed | pending |
+| `app/components/spotify/shared/devices_protocol.ixx` | `spotify_devices_protocol` | spotify | Private request from `spotify_editor.exe` to `spotify_ac.exe`. | component shared | spotify::devices | std only | stem differs | Observed | pending |
+| `app/components/spotify/shared/song_catalog.ixx` | `spotify_song_catalog` | spotify | Spotify song-format tokens and track-object rendering. | component shared | spotify::catalog | spotify_song_template | stem differs | Observed | pending |
+| `app/components/spotify/shared/song_template.ixx` | `spotify_song_template` | spotify | Generic `{token}` template parse, compile, and apply. | component shared | spotify::song | std only | stem differs | Observed | pending |
+| `app/components/spotify/shared/spotify_protocol.ixx` | `spotify_protocol` | spotify | Pipe contract and keymap names for `spotify_ac.exe`. | component shared | ac::protocol::spotify, spotify::commands | std only | bare match | Observed | pending |
+| `app/components/spotify/shared/token_store.ixx` | `spotify_token_store` | spotify | `tokens.map` parse, serialize, and coordinated replace. | component shared | spotify::tokens | spotify_data_directory | stem differs | Observed | pending |
+| `app/components/taskbar/runtime/taskbar_commands.ixx` | `taskbar_commands` | taskbar | Rebuildable command registry owned by taskbar_ac.exe. | executable-internal | create_taskbar_command_registry | command_registry | bare match | Observed | pending |
+| `app/components/taskbar/runtime/taskbar_logging.ixx` | `taskbar_logging` | taskbar | Shared component logger for taskbar_ac.exe. | executable-internal | taskbar_component | auto_core.core.component, auto_core.core.logging.config | bare match | Observed | pending |
+| `app/components/taskbar/shared/defaults.ixx` | `taskbar_defaults` | taskbar | Portable defaults for `config/taskbar.ini`. | component shared | taskbar::defaults | std only | stem differs | Observed | pending |
+| `app/components/taskbar/shared/taskbar_protocol.ixx` | `taskbar_protocol` | taskbar | Control protocol between Main and taskbar_ac.exe. | component shared | ac::protocol::taskbar | std only | bare match | Observed | pending |
+| `app/components/wake/runtime/wake_logging.ixx` | `wake_logging` | wake | Wake-event capture for `wake_ac.exe`. | executable-internal | wake_component, log_init, log_last_wake | auto_core.core.logging.config, auto_core.core.clock, auto_core.core.component, auto_core.core.ini, auto_core.core.paths, wake_data_directory | bare match | Observed | pending |
+| `app/components/wake/shared/data_directory.ixx` | `wake_data_directory` | wake | Resolved Wake operational-history directory. | component shared | wake | auto_core.core.paths, wake_defaults | stem differs | Observed | pending |
+| `app/components/wake/shared/defaults.ixx` | `wake_defaults` | wake | Portable defaults for `config/wake.ini`. | component shared | wake::defaults | std only | stem differs | Observed | pending |
+| `app/components/writer/runtime/writer_commands.ixx` | `writer_commands` | writer | Runtime command registry for `writer_ac.exe`. | executable-internal | create_writer_command_registry | command_registry | bare match | Observed | pending |
+| `app/components/writer/runtime/writer_component.ixx` | `writer_component` | writer | `writer_ac.exe` Component session. | executable-internal | writer_component | auto_core.core.component, auto_core.core.logging.config | bare match | Observed | pending |
+| `app/components/writer/shared/defaults.ixx` | `writer_defaults` | writer | Portable defaults for `config/writer.ini`. | component shared | writer::defaults | std only | stem differs | Observed | pending |
+| `app/components/writer/shared/writer_notepad.ixx` | `writer_notepad` | writer | Open Writer text files in Notepad. | component shared | writer_notepad | auto_core.core.component | bare match | Observed | pending |
+| `app/components/writer/shared/writer_protocol.ixx` | `writer_protocol` | writer | Writer command names used by `writer_ac.exe`. | component shared | ac::protocol::writer | std only | bare match | Observed | pending |
+| `app/core/component/component.ixx` | `auto_core.core.component` | Core | Defines component-scoped output for Auto Core. | public DLL | ac | auto_core.core.clock, auto_core.core.formatting, auto_core.core.logging.config | prefixed match | Observed | pending |
+| `app/core/component/component_logger.ixx` | `auto_core.core.component:logger` | Core | Owns the local file log for one Auto Core component. | DLL-internal partition | (see source) | auto_core.core.clock | partition | Observed | pending |
+| `app/core/component/console_writer.ixx` | `auto_core.core.component:console_writer` | Core | Provides synchronized component output to standard streams. | DLL-internal partition | (see source) | std only | partition | Observed | pending |
+| `app/core/component/text_inserter.ixx` | `auto_core.core.component:text_inserter` | Core | Inserts Unicode text into the active input through the clipboard. | DLL-internal partition | (see source) | auto_core.core.clipboard | partition | Observed | pending |
+| `app/core/config/core_config.ixx` | `auto_core.core.config` | Core | Cached configuration shared by Auto Core processes. | public DLL | ac::config | std only | prefixed; stem differs | Observed | pending |
+| `app/core/config/ini.ixx` | `auto_core.core.ini` | Core | Parses sectioned INI configuration documents. | public DLL | ac::ini | std only | prefixed match | Observed | pending |
+| `app/core/config/logging_config.ixx` | `auto_core.core.logging.config` | Core | Cached logging policy shared by Auto Core processes. | public DLL | ac::logging::config | std only | prefixed; stem differs | Observed | pending |
+| `app/core/config/paths.ixx` | `auto_core.core.paths` | Core | Provides paths to Auto Core files and directories. | public DLL | ac::paths | std only | prefixed match | Observed | pending |
+| `app/core/console/console.ixx` | `auto_core.core.console` | Core | Provides access to the console shared by Auto Core components. | public DLL | ac::console | std only | prefixed match | Observed | pending |
+| `app/core/diagnostics/crash_diagnostics.ixx` | `auto_core.core.crash_diagnostics` | Core | Shared, logging-independent process crash diagnostics. | public DLL | ac::crash | std only | prefixed match | Observed | pending |
+| `app/core/diagnostics/error.ixx` | `auto_core.core.error` | Core | Provides best-effort error reporting to a log file and stderr. | public DLL | ac::error | auto_core.core.formatting | prefixed match | Observed | pending |
+| `app/core/formatting/clock.ixx` | `auto_core.core.clock` | Core | Provides local date and time values in standard and custom formats. | public DLL | ac::clock | std only | prefixed match | Observed | pending |
+| `app/core/formatting/encoding.ixx` | `auto_core.core.encoding` | Core | Provides text encoding conversion utilities. | public DLL | ac::encoding | std only | prefixed match | Observed | pending |
+| `app/core/formatting/formatting.ixx` | `auto_core.core.formatting` | Core | Provides UTF-8 formatting with argument normalization. | public DLL | ac::formatting | auto_core.core.encoding | prefixed match | Observed | pending |
+| `app/core/system/clipboard.ixx` | `auto_core.core.clipboard` | Core | Provides Unicode text operations for the Windows clipboard. | public DLL | ac::clipboard | std only | prefixed match | Observed | pending |
+| `app/core/system/keyboard.ixx` | `auto_core.core.keyboard` | Core | Supports the simulation of keyboard events. | public DLL | ac::keyboard | std only | prefixed match | Observed | pending |
+| `app/core/system/pipes.ixx` | `auto_core.core.pipes` | Core | Provides owning Win32 named-pipe handles and simple pipe protocols. | public DLL | ac::pipes | std only | prefixed match | Observed | pending |
+| `app/core/system/process.ixx` | `auto_core.core.process` | Core | Job containment, owner-process handles, and breakaway shell launch. | public DLL | ac::process | std only | prefixed match | Observed | pending |
+| `app/core/system/shell.ixx` | `auto_core.core.shell` | Core | Assigns the shared Auto Core process AppUserModelID. | public DLL | ac::shell | std only | prefixed match | Observed | pending |
+| `app/core/system/thread.ixx` | `auto_core.core.thread` | Core | Provides exception-handling support for thread entry functions. | public DLL | ac::thread | auto_core.core.component | prefixed match | Observed | pending |
+| `app/core/taskbar/core_taskbar.ixx` | `auto_core.taskbar` | Core | Shared native taskbar-position support for Auto Core processes. | public DLL | ac::taskbar | std only | prefixed; stem differs | Observed | pending |
+| `app/main/config/logging/logging_config_detail.ixx` | `logging_config_detail` | Main config | Launch selection, initialization menu, and prompts for logging.ini. | config-owner internal | ac::main::logging | auto_core.main.defaults | bare match; not auto_core.main.* | Observed | pending |
+| `app/main/init/auto_core/initialization_sequence.ixx` | `auto_core_initialization` | Main init | Ordered first-run owners launched by auto_core_init.exe. | init internal | ac::main::init | std only | stem differs | Observed | pending |
+| `app/main/init/logger/logger_init_detail.ixx` | `logger_init_detail` | Main init | Menu and owner launches for logger_init.exe. | init internal | ac::main::logger_init | std only | bare match; not auto_core.main.* | Observed | pending |
+| `app/main/runtime/components/ac_components.ixx` | `auto_core.main.components` | Main host | Generic host for v1 children and `{name}_ac.oneshot.txt` launches. | executable-internal | command_registry, ac::main::components | std only | prefixed; stem differs | Observed | pending |
+| `app/main/runtime/components/main_component.ixx` | `auto_core.main.application` | Main host | Owns the Main `Component`, process launch, F-lock, and shutdown. | executable-internal | command_registry, main_component::runtime_commands, auto_core, ac::main, primary | auto_core.core.component | prefixed; stem differs | Observed | pending |
+| `app/main/runtime/keyboard/key_codes.ixx` | `auto_core.main.key_codes` | Main host | Defines normalized keyboard key codes and configuration-name resolution. This module defines the keyboard inputs supported by Auto Core. Most values match Wi... | executable-internal | key_codes | std only | prefixed match | Observed | pending |
+| `app/main/runtime/keyboard/keyboard_input.ixx` | `auto_core.main.keyboard_input` | Main host | Captures configured keyboard inputs and dispatches them on the main thread. | executable-internal | keyboard_input | std only | prefixed match | Observed | pending |
+| `app/main/runtime/keyboard/keymap.ixx` | `auto_core.main.keymap` | Main host | Shared keymap types and active bindings. | executable-internal | key_binding, active_keymap | auto_core.main.key_codes | prefixed match | Observed | pending |
+| `app/main/runtime/keyboard/keymap_runtime.ixx` | `auto_core.main.keymap.runtime` | Main host | Initializes the keymap from `keymap.map`. | executable-internal | (see source) | std only | prefixed; stem differs | Observed | pending |
+| `app/main/runtime/lifecycle/crash_recovery.ixx` | `auto_core.main.crash_recovery` | Main host | Installs Auto Core's crash handler and detects a previous crash. | executable-internal | (see source) | std only | prefixed match | Observed | pending |
+| `app/main/runtime/lifecycle/logging_init.ixx` | `auto_core.main.logging` | Main host | Opens and closes Main's local session log. | executable-internal | initialize_logging, shutdown_logging | std only | prefixed; stem differs | Observed | pending |
+| `app/main/runtime/lifecycle/program_ready.ixx` | `auto_core.main.program_ready` | Main host | Main startup-status output. | executable-internal | announce_program_ready, print_today_is_day | std only | prefixed match | Observed | pending |
+| `app/main/runtime/lifecycle/shutdown_events.ixx` | `auto_core.main.shutdown_events` | Main host | Handles console and Windows session shutdown events. | executable-internal | (see source) | std only | prefixed match | Observed | pending |
+| `app/main/runtime/taskbar/main_taskbar.ixx` | `auto_core.main.taskbar` | Main host | Owns Main's interactive taskbar cycling session and commands. | executable-internal | command_registry, taskbar_runtime_commands, taskbar_activation_action, MainTaskbarState, taskbar | std only | prefixed; stem differs | Observed | pending |
+| `app/main/runtime/test_commands.ixx` | `auto_core.main.test_commands` | Main host | Temporary diagnostic keymap commands. | executable-internal | command_registry, test_commands::runtime_commands | std only | prefixed match | Observed | pending |
+| `app/main/shared/config_support.ixx` | `auto_core.main.config_support` | Main shared | Shared helpers for Main `_config.exe` programs. | Main shared | ac::main::config | auto_core.core.paths | prefixed match | Observed | pending |
+| `app/main/shared/defaults.ixx` | `auto_core.main.defaults` | Main shared | Portable defaults for Main `_config.exe` files. | Main shared | ac::main::defaults | std only | prefixed match | Observed | pending |
+| `app/shared/command_registry.ixx` | `command_registry` | shared contract | Stores and resolves commands available to runtime configuration. | shared contract | command_registry | std only | bare match | Observed | pending |
+| `app/shared/component_star.ixx` | `component_star` | shared contract | Shared menu for `<name>_star.exe`. | shared contract | ac::component_star | auto_core.core.component, auto_core.core.logging.config, auto_core.core.paths, components_editor_request | bare match | Observed | pending |
+| `app/shared/components_editor_request.ixx` | `components_editor_request` | shared contract | Launch `components_editor.exe` from a child helper. | shared contract | ac::config::components_request | auto_core.core.paths | bare match | Observed | pending |
+| `app/shared/protocols/component_protocol.ixx` | `component_protocol` | shared contract | Shared Auto Core generic component control protocol (v1). | shared contract | ac::protocol::component | std only | bare match | Observed | pending |
 
-Generic host contracts stay here. Name-specific protocols move to
-`app/components/<name>/shared/` as each child is nested.
-
-| Module | Source | Role |
-| --- | --- | --- |
-| `command_registry` | [`command_registry.ixx`](../app/shared/command_registry.ixx) | Name and factory lookup for runtime commands |
-| `component_protocol` | [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx) | Generic `ac.component.v1` hello, invoke, and shutdown |
-| `itunes_protocol` | [`itunes_protocol.ixx`](../app/components/itunes/shared/itunes_protocol.ixx) | iTunes command names used by `itunes_ac.exe` |
-| `journal_protocol` | [`journal_protocol.ixx`](../app/components/journal/shared/journal_protocol.ixx) | Journal command tokens used by `journal_ac.exe` |
-| `slash_protocol` | [`slash_protocol.ixx`](../app/components/slash/shared/slash_protocol.ixx) | Slash keymap command names |
-| `spotify_protocol` | [`spotify_protocol.ixx`](../app/components/spotify/shared/spotify_protocol.ixx) | Spotify command names used by `spotify_ac.exe` |
-| `taskbar_protocol` | [`taskbar_protocol.ixx`](../app/components/taskbar/shared/taskbar_protocol.ixx) | Reserved Main-local taskbar command names |
-| `writer_protocol` | [`writer_protocol.ixx`](../app/components/writer/shared/writer_protocol.ixx) | Writer command names used by `writer_ac.exe` |
-
-## Components (`app/components`)
-
-| Module | Source | Role |
-| --- | --- | --- |
-| `itunes_client` | [`itunes_client.ixx`](../app/components/itunes/main/itunes_client.ixx) | COM client and shared iTunes process state |
-| `itunes_db_protocol` | [`itunes_db_protocol.ixx`](../app/components/itunes/shared/itunes_db_protocol.ixx) | Private `ac.itunes.db.v1` pipe between `itunes_ac.exe` and `itunes_db.exe` |
-| `itunes_db_client` | [`itunes_db_client.ixx`](../app/components/itunes/main/itunes_db_client.ixx) | `itunes_ac.exe` client for `itunes_db.exe` |
-| `itunes_sqlite` | [`itunes_sqlite.ixx`](../app/components/itunes/db/itunes_sqlite.ixx) | `history.db` schema and listening rows, compiled only into `itunes_db.exe` |
-| `itunes_defaults` | [`defaults.ixx`](../app/components/itunes/shared/defaults.ixx) | Compiled `itunes.ini` text and the default song template. Parsing and the verified token catalog are the headers [`song_template_detail.hpp`](../app/components/itunes/shared/song_template_detail.hpp) and [`itunes_metadata_detail.hpp`](../app/components/itunes/shared/itunes_metadata_detail.hpp). |
-| `itunes_component` | [`itunes_component.ixx`](../app/components/itunes/main/itunes_component.ixx) | `itunes_ac.exe` Component session |
-| `itunes_monitor` | [`itunes_monitor.ixx`](../app/components/itunes/main/itunes_monitor.ixx) | Track-change monitor |
-| `itunes_pipe` | [`itunes_pipe.ixx`](../app/components/itunes/main/itunes_pipe.ixx) | Pipe command registration |
-| `itunes_registry` | [`itunes_registry.ixx`](../app/components/itunes/main/itunes_registry.ixx) | iTunes runtime command registry |
-| `itunes_removal` | [`itunes_removal.ixx`](../app/components/itunes/main/itunes_removal.ixx) | Recycle-bin track removal |
-| `itunes_runtime` | [`itunes_runtime.ixx`](../app/components/itunes/main/itunes_runtime.ixx) | Testable playback and lifecycle boundaries |
-| `journal_clock` | [`journal_clock.ixx`](../app/components/journal/main/journal_clock.ixx) | Journal extended timestamp from `extended_hour.clock` in the journal data directory |
-| `journal_extended_hours` | [`journal_extended_hours.ixx`](../app/components/journal/shared/journal_extended_hours.ixx) | Cutoff token parse and format. `n` extends while `hour < n`; `+n` also includes exactly `n:00` |
-| `journal_cloud_client` | [`journal_cloud_client.ixx`](../app/components/journal/main/journal_cloud_client.ixx) | `journal_ac.exe` client that launches `journal_cloud.exe --serve` |
-| `journal_commands` | [`journal_commands.ixx`](../app/components/journal/main/journal_commands.ixx) | Journal runtime command registry |
-| `journal_factories` | [`journal_factories.ixx`](../app/components/journal/shared/journal_factories.ixx) | Compiled factory registry, alias parse/serialize, and starter files |
-| `journal_component` | [`journal_component.ixx`](../app/components/journal/main/journal_component.ixx) | `journal_ac.exe` Component session |
-| `journal_cloud_protocol` | [`journal_cloud_protocol.ixx`](../app/components/journal/shared/journal_cloud_protocol.ixx) | Private `ac.journal.cloud.v1` pipe between `journal_ac.exe` and `journal_cloud.exe` |
-| `journal_db_protocol` | [`journal_db_protocol.ixx`](../app/components/journal/shared/journal_db_protocol.ixx) | Private `ac.journal.db.v2` pipe for `journal_db.exe` |
-| `journal_db_client` | [`journal_db_client.ixx`](../app/components/journal/main/journal_db_client.ixx) | Runtime owner that launches `journal_db.exe --serve` |
-| `journal_db_session` | [`journal_db_session.ixx`](../app/components/journal/shared/journal_db_session.ixx) | Short-lived database pipe calls |
-| `journal_episode_format` | [`journal_episode_format.ixx`](../app/components/journal/shared/journal_episode_format.ixx) | Zero-padding for an episode number |
-| `journal_firebase` | [`journal_firebase.ixx`](../app/components/journal/shared/journal_firebase.ixx) | `firebase.id` text and the JSON push body |
-| `journal_auto_select` | [`journal_auto_select.ixx`](../app/components/journal/shared/journal_auto_select.ixx) | `on` / `off` parsing for `auto_select_new_series` |
-| `journal_remote_sync` | [`journal_remote_sync.ixx`](../app/components/journal/shared/journal_remote_sync.ixx) | `on` / `off` parsing for `remote_sync` |
-| `journal_series_map` | [`journal_series_map.ixx`](../app/components/journal/shared/journal_series_map.ixx) | `series.map` active line and snapshot text |
-| `journal_sqlite` | [`journal_sqlite.ixx`](../app/components/journal/db/journal_sqlite.ixx) | Private `series.db` store. Production linkage is `journal_db.exe` only |
-| `journal_title` | [`journal_title.ixx`](../app/components/journal/main/journal_title.ixx) | Episode title and new-file workflow |
-| `server_default_site` | [`default_site.ixx`](../app/components/server/shared/default_site.ixx) | Compiled `index.html` and `styles.css` starter text |
-| `server_data` | [`server_data_detail.hpp`](../app/components/server/shared/server_data_detail.hpp) | `[server] directory`, `port.id`, and `document_root.id` resolution |
-| `server_logging` | [`server_logging.ixx`](../app/components/server/main/server_logging.ixx) | `server_ac.exe` Component logging |
-| `music` | [`music.ixx`](../app/components/slash/main/music.ixx) | Recycled music-file naming |
-| `path_utils` | [`path_utils.ixx`](../app/components/slash/main/path_utils.ixx) | Path stem and extension helpers |
-| `spotify_client` | [`spotify_client.ixx`](../app/components/spotify/main/spotify_client.ixx) | Spotify Web API client state |
-| `spotify_component` | [`spotify_component.ixx`](../app/components/spotify/main/spotify_component.ixx) | `spotify_ac.exe` Component session |
-| `spotify_http` | [`spotify_http.ixx`](../app/components/spotify/main/spotify_http.ixx) | HTTP status helpers |
-| `spotify_monitor` | [`spotify_monitor.ixx`](../app/components/spotify/main/spotify_monitor.ixx) | Playback monitor |
-| `spotify_pipe` | [`spotify_pipe.ixx`](../app/components/spotify/main/spotify_pipe.ixx) | Pipe command registration |
-| `spotify_registry` | [`spotify_registry.ixx`](../app/components/spotify/main/spotify_registry.ixx) | Spotify runtime command registry |
-| `spotify_oauth` | [`spotify_oauth.ixx`](../app/components/spotify/oauth/spotify_oauth.ixx) | OAuth authorization and the initial `tokens.map` write |
-| `spotify_application_data` | [`application_data.ixx`](../app/components/spotify/shared/application_data.ixx) | `client.id` and `devices.list` parse and serialize |
-| `spotify_token_store` | [`token_store.ixx`](../app/components/spotify/shared/token_store.ixx) | `tokens.map` parse, serialize, and coordinated replace |
-| `spotify_db_client` | [`spotify_db_client.ixx`](../app/components/spotify/main/spotify_db_client.ixx) | `spotify_ac.exe` client for `spotify_db.exe` |
-| `spotify_sqlite` | [`spotify_sqlite.ixx`](../app/components/spotify/db/spotify_sqlite.ixx) | `history.db` schema and upsert, compiled only into `spotify_db.exe` |
-| `taskbar_commands` | [`taskbar_commands.ixx`](../app/components/taskbar/main/taskbar_commands.ixx) | `taskbar_ac.exe` command registration |
-| `taskbar_logging` | [`taskbar_logging.ixx`](../app/components/taskbar/main/taskbar_logging.ixx) | `taskbar_ac.exe` logging |
-| `wake_logging` | [`wake_logging.ixx`](../app/components/wake/main/wake_logging.ixx) | Wake event logging via `powercfg /lastwake` |
-| `writer_commands` | [`writer_commands.ixx`](../app/components/writer/main/writer_commands.ixx) | Writer runtime command registry |
-| `writer_data` | [`writer_data_detail.hpp`](../app/components/writer/shared/writer_data_detail.hpp) | Writer directory, session prompts, task list, and notes resolution |
-| `writer_component` | [`writer_component.ixx`](../app/components/writer/main/writer_component.ixx) | `writer_ac.exe` Component session |
+122 production modules.

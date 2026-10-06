@@ -23,10 +23,10 @@ export namespace spotify::defaults {
      */
     [[nodiscard]]
     inline bool auto_launch_enabled(std::string_view value) noexcept {
-        if (value == "on" || value == "true") {
+        if (value == "on") {
             return true;
         }
-        if (value == "off" || value == "false") {
+        if (value == "off") {
             return false;
         }
         return false;

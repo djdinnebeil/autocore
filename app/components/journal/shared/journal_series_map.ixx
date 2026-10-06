@@ -9,7 +9,7 @@
 export module journal_series_map;
 
 import std;
-import auto_core.core.paths;
+import journal_data_directory;
 import journal_episode_format;
 
 export namespace journal::series_map {
@@ -45,7 +45,7 @@ struct AllocateChoice {
 };
 
 [[nodiscard]] inline std::filesystem::path file_path() {
-    return ac::paths::journal_directory() / "series.map";
+    return journal::data_directory() / "series.map";
 }
 
 [[nodiscard]] inline ActiveField parse_active(const std::string_view contents) {

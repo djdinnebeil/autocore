@@ -23,10 +23,11 @@ keymap activate("application") or .map activate_<program>
        (switch / minimize / cycle / [fallback] launch)
 
 pipe commands (activate_auto_core, refresh_taskbar_positions)
+    -> hello catalog
     -> ac_taskbar_pipe
     -> taskbar_ac.exe
 
-Main-local reserved names (not the control pipe)
+Main-owned names (one registration, not the control pipe)
     -> activate_wordpad / activate_powershell_in_admin
     -> launch_powershell / launch_gitbash / launch_taskbar_config
 ```
@@ -169,7 +170,7 @@ multi_window = cycle
 executable_path = C:\Program Files\Google\Chrome\Application\chrome.exe
 
 [commands]
-activate = activate_google_chrome | activate_chrome
+activate = activate_google_chrome
 ```
 
 | Field | Role |
@@ -259,24 +260,16 @@ compiled Taskbar commands plus the current application files.
 `taskbar_ac.exe` does not rewrite it. `keymap/keymap_commands.txt` is
 refreshed from the full runtime registry by Main.
 
-Known historical keymap names are preserved as aliases:
+Each application registers `activate_<key>`. `mappings.ini` uses those
+names for ordinary programs. `activate_auto_core` remains a reserved pipe
+command so Auto Core activates its existing console.
 
-| Internal key | Generated command | Historical alias |
-| --- | --- | --- |
-| `file_explorer` | `activate_file_explorer` | `activate_folder` |
-| `google_chrome` | `activate_google_chrome` | `activate_chrome` |
-| `visual_studio` | `activate_visual_studio` | `activate_visual` |
-| `visual_studio_code` | `activate_visual_studio_code` | `activate_vs_code` |
-| `zoom_workplace` | `activate_zoom_workplace` | `activate_zoom` |
-
-`mappings.ini` uses `activate_*` names (and historical aliases such as
-`activate_chrome`) for ordinary programs. `activate_auto_core` remains a
-reserved pipe command so Auto Core activates its existing console.
-
-These Main names are reserved so application-definition handlers cannot replace them.
+These names are reserved so application-definition handlers cannot replace them.
 `taskbar_protocol` `commands::authority` is that reserved-name list, not a
-pipe-destination list. `refresh_taskbar_positions` is also reserved by Main
-registration and is a pipe payload, but it is not in that array.
+pipe-destination list. `activate_auto_core` and `refresh_taskbar_positions`
+are registered only from the `taskbar_ac.exe` hello catalog.
+`refresh_taskbar_positions` is not in the authority array. The four launch
+and activation names below are registered only in Main.
 
 | Command | Runs on | Behavior |
 | --- | --- | --- |
@@ -338,7 +331,7 @@ move or delete existing Taskbar data.
 With no arguments it discovers pinned and running taskbar icons. For each
 icon without a `.map` file it derives `application.key`,
 `taskbar.application_id`, `[window] process_name`, `[fallback]`, and
-`activate_<key>` (plus historical aliases for known programs). It prompts
+`activate_<key>`. It prompts
 when `process_name` cannot be derived, and when `[fallback] executable_path`
 cannot be inferred. Windows Notepad (`Microsoft.WindowsNotepad` prefix) is
 written as `notepad.map` with `executable_path = ::runtime::` and the
@@ -409,17 +402,15 @@ the app is already running.
 
 | Path | Role |
 | --- | --- |
-| `app/components/taskbar/main/` | `taskbar_ac.exe` authority, control pipe, compiled commands. |
+| `app/components/taskbar/runtime/` | `taskbar_ac.exe` authority, control pipe, compiled commands. |
 | `app/components/taskbar/config/` | `taskbar_config.exe`, the only writer of `config/taskbar.ini`. |
 | `app/components/taskbar/builder/` | `taskbar_builder.exe` application discovery and command catalog. |
 | `app/components/taskbar/builder/enum_windows.cxx` | Window enumerator used while generating `.map` definitions. |
 | `app/components/taskbar/star/` | `taskbar_star.exe` menu. It delegates and does not write files. |
 | `app/core/taskbar/` | `auto_core.taskbar` snapshot, matching, and Win+position input. |
-| `app/main/modules/main_taskbar.ixx` | Main cycling session and `.map` command registration. |
-| `app/main/runtime/src/main_taskbar.cxx` | Native vs emulated `activate_*` and cycling. |
-| `app/main/modules/taskbar_component.ixx` | Main-side `taskbar_ac.exe` lifecycle and control pipe. |
-| `app/main/runtime/src/taskbar_component.cxx` | Lifecycle client, pipe invoke, and Main-local reserved launches. |
-| `app/shared/protocols/taskbar_protocol.ixx` | Control-pipe contract and authority command names. |
+| `app/main/runtime/taskbar/main_taskbar.ixx` | Main cycling session, `.map` commands, and the Main-owned launches. |
+| `app/main/runtime/taskbar/main_taskbar.cxx` | Native vs emulated `activate_*`, cycling, and foreground launches. |
+| `app/components/taskbar/shared/taskbar_protocol.ixx` | Reserved command names shared with `taskbar_ac.exe`. |
 
 ## Manual test
 
@@ -443,5 +434,3 @@ the app is already running.
    active and the taskbar thumbnail flyout is expected. Beyond position 10,
    the same mapped key cycles matching windows without thumbnails, and the
    function key or 0 ends the session.
-7. Confirm historical aliases such as `activate_folder` and `activate_chrome`
-   still activate File Explorer and Google Chrome.

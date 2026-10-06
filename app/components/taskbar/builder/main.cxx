@@ -437,15 +437,7 @@ namespace {
     }
 
     std::string activate_commands_for_key(const std::string& key) {
-        std::string activate = "activate_" + key;
-        if (key == "file_explorer") return activate + " | activate_folder";
-        if (key == "google_chrome") return activate + " | activate_chrome";
-        if (key == "visual_studio") return activate + " | activate_visual";
-        if (key == "visual_studio_code") {
-            return activate + " | activate_vs_code";
-        }
-        if (key == "zoom_workplace") return activate + " | activate_zoom";
-        return activate;
+        return "activate_" + key;
     }
 
     bool is_packaged_application_id(const std::string_view application_id) {

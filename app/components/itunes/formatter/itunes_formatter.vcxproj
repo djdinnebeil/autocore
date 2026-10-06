@@ -137,15 +137,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\core\modules\clock.ixx" />
-    <ClCompile Include="..\..\..\core\modules\shell.ixx" />
-    <ClCompile Include="..\..\..\core\modules\logging_config.ixx" />
-    <ClCompile Include="..\..\..\core\modules\component.ixx" />
-    <ClCompile Include="..\..\..\core\modules\encoding.ixx" />
-    <ClCompile Include="..\..\..\core\modules\formatting.ixx" />
-    <ClCompile Include="..\..\..\core\modules\ini.ixx" />
-    <ClCompile Include="..\..\..\core\modules\paths.ixx" />
-    <ClCompile Include="..\main\itunes_config_detail.cxx" />
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx" />
+    <ClCompile Include="..\..\..\core\system\shell.ixx" />
+    <ClCompile Include="..\..\..\core\config\logging_config.ixx" />
+    <ClCompile Include="..\..\..\core\component\component.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx" />
+    <ClCompile Include="..\..\..\core\config\ini.ixx" />
+    <ClCompile Include="..\..\..\core\config\paths.ixx" />
+    <ClCompile Include="..\runtime\itunes_config_detail.cxx" />
     <ClCompile Include="..\shared\song_template_detail.cxx" />
     <ClCompile Include="..\shared\library_format_detail.cxx" />
     <ClCompile Include="..\shared\itunes_metadata_detail.cxx" />
@@ -153,7 +153,7 @@
     <ClCompile Include="entry.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\main\itunes_config_detail.hpp" />
+    <ClInclude Include="..\runtime\itunes_config_detail.hpp" />
     <ClInclude Include="..\shared\song_template_detail.hpp" />
     <ClInclude Include="..\shared\library_format_detail.hpp" />
     <ClInclude Include="..\shared\itunes_metadata_detail.hpp" />

@@ -8,12 +8,12 @@
 export module journal_firebase;
 
 import std;
-import auto_core.core.paths;
+import journal_data_directory;
 
 export namespace journal::firebase {
 
 [[nodiscard]] inline std::filesystem::path file_path() {
-    return ac::paths::journal_directory() / "firebase.id";
+    return journal::data_directory() / "firebase.id";
 }
 
 [[nodiscard]] inline std::string trim_copy(const std::string_view value) {

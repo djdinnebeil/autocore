@@ -1,5 +1,5 @@
 #include "catch_amalgamated.hpp"
-#include "../main/itunes_formatting_detail.hpp"
+#include "../runtime/itunes_formatting_detail.hpp"
 #include "../shared/library_format_detail.hpp"
 
 namespace detail = itunes::formatting::detail;

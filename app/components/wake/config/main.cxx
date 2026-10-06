@@ -7,6 +7,7 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
+import wake_data_directory;
 import wake_defaults;
 import components_editor_request;
 
@@ -58,10 +59,10 @@ bool current_logging() {
     if (!value) {
         return ac::logging::config::component_logging_default();
     }
-    if (*value == "on" || *value == "true") {
+    if (*value == "on") {
         return true;
     }
-    if (*value == "off" || *value == "false") {
+    if (*value == "off") {
         return false;
     }
     return ac::logging::config::component_logging_default();
@@ -215,7 +216,7 @@ int launch_snapshot() {
 
 [[nodiscard]]
 int provision_history() {
-    const auto directory = ac::paths::wake_directory();
+    const auto directory = wake::data_directory();
     if (wake::history::all_history_files_present(directory)) {
         wake_config.log_print("Wake history is already present.");
         return 0;

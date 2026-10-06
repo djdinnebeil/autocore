@@ -57,3 +57,6 @@ app/main/modules/keymap_hardcoded.ixx
 
 # Runtime output (exes, DLLs, live config, local data)
 dist/
+
+# Linker program databases (developer symbols; not part of dist/)
+symbols/

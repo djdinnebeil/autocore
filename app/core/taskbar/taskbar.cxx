@@ -143,14 +143,8 @@ namespace {
         return result;
     }
 
-    std::string canonical_application_key(std::string key) {
-        key = ascii_lower(key);
-        if (key == "folder") return "file_explorer";
-        if (key == "chrome") return "google_chrome";
-        if (key == "visual") return "visual_studio";
-        if (key == "vs_code") return "visual_studio_code";
-        if (key == "zoom") return "zoom_workplace";
-        return key;
+    std::string normalized_application_key(std::string key) {
+        return ascii_lower(std::move(key));
     }
 
     void add_unique_command(
@@ -163,26 +157,11 @@ namespace {
         }
     }
 
-    void apply_historical_command_aliases(
+    void add_activate_command(
         const std::string& key,
         std::vector<std::string>& commands
     ) {
         add_unique_command(commands, "activate_" + key);
-        if (key == "file_explorer") {
-            add_unique_command(commands, "activate_folder");
-        }
-        else if (key == "google_chrome") {
-            add_unique_command(commands, "activate_chrome");
-        }
-        else if (key == "visual_studio") {
-            add_unique_command(commands, "activate_visual");
-        }
-        else if (key == "visual_studio_code") {
-            add_unique_command(commands, "activate_vs_code");
-        }
-        else if (key == "zoom_workplace") {
-            add_unique_command(commands, "activate_zoom");
-        }
     }
 
     std::string to_utf8(const std::wstring_view value) {
@@ -278,7 +257,7 @@ namespace {
         std::ifstream input(path);
         if (!input) return;
 
-        std::string application = canonical_application_key(path.stem().string());
+        std::string application = normalized_application_key(path.stem().string());
         ApplicationConfiguration definition;
         std::string section;
         std::string line;
@@ -302,7 +281,7 @@ namespace {
 
             if (section == "application" && key == "key" &&
                 !setting.empty()) {
-                application = canonical_application_key(setting);
+                application = normalized_application_key(setting);
             }
             else if (section == "taskbar" &&
                 key == "application_id") {
@@ -335,7 +314,7 @@ namespace {
         }
 
         if (!application.empty()) {
-            apply_historical_command_aliases(
+            add_activate_command(
                 application, definition.activation_commands
             );
             auto& configured = config.applications[application];
@@ -394,7 +373,7 @@ namespace {
         }
         if (const auto position = configured_position(digit)) {
             config.fallback_positions.insert_or_assign(
-                canonical_application_key(std::string {key}), *position
+                normalized_application_key(std::string {key}), *position
             );
         }
     }
@@ -1452,7 +1431,7 @@ namespace ac::taskbar {
             return std::nullopt;
         }
         const auto found = snapshot->applications.find(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
         if (found == snapshot->applications.end() ||
             !found->second.position ||
@@ -1479,7 +1458,7 @@ namespace ac::taskbar {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return std::nullopt;
         const auto found = snapshot->fallback_executable_paths.find(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
         return found == snapshot->fallback_executable_paths.end()
             ? std::nullopt
@@ -1492,7 +1471,7 @@ namespace ac::taskbar {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return std::nullopt;
         const auto found = snapshot->applications.find(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
         if (found == snapshot->applications.end()) return std::nullopt;
         return found->second.window_matcher.executable_path;
@@ -1502,7 +1481,7 @@ namespace ac::taskbar {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return false;
         return snapshot->applications.contains(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
     }
 
@@ -1510,7 +1489,7 @@ namespace ac::taskbar {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return false;
         const auto found = snapshot->applications.find(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
         return found != snapshot->applications.end() &&
             found->second.multi_window == MultiWindowBehavior::cycle;
@@ -1519,7 +1498,7 @@ namespace ac::taskbar {
     std::vector<WindowHandle> matching_windows(
         const std::string_view application
     ) {
-        const auto key = canonical_application_key(std::string {application});
+        const auto key = normalized_application_key(std::string {application});
         const auto snapshot = local_snapshot.load();
         WindowMatcher matcher;
         if (snapshot) {
@@ -1548,7 +1527,7 @@ namespace ac::taskbar {
             return std::nullopt;
         }
         const auto found = snapshot->applications.find(
-            canonical_application_key(std::string {application})
+            normalized_application_key(std::string {application})
         );
         if (found == snapshot->applications.end()) return std::nullopt;
         if (!found->second.position || !found->second.position->valid()) {

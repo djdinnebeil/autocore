@@ -47,10 +47,10 @@ Settings load_settings() {
         settings.directory = std::string {trim(*value)};
     }
     if (const auto value = document->find("server", "logging")) {
-        if (*value == "off" || *value == "false") {
+        if (*value == "off") {
             settings.logging = false;
         }
-        else if (*value == "on" || *value == "true") {
+        else if (*value == "on") {
             settings.logging = true;
         }
         else {

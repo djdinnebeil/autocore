@@ -12,7 +12,7 @@ import journal_db_protocol;
 
 export namespace journal::db::session {
 
-[[nodiscard]] std::expected<void, std::string> probe();
+[[nodiscard]] std::expected<void, std::string> probe(void* process = nullptr);
 [[nodiscard]] std::expected<Episode, std::string> allocate_episode(
     std::string_view series_key
 );
