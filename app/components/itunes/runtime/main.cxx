@@ -31,8 +31,41 @@ void end_itunes() {
     itunes_component.log_main("shutdown signal received");
 }
 
+namespace {
+
+int export_keymap_commands() {
+    struct ClientShutdown {
+        ~ClientShutdown() { ac_itunes.shutdown(); }
+    } client_shutdown;
+
+    try {
+        const auto registry = create_itunes_command_registry();
+        for (const std::string& name : registry.registered_names()) {
+            std::cout << name << '\n';
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "iTunes keymap command export failed: "
+                  << error.what() << '\n';
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "iTunes keymap command export failed.\n";
+        return 1;
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
+}
+
+} // namespace
+
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
+    }
+
     const auto registry = create_itunes_command_registry();
     log_init();
     if (const auto database = itunes::db::start_service(); !database) {

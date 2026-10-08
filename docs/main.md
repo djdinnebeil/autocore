@@ -110,13 +110,13 @@ calls `primary()` / `secondary()` with no further name lookup.
 - All other keys: blank (`key =`, unbound)
 
 An existing `keymap.map` is never overwritten, including empty or broken
-files. Workspace failure, or a file that cannot be opened or has no usable
+files. A file that cannot be opened, or that has no usable
 rows (no resolved command on either side of any key), logs and installs an
 in-memory emergency map with the same two filled bindings. That emergency
 map is not written back to `keymap.map`. Runtime does not create
 `keymap.map`.
 
-After a successful workspace, Main refreshes `keymap/keymap_commands.txt`
+During keymap initialization, Main refreshes `keymap/keymap_commands.txt`
 from the command registry, including names advertised by started generic
 children. Journal aliases are advertised by `journal_ac.exe` after it reads its per-factory alias files.
 
@@ -158,8 +158,7 @@ same bound `std::function` call.
 
 The two maps had also diverged (`keymap.ini` vs the old compiled table).
 Restoring a compiled mode means putting a table fill back in front of the
-registry/load path. The compiled table lived in `keymap_hardcoded.ixx`, which
-is no longer part of the project.
+registry/load path.
 
 Measured on 2026-09-04 (`keymap_mode_benchmark.log` phase-split lines):
 
@@ -225,8 +224,8 @@ control pipe.
    values are logged; those names are ignored or disabled. A missing file
    is reconstructed by `components_editor.exe` at startup; if that fails,
    Main exits. An unreadable existing file is reported and every valid
-   `*_ac.exe` beside Main is enabled. Main does not start `dash` or
-   `slash` as v1 children.
+   `*_ac.exe` beside Main is enabled. Main does not start an executable
+   that embeds `AC_LAUNCH_DESCRIPTOR` as a v1 child.
 2. If `taskbar` is enabled, start it and wait for hello, then attach the
    snapshot client. Snapshot failure keeps the control child.
 3. Create pipes and start every other enabled `{name}_ac.exe` without
@@ -247,10 +246,10 @@ closes its own handle. Closing the last of those handles still ends any
 process left in the job. `logger_ac.exe --once --shutdown` is started outside
 these jobs and is not waited on.
 
-One-shot components are not started here. An enabled name with
-`{name}_ac.oneshot.txt` beside `{name}_ac.exe` is launched when its
-command runs. Dash's file asks for a new console, the foreground HWND,
-and the parent PID, and does not wait. Slash's file passes the command
+On-demand components are not started here. An enabled name whose
+`{name}_ac.exe` embeds `AC_LAUNCH_DESCRIPTOR` is launched when its
+command runs. Dash's descriptor asks for a new console, the foreground HWND,
+and the parent PID, and does not wait. Slash's descriptor passes the command
 on the command line and waits until the process exits. See
 [dash.md](dash.md) for the `--target` / `--parent-pid` launch line.
 
@@ -261,9 +260,9 @@ names. Server shutdown uses the control pipe.
 
 Boot-time children speak [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx).
 Main forwards keymap names from each child's hello catalog and from
-enabled `{name}_ac.oneshot.txt` files. Journal aliases live in per-factory
-`.list` files and are advertised by `journal_ac.exe`, including
-`launch_journal_config`. A new ordinary component does not require a Main
+enabled executables that embed `AC_LAUNCH_DESCRIPTOR`. Journal aliases live in per-factory
+`.list` files and are advertised by `journal_ac.exe`. A new ordinary
+component does not require a Main
 source edit.
 
 Registering runtime commands and adding a new child project are in

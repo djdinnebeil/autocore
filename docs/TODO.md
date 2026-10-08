@@ -16,18 +16,6 @@ Each executable still writes `{date}_{name}.log` and `{date}_{name}.main.log`.
 `merge_interval_seconds` and `merge_logs_on_shutdown`. The shutdown merge
 is a detached `logger_ac.exe --once` after the hosted logger has exited.
 
-## Done: keymap_config.exe
-
-**Status:** Shipped with Main configuration architecture
-
-`keymap_config.exe` owns `config/keymap.ini`, creates `dist/keymap/` and
-`keymap/components/`, and writes a seed `mappings.ini` if that file is
-missing. Runtime never writes those INI files. Autocomplete catalogs under
-`keymap/` are still generated at startup.
-
-A later console editor (stock Windows console vs opening `mappings.ini`
-in an editor vs a custom line editor) remains optional follow-up.
-
 ## Parked: journal_config.exe menu
 
 **Status:** Deferred helper finetune

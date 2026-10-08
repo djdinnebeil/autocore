@@ -278,8 +278,12 @@ namespace {
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return 0;
+    }
     log_init();
     std::atomic_bool stop_requested {false};
 

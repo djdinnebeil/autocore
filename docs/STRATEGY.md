@@ -31,15 +31,18 @@ section below already decides it, do not re-explore.
 - `lib/` — canonical `auto_core.dll` and `auto_core.lib` (`OutDir` for the
   core DLL). Tracked. The linker searches `lib/` only. The linker also
   writes `auto_core.exp` here; that file is gitignored.
-- `dist/bin/auto_core.dll` — runtime copy published by the
-  `PublishAutoCoreDll` target in
+- `bin/` — tracked published binaries. Application `OutDir` is `bin/`.
+  `PublishAutoCoreDll` in
   [`app/core/auto_core_dll.vcxproj`](../app/core/auto_core_dll.vcxproj)
-  after that project links. Application `OutDir` is `dist/bin/`.
-  `dist/` remains the installation root. Vendor runtime DLLs in
-  `dist/bin/` are refreshed by hand with
-  [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1),
-  which copies `third_party/*/bin/*.dll` and does not run during a
+  copies `lib/auto_core.dll` to `bin/auto_core.dll` after that project
+  links. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
+  copies `third_party/*/bin/*.dll` into `bin/` and does not run during a
   normal build.
+- `dist/bin/` — ignored runtime copy. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1)
+  is the only normal publisher. It copies `bin/*.exe` and `bin/*.dll`
+  into `dist/bin/`. `build-all.ps1` runs it after a successful build.
+  The vendor script runs it after copying into `bin/`. `dist/` remains
+  the installation root.
 - `symbols/` — gitignored linker program databases (`.pdb`). Outside
   `dist/`. `AutoCoreSymbolsDir` in `AutoCore.props`.
 - `third_party/<dependency>/` — the single vendor tree, not generated core
@@ -66,7 +69,8 @@ machine-specific drive letter.
   The process current working directory is never the path base. End users of
   a `dist/` tree do not need the repo.
 - **Clone caveats.** Windows 11 and Visual Studio 2026 (version 18+) with
-  C++23. `obj/` and `dist/` are gitignored. Link `auto_core.lib` from
+  C++23. `bin/` is the tracked published binary directory. `obj/` and
+  `dist/` are gitignored. Link `auto_core.lib` from
   `lib/`. Keep `msbuild/` at the repo root.
 
 ## Locked: two audiences
@@ -88,7 +92,8 @@ Clone vs `dist/` stays in Locked: two audiences.
 - `app/` — build input (source, projects, resources). Not source-only.
   [`app/AutoCore.sln`](../app/AutoCore.sln) is the repository workspace.
   Shared props are not here.
-- `app/components/` — child executable projects that ship in `dist/bin/`.
+- `app/components/` — child executable projects that publish to `bin/`
+  and run from `dist/bin/`.
   The component root holds one family `.sln` and responsibility folders:
   `runtime/` (`<name>_ac.exe`), `config/` (`<name>_config.exe`), and
   `shared/` (`<name>_protocol.ixx`, `defaults.ixx`). Spotify also has
@@ -151,9 +156,10 @@ Main must not know that component at compile time.
   Lines are `name`, `name on`, or `name off` (blank defaults to on;
   malformed values default to off). Names are case-sensitive and
   lowercase-only (`^[a-z][a-z0-9_]*$`). Invalid names are not normalized.
-  `dash` and `slash` may be listed. Main treats those two names as
-  non-hosted: they stay out of the v1 session. The shared list parser does
-  not name them. The list is the enable switch when the file is
+  An `AC_LAUNCH_DESCRIPTOR` RCDATA resource in `{name}_ac.exe` marks an
+  on-demand component. Main registers those commands and does not start a v1
+  session for that name. Dash and Slash embed that resource. The shared list
+  parser does not name them. The list is the enable switch when the file is
   readable. `discover_ac_executables` returns every valid `*_ac.exe` name
   from `bin_directory`. `components_config.exe` owns
   `config/components.ini` (`[settings]` only: `new_components`,
@@ -175,10 +181,11 @@ Main must not know that component at compile time.
   pipe. The catalog is immutable for the session.
 - Main keeps each successful child's process handle for the session and
   stops generic children in reverse successful-start order.
-- Logger, taskbar snapshot/cycling and INI `activate_*`, dash, slash, and
-  Main-local commands stay explicit specials. Do not add a controller DLL,
-  sidecar manifests, component kinds, dependency graphs, restart, or
-  catalog updates.
+- Logger, taskbar snapshot/cycling and INI `activate_*`, and
+  Main-local commands stay explicit specials. On-demand components are
+  described by the embedded `AC_LAUNCH_DESCRIPTOR` resource. Do not add a
+  controller DLL, a second command catalog, component kinds, dependency
+  graphs, restart, or catalog updates.
 
 ## Locked: component configuration
 
@@ -287,7 +294,8 @@ do not connect to it to send log lines.
   pointer. Clone-vs-end-user `dist/` inventory is done (`dist/`
   gitignored). Readiness docs and vendor runtime
   DLLs under `third_party/<dependency>/bin/`. Refresh those copies in
-  `dist/bin/` by hand with `scripts/copy-vendor-dlls.ps1`. Folder layout is locked.
+  `bin/` by hand with `scripts/copy-vendor-dlls.ps1`, which then publishes
+  `dist/bin/`. Folder layout is locked.
 - Done: generic component host. A normal component is an executable that
   satisfies `ac.component.v1`; Main must not know that component at
   compile time. `components.list` `[components]` is an open lowercase

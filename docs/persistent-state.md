@@ -14,15 +14,8 @@ Logs and crash reports are written by whichever process produced them. That is m
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `config/*.ini` | settings | the matching `_config.exe` | the family that names the file | `--seed` or `--init` when missing | compiled defaults, no create | yes, if paths stay relative | no | yes, through the orchestrators | unknown keys drop out on rewrite. No `true`/`false` spellings in production parsers | keep. See the INI ledger. |
 | `components.list` | enablement | `components_editor.exe` | Main, every `<name>_star.exe` | `--seed`, no-arg rebuild, or `--component` | runtime enables every valid `*_ac.exe` and does not create the file | yes | no | `components_editor.exe --seed` | none. Lines are `name`, `name on`, or `name off` | keep. Finalized. |
-| `keymap.map` | key bindings | `keymap_editor.exe` | `auto_core.exe` | `--seed` when missing | in-memory emergency map, no create | yes | no | `keymap_editor.exe` during first-run | `parse_legacy_line` accepts a brace form and has no production caller | keep the file. Brace parser is legacy. |
-| `keymap/keymap_commands.txt` | autocomplete catalog | `auto_core.exe` during keymap initialization | keymap editor consumers | rewritten when bytes differ | editor autocomplete lacks the generated list | yes | no | written on the next successful keymap init | the two exported getters have no caller; the file write does | keep. Disposition of the unused getters is pending on the module row. |
-| `keymap/components/itunes.keymap_commands.txt` | unused build list | MSBuild `WriteLinesToFile` | none | build | none; hello is the command authority | yes | no | build output | none | leftover. Not read at runtime. |
-| `keymap/components/journal.keymap_commands.txt` | unused build list | `journal_ac.exe` at build | none | build | none; hello is the command authority | yes | no | build output | none | leftover. Not read at runtime. |
-| `keymap/components/spotify.keymap_commands.txt` | unused build list | MSBuild `WriteLinesToFile` | none | build | none; hello is the command authority | yes | no | build output | none | leftover. Not read at runtime. |
-| `keymap/components/taskbar.keymap_commands.txt` | unused builder list | `taskbar_builder.exe` | none | `--seed` if missing; `--refresh-manifest` replaces | none; hello and Main registration are the authority | yes | no | `taskbar_config.exe` may launch the builder | none | leftover. Not read at runtime. |
-| `keymap/components/writer.keymap_commands.txt` | unused build list | `writer_ac.exe` at build | none | build | none; hello is the command authority | yes | no | build output | none | leftover. Not read at runtime. |
-
-Logger, Server, and Wake do not generate a `keymap/components` catalog.
+| `keymap.map` | key bindings | `keymap_editor.exe` | `auto_core.exe` | `--seed` when missing | in-memory emergency map, no create | yes | no | `keymap_editor.exe` during first-run | none. Lines are `key = primary \| secondary` | keep. |
+| `keymap/keymap_commands.txt` | autocomplete catalog | `auto_core.exe` during keymap initialization | keymap editor consumers | rewritten when bytes differ | editor autocomplete lacks the generated list | yes | no | written on the next keymap init | none | keep. |
 
 ## Logs, crashes, and errors
 

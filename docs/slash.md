@@ -25,7 +25,7 @@ A missing or unreadable file: `slash_ac.exe` reports, uses `verbose` in
 memory, and does not create the file. A readable file with a missing or
 invalid `mode` uses `verbose`, reports that, and is not rewritten.
 
-`slash_ac.oneshot.txt` sits next to `slash_ac.exe`. It names
+`slash_ac.exe` embeds `AC_LAUNCH_DESCRIPTOR`. That resource names
 `report_and_empty_recycle_bin` and tells Main to pass that command on the
 command line and wait until the process exits. Enablement is `components.list`.
 Main does not compile Slash's command names.

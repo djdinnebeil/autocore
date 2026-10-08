@@ -41,7 +41,7 @@ To run the same build on another Windows 11 PC, copy the `dist/` folder, then re
 
 1. Clone or copy the repository onto Windows 11.
 2. Install Visual Studio **2026** (version **18+**) with the Desktop development with C++ workload (MSVC **v145**, C++23).
-3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). `auto_core_dll` publishes `lib/auto_core.dll` to `dist/bin/auto_core.dll`. When third-party runtime DLLs change, run [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy `third_party/*/bin/*.dll` into `dist/bin/`. Builds do not run that script.
+3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). `auto_core_dll` publishes `lib/auto_core.dll` to `bin/auto_core.dll`. Application executables publish to `bin/`. `build-all.ps1` then runs [`scripts/publish-dist.ps1`](scripts/publish-dist.ps1), which is the only normal publisher of `dist/bin/`. When third-party runtime DLLs change, run [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy `third_party/*/bin/*.dll` into `bin/`; that script then runs `publish-dist.ps1`. Builds do not run the vendor script.
 4. Shared paths live in [`msbuild/AutoCore.props`](msbuild/AutoCore.props) (repo-relative; a clone does not edit that file).
 
 The linker searches `lib/auto_core.lib`. `dist/` is gitignored.
@@ -91,7 +91,7 @@ The main application, core DLL, shared protocols, and component projects are sep
 | `spotify_oauth` | Spotify authorization helper | `spotify_oauth.exe` | Handles the OAuth authorization flow (`spotify/oauth`) |
 | `taskbar` | Native taskbar activation | `taskbar_ac.exe` | Snapshot authority for Win+position mappings; see [Taskbar](docs/taskbar.md) |
 | `taskbar_config` | Taskbar configuration | `taskbar_config.exe` | Writes only `config/taskbar.ini` |
-| `taskbar_builder` | Taskbar application definitions | `taskbar_builder.exe` | Owns `taskbar/applications/*.map` and `keymap/components/taskbar.keymap_commands.txt` |
+| `taskbar_builder` | Taskbar application definitions | `taskbar_builder.exe` | Owns `taskbar/applications/*.map` |
 | `wake` | System wake tracker | `wake_ac.exe` | Logs resume timestamps |
 | `writer` | Text insertion and notes | `writer_ac.exe` | Pipe child of Auto Core; notepad, timestamps, and task list |
 | `writer_config` | Writer configuration | `writer_config.exe` | Writes only `config/writer.ini`. `--init` and `--seed` delegate data provisioning to `writer_editor.exe` |
@@ -127,7 +127,7 @@ Auto Core/
 │  ├─ components.list   Component enablement list
 │  ├─ keymap.map        User key-to-command map
 │  ├─ config/           Live configuration files
-│  ├─ keymap/           keymap_commands.txt and components/ catalogs
+│  ├─ keymap/           keymap_commands.txt
 │  ├─ components/       Optional component data (journal, spotify, server)
 │  ├─ taskbar/          applications/*.map; winkey_map.cache
 │  └─ writer/           session_prompts.list, task_list.txt, and notes/ (local)
@@ -145,7 +145,7 @@ normal logging. Open the Auto Core installation folder, open `crash`, and send
 only the requested event folder to the Auto Core team. A report contains
 diagnostic process information and is never uploaded automatically.
 
-Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `auto_core.lib` and `auto_core.dll`), `symbols/` (linker `.pdb` files), and `dist/bin/` (executables and the `auto_core.dll` published by `auto_core_dll`). Shared Visual Studio settings live in `msbuild/`. Wipe `obj/` anytime; rebuilding the core DLL overwrites `lib/` in place and publishes that DLL to `dist/bin/`.
+Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `auto_core.lib` and `auto_core.dll`), `symbols/` (linker `.pdb` files), and `bin/` (tracked executables and the `auto_core.dll` published by `auto_core_dll`). `publish-dist.ps1` mirrors `bin/*.exe` and `bin/*.dll` into ignored `dist/bin/`. Shared Visual Studio settings live in `msbuild/`. Wipe `obj/` anytime; rebuilding the core DLL overwrites `lib/` in place and publishes that DLL to `bin/`.
 
 ## Dash
 
@@ -170,7 +170,7 @@ See [Spotify component](docs/spotify.md).
 
 ## Taskbar
 
-`taskbar_ac.exe` publishes live Win+1 through Win+10 mappings from `taskbar/applications/*.map`. `taskbar_builder.exe` creates missing program files and owns `keymap/components/taskbar.keymap_commands.txt`. `taskbar_config.exe` writes only `config/taskbar.ini`.
+`taskbar_ac.exe` publishes live Win+1 through Win+10 mappings from `taskbar/applications/*.map`. `taskbar_builder.exe` creates missing program files. `taskbar_config.exe` writes only `config/taskbar.ini`.
 
 See [Taskbar component](docs/taskbar.md).
 

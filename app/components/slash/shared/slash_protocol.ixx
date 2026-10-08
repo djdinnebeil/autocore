@@ -10,9 +10,6 @@ import std;
 
 export namespace ac::protocol::slash {
 
-inline constexpr std::string_view manifest_filename =
-    "slash.keymap_commands.txt";
-
 struct CommandName {
     std::string_view name;
 };

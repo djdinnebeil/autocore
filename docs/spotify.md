@@ -53,9 +53,6 @@ well-formed name is logged and does not stop the pipe.
 
 ## Canonical runtime commands
 
-The Release x64 build writes canonical names to
-`dist/keymap/components/spotify.keymap_commands.txt`.
-
 | Command | Behavior |
 | --- | --- |
 | `spotify_get_queue` | Retrieves the current queue, excludes entries already present in the component's 52-entry queue-history ring, appends the current item, and inserts the formatted text. |
@@ -267,7 +264,6 @@ Auto Core runs from `dist`):
 | `<spotify directory>/devices.list` | `name = id` lines. Names are matched in lowercase and the last id wins. Written only by `spotify_editor.exe` from records returned by the running `spotify_ac.exe`. Read by `spotify_ac.exe`. |
 | `<spotify directory>/tokens.map` | `access_token`, `refresh_token`, `authorized_at`, and `refresh_expires_at`. Written by `spotify_oauth.exe` after a new authorization and by `spotify_ac.exe` when it refreshes. Initialization does not create, overwrite, or revalidate it. Its absence means Spotify user authorization has not completed. Machine-local; do not copy to another PC. |
 | `<spotify directory>/history.db` | SQLite listening history. Created and owned by `spotify_db.exe`. `spotify_ac.exe` does not open it. `--seed` creates it when it is missing. Interactive `--init` asks first. |
-| `keymap/components/spotify.keymap_commands.txt` | Generated canonical runtime-command manifest. |
 | `cover.jpg` | Album art written relative to the component's current working directory and overwritten on the next successful download. |
 
 `client.id` and `tokens.map` contain secrets. They must not be committed,

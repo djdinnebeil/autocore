@@ -120,14 +120,6 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
-        keymap_components_directory() {
-        static const std::filesystem::path directory =
-            keymap_directory() / "components";
-
-        return directory;
-    }
-
-    const std::filesystem::path&
         keymap_commands_file() {
         static const std::filesystem::path file =
             keymap_directory() / "keymap_commands.txt";

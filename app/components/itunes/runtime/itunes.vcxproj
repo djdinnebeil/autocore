@@ -200,19 +200,6 @@
     <ClInclude Include="..\shared\itunes_metadata_detail.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ItunesKeymapCommand Include="itunes_next_song" />
-    <ItunesKeymapCommand Include="itunes_play_pause" />
-    <ItunesKeymapCommand Include="itunes_print_next_up" />
-    <ItunesKeymapCommand Include="itunes_print_songs" />
-    <ItunesKeymapCommand Include="itunes_remove_song" />
-    <ItunesKeymapCommand Include="itunes_stop_song" />
-    <ItunesKeymapCommand Include="print_next_up_song_list" />
-  </ItemGroup>
-  <Target Name="GenerateItunesKeymapCommands" AfterTargets="Build" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <MakeDir Directories="$(AutoCoreDistDir)keymap\components" />
-    <WriteLinesToFile File="$(AutoCoreDistDir)keymap\components\itunes.keymap_commands.txt" Lines="@(ItunesKeymapCommand)" Overwrite="true" Encoding="UTF-8" />
-  </Target>
-  <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">
       <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

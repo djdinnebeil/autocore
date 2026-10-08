@@ -22,11 +22,9 @@ The C++23 module catalog is [modules.md](modules.md).
 
 ## Registering runtime commands
 
-To make a function available to the keymap, advertise it from a hosted child's `ac.component.v1` hello catalog, or list it in `{name}_ac.oneshot.txt` for a one-shot component. Main-owned commands (`close_program`, the function-key commands, and the Taskbar commands that must run in the foreground process) are registered in Main. Auto Core refreshes `dist/keymap/keymap_commands.txt` from that registry at startup. Adding an ordinary hosted or one-shot component does not require a Main source change. Taskbar `activate_*` names for configured programs are registered from `taskbar/applications/*.map`.
+To make a function available to the keymap, advertise it from a hosted child's `ac.component.v1` hello catalog, or list it in the `AC_LAUNCH_DESCRIPTOR` resource of an on-demand component. Main-owned commands (`close_program`, the function-key commands, and the Taskbar commands that must run in the foreground process) are registered in Main. Auto Core refreshes `dist/keymap/keymap_commands.txt` from that registry at startup. Adding an ordinary hosted or on-demand component does not require a Main source change. Taskbar `activate_*` names for configured programs are registered from `taskbar/applications/*.map`.
 
-The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, Taskbar commands that run in Main, hosted hello catalogs and enabled one-shot commands, then configured `activate_*` names last so a taskbar `.map` cannot override a reserved name. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches a Main-local command is skipped silently. A collision with an earlier child's catalog skips and logs.
-
-`get_runtime_command_names()` and `get_runtime_command_autocomplete_values()` exist on `auto_core.main.keymap.runtime` but have no in-repo callers; the autocomplete file is written from the registry directly.
+The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, Taskbar commands that run in Main, hosted hello catalogs and enabled on-demand commands, then configured `activate_*` names last so a taskbar `.map` cannot override a reserved name. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches a Main-local command is skipped silently. A collision with an earlier child's catalog skips and logs.
 
 Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](configuration.md).
 
@@ -56,12 +54,12 @@ and starts each enabled generic child:
    Win+position.
 2. Start every other enabled hosted name: create `ac_{name}_pipe` and
    launch `{name}_ac.exe` without waiting, then wait for those
-   `ac.component.v1` hellos in parallel (5s window). A name with
-   `{name}_ac.oneshot.txt` is not started. A missing exe, bad
+   `ac.component.v1` hellos in parallel (5s window). A name whose executable
+   embeds `AC_LAUNCH_DESCRIPTOR` is not started. A missing exe, bad
    hello, or timeout disables only that child.
 3. `initialize_keymap()` then registers advertised catalog names from
-   started children, plus commands from each enabled
-   `{name}_ac.oneshot.txt`.
+   started children, plus commands from each enabled executable's
+   `AC_LAUNCH_DESCRIPTOR`.
 
 The returned `Session` is RAII. `close_program()` sends v1 `shutdown` to every
 generic child, then waits under the single deadline in `shutdown.ini` until
@@ -70,12 +68,10 @@ declares `termination_policy = graceful` (the default) or
 `termination_policy = force_allowed`; Main never infers policy from a
 component name. Only `force_allowed` uses `TerminateJobObject`. A hosted
 component that cannot be assigned to its job is not started. A component
-whose executable directory contains `{name}_ac.oneshot.txt` is not a session
+whose executable embeds `AC_LAUNCH_DESCRIPTOR` is not a session
 child. When that name is enabled, Main registers the command names in the
-file and launches `{name}_ac.exe` on demand. `launch_journal_config` is
-advertised by `journal_ac.exe` and starts `journal_config.exe` from that
-process. Journal parameterized names and print-choice aliases are advertised
-in the same hello catalog.
+resource and launches `{name}_ac.exe` on demand. Journal parameterized names
+and print-choice aliases are advertised in the same hello catalog.
 
 Process lifetime, hook, F-lock, and crash restart are in [main.md](main.md).
 
@@ -96,10 +92,10 @@ Enable a v1 child in live `dist/components.list` (`name` or `name on`).
 Advertise
 commands in the child's hello catalog and bind them in live
 `dist/keymap/keymap.map`. Main does not need a per-component protocol
-file or `register_with` entry. `dash` and `slash` may be
-listed. Main treats them as non-hosted one-shot keymap launchers, not
-v1 session children. Do not use those names for a new
-v1 project.
+file or `register_with` entry. An on-demand component is any listed name
+whose executable embeds `AC_LAUNCH_DESCRIPTOR`. Dash and Slash
+are the current on-demand components. Do not start a v1 session for a
+component that embeds that resource.
 
 Run `<name>_star.exe` to enable the component, or run `components_editor.exe`
 with no arguments so a live catalog full-syncs

@@ -34,8 +34,4 @@ TEST_CASE("Spotify canonical command names are unique", "[spotify][protocol][uni
 
 TEST_CASE("Spotify protocol exposes stable resource names", "[spotify][protocol][unit]") {
     CHECK(ac::protocol::spotify::pipe_name == L"ac_spotify_pipe");
-    CHECK(
-        ac::protocol::spotify::manifest_filename ==
-        "spotify.keymap_commands.txt"
-    );
 }

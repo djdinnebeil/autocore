@@ -145,9 +145,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="slash_ac.oneshot.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="launch_descriptor.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\system\clipboard.ixx" />
@@ -174,6 +172,7 @@
       <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <ResourceCompile Include="launch_descriptor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

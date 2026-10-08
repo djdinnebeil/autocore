@@ -60,7 +60,8 @@ Disable, then Exit. Star does not read or modify the vault.
 
 ## Main launch
 
-Main starts `dash_ac.exe` with `CREATE_NEW_CONSOLE` and these arguments:
+`dash_ac.exe` embeds `AC_LAUNCH_DESCRIPTOR`. Main reads that resource and
+starts `dash_ac.exe` with `CREATE_NEW_CONSOLE` and these arguments:
 
 ```text
 --target <foreground HWND as integer> --parent-pid <auto_core.exe pid>

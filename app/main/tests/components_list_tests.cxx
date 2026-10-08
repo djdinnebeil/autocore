@@ -1,7 +1,7 @@
 #include "catch_amalgamated.hpp"
 #include "../../core/component/components_catalog_detail.hpp"
 #include "../../core/component/components_list_detail.hpp"
-#include "../shared/oneshot_component.hpp"
+#include "../shared/launch_descriptor.hpp"
 
 import auto_core.main.defaults;
 
@@ -136,8 +136,8 @@ TEST_CASE("Last duplicate [components] value wins", "[components-list][unit]") {
     CHECK_FALSE(enabled(result, "itunes"));
 }
 
-TEST_CASE("One-shot sidecars describe launch behavior without component names", "[components-list][unit]") {
-    const auto dash = ac::main::oneshot::parse(
+TEST_CASE("Launch descriptors describe launch behavior without component names", "[components-list][unit]") {
+    const auto dash = ac::main::launch_descriptor::parse(
         "console=new\n"
         "context=foreground\n"
         "argv=none\n"
@@ -145,34 +145,35 @@ TEST_CASE("One-shot sidecars describe launch behavior without component names", 
     );
     REQUIRE(dash.ok);
     CHECK(dash.descriptor.console ==
-        ac::main::oneshot::Descriptor::Console::fresh);
+        ac::main::launch_descriptor::Descriptor::Console::fresh);
     CHECK(dash.descriptor.context ==
-        ac::main::oneshot::Descriptor::Context::foreground);
+        ac::main::launch_descriptor::Descriptor::Context::foreground);
     CHECK(dash.descriptor.wait ==
-        ac::main::oneshot::Descriptor::Wait::none);
+        ac::main::launch_descriptor::Descriptor::Wait::none);
     CHECK(dash.descriptor.arguments ==
-        ac::main::oneshot::Descriptor::Arguments::none);
+        ac::main::launch_descriptor::Descriptor::Arguments::none);
     REQUIRE(dash.descriptor.commands.size() == 1);
     CHECK(dash.descriptor.commands[0] == "launch_dash");
 
-    const auto slash = ac::main::oneshot::parse(
+    const auto slash = ac::main::launch_descriptor::parse(
         "wait=infinite\n"
         "report_and_empty_recycle_bin\n"
         "another_command\n"
     );
     REQUIRE(slash.ok);
     CHECK(slash.descriptor.console ==
-        ac::main::oneshot::Descriptor::Console::inherit);
+        ac::main::launch_descriptor::Descriptor::Console::inherit);
     CHECK(slash.descriptor.arguments ==
-        ac::main::oneshot::Descriptor::Arguments::command);
+        ac::main::launch_descriptor::Descriptor::Arguments::command);
     CHECK(slash.descriptor.wait ==
-        ac::main::oneshot::Descriptor::Wait::infinite);
+        ac::main::launch_descriptor::Descriptor::Wait::infinite);
     REQUIRE(slash.descriptor.commands.size() == 2);
 
-    const auto invalid = ac::main::oneshot::parse("lifecycle=hosted\n");
+    const auto invalid = ac::main::launch_descriptor::parse("lifecycle=hosted\n");
     CHECK_FALSE(invalid.ok);
-    CHECK(ac::main::oneshot::descriptor_filename("example") ==
-        "example_ac.oneshot.txt");
+    CHECK(std::wstring_view {
+        ac::main::launch_descriptor::embedded_resource_name
+    } == L"AC_LAUNCH_DESCRIPTOR");
 }
 
 TEST_CASE("Dash and slash parse like any other name", "[components-list][unit]") {

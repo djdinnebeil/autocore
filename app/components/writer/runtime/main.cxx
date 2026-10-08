@@ -10,7 +10,6 @@ import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.paths;
 
-import <Windows.h>;
 import auto_core.core.shell;
 
 namespace {
@@ -49,41 +48,35 @@ void report_invalid_notes_subdirectory() {
     );
 }
 
-int write_manifest(
-    const command_registry::Registry& registry,
-    const std::filesystem::path& destination
-) {
-    std::filesystem::path temporary = destination;
-    temporary += ".tmp";
-    std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-    if (!output) {
+int export_keymap_commands() {
+    try {
+        const auto registry = create_writer_command_registry();
+        for (const std::string& name : registry.registered_names()) {
+            std::cout << name << '\n';
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "Writer keymap command export failed: "
+                  << error.what() << '\n';
         return 1;
     }
-    for (const std::string& value : registry.autocomplete_values()) {
-        output << value << '\n';
-    }
-    output.close();
-    if (!output) {
+    catch (...) {
+        std::cerr << "Writer keymap command export failed.\n";
         return 1;
     }
-    return MoveFileExW(
-        temporary.c_str(),
-        destination.c_str(),
-        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-    ) ? 0 : 1;
+    std::cout.flush();
+    return std::cout ? 0 : 1;
 }
 
 } // namespace
 
-int main(int argument_count, char* arguments[]) {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    auto registry = create_writer_command_registry();
-
-    if (argument_count == 3 &&
-        std::string_view {arguments[1]} ==
-            "--generate-keymap-command-registry") {
-        return write_manifest(registry, arguments[2]);
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
     }
+    auto registry = create_writer_command_registry();
 
     writer_component().log_main("writer_ac.exe started");
 

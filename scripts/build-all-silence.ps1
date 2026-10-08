@@ -6,8 +6,8 @@
   Locates an MSBuild installation supporting MSVC v145 / Visual Studio 2026
   (version 18+) with vswhere and builds app\AutoCore.sln Release x64.
   That solution build is the shipped DLL and executables. Test projects are
-  members and are not built. Renames locked dist\ outputs so Link can
-  replace them.
+  members and are not built. Renames locked symbol files so Link can
+  replace them. Does not publish dist\bin.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>
@@ -80,19 +80,8 @@ $Common = @(
     '/p:Configuration=Release'
     '/p:Platform=x64'
 )
-# close_program does not wait for children. Leftover dist processes can
-# still map auto_core.dll and *_ac.exe; rename those outputs so Link can
-# replace them.
-
-$DistDir = Join-Path $RepoRoot 'dist'
-if (Test-Path -LiteralPath $DistDir) {
-    $BinDir = Join-Path $DistDir 'bin'
-    if (Test-Path -LiteralPath $BinDir) {
-        Get-ChildItem -LiteralPath $BinDir -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -in '.exe', '.dll' } |
-            ForEach-Object { Unlock-DistFile $_.FullName }
-    }
-}
+# A debugger can keep symbols\*.pdb mapped. Rename those so Link can replace them.
+# Shipped binaries publish to bin\. This script does not update dist\bin.
 
 $SymbolsDir = Join-Path $RepoRoot 'symbols'
 if (Test-Path -LiteralPath $SymbolsDir) {

@@ -6,7 +6,8 @@ packages use `include/`, import libraries in `lib/`, and runtime DLLs in
 file is an attribution list, not a license grant for Auto Core itself. See
 [LICENSE](LICENSE) for Auto Core terms. Run
 [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy
-`third_party/*/bin/*.dll` into `dist/bin/` next to the executables.
+`third_party/*/bin/*.dll` into `bin/` next to the executables. That script
+then publishes `bin/*.exe` and `bin/*.dll` to `dist/bin/`.
 
 ## Catch2
 

@@ -8,7 +8,7 @@
     <AutoCoreThirdPartyDir>$(AutoCoreRootDir)third_party\</AutoCoreThirdPartyDir>
     <AutoCoreMacroDir>$(AutoCoreAppDir)core\include\</AutoCoreMacroDir>
     <AutoCoreDistDir>$(AutoCoreRootDir)dist\</AutoCoreDistDir>
-    <AutoCoreBinDir>$(AutoCoreDistDir)bin\</AutoCoreBinDir>
+    <AutoCoreBinDir>$(AutoCoreRootDir)bin\</AutoCoreBinDir>
     <AutoCoreSymbolsDir>$(AutoCoreRootDir)symbols\</AutoCoreSymbolsDir>
     <AutoCoreVendorIncludes>$(AutoCoreThirdPartyDir)civetweb\include;$(AutoCoreThirdPartyDir)cpr\include;$(AutoCoreThirdPartyDir)curl\include;$(AutoCoreThirdPartyDir)dbghelp\include;$(AutoCoreThirdPartyDir)json\include;$(AutoCoreThirdPartyDir)sqlite3\include;$(AutoCoreThirdPartyDir)taglib\include;$(AutoCoreThirdPartyDir)zlib\include</AutoCoreVendorIncludes>
     <AutoCoreVendorLibraries>$(AutoCoreThirdPartyDir)civetweb\lib;$(AutoCoreThirdPartyDir)cpr\lib;$(AutoCoreThirdPartyDir)curl\lib;$(AutoCoreThirdPartyDir)sqlite3\lib;$(AutoCoreThirdPartyDir)taglib\lib;$(AutoCoreThirdPartyDir)zlib\lib</AutoCoreVendorLibraries>

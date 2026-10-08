@@ -1024,111 +1024,6 @@ namespace {
         return ensure_firefox_pair(configuration, buttons, used_keys, generated);
     }
 
-    void add_activate_names(
-        std::set<std::string>& commands,
-        const std::string_view setting
-    ) {
-        std::size_t first {};
-        while (first <= setting.size()) {
-            const auto separator = setting.find('|', first);
-            std::string alias {setting.substr(
-                first,
-                separator == std::string_view::npos
-                    ? std::string_view::npos
-                    : separator - first
-            )};
-            const auto alias_begin = alias.find_first_not_of(" \t\r");
-            if (alias_begin != std::string::npos) {
-                const auto alias_end = alias.find_last_not_of(" \t\r");
-                commands.insert(alias.substr(
-                    alias_begin, alias_end - alias_begin + 1
-                ));
-            }
-            if (separator == std::string_view::npos) break;
-            first = separator + 1;
-        }
-    }
-
-    /**
-     * \brief Rewrites the installed taskbar command manifest.
-     *
-     * `taskbar_builder.exe` is the only writer. Discovery and
-     * `--refresh-manifest` always replace the file. `--seed` writes it
-     * only when it is missing.
-     */
-    bool write_keymap_manifest(const ToolConfiguration& configuration) {
-        std::set<std::string> commands {
-            "activate_auto_core",
-            "activate_powershell_in_admin",
-            "activate_wordpad",
-            "launch_gitbash",
-            "launch_powershell",
-            "refresh_taskbar_positions"
-        };
-        for (const auto& application :
-             load_taskbar_applications(configuration.applications_directory)) {
-            add_activate_names(commands, activate_commands_for_key(
-                application.key
-            ));
-            add_activate_names(commands, application.activate_command);
-        }
-
-        const auto destination =
-            ac::paths::keymap_components_directory() /
-            L"taskbar.keymap_commands.txt";
-        std::error_code error;
-        std::filesystem::create_directories(destination.parent_path(), error);
-        if (error) return false;
-
-        std::filesystem::path temporary = destination;
-        temporary += L".tmp";
-        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-        if (!output) return false;
-        for (const std::string& command : commands) {
-            output << command << '\n';
-        }
-        output.close();
-        if (!output) {
-            std::filesystem::remove(temporary, error);
-            return false;
-        }
-        if (!MoveFileExW(
-                temporary.c_str(),
-                destination.c_str(),
-                MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-            )) {
-            std::filesystem::remove(temporary, error);
-            return false;
-        }
-        std::wcout << L"Updated " << destination.wstring() << L'\n';
-        return true;
-    }
-
-    bool seed_keymap_manifest(const ToolConfiguration& configuration) {
-        const auto destination =
-            ac::paths::keymap_components_directory() /
-            L"taskbar.keymap_commands.txt";
-        std::error_code error;
-        if (std::filesystem::exists(destination, error)) {
-            if (error) {
-                taskbar_builder.log_print(
-                    "Failed to inspect {}",
-                    destination.string()
-                );
-                return false;
-            }
-            taskbar_builder.log_print(
-                "Seed skipped; keymap/components/taskbar.keymap_commands.txt "
-                "already exists"
-            );
-            return true;
-        }
-        taskbar_builder.log_print(
-            "Writing keymap/components/taskbar.keymap_commands.txt"
-        );
-        return write_keymap_manifest(configuration);
-    }
-
     int launch_taskbar_ac_refresh() {
         const auto executable_path =
             ac::paths::bin_directory() / "taskbar_ac.exe";
@@ -1186,30 +1081,6 @@ namespace {
             std::wcerr << L"Unable to refresh winkey_map.cache.\n";
         }
         return code;
-    }
-
-    int finish_after_maps(
-        const ToolConfiguration& configuration,
-        const bool seed_catalog
-    ) {
-        const int refresh = launch_taskbar_ac_refresh();
-        const bool catalog = seed_catalog
-            ? seed_keymap_manifest(configuration)
-            : write_keymap_manifest(configuration);
-        if (!catalog && !seed_catalog) {
-            std::wcerr
-                << L"Unable to update keymap/components/taskbar.keymap_commands.txt.\n";
-            taskbar_builder.log_print(
-                "Unable to update keymap/components/taskbar.keymap_commands.txt."
-            );
-        }
-        if (!catalog && seed_catalog) {
-            taskbar_builder.log_print(
-                "Unable to seed keymap/components/taskbar.keymap_commands.txt."
-            );
-        }
-        if (refresh != 0) return refresh;
-        return catalog ? 0 : 1;
     }
 
     int generate_maps(
@@ -1297,7 +1168,7 @@ namespace {
         }
         const ToolConfiguration configuration = default_configuration();
         if (generate_maps_with_com(configuration, true) != 0) return 1;
-        return finish_after_maps(configuration, false);
+        return launch_taskbar_ac_refresh();
     }
 
     void wait_for_enter() {
@@ -1315,8 +1186,7 @@ int wmain(int argc, wchar_t* argv[]) {
     try {
         const ToolConfiguration configuration = default_configuration();
         if (argc > 2) {
-            std::wcerr
-                << L"Usage: taskbar_builder.exe [--seed | --refresh-manifest]\n";
+            std::wcerr << L"Usage: taskbar_builder.exe [--seed]\n";
             return 1;
         }
         if (argc == 2) {
@@ -1326,22 +1196,9 @@ int wmain(int argc, wchar_t* argv[]) {
                 if (generate_maps_with_com(configuration, false) != 0) {
                     return 1;
                 }
-                return finish_after_maps(configuration, true);
+                return launch_taskbar_ac_refresh();
             }
-            if (argument == L"--refresh-manifest") {
-                taskbar_builder.log_print("Refreshing taskbar command manifest");
-                if (!write_keymap_manifest(configuration)) {
-                    std::wcerr
-                        << L"Unable to update keymap/components/taskbar.keymap_commands.txt.\n";
-                    taskbar_builder.log_print(
-                        "Unable to update keymap/components/taskbar.keymap_commands.txt."
-                    );
-                    return 1;
-                }
-                return 0;
-            }
-            std::wcerr
-                << L"Usage: taskbar_builder.exe [--seed | --refresh-manifest]\n";
+            std::wcerr << L"Usage: taskbar_builder.exe [--seed]\n";
             return 1;
         }
 

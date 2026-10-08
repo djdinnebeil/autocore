@@ -38,25 +38,6 @@ static const command_registry::Registry& runtime_command_registry() {
     return registry;
 }
 
-static bool initialize_keymap_workspace() {
-    std::error_code ec;
-    std::filesystem::create_directories(
-        ac::paths::keymap_components_directory(),
-        ec
-    );
-
-    if (ec) {
-        auto_core.log_print(
-            "Failed to use keymap/components: {}. Run keymap_config.exe. "
-            "Using the emergency keymap; keymap.map will not be created.",
-            ec.message()
-        );
-        return false;
-    }
-
-    return true;
-}
-
 struct KeymapSettings {
     bool silence_nonset_warning = false;
 };
@@ -188,21 +169,28 @@ static bool replace_text_file(
 static bool refresh_keymap_commands(
     const command_registry::Registry& registry
 ) {
+    const auto destination = ac::paths::keymap_commands_file();
+    std::error_code directory_error;
+    std::filesystem::create_directories(
+        destination.parent_path(),
+        directory_error
+    );
+    if (directory_error) {
+        auto_core.log_main(
+            "Failed to use {}: {}",
+            destination.parent_path().string(),
+            directory_error.message()
+        );
+        return false;
+    }
+
     return replace_text_file(
-        ac::paths::keymap_commands_file(),
+        destination,
         autocomplete_contents(registry),
         "Failed to create temporary keymap command list",
         "Failed to write temporary keymap command list",
         "Failed to replace keymap command list"
     );
-}
-
-std::vector<std::string> get_runtime_command_names() {
-    return runtime_command_registry().registered_names();
-}
-
-std::vector<std::string> get_runtime_command_autocomplete_values() {
-    return runtime_command_registry().autocomplete_values();
 }
 
 static bool parse_line(
@@ -409,11 +397,6 @@ void set_keymap_from_file() {
 }
 
 void initialize_keymap() {
-    if (!initialize_keymap_workspace()) {
-        set_emergency_keymap();
-        return;
-    }
-
     const command_registry::Registry& registry =
         runtime_command_registry();
     refresh_keymap_commands(registry);

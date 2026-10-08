@@ -1452,6 +1452,21 @@ namespace ac::taskbar {
         return commands;
     }
 
+    std::vector<std::string> configured_activation_commands_from_disk() {
+        Configuration config;
+        load_taskbar_applications(config);
+        std::vector<std::string> names;
+        for (const auto& [application, definition] : config.applications) {
+            for (const std::string& command : definition.activation_commands) {
+                if (std::ranges::find(names, command) == names.end()) {
+                    names.push_back(command);
+                }
+            }
+        }
+        std::ranges::sort(names);
+        return names;
+    }
+
     std::optional<std::wstring> configured_fallback_executable_path(
         const std::string_view application
     ) {

@@ -25,7 +25,7 @@ Every production child defines `config/example.ini` (written only by `example_co
 
 Lived example: [`app/components/server`](../app/components/server) (`runtime` / `config` / `editor` / `builder` / `star` / `shared/defaults.ixx`).
 
-Do not use `dash` or `slash` as a new v1 list name (Main keeps those non-hosted). Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the repo build scripts. Those are toolchain requirements, not filesystem paths to type into the project.
+Do not start a v1 session for a component that embeds `AC_LAUNCH_DESCRIPTOR`. Dash and Slash are the current on-demand components. Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the repo build scripts. Those are toolchain requirements, not filesystem paths to type into the project.
 
 Each heading is tagged **source**, **compile**, or **runtime configuration**.
 
@@ -68,7 +68,7 @@ Property Manager often writes an absolute `Import Project="C:\…\msbuild\AutoCo
 
 `$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props` imports (exists-guarded) are Visual Studio defaults. Leave them. They are not Auto Core paths.
 
-After a correct import, General → Output Directory is repo `dist\bin\` and Intermediate Directory is repo `obj\example\`.
+After a correct import, General → Output Directory is repo `bin\` and Intermediate Directory is repo `obj\example\`.
 
 ## Required project properties (compile)
 
@@ -274,20 +274,22 @@ Worker threads should enter through `ac::thread::run_with_exception_handling`.
 Main rewrites `dist\keymap\keymap_commands.txt` from the registry after hello.
 Do not add the component name to Main.
 
-A one-shot component is the same executable name, plus `example_ac.oneshot.txt`
-copied next to `example_ac.exe`. Main will not host it on a control pipe.
-Enable it in `components.list`. The file lists command names and optional
+An on-demand component is the same executable name, plus
+`launch_descriptor.txt` compiled into `example_ac.exe` as `RCDATA` named
+`AC_LAUNCH_DESCRIPTOR`. Main will not host it on a control pipe.
+Enable it in `components.list`. The resource lists command names and optional
 `console`, `context`, `wait`, and `argv` lines. Defaults are
 `console=default`, `context=none`, `wait=none`, and `argv=command`.
 `context=foreground` appends `--target <hwnd> --parent-pid <pid>`.
 `argv=none` does not pass the command name. `wait=infinite` blocks the
-main thread until the process exits.
+main thread until the process exits. Do not copy the descriptor beside the
+executable.
 
 ## Build verification (compile)
 
 1. Confirm **Release | x64**.
 2. Build → Build Solution.
-3. Output must be `<repo>\dist\bin\example_ac.exe`.
+3. Output must be `<repo>\bin\example_ac.exe`.
 
 If the exe lands under `app\components\example\x64\Release\`, `AutoCore.props` is missing or not the relative Shared import.
 
@@ -304,7 +306,7 @@ or run `components_editor.exe` with no arguments to full-sync discovered
 example
 ```
 
-List `dash` or `slash` only as those known Main non-hosted names, not as a new v1 child. The portable seed is [`defaults/components.list`](../defaults/components.list). Do not hard-code ordinary component names into `auto_core.dll`.
+An on-demand component embeds `AC_LAUNCH_DESCRIPTOR` and is not also given a v1 hello session. The portable seed is [`defaults/components.list`](../defaults/components.list). Do not hard-code ordinary component names into `auto_core.dll`.
 
 ## Bind a command (runtime configuration)
 
@@ -366,7 +368,7 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 ## Adding a New Auto Core Component
 
 1. **Source.** Create `app/components/<name>/runtime`, `config`, and `shared`, plus `<Name>.sln` at the component root. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `star/main.cxx` that calls `ac::component_star::run("<name>")`.
-2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `dist\bin\<name>_ac.exe` and `dist\bin\<name>_config.exe`.
+2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `bin\<name>_ac.exe` and `bin\<name>_config.exe`.
 3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini`. Enable the name with `<name>_star.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
 
 Auto Core knows how to host a component. It does not need to know which components exist when `auto_core.exe` is compiled.

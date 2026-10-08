@@ -141,6 +141,18 @@ export namespace ac::taskbar {
     [[nodiscard]] AC_API std::vector<ConfiguredActivationCommand>
         configured_activation_commands();
 
+    /**
+     * \brief Returns activation command names parsed from the current
+     * application maps.
+     *
+     * Reads `taskbar/applications/*.map` through the same loader the
+     * authority uses. Does not start the authority, refresh positions, or
+     * write configuration. A missing applications directory returns an
+     * empty list.
+     */
+    [[nodiscard]] AC_API std::vector<std::string>
+        configured_activation_commands_from_disk();
+
     /** Returns the optional executable launched when an application has no
         matching windows and no native Win+position mapping. This performs
         no file I/O or IPC. */

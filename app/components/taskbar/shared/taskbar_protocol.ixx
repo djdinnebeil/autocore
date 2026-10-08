@@ -11,8 +11,6 @@ export namespace ac::protocol::taskbar {
     inline constexpr std::wstring_view pipe_name = L"ac_taskbar_pipe";
     /** Sent by `taskbar_ac.exe` after the authority is ready. */
     inline constexpr std::string_view ready_message = "taskbar_ready";
-    inline constexpr std::string_view manifest_filename =
-        "taskbar.keymap_commands.txt";
 
     namespace commands {
         inline constexpr std::string_view activate_auto_core =

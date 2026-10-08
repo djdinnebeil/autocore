@@ -163,38 +163,6 @@ namespace ac::keymap::map_file {
     }
 
     [[nodiscard]]
-    inline std::optional<Mapping> parse_legacy_line(const std::string_view line) {
-        const auto trimmed = trim(line);
-        if (is_ignored_line(trimmed)) {
-            return std::nullopt;
-        }
-
-        const auto equals = trimmed.find('=');
-        if (equals == std::string_view::npos) {
-            return std::nullopt;
-        }
-
-        const auto opening_brace = trimmed.find('{', equals);
-        const auto closing_brace = trimmed.rfind('}');
-        if (opening_brace == std::string_view::npos ||
-            closing_brace == std::string_view::npos ||
-            closing_brace <= opening_brace + 1) {
-            return parse_line(trimmed);
-        }
-
-        const auto key = trim(trimmed.substr(0, equals));
-        if (key.empty()) {
-            return std::nullopt;
-        }
-
-        const auto actions = trimmed.substr(
-            opening_brace + 1,
-            closing_brace - opening_brace - 1
-        );
-        return sides_from_actions(key, trim(actions), ',');
-    }
-
-    [[nodiscard]]
     inline std::string format_line(
         const std::string_view key,
         const std::string_view primary,

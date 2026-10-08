@@ -13,6 +13,10 @@ import auto_core.core.shell;
 
 int main(const int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return 0;
+    }
     const bool snapshot =
         argc == 2 && std::string_view {argv[1]} == "--snapshot";
     if (argc != 1 && !snapshot) {

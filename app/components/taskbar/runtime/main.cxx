@@ -146,8 +146,44 @@ namespace {
     }
 }
 
+namespace {
+
+int export_keymap_commands() {
+    try {
+        std::vector<std::string> names =
+            create_taskbar_command_registry().registered_names();
+        for (const std::string& command :
+             ac::taskbar::configured_activation_commands_from_disk()) {
+            if (std::ranges::find(names, command) == names.end()) {
+                names.push_back(command);
+            }
+        }
+        std::ranges::sort(names);
+        for (const std::string& name : names) {
+            std::cout << name << '\n';
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "Taskbar keymap command export failed: "
+                  << error.what() << '\n';
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Taskbar keymap command export failed.\n";
+        return 1;
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
+}
+
+} // namespace
+
 int main(const int argument_count, char* arguments[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argument_count == 2 &&
+        std::string_view {arguments[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
+    }
     ac::config::initialize_core_settings();
     if (!ac::config::core_settings_report().empty()) {
         taskbar_component().log_print(

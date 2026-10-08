@@ -5,7 +5,7 @@
 .DESCRIPTION
   Builds app\AutoCore.sln Release x64 with devenv.com. That solution build
   is the shipped DLL and executables. Test projects are members and are not
-  built. Renames locked dist\ outputs so Link can replace them.
+  built. After a successful build, publishes bin\ into dist\bin.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>
@@ -49,19 +49,8 @@ function Unlock-DistFile {
         -Force -ErrorAction SilentlyContinue
 }
 
-# close_program does not wait for children. Leftover dist processes can
-# still map auto_core.dll and *_ac.exe; rename those outputs so Link can
-# replace them.
-
-$DistDir = Join-Path $RepoRoot 'dist'
-if (Test-Path -LiteralPath $DistDir) {
-    $BinDir = Join-Path $DistDir 'bin'
-    if (Test-Path -LiteralPath $BinDir) {
-        Get-ChildItem -LiteralPath $BinDir -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -in '.exe', '.dll' } |
-            ForEach-Object { Unlock-DistFile $_.FullName }
-    }
-}
+# A debugger can keep symbols\*.pdb mapped. Rename those so Link can replace them.
+# Shipped binaries publish to bin\. dist\bin is updated only by publish-dist.ps1.
 
 $SymbolsDir = Join-Path $RepoRoot 'symbols'
 if (Test-Path -LiteralPath $SymbolsDir) {
@@ -86,3 +75,19 @@ foreach ($solution in $Solutions) {
 }
 
 Write-Host 'Release x64 build finished.'
+
+$PublishScript = Join-Path $PSScriptRoot 'publish-dist.ps1'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PublishScript
+$PublishCode = $LASTEXITCODE
+
+if ($PublishCode -eq 0) {
+    exit 0
+}
+
+if ($PublishCode -eq 2) {
+    Write-Warning 'Build succeeded. dist\bin was not updated because Auto Core is running. Run scripts\publish-dist.ps1 after closing it.'
+    exit 0
+}
+
+Write-Host "Build succeeded, but publishing dist\bin failed (exit $PublishCode)."
+exit $PublishCode

@@ -26,10 +26,12 @@ C++ workload is required. From the repository root:
 Or follow the MSBuild order in [docs/building.md](docs/building.md). The
 linker searches `lib/auto_core.lib`. The repository workspace is
 `app/AutoCore.sln`. `auto_core_dll` publishes `lib/auto_core.dll` to
-`dist/bin/auto_core.dll`. [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1)
-copies vendor runtime DLLs from `third_party/*/bin/` into `dist/bin/` when
-those DLLs are added or updated. Builds do not run that script (`dist/`
-stays gitignored). The build does not plant the Server
+`bin/auto_core.dll`. Application executables publish to tracked `bin/`.
+[`scripts/publish-dist.ps1`](scripts/publish-dist.ps1) is the only normal
+publisher of `dist/bin/`. [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1)
+copies vendor runtime DLLs from `third_party/*/bin/` into `bin/` when
+those DLLs are added or updated, then runs `publish-dist.ps1`. Builds do
+not run that script (`dist/` stays gitignored; `bin/` is tracked). The build does not plant the Server
 data directory. `server_editor.exe --seed` creates missing `port.id` and
 `document_root.id`. `server_builder.exe` creates missing starter files
 under a relative document root (default `dist/components/server/site`).

@@ -71,10 +71,6 @@ TEST_CASE(
         config / "keymap.ini"
     );
     CHECK(
-        ac::paths::keymap_components_directory() ==
-        keymap / "components"
-    );
-    CHECK(
         ac::paths::keymap_commands_file() ==
         keymap / "keymap_commands.txt"
     );

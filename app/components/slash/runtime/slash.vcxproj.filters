@@ -68,5 +68,11 @@
     <ResourceCompile Include="..\..\..\resources\resource.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="launch_descriptor.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <None Include="launch_descriptor.txt">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

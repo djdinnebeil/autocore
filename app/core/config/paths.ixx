@@ -84,13 +84,6 @@ export namespace ac::paths {
         keymap_settings_file();
 
     /**
-     * \brief Returns `<keymap directory>/components`.
-     */
-    [[nodiscard]]
-    AC_API const std::filesystem::path&
-        keymap_components_directory();
-
-    /**
      * \brief Returns `<keymap directory>/keymap_commands.txt`.
      */
     [[nodiscard]]

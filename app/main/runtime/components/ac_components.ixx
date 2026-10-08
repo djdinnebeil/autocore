@@ -18,7 +18,7 @@ export namespace ac::main::components {
      *        `[components]`.
      * \return An RAII session. `shutdown()` (from `close_program()`) stops
      *         children in reverse successful-start order. Names with a
-     *         `{name}_ac.oneshot.txt` sidecar are not session children.
+     *         an embedded `AC_LAUNCH_DESCRIPTOR` are not session children.
      */
     [[nodiscard]] Session initialize();
 
@@ -40,7 +40,7 @@ export namespace ac::main::components {
      * \brief Registers hosted hello catalogs and enabled one-shot commands.
      *
      * Main-local names must already be registered so they win collisions.
-     * One-shot commands come from `{name}_ac.oneshot.txt` beside the exe.
+     * On-demand commands come from `AC_LAUNCH_DESCRIPTOR` in the executable.
      */
     void register_with(command_registry::Registry& registry);
 

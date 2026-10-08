@@ -50,10 +50,6 @@
       <AdditionalDependencies>auto_core.lib;UIAutomationCore.lib;Ole32.lib;OleAut32.lib;Shell32.lib;Propsys.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
-    <PostBuildEvent>
-      <Command>if not exist "$(AutoCoreDistDir)keymap\components" mkdir "$(AutoCoreDistDir)keymap\components"
-"$(TargetPath)" --refresh-manifest</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\formatting\clock.ixx" />

@@ -141,20 +141,6 @@ TEST_CASE("Misplaced placeholders and extra pipes are invalid", "[keymap-map][un
     ));
 }
 
-TEST_CASE("Legacy brace mappings convert to pipe form", "[keymap-map][unit]") {
-    const auto mapping = ac::keymap::map_file::parse_legacy_line(
-        "numpad_1 = {activate_auto_core, close_program}"
-    );
-    REQUIRE(mapping);
-    CHECK(
-        ac::keymap::map_file::format_line(
-            mapping->key,
-            mapping->primary,
-            mapping->secondary
-        ) == "numpad_1 = activate_auto_core | close_program\n"
-    );
-}
-
 TEST_CASE("Pipe inside parentheses is not the action split", "[keymap-map][unit]") {
     const auto mapping = ac::keymap::map_file::parse_line(
         "numpad_3 = make_print_choice(\"a|b\", true) | save_file"

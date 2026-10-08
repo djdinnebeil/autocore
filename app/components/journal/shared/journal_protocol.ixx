@@ -14,8 +14,6 @@ import std;
 export namespace ac::protocol::journal {
 
 inline constexpr std::wstring_view pipe_name = L"ac_journal_pipe";
-inline constexpr std::string_view manifest_filename =
-    "journal.keymap_commands.txt";
 /** Sent by `journal_ac.exe` after it is ready to accept invoke requests. */
 inline constexpr std::string_view ready_message = "journal_ready";
 
@@ -38,10 +36,8 @@ struct Command {
 export inline constexpr ac::protocol::journal::Command print_extended_timestamp {"print_extended_timestamp"};
 export inline constexpr ac::protocol::journal::Command print_episode_title {"print_episode_title"};
 export inline constexpr ac::protocol::journal::Command save_file_and_create_new_file {"save_file_and_create_new_file"};
-export inline constexpr ac::protocol::journal::Command launch_journal_config {"launch_journal_config"};
 
 export inline constexpr std::array journal_commands {
     print_extended_timestamp,
     print_episode_title, save_file_and_create_new_file,
-    launch_journal_config,
 };

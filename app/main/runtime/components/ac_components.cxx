@@ -8,7 +8,7 @@ module;
 #include <Windows.h>
 #include <CommCtrl.h>
 #include "../../../core/component/components_list_detail.hpp"
-#include "../../shared/oneshot_component.hpp"
+#include "../../shared/launch_descriptor_resource.hpp"
 #include "../lifecycle/logger_shutdown_detail.hpp"
 
 #pragma comment(lib, "Comctl32.lib")
@@ -117,48 +117,48 @@ namespace {
     }
 
     [[nodiscard]]
-    std::optional<ac::main::oneshot::ParseResult> read_oneshot(
+    std::optional<ac::main::launch_descriptor::ParseResult> read_launch_descriptor(
         const std::string_view name
     ) {
-        const auto path = ac::paths::bin_directory() /
-            ac::main::oneshot::descriptor_filename(name);
+        const auto executable = ac::paths::bin_directory() /
+            (std::string {name} + "_ac.exe");
         std::error_code exists_error;
-        if (!std::filesystem::exists(path, exists_error) || exists_error) {
+        if (!std::filesystem::is_regular_file(executable, exists_error) ||
+            exists_error) {
             return std::nullopt;
         }
 
-        std::ifstream input(path, std::ios::binary);
-        if (!input) {
-            ac::main::oneshot::ParseResult failed;
-            failed.error = "Unable to read " + path.string();
-            return failed;
+        const HMODULE module = LoadLibraryExW(
+            executable.c_str(),
+            nullptr,
+            LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE
+        );
+        if (!module) {
+            return std::nullopt;
         }
 
-        const std::string text {
-            std::istreambuf_iterator<char> {input},
-            std::istreambuf_iterator<char> {}
-        };
-        auto parsed = ac::main::oneshot::parse(text);
-        if (!parsed.ok) {
-            parsed.error = path.filename().string() + ": " + parsed.error;
-        }
-        return parsed;
+        const auto descriptor = ac::main::launch_descriptor::read_embedded(
+            module,
+            executable.filename().string()
+        );
+        FreeLibrary(module);
+        return descriptor;
     }
 
-    void launch_oneshot(
+    void launch_from_descriptor(
         const std::string& component,
         const std::string& command,
-        const ac::main::oneshot::Descriptor& descriptor
+        const ac::main::launch_descriptor::Descriptor& descriptor
     ) {
         const auto executable = ac::paths::bin_directory() /
             (component + "_ac.exe");
         std::wstring arguments;
         if (descriptor.arguments ==
-            ac::main::oneshot::Descriptor::Arguments::command) {
+            ac::main::launch_descriptor::Descriptor::Arguments::command) {
             arguments = ac::encoding::to_utf16(command);
         }
         if (descriptor.context ==
-            ac::main::oneshot::Descriptor::Context::foreground) {
+            ac::main::launch_descriptor::Descriptor::Context::foreground) {
             if (!arguments.empty()) {
                 arguments += L' ';
             }
@@ -170,7 +170,8 @@ namespace {
         }
 
         const DWORD creation_flags =
-            descriptor.console == ac::main::oneshot::Descriptor::Console::fresh
+            descriptor.console ==
+                ac::main::launch_descriptor::Descriptor::Console::fresh
                 ? CREATE_NEW_CONSOLE
                 : 0;
 
@@ -180,7 +181,8 @@ namespace {
             command
         );
 
-        if (descriptor.wait == ac::main::oneshot::Descriptor::Wait::none) {
+        if (descriptor.wait ==
+            ac::main::launch_descriptor::Descriptor::Wait::none) {
             (void)ac::main::create_process(
                 executable,
                 arguments,
@@ -230,27 +232,29 @@ namespace {
         CloseHandle(process_info.hProcess);
     }
 
-    void register_oneshot_commands(command_registry::Registry& registry) {
+    void register_launch_descriptor_commands(
+        command_registry::Registry& registry
+    ) {
         const auto& parsed = loaded_catalog();
         if (!parsed.ok) {
             return;
         }
 
         for (const auto& name : parsed.enabled) {
-            const auto oneshot = read_oneshot(name);
-            if (!oneshot) {
+            const auto descriptor = read_launch_descriptor(name);
+            if (!descriptor) {
                 continue;
             }
-            if (!oneshot->ok) {
+            if (!descriptor->ok) {
                 auto_core.log_print(
-                    "Ignoring one-shot component {}: {}",
+                    "Ignoring launch descriptor for {}: {}",
                     name,
-                    oneshot->error
+                    descriptor->error
                 );
                 continue;
             }
 
-            for (const auto& command : oneshot->descriptor.commands) {
+            for (const auto& command : descriptor->descriptor.commands) {
                 if (registry.contains(command)) {
                     auto_core.log_print(
                         "Skipping {} command '{}' because that name is already "
@@ -265,9 +269,9 @@ namespace {
                     [
                         component = name,
                         command,
-                        descriptor = oneshot->descriptor
+                        launch = descriptor->descriptor
                     ] {
-                        launch_oneshot(component, command, descriptor);
+                        launch_from_descriptor(component, command, launch);
                     }
                 );
             }
@@ -1732,7 +1736,7 @@ void ac::main::components::register_with(
         }
     }
 
-    register_oneshot_commands(registry);
+    register_launch_descriptor_commands(registry);
 }
 
 ac::main::components::Session ac::main::components::initialize() {
@@ -1777,12 +1781,12 @@ ac::main::components::Session ac::main::components::initialize() {
     remaining.reserve(parsed.enabled.size());
     bool start_taskbar_first = false;
     for (const auto& name : parsed.enabled) {
-        if (const auto oneshot = read_oneshot(name)) {
-            if (!oneshot->ok) {
+        if (const auto descriptor = read_launch_descriptor(name)) {
+            if (!descriptor->ok) {
                 auto_core.log_print(
-                    "Ignoring one-shot component {}: {}",
+                    "Ignoring launch descriptor for {}: {}",
                     name,
-                    oneshot->error
+                    descriptor->error
                 );
             }
             continue;

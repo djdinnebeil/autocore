@@ -190,17 +190,6 @@
     <ClCompile Include="spotify_component.ixx" />
   </ItemGroup>
   <ItemGroup>
-    <SpotifyKeymapCommand Include="spotify_get_queue" />
-    <SpotifyKeymapCommand Include="spotify_next_song" />
-    <SpotifyKeymapCommand Include="spotify_play_pause" />
-    <SpotifyKeymapCommand Include="spotify_print_songs" />
-    <SpotifyKeymapCommand Include="spotify_switch_player" />
-  </ItemGroup>
-  <Target Name="GenerateSpotifyKeymapCommands" AfterTargets="Build" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <MakeDir Directories="$(AutoCoreDistDir)keymap\components" />
-    <WriteLinesToFile File="$(AutoCoreDistDir)keymap\components\spotify.keymap_commands.txt" Lines="@(SpotifyKeymapCommand)" Overwrite="true" Encoding="UTF-8" />
-  </Target>
-  <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">
       <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

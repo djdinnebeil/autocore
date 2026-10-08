@@ -12,48 +12,46 @@ import journal_db_client;
 import journal_remote_sync;
 import component_protocol;
 
-import <Windows.h>;
 import auto_core.core.shell;
 
 namespace {
 
-int write_manifest(
-    const command_registry::Registry& registry,
-    const std::filesystem::path& destination
-) {
-    std::filesystem::path temporary = destination;
-    temporary += ".tmp";
-    std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-    if (!output) {
+int export_keymap_commands() {
+    const auto console = std::cout.rdbuf(std::cerr.rdbuf());
+    command_registry::Registry registry;
+    try {
+        registry = create_journal_command_registry();
+    }
+    catch (const std::exception& error) {
+        std::cout.rdbuf(console);
+        std::cerr << "Journal keymap command export failed: "
+                  << error.what() << '\n';
         return 1;
     }
-
-    for (const std::string& value : registry.autocomplete_values()) {
-        output << value << '\n';
-    }
-    output.close();
-    if (!output) {
+    catch (...) {
+        std::cout.rdbuf(console);
+        std::cerr << "Journal keymap command export failed.\n";
         return 1;
     }
+    std::cout.rdbuf(console);
 
-    return MoveFileExW(
-        temporary.c_str(),
-        destination.c_str(),
-        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-    ) ? 0 : 1;
+    for (const std::string& name : registry.registered_names()) {
+        std::cout << name << '\n';
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
 }
 
 } // namespace
 
-int main(int argument_count, char* arguments[]) {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    auto registry = create_journal_command_registry();
-
-    if (argument_count == 3 &&
-        std::string_view {arguments[1]} ==
-            "--generate-keymap-command-registry") {
-        return write_manifest(registry, arguments[2]);
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
     }
+
+    auto registry = create_journal_command_registry();
 
     journal_component().log_main("journal_ac.exe started");
 

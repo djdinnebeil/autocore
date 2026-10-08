@@ -1,10 +1,14 @@
-# Build outputs (plain names also ignore machine-local directory symlinks)
+# Build outputs (plain names also ignore machine-local directory symlinks).
+# Published binaries in /bin are tracked. Other bin/ directories stay ignored.
 bin/
+!/bin/
+!/bin/**
 !third_party/
 !third_party/*/
 !third_party/*/bin/
 !third_party/*/bin/**
 obj/
+obj
 out/
 out
 Debug/
@@ -14,15 +18,18 @@ x86/
 
 # Compiled binaries and debug symbols
 *.exe
+!/bin/*.exe
 *.pdb
 *.obj
+*.ilk
 *.aps
 
 # Leftover generated core outputs if an older layout still has them
 # (vendored third-party .lib files stay under third_party/<dep>/lib).
 # Disposable intermediates are obj/. Canonical auto_core.dll and
-# auto_core.lib live in lib/. Do not ignore lib/ or *.dll — runtime
-# DLLs are covered by dist/. Developer scripts under scripts/ stay tracked.
+# auto_core.lib live in lib/. Published copies live in tracked bin/.
+# Do not ignore lib/ or *.dll. dist/ is the ignored local installation.
+# Developer scripts under scripts/ stay tracked.
 *.exp
 
 # Logs and temporary files
@@ -42,6 +49,9 @@ Desktop.ini
 .vscode/
 .idea/
 
+# Precompiled-header intermediates
+ipch/
+
 # Environment/secrets
 .env
 .env.*
@@ -51,9 +61,6 @@ Desktop.ini
 # Local overlays kept on this machine; not part of a public clone
 *.local.ixx
 *.local.ini
-
-# Leftover compiled keymap (removed from the project)
-app/main/modules/keymap_hardcoded.ixx
 
 # Runtime output (exes, DLLs, live config, local data)
 dist/

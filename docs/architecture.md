@@ -56,7 +56,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `crash_recovery_config.exe` | `app/main/config/crash_recovery` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `crash_recovery.ini`. |
 | `components_editor.exe` | `app/main/editors/components` | operational editor | one-shot | menu, `--seed`, `--component` with `--on` or `--off` | Finalized sole writer of `components.list`. |
 | `keymap_editor.exe` | `app/main/editors/keymap` | operational editor | one-shot | menu, `--seed` | Finalized sole writer of `keymap.map`. |
-| `dash_ac.exe` | `app/components/dash/runtime` | Component, one-shot | one-shot per launch | `dash_ac.oneshot.txt` | Listed in `components.list`. Not a v1 child. The sidecar supplies `launch_dash`, a new console, and foreground context. |
+| `dash_ac.exe` | `app/components/dash/runtime` | Component, on-demand | one-shot per launch | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor supplies `launch_dash`, a new console, and foreground context. |
 | `dash_config.exe` | `app/components/dash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `dash.ini`. |
 | `dash_editor.exe` | `app/components/dash/editor` | operational editor | one-shot | menu | Observed owner of the DPAPI vault. |
 | `dash_star.exe` | `app/components/dash/star` | enablement console | one-shot | shared menu | Observed. Does not write the list or the INI. |
@@ -65,7 +65,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `itunes_db.exe` | `app/components/itunes/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--owner-handle`, menu | Observed. |
 | `itunes_formatter.exe` | `app/components/itunes/formatter` | format-definition owner | one-shot | `--seed`, `--init`, menu | Observed owner of `song.format` and `library.format`. |
 | `itunes_star.exe` | `app/components/itunes/star` | enablement console | one-shot | shared menu | Observed. |
-| `journal_ac.exe` | `app/components/journal/runtime` | Component | long-running while hosted | `ac.component.v1`; `--generate-keymap-command-registry` at build | Observed hosted member. |
+| `journal_ac.exe` | `app/components/journal/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. |
 | `journal_config.exe` | `app/components/journal/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `journal.ini`. |
 | `journal_db.exe` | `app/components/journal/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--init`, `--owner-handle` | Observed. Reconnect-per-call. |
 | `journal_builder.exe` | `app/components/journal/builder` | recipe materializer | one-shot | `--seed`, `--init`, interactive edit | Observed. Interactive edit is a mode of this owner. |
@@ -81,7 +81,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `server_editor.exe` | `app/components/server/editor` | operational editor | one-shot | `--seed`, `--init`, menu | Observed owner of `port.id` and `document_root.id`. |
 | `server_builder.exe` | `app/components/server/builder` | recipe materializer | one-shot | `--seed` only | Observed. |
 | `server_star.exe` | `app/components/server/star` | enablement console | one-shot | shared menu | Observed. |
-| `slash_ac.exe` | `app/components/slash/runtime` | Component, one-shot | one-shot per command | `slash_ac.oneshot.txt` | Listed in `components.list`. Not a v1 child. The sidecar names the commands and waits until the process exits. |
+| `slash_ac.exe` | `app/components/slash/runtime` | Component, on-demand | one-shot per command | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor names the commands and waits until the process exits. |
 | `slash_config.exe` | `app/components/slash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `slash.ini`. |
 | `slash_star.exe` | `app/components/slash/star` | enablement console | one-shot | shared menu | Observed. |
 | `spotify_ac.exe` | `app/components/spotify/runtime` | Component | long-running while hosted | `ac.component.v1`; also the devices pipe host | Observed hosted member. |
@@ -93,12 +93,12 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `spotify_star.exe` | `app/components/spotify/star` | enablement console | one-shot | shared menu | Observed. |
 | `taskbar_ac.exe` | `app/components/taskbar/runtime` | Component | hosted long-running; `--refresh-cache` one-shot | `ac.component.v1`, `--refresh-cache` | **Exception** candidate: same owner, extra CLI mode. |
 | `taskbar_config.exe` | `app/components/taskbar/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `taskbar.ini`. |
-| `taskbar_builder.exe` | `app/components/taskbar/builder` | recipe materializer | one-shot | `--seed`, `--refresh-manifest`, menu | Observed. `--refresh-manifest` replaces the keymap catalog. Then launches `taskbar_ac.exe --refresh-cache`. |
+| `taskbar_builder.exe` | `app/components/taskbar/builder` | recipe materializer | one-shot | `--seed`, menu | Observed. After application maps are written, launches `taskbar_ac.exe --refresh-cache`. |
 | `taskbar_star.exe` | `app/components/taskbar/star` | enablement console | one-shot | shared menu | Observed. |
 | `wake_ac.exe` | `app/components/wake/runtime` | Component | long-running while hosted; `--snapshot` one-shot | `ac.component.v1`, `--snapshot` | Observed. `--snapshot` is an extra mode used by `wake_config.exe`. |
 | `wake_config.exe` | `app/components/wake/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `wake.ini`. |
 | `wake_star.exe` | `app/components/wake/star` | enablement console | one-shot | shared menu | Observed. |
-| `writer_ac.exe` | `app/components/writer/runtime` | Component | long-running while hosted | `ac.component.v1`; `--generate-keymap-command-registry` at build | Observed hosted member. The daily-note command launches `writer_editor.exe --daily-note`. |
+| `writer_ac.exe` | `app/components/writer/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. The daily-note command launches `writer_editor.exe --daily-note`. |
 | `writer_config.exe` | `app/components/writer/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `writer.ini`. |
 | `writer_editor.exe` | `app/components/writer/editor` | operational editor | one-shot | `--seed`, `--init`, `--daily-note`, menu | Observed owner of `task_list.txt`, `session_prompts.list`, and the daily note. |
 | `writer_star.exe` | `app/components/writer/star` | enablement console | one-shot | shared menu | Observed. |
@@ -119,14 +119,14 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 | Other long-running pipe host | `journal_cloud.exe --serve`. Spotify devices is a private pipe from `spotify_editor.exe` to `spotify_ac.exe`, not a separate process. |
 | One-shot utilities | `spotify_oauth.exe`, `itunes_formatter.exe`, `spotify_formatter.exe`, `server_builder.exe`, `taskbar_builder.exe`, `logger_ac.exe --once`, `wake_ac.exe --snapshot`, `taskbar_ac.exe --refresh-cache` |
 | Platform substrates in the DLL | taskbar snapshot authority, pipes, process, paths, logging, INI read, clipboard, keyboard, crash diagnostics |
-| Non-hosted commands | Dash and Slash, launched by Main rather than hello/invoke |
+| Non-hosted commands | Dash and Slash, launched from `AC_LAUNCH_DESCRIPTOR` rather than hello/invoke |
 | Installation trampoline | `auto_core_shell_launcher.exe` |
 
 No production executable is in the wrong family folder. The live folders are `runtime/`, `config/`, `star/`, `shared/`, plus `editor/`, `builder/`, `db/`, `formatter/`, `oauth/`, `clock/`, `cloud/`, and `series/` where that executable exists. Docs that still say component `main/` for `runtime/` are **Legacy** (C2 is Finalized).
 
 ## Internal protocols
 
-Versioning policy for every internal wire is **Finalized** as policy: the prerelease ships one version of each protocol; a version change deletes the old id in the same change. The spellings below are **Observed** except `ac.component.v1`, whose wire ids are **Finalized**. There is no second taskbar pipe and no second keymap wire. `parse_legacy_line` is an unused brace parser for `keymap.map`, not a second wire. **Legacy.**
+Versioning policy for every internal wire is **Finalized** as policy: the prerelease ships one version of each protocol; a version change deletes the old id in the same change. The spellings below are **Observed** except `ac.component.v1`, whose wire ids are **Finalized**. There is no second taskbar pipe and no second keymap wire.
 
 No protocol id parser was found that still accepts a superseded id. After hello, `ac.component.v1` does not allow unsolicited child messages. The private database and cloud pipes are request/response. The taskbar snapshot pipe is the exception: a connected client receives later generations.
 
@@ -227,9 +227,7 @@ Hosted Components: itunes, journal, logger, server, spotify, taskbar, wake, writ
 
 ## Command registration
 
-Hosted components advertise commands in the `ac.component.v1` hello catalog. One-shot components list commands in `{name}_ac.oneshot.txt` next to the executable. Main registers both without compiling the component name. Name-specific protocol modules are for the component itself. They are not a Main command table.
-
-Some builds still write `keymap/components/*.keymap_commands.txt`. Main does not read those files.
+Hosted components advertise commands in the `ac.component.v1` hello catalog. On-demand components list commands in the `AC_LAUNCH_DESCRIPTOR` resource inside the executable. Main registers both without compiling the component name. Name-specific protocol modules are for the component itself. They are not a Main command table. `auto_core.exe` rewrites `keymap/keymap_commands.txt` from that registry.
 
 ## External APIs
 

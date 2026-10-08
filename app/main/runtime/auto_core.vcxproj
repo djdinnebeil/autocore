@@ -202,7 +202,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\core\component\components_list_detail.hpp" />
-    <ClInclude Include="..\shared\oneshot_component.hpp" />
+    <ClInclude Include="..\shared\launch_descriptor.hpp" />
+    <ClInclude Include="..\shared\launch_descriptor_resource.hpp" />
     <ClInclude Include="keyboard\keymap_map_detail.hpp" />
     <ClInclude Include="lifecycle\logger_shutdown_detail.hpp" />
   </ItemGroup>

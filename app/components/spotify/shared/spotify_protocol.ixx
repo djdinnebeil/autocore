@@ -10,7 +10,6 @@ export namespace ac::protocol::spotify {
 
     /** Local pipe name without the `\\.\pipe\` prefix. */
     inline constexpr std::wstring_view pipe_name = L"ac_spotify_pipe";
-    inline constexpr std::string_view manifest_filename = "spotify.keymap_commands.txt";
 
     /**
      * Integer commands sent on the pipe. Enumerator 7 is unused.

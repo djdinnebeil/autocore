@@ -172,6 +172,7 @@ int main() {
     LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
     bool once = false;
     bool shutdown_once = false;
+    bool export_keymap_commands = false;
     if (arguments != nullptr) {
         for (int index = 1; index < argument_count; ++index) {
             if (ac::logger::detail::is_once_argument(arguments[index])) {
@@ -180,8 +181,15 @@ int main() {
             else if (ac::logger::detail::is_shutdown_argument(arguments[index])) {
                 shutdown_once = true;
             }
+            else if (std::wstring_view {arguments[index]} ==
+                     L"--export-keymap-commands") {
+                export_keymap_commands = true;
+            }
         }
         LocalFree(arguments);
+    }
+    if (export_keymap_commands) {
+        return 0;
     }
     // `--shutdown` only labels a `--once` launch. It does not imply `--once`.
     if (once) {

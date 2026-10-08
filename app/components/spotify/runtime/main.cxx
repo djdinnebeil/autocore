@@ -30,6 +30,31 @@ void end_spotify() {
     spotify_component.log_main("shutdown signal received");
     stop_spotify_monitor();
 }
+
+namespace {
+
+int export_keymap_commands() {
+    try {
+        const auto registry = create_spotify_command_registry();
+        for (const std::string& name : registry.registered_names()) {
+            std::cout << name << '\n';
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "Spotify keymap command export failed: "
+                  << error.what() << '\n';
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Spotify keymap command export failed.\n";
+        return 1;
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
+}
+
+} // namespace
+
 /**
  * \brief Main function for the Spotify process.
  * Initializes logging, sets up the command map, starts the Spotify song thread,
@@ -37,8 +62,12 @@ void end_spotify() {
  *
  * \return Exit code of the process.
  */
-int main() {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argc == 2 &&
+        std::string_view {argv[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
+    }
     const auto registry = create_spotify_command_registry();
     int exit_code = 0;
     log_init();

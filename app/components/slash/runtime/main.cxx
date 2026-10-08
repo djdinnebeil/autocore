@@ -410,8 +410,32 @@ namespace {
  * \brief Runs the slash component.
  * \return Exit code of the process.
  */
+int export_keymap_commands() {
+    try {
+        const auto registry = create_slash_command_registry();
+        for (const std::string& name : registry.registered_names()) {
+            std::cout << name << '\n';
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "Slash keymap command export failed: "
+                  << error.what() << '\n';
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Slash keymap command export failed.\n";
+        return 1;
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
+}
+
 int main(int argument_count, char* arguments[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argument_count == 2 &&
+        std::string_view {arguments[1]} == "--export-keymap-commands") {
+        return export_keymap_commands();
+    }
     const auto registry = create_slash_command_registry();
 
     const std::string_view command_name = argument_count == 2

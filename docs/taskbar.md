@@ -8,7 +8,7 @@ an optional `[fallback]` executable for a new session.
 
 `taskbar_ac.exe` is the snapshot authority. `taskbar_config.exe` writes
 only `config/taskbar.ini`. `taskbar_builder.exe` writes missing
-per-program `.map` files and `keymap/components/taskbar.keymap_commands.txt`.
+per-program `.map` files.
 Shared matching, discovery, and Win+position input live
 in the `auto_core.taskbar` DLL module. Main owns interactive cycling and
 registers `activate_*` names from the published snapshot.
@@ -252,13 +252,8 @@ sends Win+number.
 ## Runtime commands
 
 `.map` `activate_*` names are registered from the snapshot when Auto Core
-starts. `keymap/components/taskbar.keymap_commands.txt` is an editor-aid
-catalog owned by `taskbar_builder.exe`. Discovery rewrites it, and
-`taskbar_builder.exe --refresh-manifest` always rewrites it from the
-compiled Taskbar commands plus the current application files.
-`taskbar_builder.exe --seed` writes it only when it is missing.
-`taskbar_ac.exe` does not rewrite it. `keymap/keymap_commands.txt` is
-refreshed from the full runtime registry by Main.
+starts. `keymap/keymap_commands.txt` is refreshed from the full runtime
+registry by Main.
 
 Each application registers `activate_<key>`. `mappings.ini` uses those
 names for ordinary programs. `activate_auto_core` remains a reserved pipe
@@ -325,8 +320,7 @@ move or delete existing Taskbar data.
 
 ## `taskbar_builder.exe`
 
-`taskbar_builder.exe` is the only writer of `taskbar/applications/*.map` and
-`keymap/components/taskbar.keymap_commands.txt`.
+`taskbar_builder.exe` is the only writer of `taskbar/applications/*.map`.
 
 With no arguments it discovers pinned and running taskbar icons. For each
 icon without a `.map` file it derives `application.key`,
@@ -344,24 +338,20 @@ with `process_name = msedge.exe` and the default x86 Edge fallback.
 Packaged-app `[fallback]` is still `shell:AppsFolder\<AUMID>`. `Update.exe` and
 `ApplicationFrameHost.exe` are never stored as `process_name`. Existing
 `.map` files are left unchanged. Files named `*.ini` in
-`taskbar/applications/` are ignored. The command catalog is then rewritten.
+`taskbar/applications/` are ignored. After the application-map step
+succeeds, it launches `taskbar_ac.exe --refresh-cache`.
 
 `--seed` is noninteractive. It discovers the current taskbar and creates
 only missing `applications/*.map` files. An existing `.map` is not opened
 or rewritten, even when its contents differ from the current builder
-output. Fields that would require a prompt are left blank. It writes the
-command catalog only when that file is missing. After the application-map
-step succeeds, it launches `taskbar_ac.exe --refresh-cache` even if the
-catalog write fails. A catalog failure still makes the builder return
-nonzero. Map generation failure does not launch the refresh and does not
+output. Fields that would require a prompt are left blank. After the
+application-map step succeeds, it launches `taskbar_ac.exe --refresh-cache`.
+Map generation failure does not launch the refresh and does not
 delete maps already created in that run.
 
-The no-argument builder keeps the interactive prompts, rewrites the command
-catalog, and launches `taskbar_ac.exe --refresh-cache` only after
-application-map generation succeeds. `--refresh-manifest` always rewrites
-the catalog from the compiled Taskbar commands plus the current application
-files and does not refresh the cache. The builder post-build runs
-`--refresh-manifest`.
+The no-argument builder keeps the interactive prompts and launches
+`taskbar_ac.exe --refresh-cache` only after application-map generation
+succeeds.
 
 `taskbar_ac.exe --refresh-cache` resolves the Taskbar directory, loads
 `applications/*.map` from that directory, forces live discovery, matches
@@ -404,7 +394,7 @@ the app is already running.
 | --- | --- |
 | `app/components/taskbar/runtime/` | `taskbar_ac.exe` authority, control pipe, compiled commands. |
 | `app/components/taskbar/config/` | `taskbar_config.exe`, the only writer of `config/taskbar.ini`. |
-| `app/components/taskbar/builder/` | `taskbar_builder.exe` application discovery and command catalog. |
+| `app/components/taskbar/builder/` | `taskbar_builder.exe` application discovery. |
 | `app/components/taskbar/builder/enum_windows.cxx` | Window enumerator used while generating `.map` definitions. |
 | `app/components/taskbar/star/` | `taskbar_star.exe` menu. It delegates and does not write files. |
 | `app/core/taskbar/` | `auto_core.taskbar` snapshot, matching, and Win+position input. |
@@ -417,8 +407,7 @@ the app is already running.
 1. Pin or run a program that has no file in `taskbar/applications`.
 2. Run `taskbar_config.exe` and confirm it edits only `config/taskbar.ini`.
    Run Discover taskbar applications (`taskbar_builder.exe`). Confirm it
-   creates a missing `.map` definition and rewrites
-   `keymap/components/taskbar.keymap_commands.txt`. An existing `.map`
+   creates a missing `.map` definition. An existing `.map`
    file stays unchanged. A `*.ini` file in `taskbar/applications/` is ignored.
 3. Restart Auto Core. Invoke the generated `activate_<key>` command. It must
    use Win+1 through Win+10 when the icon is in those positions.

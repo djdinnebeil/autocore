@@ -22,6 +22,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_editor", "editor
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "keymap_editor", "editors\keymap\keymap_editor.vcxproj", "{B8D4F2C3-5E69-401B-AC32-7F901D3E02BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "keymap_builder", "builder\keymap\keymap_builder.vcxproj", "{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_init", "init\auto_core\auto_core_init.vcxproj", "{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_init", "init\components\components_init.vcxproj", "{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}"
@@ -74,6 +76,10 @@ Global
 		{B8D4F2C3-5E69-401B-AC32-7F901D3E02BC}.Debug|x64.Build.0 = Debug|x64
 		{B8D4F2C3-5E69-401B-AC32-7F901D3E02BC}.Release|x64.ActiveCfg = Release|x64
 		{B8D4F2C3-5E69-401B-AC32-7F901D3E02BC}.Release|x64.Build.0 = Release|x64
+		{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93}.Debug|x64.ActiveCfg = Debug|x64
+		{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93}.Debug|x64.Build.0 = Debug|x64
+		{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93}.Release|x64.ActiveCfg = Release|x64
+		{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93}.Release|x64.Build.0 = Release|x64
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Debug|x64.ActiveCfg = Debug|x64
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Debug|x64.Build.0 = Debug|x64
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Release|x64.ActiveCfg = Release|x64

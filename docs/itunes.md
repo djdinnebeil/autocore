@@ -226,8 +226,7 @@ current `components.list` state and is performed by `components_editor.exe`.
 ## Canonical runtime commands
 
 Canonical component commands are case-sensitive and use the lowercase
-`itunes_` prefix. The Release build writes them to
-`dist/keymap/components/itunes.keymap_commands.txt`.
+`itunes_` prefix.
 
 | Command | Behavior |
 | --- | --- |

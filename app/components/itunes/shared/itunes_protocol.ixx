@@ -10,7 +10,6 @@ export namespace ac::protocol::itunes {
 
     /** Local pipe name without the `\\.\pipe\` prefix. */
     inline constexpr std::wstring_view pipe_name = L"ac_itunes_pipe";
-    inline constexpr std::string_view manifest_filename = "itunes.keymap_commands.txt";
 
     /**
      * Integer commands sent on the pipe. Enumerator 8 is unused and reserved

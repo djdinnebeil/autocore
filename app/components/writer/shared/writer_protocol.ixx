@@ -8,9 +8,6 @@ import std;
 
 export namespace ac::protocol::writer {
 
-inline constexpr std::string_view manifest_filename =
-    "writer.keymap_commands.txt";
-
 /** A keymap command name forwarded as an invoke payload. */
 struct Command {
     std::string_view name;

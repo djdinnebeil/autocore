@@ -5,14 +5,18 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <limits>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
+
+#include "../../../main/shared/launch_descriptor_resource.hpp"
 
 import auto_core.core.console;
 import auto_core.core.component;
@@ -281,10 +285,39 @@ void insert_secret() {
     }
 }
 
+int export_keymap_commands() {
+    const auto loaded = ac::main::launch_descriptor::read_embedded(
+        GetModuleHandleW(nullptr),
+        "dash_ac.exe"
+    );
+    if (!loaded) {
+        std::cerr << "Dash keymap command export failed: launch descriptor is "
+                     "missing\n";
+        return 1;
+    }
+    if (!loaded->ok) {
+        std::cerr << "Dash keymap command export failed: "
+                  << loaded->error << '\n';
+        return 1;
+    }
+
+    auto commands = loaded->descriptor.commands;
+    std::ranges::sort(commands);
+    for (const std::string& name : commands) {
+        std::cout << name << '\n';
+    }
+    std::cout.flush();
+    return std::cout ? 0 : 1;
+}
+
 } // namespace
 
 int wmain(int argument_count, wchar_t* arguments[]) {
     ac::shell::set_process_app_user_model_id();
+    if (argument_count == 2 &&
+        std::wstring_view {arguments[1]} == L"--export-keymap-commands") {
+        return export_keymap_commands();
+    }
     try {
         dash::hello::initialize();
 

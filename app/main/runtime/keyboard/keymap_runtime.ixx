@@ -19,8 +19,4 @@ export {
     void initialize_keymap();
     /** Parses `keymap.map` into `active_keymap`. Failure installs the emergency map. */
     void set_keymap_from_file();
-    /** Names written to `keymap_commands.txt`. No in-repo caller. */
-    std::vector<std::string> get_runtime_command_names();
-    /** Autocomplete expressions written to `keymap_commands.txt`. No in-repo caller. */
-    std::vector<std::string> get_runtime_command_autocomplete_values();
 }

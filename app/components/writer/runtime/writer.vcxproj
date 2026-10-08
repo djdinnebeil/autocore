@@ -58,10 +58,6 @@
       <AdditionalDependencies>auto_core.lib;Shell32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
-    <PostBuildEvent>
-      <Command>if not exist "$(AutoCoreDistDir)keymap\components" mkdir "$(AutoCoreDistDir)keymap\components"
-"$(TargetPath)" --generate-keymap-command-registry "$(AutoCoreDistDir)keymap\components\writer.keymap_commands.txt"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\core\system\clipboard.ixx" />

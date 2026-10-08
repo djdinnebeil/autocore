@@ -34,8 +34,4 @@ TEST_CASE("iTunes canonical command names are unique", "[itunes][protocol][unit]
 
 TEST_CASE("iTunes protocol exposes stable resource names", "[itunes][protocol][unit]") {
     CHECK(ac::protocol::itunes::pipe_name == L"ac_itunes_pipe");
-    CHECK(
-        ac::protocol::itunes::manifest_filename ==
-        "itunes.keymap_commands.txt"
-    );
 }

@@ -5,8 +5,8 @@
 .DESCRIPTION
   Builds Core.sln, Main.sln, and each component family solution sequentially
   with devenv.com /Build "Release|x64". Core first. Test projects are members
-  of those solutions and are not built. Renames locked dist\ outputs so Link
-  can replace them.
+  of those solutions and are not built. Renames locked symbol files so Link
+  can replace them. Does not publish dist\bin.
 .EXAMPLE
   .\scripts\build-all-components.ps1
 #>
@@ -50,19 +50,8 @@ function Unlock-DistFile {
         -Force -ErrorAction SilentlyContinue
 }
 
-# close_program does not wait for children. Leftover dist processes can
-# still map auto_core.dll and *_ac.exe; rename those outputs so Link can
-# replace them.
-
-$DistDir = Join-Path $RepoRoot 'dist'
-if (Test-Path -LiteralPath $DistDir) {
-    $BinDir = Join-Path $DistDir 'bin'
-    if (Test-Path -LiteralPath $BinDir) {
-        Get-ChildItem -LiteralPath $BinDir -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -in '.exe', '.dll' } |
-            ForEach-Object { Unlock-DistFile $_.FullName }
-    }
-}
+# A debugger can keep symbols\*.pdb mapped. Rename those so Link can replace them.
+# Shipped binaries publish to bin\. This script does not update dist\bin.
 
 $SymbolsDir = Join-Path $RepoRoot 'symbols'
 if (Test-Path -LiteralPath $SymbolsDir) {
