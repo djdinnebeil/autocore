@@ -2,11 +2,11 @@
 
 This file records improvements that are intentionally deferred and do not
 block the current Main version. Product-level follow-ups are tracked in
-[docs/TODO.md](../../../docs/TODO.md). DLL-specific items stay in
-[app/core/TODO.md](../../../core/TODO.md).
+[devs/TODO.md](../../../devs/TODO.md). DLL-specific items stay in
+[app/core/TODO.md](../../core/TODO.md).
 
 Interactive taskbar cycling encapsulation (`switch_set` read by
-`keyboard_input::process_key_event`) is tracked in [docs/TODO.md](../../../docs/TODO.md). Do not
+`keyboard_input::process_key_event`) is tracked in [devs/TODO.md](../../../devs/TODO.md). Do not
 change that control flow here.
 
 ## Do not block the message loop on Slash

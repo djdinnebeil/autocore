@@ -20,7 +20,7 @@ Release binaries use the DLL CRT (`/MD`). If you run a `dist/` tree you did not 
 1. Clone or copy the project into a local development directory.
 2. Shared paths live in `msbuild/AutoCore.props` (repo-relative; do not edit after a clone).
 3. Build the core DLL, then the main executable, then any required component executables (`.\scripts\build-all.ps1` from the repo root).
-4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](configuration.md).
+4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](../docs/configuration.md).
 
 ## Shortcut identity
 

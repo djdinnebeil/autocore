@@ -23,7 +23,7 @@ export namespace keyboard_input {
 
     /**
      * Dispatches a posted key event on the main thread. Reads
-     * `taskbar.switch_set` for interactive cycling (see docs/TODO.md).
+     * `taskbar.switch_set` for interactive cycling (see devs/TODO.md).
      */
     bool process_key_event(const MSG& message);
 }

@@ -5,10 +5,10 @@ Beta testers follow the same path: build, then run `dist\bin\auto_core.exe`.
 
 ## Before you start
 
-1. Read [README.md](README.md) (using vs building vs extending).
-2. Skim [docs/development.md](docs/development.md),
-   [docs/new-component.md](docs/new-component.md), and
-   [docs/building.md](docs/building.md).
+1. Read [README.md](../readme.md) (using vs building vs extending).
+2. Skim [development.md](development.md),
+   [new-component.md](new-component.md), and
+   [building.md](building.md).
 3. Do not commit `dist/` (live config, keymap, Spotify, journal, taskbar,
    server files, logs, crash dumps, writer, notes) or `*.local.ixx` /
    `*.local.ini`. Portable defaults are compiled in each child's
@@ -23,12 +23,12 @@ C++ workload is required. From the repository root:
 .\scripts\build-all.ps1
 ```
 
-Or follow the MSBuild order in [docs/building.md](docs/building.md). The
+Or follow the MSBuild order in [building.md](building.md). The
 linker searches `lib/auto_core.lib`. The repository workspace is
 `app/AutoCore.sln`. `auto_core_dll` publishes `lib/auto_core.dll` to
 `bin/auto_core.dll`. Application executables publish to tracked `bin/`.
-[`scripts/publish-dist.ps1`](scripts/publish-dist.ps1) is the only normal
-publisher of `dist/bin/`. [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1)
+[`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal
+publisher of `dist/bin/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
 copies vendor runtime DLLs from `third_party/*/bin/` into `bin/` when
 those DLLs are added or updated, then runs `publish-dist.ps1`. Builds do
 not run that script (`dist/` stays gitignored; `bin/` is tracked). The build does not plant the Server
@@ -38,7 +38,7 @@ under a relative document root (default `dist/components/server/site`).
 
 ## Adding a component
 
-Follow [docs/new-component.md](docs/new-component.md): new project under
+Follow [new-component.md](new-component.md): new project under
 `app/components/<name>/runtime/` (and `config/`, `shared/`), import
 `msbuild/AutoCore.props` as `..\..\..\..\msbuild\AutoCore.props`, advertise keymap names in the child's
 hello catalog, and bind them in live `dist/keymap.map`. A generic
@@ -61,10 +61,10 @@ msbuild app\components\spotify\tests\spotify_tests.vcxproj /m /p:Configuration=R
 .\obj\spotify_tests\spotify_tests.exe "~[live]"
 ```
 
-iTunes and Spotify notes: [app/components/itunes/tests/TESTING.md](app/components/itunes/tests/TESTING.md),
-[app/components/spotify/tests/TESTING.md](app/components/spotify/tests/TESTING.md).
+iTunes and Spotify notes: [app/components/itunes/tests/TESTING.md](../app/components/itunes/tests/TESTING.md),
+[app/components/spotify/tests/TESTING.md](../app/components/spotify/tests/TESTING.md).
 
 ## Security reports
 
-See [SECURITY.md](SECURITY.md). Do not file public issues that include
+See [security.md](../docs/security.md). Do not file public issues that include
 secrets or exploit steps.

@@ -4,7 +4,7 @@
 
 If you find a vulnerability in Auto Core, please do **not** open a public
 issue that includes exploit details. Email the copyright holders listed in
-[LICENSE](LICENSE), or open a private GitHub security advisory on the
+[LICENSE](../license), or open a private GitHub security advisory on the
 repository.
 
 Include what you observed, the Auto Core version or commit, and Windows
@@ -20,7 +20,7 @@ before you run a binary you did not build.
 
 The process may run elevated so some components (notably iTunes COM
 automation) can attach. Elevation mismatches are documented in
-[README.md](README.md) and [docs/itunes.md](docs/itunes.md).
+[README.md](../readme.md) and [itunes.md](itunes.md).
 
 ## Secrets and local data
 
@@ -32,8 +32,8 @@ automation) can attach. Elevation mismatches are documented in
 - `.env` files, logs, crash dumps, writer notes, or a private
   `bindings.local.ini`
 
-Dash is **not** a password manager. See [docs/dash.md](docs/dash.md).
-Spotify tokens are machine-local; see [docs/spotify.md](docs/spotify.md).
+Dash is **not** a password manager. See [dash.md](dash.md).
+Spotify tokens are machine-local; see [spotify.md](spotify.md).
 
 ## Local file server
 
@@ -42,7 +42,7 @@ Spotify tokens are machine-local; see [docs/spotify.md](docs/spotify.md).
 port. There is no authentication. Files reached through a symbolic link
 or junction inside that root are still served. Do not point the document
 root at secrets. Do not change the bind to a LAN address. See
-[docs/server.md](docs/server.md).
+[server.md](server.md).
 
 ## Privilege and IPC
 

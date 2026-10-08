@@ -7,7 +7,7 @@ Auto Core also includes component-based automation outside the keyboard layer, i
 This repository is for people who want to **build or extend** the source and **run** the `dist/` tree they built. Beta testers are developers: clone or copy the tree, build Release x64, then start `dist\bin\auto_core.exe` (or the root `Auto Core.lnk`). There is no installer.
 
 > [!WARNING]
-> Auto Core installs a low-level keyboard hook. Antivirus may flag it. Review [SECURITY.md](SECURITY.md) before you run it. Dash is not a password manager.
+> Auto Core installs a low-level keyboard hook. Antivirus may flag it. Review [security.md](docs/security.md) before you run it. Dash is not a password manager.
 
 ## Contents
 
@@ -41,14 +41,14 @@ To run the same build on another Windows 11 PC, copy the `dist/` folder, then re
 
 1. Clone or copy the repository onto Windows 11.
 2. Install Visual Studio **2026** (version **18+**) with the Desktop development with C++ workload (MSVC **v145**, C++23).
-3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](docs/building.md). `auto_core_dll` publishes `lib/auto_core.dll` to `bin/auto_core.dll`. Application executables publish to `bin/`. `build-all.ps1` then runs [`scripts/publish-dist.ps1`](scripts/publish-dist.ps1), which is the only normal publisher of `dist/bin/`. When third-party runtime DLLs change, run [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy `third_party/*/bin/*.dll` into `bin/`; that script then runs `publish-dist.ps1`. Builds do not run the vendor script.
+3. From the repository root, run [`scripts/build-all.ps1`](scripts/build-all.ps1), or follow the MSBuild order in [Building](devs/building.md). `auto_core_dll` publishes `lib/auto_core.dll` to `bin/auto_core.dll`. Application executables publish to `bin/`. `build-all.ps1` then runs [`scripts/publish-dist.ps1`](scripts/publish-dist.ps1), which is the only normal publisher of `dist/bin/`. When third-party runtime DLLs change, run [`scripts/copy-vendor-dlls.ps1`](scripts/copy-vendor-dlls.ps1) to copy `third_party/*/bin/*.dll` into `bin/`; that script then runs `publish-dist.ps1`. Builds do not run the vendor script.
 4. Shared paths live in [`msbuild/AutoCore.props`](msbuild/AutoCore.props) (repo-relative; a clone does not edit that file).
 
 The linker searches `lib/auto_core.lib`. `dist/` is gitignored.
 
 ## Extending
 
-New components, shared protocols, and keymap registration are documented in [Development](docs/development.md). Creating a child from File → New → Project is [Adding a new component](docs/new-component.md). The module catalog is [Modules](docs/modules.md). Contribution mechanics (tests, what not to commit) are in [CONTRIBUTING.md](CONTRIBUTING.md).
+New components, shared protocols, and keymap registration are documented in [Development](devs/development.md). Creating a child from File → New → Project is [Adding a new component](devs/new-component.md). The module catalog is [Modules](devs/modules.md). Contribution mechanics (tests, what not to commit) are in [contributing.md](devs/contributing.md).
 
 Journal aliases live in per-factory `.list` files under the configured journal data directory (default `dist/components/journal/`). `journal_builder.exe` owns those files. `journal_builder.exe --seed` creates a missing starter file and leaves an existing file unchanged. `journal_config.exe --init` and `--seed` walk the Journal stores by launching each owner. `journal_ac.exe` reads the files at startup and advertises the alias names. Restart Journal after a change. Unused aliases are not bound; `keymap.map` is the filter.
 
@@ -104,12 +104,10 @@ Auto Core/
 ├─ .editorconfig        Encoding, newlines, indent
 ├─ .gitattributes       Line endings and binary types
 ├─ .gitignore           Outputs stay out of source
-├─ AGENTS.md            Agent map
+├─ AGENTS.md            Project map
 ├─ README.md            Project overview
 ├─ LICENSE              License terms
 ├─ NOTICE.md            Third-party library attribution
-├─ CONTRIBUTING.md      How to build and extend
-├─ SECURITY.md          Hook, secrets, how to report issues
 ├─ scripts/             Repo build scripts and the manual vendor DLL refresh
 ├─ msbuild/             AutoCore.props (one level below repo root; not obj/)
 ├─ app/                 Build input (source, projects, resources). Not source-only
@@ -131,7 +129,8 @@ Auto Core/
 │  ├─ components/       Optional component data (journal, spotify, server)
 │  ├─ taskbar/          applications/*.map; winkey_map.cache
 │  └─ writer/           session_prompts.list, task_list.txt, and notes/ (local)
-├─ docs/                Developer documentation
+├─ devs/                Developing Auto Core
+├─ docs/                Using and configuring Auto Core
 ├─ lib/                 Canonical auto_core.dll and auto_core.lib
 ├─ obj/                 Gitignored IntDir, including test binaries
 ├─ symbols/             Gitignored linker program databases (`.pdb`)
@@ -160,7 +159,7 @@ The iTunes component controls playback through the iTunes COM automation interfa
 > [!IMPORTANT]
 > An elevated Auto Core process cannot connect to an iTunes instance that is already running without Administrator privileges. Either start Auto Core before iTunes, or close iTunes and restart it with Administrator privileges before starting Auto Core.
 
-See [iTunes component](docs/itunes.md). Follow-up work is in [docs/TODO.md](docs/TODO.md).
+See [iTunes component](docs/itunes.md). Follow-up work is in [devs/TODO.md](devs/TODO.md).
 
 ## Spotify
 
@@ -183,20 +182,20 @@ See [Taskbar component](docs/taskbar.md).
 
 ## Documentation
 
-The documentation index is [docs/README.md](docs/README.md).
+Using and configuring Auto Core is indexed in [docs/README.md](docs/README.md). Developing Auto Core is indexed in [devs/README.md](devs/README.md).
 
 | Document | Topic |
 | --- | --- |
-| [Building](docs/building.md) | Solutions, MSBuild order, output directories |
 | [Configuration](docs/configuration.md) | INI files, keymap, logging, copying `dist/` |
-| [Development](docs/development.md) | Protocols, runtime commands, new components |
-| [Adding a new component](docs/new-component.md) | File → New → Project, `AutoCore.props`, live list and keymap |
 | [Main](docs/main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
-| [Modules](docs/modules.md) | C++23 module catalog |
-| [Contributing](CONTRIBUTING.md) | Clone, build, what not to commit |
-| [Security](SECURITY.md) | Keyboard hook, secrets, reporting |
+| [Security](docs/security.md) | Keyboard hook, secrets, reporting |
+| [Building](devs/building.md) | Solutions, MSBuild order, output directories |
+| [Development](devs/development.md) | Protocols, runtime commands, new components |
+| [Adding a new component](devs/new-component.md) | File → New → Project, `AutoCore.props`, live list and keymap |
+| [Modules](devs/modules.md) | C++23 module catalog |
+| [Contributing](devs/contributing.md) | Clone, build, what not to commit |
 
-Product follow-ups are in [docs/TODO.md](docs/TODO.md). DLL-specific deferred work is in [app/core/TODO.md](app/core/TODO.md). Main-specific deferred work is in [app/main/TODO.md](app/main/TODO.md).
+Product follow-ups are in [devs/TODO.md](devs/TODO.md). DLL-specific deferred work is in [app/core/TODO.md](app/core/TODO.md). Main-specific deferred work is in [app/main/runtime/TODO.md](app/main/runtime/TODO.md).
 
 ## History
 

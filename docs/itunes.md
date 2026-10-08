@@ -395,7 +395,7 @@ Support for attaching safely to an existing non-administrator iTunes process
 is deferred. The investigation must favor least privilege and account for COM,
 IPC, process-integrity, file-access, and spoofing risks; it must not weaken a
 Windows security boundary merely to make attachment succeed. The acceptance
-criteria are tracked in the project [`TODO.md`](TODO.md).
+criteria are tracked in the project [`TODO.md`](../devs/TODO.md).
 
 ## Failure behavior and logging
 

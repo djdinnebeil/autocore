@@ -90,7 +90,7 @@ except when the key is numpad 0.
 While an interactive taskbar cycle is active (`taskbar.switch_set`), posted
 keys go to `MainTaskbarState::switch_windows` instead of the keymap. That
 field is public because the hook reads it; encapsulation is tracked in
-[TODO.md](TODO.md).
+[TODO.md](../devs/TODO.md).
 
 Numpad Enter is normalized to `key_codes::numpad_enter` (`0x100`) using
 `LLKHF_EXTENDED`. `keymap.map` names are resolved by `key_codes::resolve`;
@@ -266,7 +266,7 @@ component does not require a Main
 source edit.
 
 Registering runtime commands and adding a new child project are in
-[development.md](development.md). Per-component product docs:
+[development.md](../devs/development.md). Per-component product docs:
 
 - [Dash](dash.md)
 - [iTunes](itunes.md)

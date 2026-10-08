@@ -15,9 +15,12 @@ section below already decides it, do not re-explore.
 
 ## Agent work
 
-- **Tokens.** Always-on map is `AGENTS.md` only. Thoroughness lives in
-  `docs/`. Add Cursor glob rules only after a repeated mistake is cheaper to
-  encode than to rediscover.
+- **Tokens.** Always-on map is `AGENTS.md` only: layout and where to read
+  next. Thoroughness for developing Auto Core lives in `devs/`. Thoroughness
+  for using, configuring, and installed runtime behavior lives in `docs/`.
+  Do not copy per-component executable
+  lists, module stems, or retired names into it. Add Cursor glob rules only
+  after a repeated mistake is cheaper to encode than to rediscover.
 - **Git.** Feature work on a new branch; close by merging to `main`. No
   force-push to `main`. Do not commit unless asked. A private remote is
   allowed for a personal clone after the new `git init`; public remotes
@@ -80,7 +83,7 @@ no installer yet; see [README.md](../README.md). `dist/` is gitignored.
 Portable defaults are compiled in each child's `shared/defaults.ixx` and in
 [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx) for Main
 host INIs. Do not commit personal runtime data; see
-[CONTRIBUTING.md](../CONTRIBUTING.md).
+[contributing.md](contributing.md).
 
 ## Locked: folder layout
 
@@ -121,9 +124,13 @@ Clone vs `dist/` stays in Locked: two audiences.
 - `app/shared/` — compile-time IPC protocols and `command_registry`.
   Runtime facilities stay in the core DLL.
 - `app/resources/` — shared `.ico`/`.rc`. Stays under `app/`.
+- `devs/` — developing Auto Core: contribution, building, architecture,
+  maintenance, and internal project documentation. STRATEGY is current
+  truth.
 - `dist/` — gitignored assembled runtime for end users. Nested live
   dirs are documented in README, not locked here.
-- `docs/` — developer documentation. STRATEGY is current truth.
+- `docs/` — using and configuring Auto Core, and installed runtime
+  behavior.
 - `lib/` — canonical `auto_core.dll` and `auto_core.lib`. See build
   outputs.
 - `msbuild/` — `AutoCore.props`. One level below the repo root. Not
@@ -290,34 +297,6 @@ do not connect to it to send log lines.
 
 ## Current path
 
-- Done: Phase 0; living [docs/STRATEGY.md](STRATEGY.md) plus `AGENTS.md`
-  pointer. Clone-vs-end-user `dist/` inventory is done (`dist/`
-  gitignored). Readiness docs and vendor runtime
-  DLLs under `third_party/<dependency>/bin/`. Refresh those copies in
-  `bin/` by hand with `scripts/copy-vendor-dlls.ps1`, which then publishes
-  `dist/bin/`. Folder layout is locked.
-- Done: generic component host. A normal component is an executable that
-  satisfies `ac.component.v1`; Main must not know that component at
-  compile time. `components.list` `[components]` is an open lowercase
-  catalog (`name` / `name on` / `name off`). Launch is the name only
-  (`weather` → `weather_ac.exe` in `bin/` and `ac_weather_pipe`). Discovery of
-  `*_ac.exe` is used by `components_editor.exe` to reconcile the catalog when
-  `config/<name>.ini` exists, and by runtime only when an existing
-  `components.list` is unreadable. The v1 control channel is
-  hello/catalog, then Main-to-child `invoke` and `shutdown`. Taskbar
-  snapshot/cycling/`activate_*`, dash, slash, and Main-local commands stay
-  explicit specials. `dash` and `slash` may be listed in `[components]`;
-  that section is their enable switch. Main does not start them as v1
-  children. The shared parser does not classify those names.
-- Done: per-executable logs. `{date}_{name}.log` and `{date}_{name}.main.log`
-  are local. `logger_ac.exe` merges the `.main.log` files.
-  `logging_config.exe` writes `config/logging.ini`.
-  `logger_config.exe` writes `config/logger.ini`.
-- Done: host vs component INI contract. Host files are written only by
-  Main `_config.exe` programs. Component INIs are generated only by
-  `<name>_config.exe`. Nested `main` / `config` / `shared` trees land per
-  child session. Main lives under `app/main/runtime`,
-  `app/main/editors`, `app/main/config`, and `app/main/shared`.
 - Remaining packaging: run
   [`scripts/build-all.ps1`](../scripts/build-all.ps1) on this PC. After
   it succeeds, delete `.git` and start a new project (`git init`,

@@ -3,7 +3,7 @@
  * \brief Owns Main's interactive taskbar cycling session and commands.
  *
  * Cycling fields are currently public because `process_key_event` reads
- * `switch_set`. Encapsulation is tracked in docs/TODO.md.
+ * `switch_set`. Encapsulation is tracked in devs/TODO.md.
  */
 export module auto_core.main.taskbar;
 

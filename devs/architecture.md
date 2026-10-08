@@ -4,7 +4,7 @@ Phase 1A discovery. This file records the live tree: glossary words, every produ
 
 Test executables under `obj\*_tests\` and `scripts/stamp_auto_core_shortcut` are build tools. They are outside the taxonomy. `auto_core.dll` is the shared library. It is listed with the host because the stem `auto_core` is reserved for it and for `auto_core.exe`.
 
-The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
+The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](../docs/configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
 
 ## Glossary
 

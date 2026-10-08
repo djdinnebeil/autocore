@@ -26,7 +26,7 @@ To make a function available to the keymap, advertise it from a hosted child's `
 
 The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, Taskbar commands that run in Main, hosted hello catalogs and enabled on-demand commands, then configured `activate_*` names last so a taskbar `.map` cannot override a reserved name. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches a Main-local command is skipped silently. A collision with an earlier child's catalog skips and logs.
 
-Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](configuration.md).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](../docs/configuration.md).
 
 ## Defaults vs live files
 
@@ -73,7 +73,7 @@ child. When that name is enabled, Main registers the command names in the
 resource and launches `{name}_ac.exe` on demand. Journal parameterized names
 and print-choice aliases are advertised in the same hello catalog.
 
-Process lifetime, hook, F-lock, and crash restart are in [main.md](main.md).
+Process lifetime, hook, F-lock, and crash restart are in [main.md](../docs/main.md).
 
 ## Adding a new component
 
@@ -83,7 +83,7 @@ existing child) are in [new-component.md](new-component.md).
 Put the project at `app/components/<name>/`. Import
 `..\..\..\msbuild\AutoCore.props` once (relative). Target name is
 `<name>_ac` for short children (`dash_ac`, `example_ac`, `itunes_ac`,
-`journal_ac`, `logger_ac`, `server_ac`, `simple_test_ac`, `slash_ac`,
+`journal_ac`, `logger_ac`, `server_ac`, `slash_ac`,
 `spotify_ac`, `taskbar_ac`, `wake_ac`, `writer_ac`). Leave `auto_core`,
 `spotify_oauth`, `spotify_editor`, `spotify_db`, `itunes_db`, `journal_config`, `journal_builder`, `journal_clock`, `journal_db`, `journal_series`, `journal_cloud`, `server_config`, `server_editor`, `server_builder`,
 `taskbar_config`, `taskbar_builder`, `writer_config`, and `writer_editor` unsuffixed.
@@ -100,36 +100,10 @@ component that embeds that resource.
 Run `<name>_star.exe` to enable the component, or run `components_editor.exe`
 with no arguments so a live catalog full-syncs
 discovered `<name>_ac.exe` names that already have `config/<name>.ini`. The portable
-`[components]` seed is [`defaults/components.list`](../defaults/components.list),
-owned by [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx).
+`[components]` seed is `components_list` in
+[`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx).
 Do not put ordinary component names in `auto_core.dll`.
 
 A clone does not need an `obj` junction. If you want intermediates
 elsewhere, create a directory junction to `obj` yourself and keep it out
 of git.
-
-### Generic host smoke test (`simple_test`)
-
-[`simple_test_ac.exe`](../app/components/simple_test/) verifies that Main
-discovers a completely new child from the live list without rebuilding
-`auto_core.exe`, `auto_core.dll`, or any existing component. It is
-intentionally omitted from the portable
-[`defaults/components.list`](../defaults/components.list) seed.
-
-1. Build only this child (Release x64):
-
-   ```powershell
-   msbuild "app\components\simple_test\simple_test.vcxproj" /m /t:Build /p:Configuration=Release /p:Platform=x64
-   ```
-
-2. Append `simple_test` to live `dist/components.list`,
-   or run `simple_test_config.exe` / `components_editor.exe`. Auto Core
-   does not write that file.
-3. Bind `print_simple_test` (no parentheses) in live
-   `dist/keymap/keymap.map`, for example
-   `numpad_3 = {print_simple_test, make_print_choice("42nd", true)}`.
-4. Start the already-built `dist/bin/auto_core.exe`. Confirm the child prints
-   startup lines (`component: simple_test`, `pipe: ac_simple_test_pipe`),
-   `print_simple_test` appears in regenerated
-   `dist/keymap/keymap_commands.txt`, and the bound key prints
-   `this is print_simple_test() from within simple_test_ac.exe`.

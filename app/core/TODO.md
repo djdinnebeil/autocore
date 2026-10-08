@@ -2,7 +2,7 @@
 
 This file records improvements that are intentionally deferred and do not
 block completion of the current DLL version. Product-level follow-ups are
-tracked in [docs/TODO.md](../../docs/TODO.md).
+tracked in [devs/TODO.md](../../devs/TODO.md).
 
 ## Reap completed taskbar publisher threads
 
