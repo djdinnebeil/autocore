@@ -1,4 +1,4 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -23,7 +23,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash", "components\dash\run
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_star", "components\dash\star\dash_star.vcxproj", "{214DA624-AF8A-4F13-A378-6D3876A14298}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_settings", "components\dash\settings\dash_settings.vcxproj", "{214DA624-AF8A-4F13-A378-6D3876A14298}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -48,7 +48,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes", "components\itunes
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_star", "components\itunes\star\itunes_star.vcxproj", "{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_settings", "components\itunes\settings\itunes_settings.vcxproj", "{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -93,7 +93,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "journal_series", "component
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "journal_star", "components\journal\star\journal_star.vcxproj", "{05F8703B-F867-4D01-B9E8-6F9C77C66683}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "journal_settings", "components\journal\settings\journal_settings.vcxproj", "{05F8703B-F867-4D01-B9E8-6F9C77C66683}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -115,7 +115,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger", "components\logger
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_star", "components\logger\star\logger_star.vcxproj", "{D27D2A27-BB82-4857-8C6D-989B41541590}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_settings", "components\logger\settings\logger_settings.vcxproj", "{D27D2A27-BB82-4857-8C6D-989B41541590}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -170,6 +170,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_init", "main\init
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_settings", "main\settings\auto_core_settings.vcxproj", "{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88}"
+	ProjectSection(ProjectDependencies) = postProject
+		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_init", "main\init\components\components_init.vcxproj", "{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
@@ -209,7 +214,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "components\server
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server_star", "components\server\star\server_star.vcxproj", "{ECC3048B-7A6D-4C52-A8AA-7D97F3977858}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server_settings", "components\server\settings\server_settings.vcxproj", "{ECC3048B-7A6D-4C52-A8AA-7D97F3977858}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -226,7 +231,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "slash", "components\slash\r
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "slash_star", "components\slash\star\slash_star.vcxproj", "{11E7101B-FFC3-4800-9E37-A93085565B1F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "slash_settings", "components\slash\settings\slash_settings.vcxproj", "{11E7101B-FFC3-4800-9E37-A93085565B1F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -263,7 +268,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify", "components\spoti
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_star", "components\spotify\star\spotify_star.vcxproj", "{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_settings", "components\spotify\settings\spotify_settings.vcxproj", "{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -288,7 +293,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "taskbar", "components\taskb
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "taskbar_star", "components\taskbar\star\taskbar_star.vcxproj", "{2C2EE6E4-F8C9-4C33-A547-A0EA940A5F28}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "taskbar_settings", "components\taskbar\settings\taskbar_settings.vcxproj", "{2C2EE6E4-F8C9-4C33-A547-A0EA940A5F28}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -303,7 +308,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake", "components\wake\run
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake_star", "components\wake\star\wake_star.vcxproj", "{3ECF9626-D769-488C-9249-CDCBA87AC964}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake_settings", "components\wake\settings\wake_settings.vcxproj", "{3ECF9626-D769-488C-9249-CDCBA87AC964}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -325,7 +330,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer", "components\writer
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_star", "components\writer\star\writer_star.vcxproj", "{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_settings", "components\writer\settings\writer_settings.vcxproj", "{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
@@ -499,6 +504,10 @@ Global
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Debug|x64.Build.0 = Debug|x64
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Release|x64.ActiveCfg = Release|x64
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27}.Release|x64.Build.0 = Release|x64
+		{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88}.Debug|x64.ActiveCfg = Debug|x64
+		{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88}.Debug|x64.Build.0 = Debug|x64
+		{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88}.Release|x64.ActiveCfg = Release|x64
+		{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88}.Release|x64.Build.0 = Release|x64
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Debug|x64.ActiveCfg = Debug|x64
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Debug|x64.Build.0 = Debug|x64
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Release|x64.ActiveCfg = Release|x64
@@ -667,6 +676,7 @@ Global
 		{B8D4F2C3-5E69-401B-AC32-7F901D3E02BC} = {F0010001-0000-4000-8000-000000000002}
 		{4E8B7C21-9A36-4D15-B7F0-2C6E1A8D5F93} = {F0010001-0000-4000-8000-000000000002}
 		{7E4C1A90-2B6D-4F18-9C35-8A1D0E6F4B27} = {F0010001-0000-4000-8000-000000000002}
+		{E3B7C4A1-8D25-4F60-9A12-7C5E1B0D4A88} = {F0010001-0000-4000-8000-000000000002}
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56} = {F0010001-0000-4000-8000-000000000002}
 		{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58} = {F0010001-0000-4000-8000-000000000002}
 		{B34038F4-60EB-49D6-B502-9FE13BB1D102} = {F0010001-0000-4000-8000-000000000002}

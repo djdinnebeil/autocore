@@ -177,9 +177,9 @@ Hello is sent after those checks. A leftover process still holding the
 configured port is logged after hello; it does not stall Main's hello
 wait.
 
-## `server_star.exe`
+## `server_settings.exe`
 
-Source: `app/components/server/star`. The menu delegates and does not write
+Source: `app/components/server/settings`. The menu delegates and does not write
 persistent files.
 
 1. **Initialize** when `config/server.ini` is missing

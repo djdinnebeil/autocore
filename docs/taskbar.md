@@ -364,7 +364,7 @@ that refresh fails, `taskbar_builder.exe` reports
 `Unable to refresh winkey_map.cache.` and returns nonzero. Maps already
 created stay in place.
 
-`taskbar_star.exe` lists **Discover taskbar applications**, which launches
+`taskbar_settings.exe` lists **Discover taskbar applications**, which launches
 `taskbar_builder.exe` with no arguments. Initialize or Configure comes
 first, then that action, then Enable or Disable.
 
@@ -396,7 +396,7 @@ the app is already running.
 | `app/components/taskbar/config/` | `taskbar_config.exe`, the only writer of `config/taskbar.ini`. |
 | `app/components/taskbar/builder/` | `taskbar_builder.exe` application discovery. |
 | `app/components/taskbar/builder/enum_windows.cxx` | Window enumerator used while generating `.map` definitions. |
-| `app/components/taskbar/star/` | `taskbar_star.exe` menu. It delegates and does not write files. |
+| `app/components/taskbar/settings/` | `taskbar_settings.exe` menu. It delegates and does not write files. |
 | `app/core/taskbar/` | `auto_core.taskbar` snapshot, matching, and Win+position input. |
 | `app/main/runtime/taskbar/main_taskbar.ixx` | Main cycling session, `.map` commands, and the Main-owned launches. |
 | `app/main/runtime/taskbar/main_taskbar.cxx` | Native vs emulated `activate_*`, cycling, and foreground launches. |

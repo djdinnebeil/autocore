@@ -13,7 +13,7 @@ Logs and crash reports are written by whichever process produced them. That is m
 | Path | Purpose | Sole writer | Readers | Created | Missing | Portable | Secrets | First-run | Legacy | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `config/*.ini` | settings | the matching `_config.exe` | the family that names the file | `--seed` or `--init` when missing | compiled defaults, no create | yes, if paths stay relative | no | yes, through the orchestrators | unknown keys drop out on rewrite. No `true`/`false` spellings in production parsers | keep. See the INI ledger. |
-| `components.list` | enablement | `components_editor.exe` | Main, every `<name>_star.exe` | `--seed`, no-arg rebuild, or `--component` | runtime enables every valid `*_ac.exe` and does not create the file | yes | no | `components_editor.exe --seed` | none. Lines are `name`, `name on`, or `name off` | keep. Finalized. |
+| `components.list` | enablement | `components_editor.exe` | Main, every `<name>_settings.exe` | `--seed`, no-arg rebuild, or `--component` | runtime enables every valid `*_ac.exe` and does not create the file | yes | no | `components_editor.exe --seed` | none. Lines are `name`, `name on`, or `name off` | keep. Finalized. |
 | `keymap.map` | key bindings | `keymap_editor.exe` | `auto_core.exe` | `--seed` when missing | in-memory emergency map, no create | yes | no | `keymap_editor.exe` during first-run | none. Lines are `key = primary \| secondary` | keep. |
 | `keymap/keymap_commands.txt` | autocomplete catalog | `auto_core.exe` during keymap initialization | keymap editor consumers | rewritten when bytes differ | editor autocomplete lacks the generated list | yes | no | written on the next keymap init | none | keep. |
 
@@ -119,7 +119,7 @@ Data directory default `writer`. Notes subdirectory default `notes`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `session_prompts.list` | prompt lines | `writer_editor.exe` | `writer_ac.exe` opens the file | editor `--seed` / `--init` creates it. `writer_ac.exe` does not | yes | no | |
 | `task_list.txt` | task lines | `writer_editor.exe` | `writer_ac.exe` opens the file | same | yes | no | |
-| `notes/YYYY-MM-DD.txt` | daily note | `writer_editor.exe` (`--daily-note` and the editor menu) | the user, in Notepad | that command creates the day's file by appending | yes | notes may be private | `writer_ac.exe` and `writer_star.exe` launch `writer_editor.exe --daily-note`. They do not write the file. |
+| `notes/YYYY-MM-DD.txt` | daily note | `writer_editor.exe` (`--daily-note` and the editor menu) | the user, in Notepad | that command creates the day's file by appending | yes | notes may be private | `writer_ac.exe` and `writer_settings.exe` launch `writer_editor.exe --daily-note`. They do not write the file. |
 
 The notes directory is created by `writer_editor.exe` when it resolves today's note.
 

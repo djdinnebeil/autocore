@@ -1,4 +1,4 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -14,7 +14,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_formatter", "format
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_oauth", "oauth\spotify_oauth.vcxproj", "{DBA6707F-9E2A-4467-B876-391782B522E7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_star", "star\spotify_star.vcxproj", "{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_settings", "settings\spotify_settings.vcxproj", "{E6A41C27-9B53-4D18-A7F0-5C2D8E1B4A90}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spotify_tests", "tests\spotify_tests.vcxproj", "{FD98214C-B9AC-4C1C-9E7A-356607D3CD31}"
 EndProject

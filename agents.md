@@ -14,7 +14,7 @@ Auto Core is a C++23 Windows automation system. Production builds are **Release 
 - `dist/` — installation layout
 
 Within Main and components, directories follow executable responsibility:
-`runtime/`, `config/`, `builder/`, `star/`, and `shared/`. Main uses
+`runtime/`, `config/`, `builder/`, `settings/`, and `shared/`. Main uses
 `editors/` and `init/`. A component editor directory is `editor/`.
 
 A `.vcxproj` represents one executable or library. `app/AutoCore.sln` is the repository workspace; subsystem and component directories may also provide focused `.sln` files.
@@ -28,7 +28,7 @@ Component-specific protocols belong in that component's `shared/` directory.
 
 Configuration executables own configuration files. Editors own persistent operational data. Init executables orchestrate first-run setup rather than owning configuration.
 
-Runtime component executables use `<name>_ac.exe`. User-facing component management executables use `<name>_star.exe`.
+Runtime component executables use `<name>_ac.exe`. User-facing settings applications use `<name>_settings.exe` and `auto_core_settings.exe`. A `<name>_config.exe` remains the sole owner of one INI. Settings applications delegate to those owners and do not gain INI ownership.
 
 ## Documentation
 

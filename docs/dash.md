@@ -24,7 +24,7 @@ while the user selects one, verifies with Windows Hello, decrypts that value,
 and inserts it. It does not add, remove, rename, or otherwise rewrite the
 vault.
 
-`dash_star.exe` writes nothing. It delegates configuration to
+`dash_settings.exe` writes nothing. It delegates configuration to
 `dash_config.exe`, vault management to `dash_editor.exe` (Manage secrets),
 and enablement to `components_editor.exe`.
 
@@ -54,7 +54,7 @@ List shows names only and does not decrypt or display secret values. Add does
 not require Windows Hello. Remove requires Windows Hello and the existing
 explicit `yes` confirmation.
 
-`dash_star.exe` offers Initialize when `config/dash.ini` is missing, and
+`dash_settings.exe` offers Initialize when `config/dash.ini` is missing, and
 Configure when that file exists. Manage secrets is next, then Enable or
 Disable, then Exit. Star does not read or modify the vault.
 

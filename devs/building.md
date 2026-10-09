@@ -60,7 +60,7 @@ The twelve family workspaces are:
 | Wake | [`app/components/wake/Wake.sln`](../app/components/wake/Wake.sln) |
 | Writer | [`app/components/writer/Writer.sln`](../app/components/writer/Writer.sln) |
 
-Component hosted executables live in `runtime/`. Other responsibility directories (`config`, `star`, `db`, `editor`, `builder`, `formatter`, `oauth`, `clock`, `cloud`, `series`, `shared`, `tests`) stay beside it. To work on `itunes_db`, open `iTunes.sln` and build that project, or run MSBuild on `app\components\itunes\db\itunes_db.vcxproj`.
+Component hosted executables live in `runtime/`. Other responsibility directories (`config`, `settings`, `db`, `editor`, `builder`, `formatter`, `oauth`, `clock`, `cloud`, `series`, `shared`, `tests`) stay beside it. To work on `itunes_db`, open `iTunes.sln` and build that project, or run MSBuild on `app\components\itunes\db\itunes_db.vcxproj`.
 
 Production tests:
 

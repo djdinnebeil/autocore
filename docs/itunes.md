@@ -207,7 +207,7 @@ invalid `format` or `column_count` is logged and falls back only that field.
 
 ## Star
 
-`itunes_star.exe` delegates and writes neither store. With `itunes.ini`
+`itunes_settings.exe` delegates and writes neither store. With `itunes.ini`
 present and the component enabled, the shared menu is:
 
 ```text

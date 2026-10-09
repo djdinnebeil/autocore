@@ -175,7 +175,15 @@ Main must not know that component at compile time.
   writer of `components.list`.   Child `_config.exe` programs write
   `config/<name>.ini` and do not launch `components_editor.exe`.
   They never write `components.ini` or `components.list`.
-  `<name>_star.exe` is the user-facing enablement console. A missing
+  `<name>_settings.exe` is the user-facing settings application. It may
+  delegate to config, editors, builders, formatters, OAuth, and domain
+  tools, and it may enable or disable the component. It does not own
+  the INI. `auto_core_settings.exe` is the installation settings
+  application. It delegates a missing `auto_core.ini` to
+  `auto_core_init.exe`, then offers `auto_core_config.exe` and every
+  installed `<name>_settings.exe` except itself. Discovery is the
+  `*_settings.exe` filename, not `components.list` and not `*_ac.exe`.
+  A missing
   `components.list` is reconstructible: Main launches no-arg
   `components_editor.exe` and fails startup if the list is still absent.
   Runtime scans `*_ac.exe` only when an existing `components.list` is
@@ -235,7 +243,7 @@ Name-specific protocols live under that child's `shared/`.
   settings or compiled defaults. Targeted `--component <name>` requires
   that INI to exist and does not prune missing names.
   `--component <name> --on` or `--off` rewrites that one entry to
-  explicit `on` or `off` and does not rebuild the list. `<name>_star.exe`
+  explicit `on` or `off` and does not rebuild the list. `<name>_settings.exe`
   reads the list and launches that command; it does not write
   `components.list`. There is no
   legacy `[components]` / `[list]` migration. Sync does not overwrite

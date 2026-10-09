@@ -56,6 +56,7 @@
   <ItemGroup>
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="components_list_tests.cxx" />
+    <ClCompile Include="settings_catalog_tests.cxx" />
     <ClCompile Include="logger_shutdown_tests.cxx" />
     <ClCompile Include="keymap_map_tests.cxx" />
     <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />

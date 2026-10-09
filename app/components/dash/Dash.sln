@@ -1,4 +1,4 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -8,7 +8,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_config", "config\dash_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_editor", "editor\dash_editor.vcxproj", "{7C3E9A21-5B84-4D6F-A193-2E8F6C0B4D57}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_star", "star\dash_star.vcxproj", "{214DA624-AF8A-4F13-A378-6D3876A14298}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dash_settings", "settings\dash_settings.vcxproj", "{214DA624-AF8A-4F13-A378-6D3876A14298}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

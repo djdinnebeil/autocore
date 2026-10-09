@@ -76,7 +76,7 @@ TEST_CASE("First merge uses the parent directory and appends once", "[logging][m
 
 TEST_CASE("Component identity comes from the parent directory", "[logging][merge]") {
     const auto root = test_root();
-    const auto directory = root / "components" / "alpha_star";
+    const auto directory = root / "components" / "alpha_sample";
     std::filesystem::create_directories(directory);
     std::ofstream output(
         directory / "2026-09-25_not_the_component.main.log",
@@ -87,7 +87,7 @@ TEST_CASE("Component identity comes from the parent directory", "[logging][merge
 
     REQUIRE(ac::logger::detail::merge_once(root).ok);
     CHECK(read_text(root / "2026-09-25_main.log") ==
-        "[2026-09-25 11:42:10.123] [alpha_star] started\n");
+        "[2026-09-25 11:42:10.123] [alpha_sample] started\n");
 }
 
 TEST_CASE("Timestamp collisions keep both records in path order", "[logging][merge]") {

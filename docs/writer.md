@@ -98,7 +98,7 @@ writer_editor
 
 ## Star
 
-`writer_star.exe` does not open that menu. It delegates:
+`writer_settings.exe` does not open that menu. It delegates:
 
 ```text
 writer

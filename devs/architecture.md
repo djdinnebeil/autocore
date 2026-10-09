@@ -38,7 +38,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 
 ## Executable taxonomy
 
-**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 59 production executables plus `auto_core.dll`. Each name appears once.
+**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 60 production executables plus `auto_core.dll`. Each name appears once.
 
 | Executable | Project | Class | Lifetime | CLI | State |
 | --- | --- | --- | --- | --- | --- |
@@ -49,6 +49,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `logger_init.exe` | `app/main/init/logger` | first-run orchestrator | one-shot | menu; `--seed`, `--init`, or `--disable` on `logging_config.exe`, and `--seed` or `--init` on `logger_config.exe` | Finalized: does not write files. |
 | `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | menu; `--init --seed` or `--init` on each `<name>_config.exe` | Finalized: does not write files. Combined flags are Observed under C8. |
 | `auto_core_config.exe` | `app/main/config/auto_core` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `auto_core.ini`. |
+| `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Delegates first-run to `auto_core_init.exe` and launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
 | `components_config.exe` | `app/main/config/components` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components.ini`. |
 | `keymap_config.exe` | `app/main/config/keymap` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `keymap.ini`. |
 | `logging_config.exe` | `app/main/config/logging` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging.ini`. `--disable` is an extra mode. Observed. |
@@ -59,12 +60,12 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `dash_ac.exe` | `app/components/dash/runtime` | Component, on-demand | one-shot per launch | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor supplies `launch_dash`, a new console, and foreground context. |
 | `dash_config.exe` | `app/components/dash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `dash.ini`. |
 | `dash_editor.exe` | `app/components/dash/editor` | operational editor | one-shot | menu | Observed owner of the DPAPI vault. |
-| `dash_star.exe` | `app/components/dash/star` | enablement console | one-shot | shared menu | Observed. Does not write the list or the INI. |
+| `dash_settings.exe` | `app/components/dash/settings` | settings application | one-shot | shared menu | Observed. Does not write the list or the INI. |
 | `itunes_ac.exe` | `app/components/itunes/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. |
 | `itunes_config.exe` | `app/components/itunes/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `itunes.ini`. |
 | `itunes_db.exe` | `app/components/itunes/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--owner-handle`, menu | Observed. |
 | `itunes_formatter.exe` | `app/components/itunes/formatter` | format-definition owner | one-shot | `--seed`, `--init`, menu | Observed owner of `song.format` and `library.format`. |
-| `itunes_star.exe` | `app/components/itunes/star` | enablement console | one-shot | shared menu | Observed. |
+| `itunes_settings.exe` | `app/components/itunes/settings` | settings application | one-shot | shared menu | Observed. |
 | `journal_ac.exe` | `app/components/journal/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. |
 | `journal_config.exe` | `app/components/journal/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `journal.ini`. |
 | `journal_db.exe` | `app/components/journal/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--init`, `--owner-handle` | Observed. Reconnect-per-call. |
@@ -72,36 +73,36 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `journal_series.exe` | `app/components/journal/series` | domain-named store owner | one-shot | `--seed`, `--init`, menu; may launch `journal_db.exe --serve` | Observed. Not renamed to `_editor`. |
 | `journal_clock.exe` | `app/components/journal/clock` | domain-named store owner | one-shot | `--seed`, `--init` | Observed owner of `extended_hour.clock`. |
 | `journal_cloud.exe` | `app/components/journal/cloud` | domain-named service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--init`, `--owner-handle` | Observed. |
-| `journal_star.exe` | `app/components/journal/star` | enablement console | one-shot | shared menu | Observed. |
+| `journal_settings.exe` | `app/components/journal/settings` | settings application | one-shot | shared menu | Observed. |
 | `logger_ac.exe` | `app/components/logger/runtime` | Component | hosted long-running; `--once` one-shot | `--once`, `--shutdown` as a label on `--once` | **Exception** candidate: same owner, extra CLI mode. Proposed until the taxonomy decision. |
 | `logger_config.exe` | `app/components/logger/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `logger.ini` only. |
-| `logger_star.exe` | `app/components/logger/star` | enablement console | one-shot | shared menu | Observed. |
+| `logger_settings.exe` | `app/components/logger/settings` | settings application | one-shot | shared menu | Observed. |
 | `server_ac.exe` | `app/components/server/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed. HTTP server. Not a service in the glossary sense. |
 | `server_config.exe` | `app/components/server/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `server.ini`. |
 | `server_editor.exe` | `app/components/server/editor` | operational editor | one-shot | `--seed`, `--init`, menu | Observed owner of `port.id` and `document_root.id`. |
 | `server_builder.exe` | `app/components/server/builder` | recipe materializer | one-shot | `--seed` only | Observed. |
-| `server_star.exe` | `app/components/server/star` | enablement console | one-shot | shared menu | Observed. |
+| `server_settings.exe` | `app/components/server/settings` | settings application | one-shot | shared menu | Observed. |
 | `slash_ac.exe` | `app/components/slash/runtime` | Component, on-demand | one-shot per command | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor names the commands and waits until the process exits. |
 | `slash_config.exe` | `app/components/slash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `slash.ini`. |
-| `slash_star.exe` | `app/components/slash/star` | enablement console | one-shot | shared menu | Observed. |
+| `slash_settings.exe` | `app/components/slash/settings` | settings application | one-shot | shared menu | Observed. |
 | `spotify_ac.exe` | `app/components/spotify/runtime` | Component | long-running while hosted | `ac.component.v1`; also the devices pipe host | Observed hosted member. |
 | `spotify_config.exe` | `app/components/spotify/config` | INI writer | one-shot | `--seed`, `--init`, both, menu | Finalized owner of `spotify.ini`. Combined flags continue into authorization. See C8. |
 | `spotify_db.exe` | `app/components/spotify/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--owner-handle`, menu | Observed. |
 | `spotify_editor.exe` | `app/components/spotify/editor` | operational editor | one-shot | `--seed`, `--client-id`, menu | Observed. Pipe client of `ac.spotify.devices.v1`. Not a service. |
 | `spotify_formatter.exe` | `app/components/spotify/formatter` | format-definition owner | one-shot | `--seed`, `--init`, menu | Observed owner of `song.format`. |
 | `spotify_oauth.exe` | `app/components/spotify/oauth` | authorization helper | one-shot | OAuth flow | Observed. Initial `tokens.map` write. `spotify_ac.exe` also writes that file on refresh. |
-| `spotify_star.exe` | `app/components/spotify/star` | enablement console | one-shot | shared menu | Observed. |
+| `spotify_settings.exe` | `app/components/spotify/settings` | settings application | one-shot | shared menu | Observed. |
 | `taskbar_ac.exe` | `app/components/taskbar/runtime` | Component | hosted long-running; `--refresh-cache` one-shot | `ac.component.v1`, `--refresh-cache` | **Exception** candidate: same owner, extra CLI mode. |
 | `taskbar_config.exe` | `app/components/taskbar/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `taskbar.ini`. |
 | `taskbar_builder.exe` | `app/components/taskbar/builder` | recipe materializer | one-shot | `--seed`, menu | Observed. After application maps are written, launches `taskbar_ac.exe --refresh-cache`. |
-| `taskbar_star.exe` | `app/components/taskbar/star` | enablement console | one-shot | shared menu | Observed. |
+| `taskbar_settings.exe` | `app/components/taskbar/settings` | settings application | one-shot | shared menu | Observed. |
 | `wake_ac.exe` | `app/components/wake/runtime` | Component | long-running while hosted; `--snapshot` one-shot | `ac.component.v1`, `--snapshot` | Observed. `--snapshot` is an extra mode used by `wake_config.exe`. |
 | `wake_config.exe` | `app/components/wake/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `wake.ini`. |
-| `wake_star.exe` | `app/components/wake/star` | enablement console | one-shot | shared menu | Observed. |
+| `wake_settings.exe` | `app/components/wake/settings` | settings application | one-shot | shared menu | Observed. |
 | `writer_ac.exe` | `app/components/writer/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. The daily-note command launches `writer_editor.exe --daily-note`. |
 | `writer_config.exe` | `app/components/writer/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `writer.ini`. |
 | `writer_editor.exe` | `app/components/writer/editor` | operational editor | one-shot | `--seed`, `--init`, `--daily-note`, menu | Observed owner of `task_list.txt`, `session_prompts.list`, and the daily note. |
-| `writer_star.exe` | `app/components/writer/star` | enablement console | one-shot | shared menu | Observed. |
+| `writer_settings.exe` | `app/components/writer/settings` | settings application | one-shot | shared menu | Observed. |
 
 `--initialize` is a compatibility alias of `--init` in `parse_config_launch`. **Legacy** alias. It is not a second mode. Production INI parsers that use that function accept it.
 
@@ -111,8 +112,8 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 
 | Group | Members |
 | --- | --- |
-| Host session | `auto_core.exe`, `auto_core_init.exe`, `logger_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
-| Enablement console | every `<name>_star.exe` on `component_star` |
+| Host session | `auto_core.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `logger_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
+| Component Settings | every `<name>_settings.exe` on `component_settings` |
 | Configuration owners | every `<name>_config.exe`, including Main |
 | Operational editors | `components_editor`, `keymap_editor`, `writer_editor`, `server_editor`, `dash_editor`, `spotify_editor`, `journal_series`, `journal_builder` (also a builder), `journal_clock` |
 | Database services | `itunes_db.exe`, `spotify_db.exe`, `journal_db.exe` |
@@ -122,7 +123,7 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 | Non-hosted commands | Dash and Slash, launched from `AC_LAUNCH_DESCRIPTOR` rather than hello/invoke |
 | Installation trampoline | `auto_core_shell_launcher.exe` |
 
-No production executable is in the wrong family folder. The live folders are `runtime/`, `config/`, `star/`, `shared/`, plus `editor/`, `builder/`, `db/`, `formatter/`, `oauth/`, `clock/`, `cloud/`, and `series/` where that executable exists. Docs that still say component `main/` for `runtime/` are **Legacy** (C2 is Finalized).
+No production executable is in the wrong family folder. The live folders are `runtime/`, `config/`, `settings/`, `shared/`, plus `editor/`, `builder/`, `db/`, `formatter/`, `oauth/`, `clock/`, `cloud/`, and `series/` where that executable exists. Docs that still say component `main/` for `runtime/` are **Legacy** (C2 is Finalized).
 
 ## Internal protocols
 

@@ -127,7 +127,7 @@ Spotify data directory (default `components/spotify`, which is
 callback, and token failures exit 1. There is no device mode and no
 runtime-refresh mode.
 
-`spotify_config.exe`, `spotify_star.exe`, and `spotify_ac.exe` (only when
+`spotify_config.exe`, `spotify_settings.exe`, and `spotify_ac.exe` (only when
 `auto_launch_oauth` is `on`) each start `spotify_oauth.exe` with
 `CREATE_NEW_CONSOLE` and wait until that process ends. Other Star actions
 stay on the Star console.
@@ -330,9 +330,9 @@ launch `spotify_config.exe`. `--seed` writes the compiled template only when
 `song.format` is missing. `--init` runs the format prompt only when the file
 is missing. `cancel` writes nothing.
 
-`spotify_star.exe` lists Manage client and devices, Authorize Spotify, then
+`spotify_settings.exe` lists Manage client and devices, Authorize Spotify, then
 Format song. Authorize Spotify starts `spotify_oauth.exe` in a new console
-and waits. The star menu does not write `song.format`, `client.id`,
+and waits. The settings menu does not write `song.format`, `client.id`,
 `devices.list`, or `tokens.map`. `spotify_db.exe` is not a Star action.
 
 The formatted string is the in-memory current-track and queue-title identity.

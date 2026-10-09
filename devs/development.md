@@ -11,7 +11,7 @@ The C++23 module catalog is [modules.md](modules.md).
 | Folder or Module | Purpose |
 | --- | --- |
 | `app/shared/command_registry.ixx` | Stores and resolves runtime keymap command names. |
-| `app/shared/components_editor_request.ixx` | Shared `--init` / `--seed` parsing. `<name>_star.exe` launches `components_editor.exe --component <name> --on` or `--off`. |
+| `app/shared/components_editor_request.ixx` | Shared `--init` / `--seed` parsing. `<name>_settings.exe` launches `components_editor.exe --component <name> --on` or `--off`. |
 | `app/shared/protocols/component_protocol.ixx` | Generic `ac.component.v1` hello, invoke, and shutdown. |
 | `itunes/shared/itunes_protocol.ixx` | iTunes command names used by `itunes_ac.exe`. |
 | `journal/shared/journal_protocol.ixx` | Journal command tokens used by `journal_ac.exe`. |
@@ -97,7 +97,7 @@ whose executable embeds `AC_LAUNCH_DESCRIPTOR`. Dash and Slash
 are the current on-demand components. Do not start a v1 session for a
 component that embeds that resource.
 
-Run `<name>_star.exe` to enable the component, or run `components_editor.exe`
+Run `<name>_settings.exe` to enable the component, or run `components_editor.exe`
 with no arguments so a live catalog full-syncs
 discovered `<name>_ac.exe` names that already have `config/<name>.ini`. The portable
 `[components]` seed is `components_list` in

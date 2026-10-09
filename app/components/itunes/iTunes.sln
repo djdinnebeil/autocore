@@ -1,4 +1,4 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -10,7 +10,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_db", "db\itunes_db.v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_formatter", "formatter\itunes_formatter.vcxproj", "{4F8A1C2E-6B37-4D91-A5E0-9C12D7B4E831}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_star", "star\itunes_star.vcxproj", "{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_settings", "settings\itunes_settings.vcxproj", "{F7B52D38-0C64-4E29-B801-6D3E9F2C5BA1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "itunes_tests", "tests\itunes_tests.vcxproj", "{8A93D97D-8E16-4A5F-92E1-6559F3D50796}"
 EndProject

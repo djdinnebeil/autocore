@@ -71,9 +71,9 @@
     <ClCompile Include="..\config\configured_directory.cxx" />
     <ClCompile Include="..\config\logging_config_detail.cxx" />
     <ClCompile Include="..\..\shared\components_editor_request.ixx" />
-    <ClCompile Include="..\..\shared\component_star.ixx" />
+    <ClCompile Include="..\..\shared\component_settings.ixx" />
     <ClCompile Include="clock_tests.cxx" />
-    <ClCompile Include="component_star_tests.cxx" />
+    <ClCompile Include="component_settings_tests.cxx" />
     <ClCompile Include="component_log_tests.cxx" />
     <ClCompile Include="core_config_tests.cxx" />
     <ClCompile Include="crash_diagnostics_tests.cxx" />

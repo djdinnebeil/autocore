@@ -68,13 +68,13 @@
     <ClCompile Include="..\..\shared\components_editor_request.ixx">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\shared\component_star.ixx">
+    <ClCompile Include="..\..\shared\component_settings.ixx">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="clock_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="component_star_tests.cxx">
+    <ClCompile Include="component_settings_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="core_config_tests.cxx">

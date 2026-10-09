@@ -167,7 +167,7 @@ is a new entry in `journal_factories` plus a rebuild of `journal_ac.exe` and
 `journal_builder.exe`. Direct factory keymap expressions such as
 `make_print_choice("Tabby", 0)` stay in the catalog.
 
-`journal_star.exe` launches the builder as **Manager journal builder**,
+`journal_settings.exe` launches the builder as **Manager journal builder**,
 `journal_series.exe` as **Manage series**, `journal_cloud.exe` as
 **Configure Firebase**, and `journal_clock.exe` as **Configure extended
 hours**. Star does not write `series.map`, `firebase.id`, or `series.db`.
