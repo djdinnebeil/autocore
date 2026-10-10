@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\..\main\shared\defaults.ixx" />
     <ClCompile Include="..\..\..\main\shared\config_support.ixx" />
     <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>

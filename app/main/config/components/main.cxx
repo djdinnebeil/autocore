@@ -6,6 +6,7 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
@@ -13,10 +14,38 @@ import auto_core.core.shell;
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
 namespace catalog = ac::config::components_catalog;
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component components_config {"components_config"};
+
+constexpr std::string_view new_component_values[] {"prompt", "on", "off"};
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "new_components",
+        .display_name = "New components",
+        .summary = "How a newly discovered component is added to the list.",
+        .default_value = defaults::components_new_components,
+        .choices = new_component_values,
+    },
+    {
+        .key = "sort_components",
+        .display_name = "Sort components",
+        .summary = "Sort the component list when it is rebuilt.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+    {
+        .key = "remove_missing_components",
+        .display_name = "Remove missing components",
+        .summary = "Drop list entries whose component is no longer installed.",
+        .default_value = "off",
+        .choices = on_off,
+    },
+};
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
@@ -38,7 +67,10 @@ bool write_settings(const catalog::Settings& settings) {
     if (!cfg::ensure_directory(ac::paths::config_directory())) {
         return false;
     }
-    if (!cfg::write_bytes(ini_path(), catalog::format_settings(settings))) {
+    if (!cfg::write_bytes(
+            ini_path(),
+            menu::with_header(menu_settings, catalog::format_settings(settings))
+        )) {
         return false;
     }
     components_config.log_print("Wrote {}", ini_path().string());
@@ -85,48 +117,52 @@ std::optional<catalog::Settings> load_settings() {
 }
 
 [[nodiscard]]
-std::optional<catalog::Settings> prompt_settings(
-    const catalog::Settings& suggestion
-) {
-    const auto new_components = cfg::prompt_choice(
-        "new_components",
-        catalog::to_string(suggestion.new_components),
-        {"prompt", "on", "off"}
-    );
-    if (!new_components) {
-        return std::nullopt;
+std::string current_text(const menu::Setting& setting) {
+    const auto loaded = load_settings();
+    const auto values = loaded ? *loaded : default_settings();
+    if (setting.key == "new_components") {
+        return std::string {catalog::to_string(values.new_components)};
     }
-    const auto sort_components = cfg::prompt_on_off(
-        "sort_components",
-        suggestion.sort_components
-    );
-    if (!sort_components) {
-        return std::nullopt;
+    if (setting.key == "sort_components") {
+        return values.sort_components ? "on" : "off";
     }
-    const auto remove_missing = cfg::prompt_on_off(
-        "remove_missing_components",
-        suggestion.remove_missing_components
-    );
-    if (!remove_missing) {
-        return std::nullopt;
-    }
-    catalog::Settings settings;
-    settings.new_components = catalog::parse_new_components(*new_components);
-    settings.sort_components = *sort_components;
-    settings.remove_missing_components = *remove_missing;
-    return settings;
+    return values.remove_missing_components ? "on" : "off";
 }
 
-void show_settings(const catalog::Settings& settings) {
-    std::cout
-        << "Current config/components.ini\n"
-        << "  new_components = "
-        << catalog::to_string(settings.new_components)
-        << "\n  sort_components = "
-        << (settings.sort_components ? "on" : "off")
-        << "\n  remove_missing_components = "
-        << (settings.remove_missing_components ? "on" : "off")
-        << '\n';
+[[nodiscard]]
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto loaded = load_settings();
+    if (!loaded) {
+        return menu::ApplyResult::failed;
+    }
+    if (setting.key == "new_components") {
+        loaded->new_components = catalog::parse_new_components(value);
+    }
+    else if (setting.key == "sort_components") {
+        loaded->sort_components = value == "on";
+    }
+    else {
+        loaded->remove_missing_components = value == "on";
+    }
+    if (!write_settings(*loaded)) {
+        return menu::ApplyResult::failed;
+    }
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+menu::MenuResult run_configuration_menu() {
+    return menu::run_menu(
+        "Components Configuration",
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
 }
 
 [[nodiscard]]
@@ -149,81 +185,25 @@ int offer_sync() {
 }
 
 [[nodiscard]]
-int initialize_files(const bool offer_editor) {
-    std::cout
-        << "Component configuration is missing. Create it using the defaults.\n";
-    const auto settings = prompt_settings(default_settings());
-    if (!settings) {
+int initialize_missing() {
+    if (!write_settings(default_settings())) {
         return 1;
     }
-    if (!write_settings(*settings)) {
-        return 1;
-    }
-    if (!offer_editor) {
-        return 0;
-    }
-    return offer_sync();
-}
-
-[[nodiscard]]
-int configuration_mode() {
-    auto settings = load_settings();
-    if (!settings) {
-        return 1;
-    }
-    show_settings(*settings);
-    while (true) {
+    const auto offer = menu::offer_configuration(
+        "Components Configuration",
+        menu_settings,
+        current_text,
+        std::cin,
         std::cout
-            << "\ncomponents_config\n"
-            << "  1. Modify settings\n"
-            << "  2. Restore defaults\n"
-            << "  3. Exit\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            const auto updated = prompt_settings(*settings);
-            if (!updated) {
-                return 1;
-            }
-            if (!write_settings(*updated)) {
-                return 1;
-            }
-            if (offer_sync() != 0) {
-                return 1;
-            }
-            settings = load_settings();
-            if (!settings) {
-                return 1;
-            }
-            show_settings(*settings);
-        }
-        else if (*line == "2") {
-            if (!write_settings(default_settings())) {
-                return 1;
-            }
-            if (offer_sync() != 0) {
-                return 1;
-            }
-            settings = load_settings();
-            if (!settings) {
-                return 1;
-            }
-            components_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings(*settings);
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
     }
+    if (offer == menu::OfferResult::configure) {
+        const auto result = run_configuration_menu();
+        return result.ok ? 0 : 1;
+    }
+    return 0;
 }
 
 } // namespace
@@ -272,11 +252,27 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_configuration_missing(components_config);
-        return initialize_files(false);
+        req::log_writing_defaults(components_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(components_config);
+        return 0;
     }
 
-    if (ini_present) {
-        return configuration_mode();
+    if (!ini_present) {
+        req::log_configuration_missing(components_config);
+        req::log_writing_defaults(components_config);
+        if (!write_settings(default_settings())) {
+            return 1;
+        }
     }
-    return initialize_files(true);
+    const auto result = run_configuration_menu();
+    if (!result.ok) {
+        return 1;
+    }
+    if (!ini_present || result.changed) {
+        return offer_sync();
+    }
+    return 0;
 }

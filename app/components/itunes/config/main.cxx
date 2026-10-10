@@ -3,14 +3,45 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
-import itunes_defaults;
 import components_editor_request;
+import config_menu;
+import itunes_defaults;
 
 import <iostream>;
 import <Windows.h>;
 import auto_core.core.shell;
 
+namespace menu = ac::config_menu;
+
 namespace {
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "directory",
+        .display_name = "Directory",
+        .summary =
+            "iTunes data directory. A relative path resolves against the "
+            "installation root.",
+        .default_value = itunes::defaults::directory,
+        .constraint = "Enter a relative or absolute directory.",
+    },
+    {
+        .key = "auto_start",
+        .display_name = "Auto-start",
+        .summary = "Start iTunes when the iTunes component starts.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the iTunes component.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
 
 std::string_view trim(std::string_view value) {
     const auto first = value.find_first_not_of(" \t");
@@ -102,113 +133,18 @@ PromptValues values_in_file(
     return values;
 }
 
-bool cancelled(ac::Component& log, std::string_view value) {
-    if (value != "cancel") {
-        return false;
-    }
-    log.log_print("Cancelled.");
-    return true;
-}
-
-std::string lower_token(std::string_view value) {
-    std::string token {value};
-    for (char& character : token) {
-        if (character >= 'A' && character <= 'Z') {
-            character = static_cast<char>(character - 'A' + 'a');
-        }
-    }
-    return token;
-}
-
-std::optional<PromptValues> prompt_values(
-    ac::Component& log,
-    const PromptValues& current
-) {
-    std::cout << "iTunes directory [" << current.directory << "]: ";
-    std::string directory_input;
-    if (!std::getline(std::cin, directory_input)) {
-        log.log_print("Failed to read directory.");
-        return std::nullopt;
-    }
-    const auto directory = trim(directory_input);
-    if (cancelled(log, directory)) {
-        return std::nullopt;
-    }
-    PromptValues values = current;
-    if (!directory.empty()) {
-        values.directory = std::string {directory};
-    }
-
-    while (true) {
-        std::cout
-            << "Auto-start iTunes ["
-            << (current.auto_start ? "on" : "off")
-            << "]: ";
-        std::string auto_start_input;
-        if (!std::getline(std::cin, auto_start_input)) {
-            log.log_print("Failed to read auto_start.");
-            return std::nullopt;
-        }
-        const auto auto_start_value = trim(auto_start_input);
-        if (cancelled(log, auto_start_value)) {
-            return std::nullopt;
-        }
-        if (auto_start_value.empty()) {
-            values.auto_start = current.auto_start;
-            break;
-        }
-        const auto auto_start_token = lower_token(auto_start_value);
-        if (auto_start_token == "on") {
-            values.auto_start = true;
-            break;
-        }
-        if (auto_start_token == "off") {
-            values.auto_start = false;
-            break;
-        }
-        std::cout << "Enter on or off.\n";
-    }
-
-    while (true) {
-        std::cout << "Enable logging ["
-                  << (current.logging ? "on" : "off")
-                  << "]: ";
-        std::string logging_input;
-        if (!std::getline(std::cin, logging_input)) {
-            log.log_print("Failed to read logging.");
-            return std::nullopt;
-        }
-        const auto logging_value = trim(logging_input);
-        if (cancelled(log, logging_value)) {
-            return std::nullopt;
-        }
-        if (logging_value.empty()) {
-            values.logging = current.logging;
-            break;
-        }
-        const auto logging_token = lower_token(logging_value);
-        if (logging_token == "on") {
-            values.logging = true;
-            break;
-        }
-        if (logging_token == "off") {
-            values.logging = false;
-            break;
-        }
-        std::cout << "Enter on or off.\n";
-    }
-    return values;
-}
-
 bool write_prompted(
     ac::Component& log,
     const std::filesystem::path& path,
     const PromptValues& values
 ) {
-    const auto contents = itunes::defaults::ini_for(
-        values.directory,
-        values.auto_start,
-        values.logging
+    const auto contents = menu::with_header(
+        menu_settings,
+        itunes::defaults::ini_for(
+            values.directory,
+            values.auto_start,
+            values.logging
+        )
     );
     if (!write_bytes(log, path, contents)) {
         return false;
@@ -280,6 +216,67 @@ int launch_owner(
     return code;
 }
 
+std::string current_text(
+    ac::Component& log,
+    const std::filesystem::path& path,
+    const menu::Setting& setting
+) {
+    bool readable = false;
+    const auto values = values_in_file(log, path, readable);
+    if (setting.key == "directory") {
+        return values.directory;
+    }
+    if (setting.key == "auto_start") {
+        return values.auto_start ? "on" : "off";
+    }
+    return values.logging ? "on" : "off";
+}
+
+menu::ApplyResult apply_setting(
+    ac::Component& log,
+    const std::filesystem::path& path,
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    bool readable = false;
+    auto values = values_in_file(log, path, readable);
+    if (!readable && std::filesystem::exists(path)) {
+        return menu::ApplyResult::failed;
+    }
+    if (setting.key == "directory") {
+        values.directory = std::string {value};
+    }
+    else if (setting.key == "auto_start") {
+        values.auto_start = value == "on";
+    }
+    else {
+        values.logging = value == "on";
+    }
+    if (!write_prompted(log, path, values)) {
+        return menu::ApplyResult::failed;
+    }
+    return menu::ApplyResult::stored;
+}
+
+int run_configuration_menu(
+    ac::Component& log,
+    const std::filesystem::path& path
+) {
+    const auto result = menu::run_menu(
+        "iTunes Configuration",
+        menu_settings,
+        [&](const menu::Setting& setting) {
+            return current_text(log, path, setting);
+        },
+        [&](const menu::Setting& setting, const std::string_view value) {
+            return apply_setting(log, path, setting, value);
+        },
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
 int launch_owned_stores(ac::Component& log, std::wstring_view formatter_mode) {
     if (const int database = launch_owner(log, L"itunes_db.exe", L"--seed");
         database != 0) {
@@ -320,7 +317,11 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_writing_defaults(itunes_config);
-            if (!write_bytes(itunes_config, path, itunes::defaults::ini_text)) {
+            if (!write_bytes(
+                    itunes_config,
+                    path,
+                    menu::with_header(menu_settings, itunes::defaults::ini_text)
+                )) {
                 return 1;
             }
             req::log_configuration_initialized(itunes_config);
@@ -334,39 +335,36 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_configuration_missing(itunes_config);
-            const auto values = prompt_values(itunes_config, {});
-            if (!values) {
+            req::log_writing_defaults(itunes_config);
+            if (!write_prompted(itunes_config, path, {})) {
                 return 1;
             }
-            if (!write_prompted(itunes_config, path, *values)) {
+            const auto offer = menu::offer_configuration(
+                "iTunes Configuration",
+                menu_settings,
+                [&](const menu::Setting& setting) {
+                    return current_text(itunes_config, path, setting);
+                },
+                std::cin,
+                std::cout
+            );
+            if (offer == menu::OfferResult::failed) {
+                return 1;
+            }
+            if (offer == menu::OfferResult::configure &&
+                run_configuration_menu(itunes_config, path) != 0) {
                 return 1;
             }
         }
         return launch_owned_stores(itunes_config, L"--init");
     }
 
-    if (exists) {
-        bool readable = false;
-        const auto current = values_in_file(itunes_config, path, readable);
-        if (!readable) {
+    if (!exists) {
+        req::log_configuration_missing(itunes_config);
+        req::log_writing_defaults(itunes_config);
+        if (!write_prompted(itunes_config, path, {})) {
             return 1;
         }
-        const auto values = prompt_values(itunes_config, current);
-        if (!values) {
-            return 1;
-        }
-        if (!write_prompted(itunes_config, path, *values)) {
-            return 1;
-        }
-        return 0;
     }
-
-    const auto values = prompt_values(itunes_config, {});
-    if (!values) {
-        return 1;
-    }
-    if (!write_prompted(itunes_config, path, *values)) {
-        return 1;
-    }
-    return 0;
+    return run_configuration_menu(itunes_config, path);
 }

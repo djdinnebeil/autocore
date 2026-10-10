@@ -5,16 +5,30 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component keymap_config {"keymap_config"};
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting settings[] {
+    {
+        .key = "silence_nonset_warning",
+        .display_name = "Silence unset-key warning",
+        .summary = "Skip the load-time message for keys that have no command.",
+        .default_value = "off",
+        .choices = on_off,
+    },
+};
 
 struct KeymapFlags {
     bool silence_nonset_warning {defaults::keymap_silence_nonset_warning};
@@ -41,41 +55,46 @@ KeymapFlags current_flags() {
 bool write_flags(const KeymapFlags& flags) {
     return cfg::write_bytes(
         ini_path(),
-        defaults::ini_for_keymap(flags.silence_nonset_warning)
+        menu::with_header(
+            settings,
+            defaults::ini_for_keymap(flags.silence_nonset_warning)
+        )
     );
 }
 
-void show_settings() {
-    const auto flags = current_flags();
-    std::cout
-        << "Current config/keymap.ini\n"
-        << "  silence_nonset_warning = "
-        << (flags.silence_nonset_warning ? "on" : "off")
-        << '\n';
+[[nodiscard]]
+std::string current_text(const menu::Setting&) {
+    return current_flags().silence_nonset_warning ? "on" : "off";
 }
 
 [[nodiscard]]
-std::optional<KeymapFlags> prompt_flags(const KeymapFlags& suggestion) {
-    KeymapFlags flags = suggestion;
-    const auto silence = cfg::prompt_on_off(
-        "silence_nonset_warning",
-        suggestion.silence_nonset_warning
+menu::ApplyResult apply_setting(const menu::Setting&, const std::string_view value) {
+    KeymapFlags flags;
+    flags.silence_nonset_warning = value == "on";
+    if (!write_flags(flags)) {
+        keymap_config.log_print("Failed to write {}.", ini_path().string());
+        return menu::ApplyResult::failed;
+    }
+    keymap_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Keymap Configuration",
+        settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
     );
-    if (!silence) {
-        return std::nullopt;
-    }
-    flags.silence_nonset_warning = *silence;
-    return flags;
+    return result.ok ? 0 : 1;
 }
 
 [[nodiscard]]
-int first_time() {
-    std::cout << "config/keymap.ini is missing. Create it using the defaults.\n";
-    const auto flags = prompt_flags({});
-    if (!flags) {
-        return 1;
-    }
-    if (!write_flags(*flags)) {
+int write_missing_defaults() {
+    if (!write_flags({})) {
         keymap_config.log_print("Failed to write {}.", ini_path().string());
         return 1;
     }
@@ -83,55 +102,25 @@ int first_time() {
     return 0;
 }
 
-int configuration_mode() {
-    show_settings();
-    while (true) {
-        std::cout
-            << "\nkeymap_config\n"
-            << "  1. Modify settings\n"
-            << "  2. Restore defaults\n"
-            << "  3. Exit\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            const auto flags = prompt_flags(current_flags());
-            if (!flags) {
-                return 1;
-            }
-            if (!write_flags(*flags)) {
-                keymap_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            keymap_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_flags({})) {
-                keymap_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            keymap_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
+[[nodiscard]]
+int initialize_missing() {
+    if (write_missing_defaults() != 0) {
+        return 1;
     }
+    const auto offer = menu::offer_configuration(
+        "Keymap Configuration",
+        settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 } // namespace
@@ -161,8 +150,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_writing_defaults(keymap_config);
-        if (!write_flags({})) {
-            keymap_config.log_print("Failed to write {}.", ini_path().string());
+        if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(keymap_config);
@@ -175,11 +163,20 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_configuration_missing(keymap_config);
-        return first_time();
+        req::log_writing_defaults(keymap_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(keymap_config);
+        return 0;
     }
 
-    if (present) {
-        return configuration_mode();
+    if (!present) {
+        req::log_configuration_missing(keymap_config);
+        req::log_writing_defaults(keymap_config);
+        if (write_missing_defaults() != 0) {
+            return 1;
+        }
     }
-    return first_time();
+    return run_configuration_menu();
 }

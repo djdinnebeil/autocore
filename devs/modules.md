@@ -22,7 +22,7 @@ Layer, for every row:
 - `auto_core.taskbar` is the intentional shared substrate. Not a second DLL.
 - Parallel database modules (`itunes_db_protocol`, `spotify_db_protocol`, `journal_db_protocol`, and the matching clients and `*_sqlite` modules) are an observation. **C16 Proposed canonical** keeps them separate.
 
-Protocol, configuration, and persistent-state relationships are not copied onto every defaults row. Those ledgers are [architecture.md](architecture.md), [configuration.md](../docs/configuration.md), and [persistent-state.md](persistent-state.md). `.cxx` evidence is folded into those ledgers when it changes a contract.
+Protocol, configuration, and persistent-state relationships are not copied onto every defaults row. Those ledgers are [architecture.md](architecture.md), [configuration.md](../docs/manual/configuration.md), and [persistent-state.md](persistent-state.md). `.cxx` evidence is folded into those ledgers when it changes a contract.
 
 | Path | Module | Family | Responsibility | Role | Principal exports | Imports | Naming | State | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

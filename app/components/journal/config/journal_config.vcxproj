@@ -150,6 +150,7 @@
     <ClCompile Include="..\shared\journal_auto_select.ixx" />
     <ClCompile Include="..\shared\journal_remote_sync.ixx" />
     <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>

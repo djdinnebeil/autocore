@@ -26,7 +26,7 @@ To make a function available to the keymap, advertise it from a hosted child's `
 
 The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, Taskbar commands that run in Main, hosted hello catalogs and enabled on-demand commands, then configured `activate_*` names last so a taskbar `.map` cannot override a reserved name. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches a Main-local command is skipped silently. A collision with an earlier child's catalog skips and logs.
 
-Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](../docs/configuration.md).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](../docs/manual/configuration.md).
 
 ## Defaults vs live files
 
@@ -73,7 +73,7 @@ child. When that name is enabled, Main registers the command names in the
 resource and launches `{name}_ac.exe` on demand. Journal parameterized names
 and print-choice aliases are advertised in the same hello catalog.
 
-Process lifetime, hook, F-lock, and crash restart are in [main.md](../docs/main.md).
+Process lifetime, hook, F-lock, and crash restart are in [main.md](main.md).
 
 ## Adding a new component
 

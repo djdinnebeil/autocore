@@ -1,6 +1,6 @@
 # Persistent state
 
-Phase 1A discovery of every file that survives process exit. INI keys are in [configuration.md](../docs/configuration.md). This ledger is what the general sole-writer rule (C9, **Proposed canonical**) has to match. It is not that rule made normative.
+Phase 1A discovery of every file that survives process exit. INI keys are in [configuration.md](../docs/manual/configuration.md). This ledger is what the general sole-writer rule (C9, **Proposed canonical**) has to match. It is not that rule made normative.
 
 Paths are relative to the installation root (`dist/` after a normal build) unless the row says otherwise. A Component data directory comes from that Component's `directory` key. Compiled defaults are in the configuration ledger.
 

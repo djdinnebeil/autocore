@@ -53,9 +53,12 @@ try {
         throw "Source directory not found: $Source"
     }
 
+    $RootSetupName = 'Auto Core Setup.exe'
     $SourceFiles = @(
         Get-ChildItem -LiteralPath $Source -File |
-            Where-Object { $_.Extension -in '.exe', '.dll' }
+            Where-Object {
+                $_.Extension -in '.exe', '.dll' -and $_.Name -ne $RootSetupName
+            }
     )
     if ($SourceFiles.Count -eq 0) {
         throw "No executables or DLLs found in $Source"
@@ -96,6 +99,12 @@ try {
         ForEach-Object {
             Move-Item -LiteralPath $_.FullName -Destination (Join-Path $Destination $_.Name) -Force
         }
+
+    $RootSetupSource = Join-Path $Source $RootSetupName
+    if (Test-Path -LiteralPath $RootSetupSource -PathType Leaf) {
+        Copy-Item -LiteralPath $RootSetupSource -Destination (Join-Path $Dist $RootSetupName) -Force
+        Write-Host "Published $RootSetupName -> dist\$RootSetupName"
+    }
 
     Write-Host "Published bin -> dist\bin"
     exit 0

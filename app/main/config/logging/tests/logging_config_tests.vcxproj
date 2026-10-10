@@ -59,6 +59,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\defaults.ixx" />
+    <ClCompile Include="..\..\..\..\shared\config_menu.ixx" />
     <ClCompile Include="..\logging_config_detail.ixx" />
     <ClCompile Include="..\..\..\init\auto_core\initialization_sequence.ixx" />
     <ClCompile Include="..\..\..\init\logger\logger_init_detail.ixx" />

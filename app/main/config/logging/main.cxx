@@ -5,14 +5,15 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 import logging_config_detail;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
-namespace defaults = ac::main::defaults;
 namespace logging = ac::main::logging;
+namespace menu = ac::config_menu;
 
 namespace {
 
@@ -88,108 +89,103 @@ LoggingValues current_values() {
 
 [[nodiscard]]
 bool write_values(const LoggingValues& values) {
-    return cfg::write_bytes(
-        ini_path(),
-        defaults::ini_for_logging(
-            values.disable_all,
-            values.write_logs_to_files,
-            values.directory,
-            values.write_logs_to_console,
-            values.log_print_mode,
-            values.component_logging_default
-        )
-    );
-}
-
-void show_settings() {
-    const auto values = current_values();
-    std::cout
-        << "Current config/logging.ini\n"
-        << "disable_all = " << (values.disable_all ? "on" : "off") << '\n'
-        << "directory = " << values.directory << '\n'
-        << "write_logs_to_files = "
-        << (values.write_logs_to_files ? "on" : "off") << '\n'
-        << "write_logs_to_console = "
-        << (values.write_logs_to_console ? "on" : "off") << '\n'
-        << "log_print_mode = " << values.log_print_mode << '\n'
-        << "component_logging_default = "
-        << (values.component_logging_default ? "on" : "off") << '\n';
+    return cfg::write_bytes(ini_path(), logging::ini_text(values));
 }
 
 [[nodiscard]]
-int create_from_prompt() {
-    const auto values = logging::prompt_values(
-        std::cin,
-        std::cout,
-        logging::compiled_defaults()
-    );
-    if (!values) {
-        std::cerr << "config/logging.ini was not created.\n";
-        return 1;
+std::string on_off(const bool value) {
+    return value ? "on" : "off";
+}
+
+[[nodiscard]]
+std::string current_text(const menu::Setting& setting) {
+    const auto values = current_values();
+    if (setting.key == "disable_all") {
+        return on_off(values.disable_all);
     }
-    if (!write_values(*values)) {
+    if (setting.key == "directory") {
+        return values.directory;
+    }
+    if (setting.key == "write_logs_to_files") {
+        return on_off(values.write_logs_to_files);
+    }
+    if (setting.key == "write_logs_to_console") {
+        return on_off(values.write_logs_to_console);
+    }
+    if (setting.key == "log_print_mode") {
+        return values.log_print_mode;
+    }
+    return on_off(values.component_logging_default);
+}
+
+[[nodiscard]]
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto values = current_values();
+    if (setting.key == "disable_all") {
+        values.disable_all = value == "on";
+    }
+    else if (setting.key == "directory") {
+        values.directory = value.empty()
+            ? std::string {ac::main::defaults::logging_directory}
+            : std::string {value};
+    }
+    else if (setting.key == "write_logs_to_files") {
+        values.write_logs_to_files = value == "on";
+    }
+    else if (setting.key == "write_logs_to_console") {
+        values.write_logs_to_console = value == "on";
+    }
+    else if (setting.key == "log_print_mode") {
+        values.log_print_mode = std::string {value};
+    }
+    else {
+        values.component_logging_default = value == "on";
+    }
+    if (!write_values(values)) {
+        logging_config.log_print("Failed to write {}.", ini_path().string());
+        return menu::ApplyResult::failed;
+    }
+    logging_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Logging Configuration",
+        logging::menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
+[[nodiscard]]
+int initialize_missing() {
+    if (!write_values(logging::compiled_defaults())) {
         std::cerr << "Failed to write " << ini_path().string() << ".\n";
         return 1;
     }
-    logging_config.log_main("logging_config.exe started");
     logging_config.log_print("Wrote {}", ini_path().string());
-    return 0;
-}
-
-int configuration_mode() {
-    show_settings();
-    while (true) {
+    const auto offer = menu::offer_configuration(
+        "Logging Configuration",
+        logging::menu_settings,
+        current_text,
+        std::cin,
         std::cout
-            << "\nlogging_config\n"
-            << "1. Modify settings\n"
-            << "2. Restore defaults\n"
-            << "3. Exit\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        logging_config.log("Choice: {}", *line);
-        if (*line == "1") {
-            const auto values = logging::prompt_values(
-                std::cin,
-                std::cout,
-                current_values()
-            );
-            if (!values) {
-                return 1;
-            }
-            if (!write_values(*values)) {
-                logging_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            logging_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_values({})) {
-                logging_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            logging_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
     }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 } // namespace
@@ -250,11 +246,25 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (action == logging::Action::initialize) {
+        logging_config.log_main("logging_config.exe started");
         req::log_configuration_missing(logging_config);
-        return create_from_prompt();
+        req::log_writing_defaults(logging_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(logging_config);
+        return 0;
     }
     if (action == logging::Action::create_missing) {
-        return create_from_prompt();
+        logging_config.log_main("logging_config.exe started");
+        req::log_configuration_missing(logging_config);
+        req::log_writing_defaults(logging_config);
+        if (!write_values(logging::compiled_defaults())) {
+            std::cerr << "Failed to write " << ini_path().string() << ".\n";
+            return 1;
+        }
+        logging_config.log_print("Wrote {}", ini_path().string());
+        return run_configuration_menu();
     }
 
     logging_config.log_main("logging_config.exe started");
@@ -273,5 +283,5 @@ int main(int argc, char* argv[]) {
         req::log_initialization_skipped(logging_config, "config/logging.ini");
         return 0;
     }
-    return configuration_mode();
+    return run_configuration_menu();
 }

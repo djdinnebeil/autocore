@@ -7,16 +7,51 @@ import journal_auto_select;
 import journal_defaults;
 import journal_remote_sync;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import <Windows.h>;
 import auto_core.core.shell;
+
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component journal_config {
     "journal_config",
     ac::logging::config::LoggingScope {"journal"}
+};
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "directory",
+        .display_name = "Directory",
+        .summary = "Folder that stores Journal data.",
+        .default_value = journal::defaults::directory,
+    },
+    {
+        .key = "auto_select_new_series",
+        .display_name = "Auto-select new series",
+        .summary = "On makes a newly created series the active series.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+    {
+        .key = "remote_sync",
+        .display_name = "Remote sync",
+        .summary = "On starts the Journal cloud runtime.",
+        .default_value = "off",
+        .choices = on_off,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the Journal component.",
+        .default_value = "on",
+        .choices = on_off,
+    },
 };
 
 std::wstring quote_argument(std::wstring_view value) {
@@ -117,145 +152,8 @@ int launch_owned_stores(const std::wstring_view mode) {
     return launch_owner(L"journal_series.exe", mode);
 }
 
-std::string_view trim(std::string_view value) {
-    const auto first = value.find_first_not_of(" \t");
-    if (first == std::string_view::npos) {
-        return {};
-    }
-    const auto last = value.find_last_not_of(" \t");
-    return value.substr(first, last - first + 1);
-}
-
-[[nodiscard]]
-std::optional<std::string> prompt_line(
-    const std::string_view label,
-    const std::string_view current
-) {
-    std::cout << label << " [" << current << "]: ";
-    std::string input;
-    if (!std::getline(std::cin, input)) {
-        return std::nullopt;
-    }
-    const auto value = trim(input);
-    if (value.empty()) {
-        return std::string {current};
-    }
-    return std::string {value};
-}
-
-[[nodiscard]]
-bool cancelled(const std::string_view value) {
-    if (value != "cancel") {
-        return false;
-    }
-    journal_config.log_print("Cancelled.");
-    return true;
-}
-
-[[nodiscard]]
-std::optional<std::string> prompt_on_off(
-    const std::string_view label,
-    const std::string_view current
-) {
-    while (true) {
-        std::cout << label << " [" << current << "]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return std::nullopt;
-        }
-        const auto value = trim(input);
-        if (cancelled(value)) {
-            return std::nullopt;
-        }
-        if (value.empty()) {
-            return std::string {current};
-        }
-        if (const auto token = journal::remote_sync::canonical(value)) {
-            return *token;
-        }
-        std::cout << "Enter on or off.\n";
-    }
-}
-
-[[nodiscard]]
-std::optional<std::string> prompt_remote_sync(const std::string_view current) {
-    return prompt_on_off("remote_sync", current);
-}
-
-bool ensure_journal_ini(const bool prompt) {
-    const auto path = ac::paths::config_directory() / "journal.ini";
-
-    std::error_code error;
-    if (std::filesystem::exists(path, error)) {
-        return true;
-    }
-    if (error) {
-        journal_config.log_print(
-            "Failed to inspect {}: {}",
-            path.string(),
-            error.message()
-        );
-        return false;
-    }
-
-    std::string directory;
-    bool auto_select_new_series = true;
-    std::string remote_sync {"off"};
-    bool logging = true;
-    if (prompt) {
-        std::cout
-            << "Journal directory ["
-            << journal::defaults::directory
-            << "]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return false;
-        }
-        const auto directory_value = trim(input);
-        if (cancelled(directory_value)) {
-            return false;
-        }
-        directory = std::string {directory_value};
-        const auto select = prompt_on_off("Auto-select new series", "on");
-        if (!select) {
-            return false;
-        }
-        auto_select_new_series = *select == "on";
-        const auto sync = prompt_on_off("Remote sync", remote_sync);
-        if (!sync) {
-            return false;
-        }
-        remote_sync = *sync;
-        const auto logging_value = prompt_on_off("Enable logging", "on");
-        if (!logging_value) {
-            return false;
-        }
-        logging = *logging_value == "on";
-    }
-
-    std::error_code create_error;
-    std::filesystem::create_directories(ac::paths::config_directory(), create_error);
-    if (create_error) {
-        journal_config.log_print(
-            "Failed to create config directory: {}",
-            create_error.message()
-        );
-        return false;
-    }
-    std::ofstream output(path, std::ios::binary | std::ios::trunc);
-    if (!output) {
-        journal_config.log_print("Failed to create {}", path.string());
-        return false;
-    }
-    const auto contents = journal::defaults::ini_for(
-        directory,
-        logging,
-        auto_select_new_series,
-        remote_sync
-    );
-    output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
-    output.close();
-    return static_cast<bool>(output);
+std::filesystem::path ini_path() {
+    return ac::paths::config_directory() / "journal.ini";
 }
 
 struct JournalSettings {
@@ -268,9 +166,7 @@ struct JournalSettings {
 [[nodiscard]]
 JournalSettings load_settings() {
     JournalSettings settings;
-    const auto document = ac::ini::read(
-        ac::paths::config_directory() / "journal.ini"
-    );
+    const auto document = ac::ini::read(ini_path());
     if (!document) {
         return settings;
     }
@@ -304,15 +200,26 @@ JournalSettings load_settings() {
 }
 
 [[nodiscard]]
-bool save_settings(const JournalSettings& settings) {
-    const auto path = ac::paths::config_directory() / "journal.ini";
-    const std::string contents =
-        "[journal]\n"
-        "directory = " + settings.directory + "\n"
-        "auto_select_new_series = " +
-        std::string {settings.auto_select_new_series ? "on" : "off"} + "\n"
-        "remote_sync = " + settings.remote_sync + "\n"
-        "logging = " + std::string {settings.logging ? "on" : "off"} + "\n";
+bool write_settings(const JournalSettings& settings, const bool announce) {
+    const auto path = ini_path();
+    std::error_code create_error;
+    std::filesystem::create_directories(path.parent_path(), create_error);
+    if (create_error) {
+        journal_config.log_print(
+            "Failed to create config directory: {}",
+            create_error.message()
+        );
+        return false;
+    }
+    const auto contents = menu::with_header(
+        menu_settings,
+        journal::defaults::ini_for(
+            settings.directory,
+            settings.logging,
+            settings.auto_select_new_series,
+            settings.remote_sync
+        )
+    );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
         journal_config.log_print("Failed to write {}", path.string());
@@ -327,68 +234,80 @@ bool save_settings(const JournalSettings& settings) {
         journal_config.log_print("Failed to write {}", path.string());
         return false;
     }
-    journal_config.log_print("Wrote {}", path.string());
+    if (announce) {
+        journal_config.log_print("Wrote {}", path.string());
+    }
     return true;
 }
 
 [[nodiscard]]
-bool edit_settings() {
+std::string current_text(const menu::Setting& setting) {
+    const auto settings = load_settings();
+    if (setting.key == "directory") {
+        return settings.directory;
+    }
+    if (setting.key == "auto_select_new_series") {
+        return settings.auto_select_new_series ? "on" : "off";
+    }
+    if (setting.key == "remote_sync") {
+        return settings.remote_sync;
+    }
+    return settings.logging ? "on" : "off";
+}
+
+[[nodiscard]]
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
     auto settings = load_settings();
-    const auto directory = prompt_line("directory", settings.directory);
-    if (!directory) {
-        return false;
+    if (setting.key == "directory") {
+        settings.directory = std::string {value};
     }
-    const auto remote_sync = prompt_remote_sync(settings.remote_sync);
-    if (!remote_sync) {
-        return false;
+    else if (setting.key == "auto_select_new_series") {
+        settings.auto_select_new_series = value == "on";
     }
-    settings.directory = *directory;
-    settings.remote_sync = *remote_sync;
-    while (true) {
-        std::cout << "Select a new series automatically? ["
-                  << (settings.auto_select_new_series ? "Y/n" : "y/N")
-                  << "]: ";
-        std::string answer;
-        if (!std::getline(std::cin, answer)) {
-            return false;
-        }
-        const auto value = trim(answer);
-        if (value.empty()) {
-            break;
-        }
-        if (value == "y" || value == "Y") {
-            settings.auto_select_new_series = true;
-            break;
-        }
-        if (value == "n" || value == "N") {
-            settings.auto_select_new_series = false;
-            break;
-        }
-        std::cout << "Enter Y or n.\n";
+    else if (setting.key == "remote_sync") {
+        settings.remote_sync = std::string {value};
     }
-    while (true) {
-        std::cout << "Enable logging? ["
-                  << (settings.logging ? "Y/n" : "y/N")
-                  << "]: ";
-        std::string answer;
-        if (!std::getline(std::cin, answer)) {
-            return false;
-        }
-        const auto value = trim(answer);
-        if (value.empty()) {
-            break;
-        }
-        if (value == "y" || value == "Y") {
-            settings.logging = true;
-            break;
-        }
-        if (value == "n" || value == "N") {
-            settings.logging = false;
-            break;
-        }
-        std::cout << "Enter Y or n.\n";
+    else {
+        settings.logging = value == "on";
     }
-    return save_settings(settings);
+    if (!write_settings(settings, true)) {
+        return menu::ApplyResult::failed;
+    }
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Journal Configuration",
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
+[[nodiscard]]
+int offer_configuration() {
+    const auto offer = menu::offer_configuration(
+        "Journal Configuration",
+        menu_settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 void activate_own_console() {
@@ -417,7 +336,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "journal.ini";
+    const auto path = ini_path();
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
@@ -433,7 +352,7 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_writing_defaults(journal_config);
-            if (!ensure_journal_ini(false)) {
+            if (!write_settings({}, false)) {
                 journal_config.log_print(
                     "Journal configuration was not initialized."
                 );
@@ -450,7 +369,13 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_configuration_missing(journal_config);
-            if (!ensure_journal_ini(true)) {
+            if (!write_settings({}, false)) {
+                journal_config.log_print(
+                    "Journal configuration was not initialized."
+                );
+                return 1;
+            }
+            if (offer_configuration() != 0) {
                 journal_config.log_print(
                     "Journal configuration was not initialized."
                 );
@@ -460,9 +385,13 @@ int main(int argc, char* argv[]) {
         return launch_owned_stores(L"--init");
     }
 
-    if (!ensure_journal_ini(true)) {
-        journal_config.log_print("Journal configuration was not initialized.");
-        return 1;
+    if (!present) {
+        if (!write_settings({}, false)) {
+            journal_config.log_print(
+                "Journal configuration was not initialized."
+            );
+            return 1;
+        }
     }
 
     if (launch_owner(L"journal_builder.exe", L"--seed") != 0) {
@@ -470,27 +399,5 @@ int main(int argc, char* argv[]) {
     }
 
     activate_own_console();
-
-    while (true) {
-        std::cout
-            << "\njournal_config\n"
-            << "  1. Journal settings\n"
-            << "  2. Exit\n"
-            << "> ";
-        std::string choice;
-        if (!std::getline(std::cin, choice)) {
-            return 0;
-        }
-        if (choice == "1") {
-            if (!edit_settings()) {
-                return 1;
-            }
-        }
-        else if (choice == "2" || choice == "q" || choice == "Q") {
-            return 0;
-        }
-        else {
-            std::cout << "Unknown option.\n";
-        }
-    }
+    return run_configuration_menu();
 }

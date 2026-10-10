@@ -2,7 +2,7 @@
  * \file itunes_client.ixx
  * \brief COM iTunes client. All COM create/access/release run on one owner thread.
  *
- * See docs/itunes.md for privilege limits and reconnection. `ac_itunes` is the
+ * See docs/manual/itunes.md for privilege limits and reconnection. `ac_itunes` is the
  * process-wide client; mutexes and `itunes_condition` coordinate the monitor.
  */
 module;

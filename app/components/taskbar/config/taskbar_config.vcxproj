@@ -63,6 +63,7 @@
     <ClCompile Include="..\..\..\core\config\paths.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup><ResourceCompile Include="..\..\..\resources\resource.rc">

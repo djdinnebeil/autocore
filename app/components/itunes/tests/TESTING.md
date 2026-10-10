@@ -54,7 +54,7 @@ coverage is deferred to the opt-in live harness and must use recoverable test
 media.
 
 The component architecture, command behavior, deletion caveats, and current
-Windows privilege limitation are documented in `docs/itunes.md`.
+Windows privilege limitation are documented in `docs/manual/itunes.md`.
 
 Test cases should describe observable behavior, remain independent of execution
 order, and use `REQUIRE` for prerequisites and `CHECK` for expected results.

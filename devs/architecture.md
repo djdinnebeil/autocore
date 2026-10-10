@@ -4,7 +4,7 @@ Phase 1A discovery. This file records the live tree: glossary words, every produ
 
 Test executables under `obj\*_tests\` and `scripts/stamp_auto_core_shortcut` are build tools. They are outside the taxonomy. `auto_core.dll` is the shared library. It is listed with the host because the stem `auto_core` is reserved for it and for `auto_core.exe`.
 
-The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](../docs/configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
+The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](../docs/manual/configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
 
 ## Glossary
 
@@ -38,7 +38,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 
 ## Executable taxonomy
 
-**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 60 production executables plus `auto_core.dll`. Each name appears once.
+**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 61 production executables plus `auto_core.dll`. Each name appears once.
 
 | Executable | Project | Class | Lifetime | CLI | State |
 | --- | --- | --- | --- | --- | --- |
@@ -50,6 +50,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | menu; `--init --seed` or `--init` on each `<name>_config.exe` | Finalized: does not write files. Combined flags are Observed under C8. |
 | `auto_core_config.exe` | `app/main/config/auto_core` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `auto_core.ini`. |
 | `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Delegates first-run to `auto_core_init.exe` and launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
+| `Auto Core Setup.exe` | `app/main/setup` | installation bootstrap | one-shot | none | Observed. Not a Component, config owner, editor, or init orchestrator. Does not link the DLL. Creates or refreshes the two installation-root shortcuts, then launches `auto_core_settings.exe`. |
 | `components_config.exe` | `app/main/config/components` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components.ini`. |
 | `keymap_config.exe` | `app/main/config/keymap` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `keymap.ini`. |
 | `logging_config.exe` | `app/main/config/logging` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging.ini`. `--disable` is an extra mode. Observed. |
@@ -106,13 +107,15 @@ The failure this glossary exists to stop is "the database component of the iTune
 
 `--initialize` is a compatibility alias of `--init` in `parse_config_launch`. **Legacy** alias. It is not a second mode. Production INI parsers that use that function accept it.
 
+No-argument `<name>_config.exe` uses `app/shared/config_menu.ixx` to list that owner's settings. The module is presentation only. The owner still defines each key, default, and validation rule, and it is still the only writer of `config/<name>.ini`. Closed-value settings are also written as a leading `# key = a | b` comment. `auto_core_config.exe` keeps its hub of the other Main configuration owners and leaves that hub with `0. Exit`. OAuth, editors, builders, and database initialization stay outside the setting menu. See [configuration.md](../docs/manual/configuration.md).
+
 ## Subsystems
 
 These sit under Components or under Main. Grouping is **Observed**. The word "subsystem" is **Proposed canonical**.
 
 | Group | Members |
 | --- | --- |
-| Host session | `auto_core.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `logger_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
+| Host session | `auto_core.exe`, `Auto Core Setup.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `logger_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
 | Component Settings | every `<name>_settings.exe` on `component_settings` |
 | Configuration owners | every `<name>_config.exe`, including Main |
 | Operational editors | `components_editor`, `keymap_editor`, `writer_editor`, `server_editor`, `dash_editor`, `spotify_editor`, `journal_series`, `journal_builder` (also a builder), `journal_clock` |
@@ -123,7 +126,7 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 | Non-hosted commands | Dash and Slash, launched from `AC_LAUNCH_DESCRIPTOR` rather than hello/invoke |
 | Installation trampoline | `auto_core_shell_launcher.exe` |
 
-No production executable is in the wrong family folder. The live folders are `runtime/`, `config/`, `settings/`, `shared/`, plus `editor/`, `builder/`, `db/`, `formatter/`, `oauth/`, `clock/`, `cloud/`, and `series/` where that executable exists. Docs that still say component `main/` for `runtime/` are **Legacy** (C2 is Finalized).
+No production executable is in the wrong family folder. The live folders are `runtime/`, `config/`, `settings/`, `setup/`, `shared/`, plus `editor/`, `builder/`, `db/`, `formatter/`, `oauth/`, `clock/`, `cloud/`, and `series/` where that executable exists. Docs that still say component `main/` for `runtime/` are **Legacy** (C2 is Finalized).
 
 ## Internal protocols
 

@@ -48,4 +48,4 @@ active device, downloads album art, writes credentials or tokens, inserts text,
 or modifies `history.db`.
 
 The component contract, authorization files, command behavior, persistence,
-and known limitations are documented in `docs/spotify.md`.
+and known limitations are documented in `docs/manual/spotify.md`.

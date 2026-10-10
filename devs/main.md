@@ -90,7 +90,7 @@ except when the key is numpad 0.
 While an interactive taskbar cycle is active (`taskbar.switch_set`), posted
 keys go to `MainTaskbarState::switch_windows` instead of the keymap. That
 field is public because the hook reads it; encapsulation is tracked in
-[TODO.md](../devs/TODO.md).
+[TODO.md](TODO.md).
 
 Numpad Enter is normalized to `key_codes::numpad_enter` (`0x100`) using
 `LLKHF_EXTENDED`. `keymap.map` names are resolved by `key_codes::resolve`;
@@ -145,7 +145,7 @@ emergency fallback.
 Optional `config/keymap.ini` `[keymap] silence_nonset_warning` must be
 exactly `on` to skip the load-time unset messages. A missing file keeps
 the flag off and is reported; the file is not created. Any other value
-leaves the flag off. See [configuration.md](configuration.md).
+leaves the flag off. See [configuration.md](../docs/manual/configuration.md).
 
 ### Why keymap.map is the only map
 
@@ -187,7 +187,7 @@ Main separately preserves its recovery policy: it writes
 `<installation_root>/crash/.crash`, starts the installed `auto_core.exe`, then
 runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
 written, the handler does not restart. See
-[configuration.md](configuration.md) for `crash_recovery.ini`.
+[configuration.md](../docs/manual/configuration.md) for `crash_recovery.ini`.
 
 `send_crash_command` is a diagnostic keymap name that forces this path.
 `encoding_test` round-trips UTF-16 through core encoding and prints PASS/FAIL.
@@ -251,7 +251,7 @@ On-demand components are not started here. An enabled name whose
 command runs. Dash's descriptor asks for a new console, the foreground HWND,
 and the parent PID, and does not wait. Slash's descriptor passes the command
 on the command line and waits until the process exits. See
-[dash.md](dash.md) for the `--target` / `--parent-pid` launch line.
+[dash.md](../docs/manual/dash.md) for the `--target` / `--parent-pid` launch line.
 
 Wake and server are generic v1 children. Wake has no advertised keymap
 names. Server shutdown uses the control pipe.
@@ -266,9 +266,9 @@ component does not require a Main
 source edit.
 
 Registering runtime commands and adding a new child project are in
-[development.md](../devs/development.md). Per-component product docs:
+[development.md](development.md). Per-component product docs:
 
-- [Dash](dash.md)
-- [iTunes](itunes.md)
-- [Spotify](spotify.md)
-- [Taskbar](taskbar.md)
+- [Dash](../docs/manual/dash.md)
+- [iTunes](../docs/manual/itunes.md)
+- [Spotify](../docs/manual/spotify.md)
+- [Taskbar](../docs/manual/taskbar.md)

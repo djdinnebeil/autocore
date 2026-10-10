@@ -1,7 +1,5 @@
 #include <Windows.h>
 
-#include "../shared/server_data_detail.hpp"
-
 import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
@@ -9,15 +7,36 @@ import auto_core.core.ini;
 import auto_core.core.paths;
 import server_defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
+
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component server_config {
     "server_config",
     ac::logging::config::LoggingScope {"server"}
+};
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "directory",
+        .display_name = "Directory",
+        .summary = "Folder that stores Server data.",
+        .default_value = server::defaults::directory,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the Server component.",
+        .default_value = "on",
+        .choices = on_off,
+    },
 };
 
 std::string_view trim(std::string_view value) {
@@ -34,11 +53,13 @@ struct Settings {
     bool logging = true;
 };
 
+std::filesystem::path ini_path() {
+    return ac::paths::config_directory() / "server.ini";
+}
+
 Settings load_settings() {
     Settings settings;
-    const auto document = ac::ini::read(
-        ac::paths::config_directory() / "server.ini"
-    );
+    const auto document = ac::ini::read(ini_path());
     if (!document) {
         return settings;
     }
@@ -60,13 +81,6 @@ Settings load_settings() {
     return settings;
 }
 
-std::filesystem::path resolved_directory(std::string_view stored) {
-    return server::data::resolve_directory(
-        stored,
-        ac::paths::installation_root()
-    );
-}
-
 bool write_server_ini(const Settings& settings) {
     std::error_code error;
     std::filesystem::create_directories(ac::paths::config_directory(), error);
@@ -78,15 +92,15 @@ bool write_server_ini(const Settings& settings) {
         return false;
     }
 
-    const auto path = ac::paths::config_directory() / "server.ini";
+    const auto path = ini_path();
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
         server_config.log_print("Failed to create {}", path.string());
         return false;
     }
-    const auto contents = server::defaults::ini_for(
-        settings.directory,
-        settings.logging
+    const auto contents = menu::with_header(
+        menu_settings,
+        server::defaults::ini_for(settings.directory, settings.logging)
     );
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
@@ -103,60 +117,6 @@ bool cancelled(const std::string_view value) {
     }
     server_config.log_print("Cancelled.");
     return true;
-}
-
-std::string lower_token(std::string_view value) {
-    std::string token {value};
-    for (char& character : token) {
-        if (character >= 'A' && character <= 'Z') {
-            character = static_cast<char>(character - 'A' + 'a');
-        }
-    }
-    return token;
-}
-
-std::optional<std::string> prompt_init_directory() {
-    std::cout
-        << "Server directory ["
-        << server::defaults::directory
-        << "]: ";
-    std::string input;
-    if (!std::getline(std::cin, input)) {
-        return std::nullopt;
-    }
-    const auto directory = trim(input);
-    if (cancelled(directory)) {
-        return std::nullopt;
-    }
-    if (directory.empty()) {
-        return std::string {server::defaults::directory};
-    }
-    return std::string {directory};
-}
-
-std::optional<bool> prompt_init_logging() {
-    while (true) {
-        std::cout << "Enable logging [on]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return std::nullopt;
-        }
-        const auto value = trim(input);
-        if (cancelled(value)) {
-            return std::nullopt;
-        }
-        if (value.empty()) {
-            return true;
-        }
-        const auto token = lower_token(value);
-        if (token == "on") {
-            return true;
-        }
-        if (token == "off") {
-            return false;
-        }
-        std::cout << "Enter on or off.\n";
-    }
 }
 
 enum class SiteChoice {
@@ -186,99 +146,62 @@ SiteChoice prompt_default_site() {
     }
 }
 
-std::optional<std::string> prompt_directory(std::string_view current) {
-    std::cout << "Server data directory [" << current << "]: ";
-    std::string input;
-    if (!std::getline(std::cin, input)) {
-        return std::nullopt;
-    }
-    const auto directory = trim(input);
-    if (directory.empty()) {
-        return std::string {current};
-    }
-    return std::string {directory};
-}
-
-std::optional<bool> prompt_logging(const bool current) {
-    while (true) {
-        std::cout << "Enable logging? [" << (current ? "Y/n" : "y/N") << "]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return std::nullopt;
-        }
-        const auto value = trim(input);
-        if (value.empty()) {
-            return current;
-        }
-        if (value == "y" || value == "Y") {
-            return true;
-        }
-        if (value == "n" || value == "N") {
-            return false;
-        }
-        std::cout << "Enter Y or n.\n";
-    }
-}
-
-bool ensure_server_ini(const bool prompt) {
-    const auto path = ac::paths::config_directory() / "server.ini";
-
-    std::error_code error;
-    if (std::filesystem::exists(path, error)) {
-        return true;
-    }
-    if (error) {
-        server_config.log_print(
-            "Failed to inspect {}: {}",
-            path.string(),
-            error.message()
-        );
-        return false;
-    }
-
-    Settings settings;
-    if (prompt) {
-        const auto directory = prompt_directory(server::defaults::directory);
-        if (!directory) {
-            return false;
-        }
-        const auto logging = prompt_logging(true);
-        if (!logging) {
-            return false;
-        }
-        settings.directory = *directory;
-        settings.logging = *logging;
-    }
-    return write_server_ini(settings);
-}
-
-void show_directory() {
+std::string current_text(const menu::Setting& setting) {
     const auto settings = load_settings();
-    std::cout
-        << "directory: " << settings.directory << '\n'
-        << "Resolved path: " << resolved_directory(settings.directory).string()
-        << '\n'
-        << "logging: " << (settings.logging ? "on" : "off") << '\n';
+    if (setting.key == "directory") {
+        return settings.directory;
+    }
+    return settings.logging ? "on" : "off";
 }
 
-bool set_directory() {
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
     auto settings = load_settings();
-    const auto directory = prompt_directory(settings.directory);
-    if (!directory) {
-        return false;
+    if (setting.key == "directory") {
+        settings.directory = std::string {value};
     }
-    const auto logging = prompt_logging(settings.logging);
-    if (!logging) {
-        return false;
+    else {
+        settings.logging = value == "on";
     }
-    settings.directory = *directory;
-    settings.logging = *logging;
     if (!write_server_ini(settings)) {
         server_config.log_print("Failed to write config/server.ini.");
-        return false;
+        return menu::ApplyResult::failed;
     }
-    server_config.log_print("directory stored as {}.", settings.directory);
-    return true;
+    if (setting.key == "directory") {
+        server_config.log_print("directory stored as {}.", settings.directory);
+    }
+    return menu::ApplyResult::stored;
+}
+
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Server Configuration",
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
+int offer_configuration() {
+    const auto offer = menu::offer_configuration(
+        "Server Configuration",
+        menu_settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 std::wstring quote_argument(std::wstring_view value) {
@@ -397,18 +320,6 @@ void activate_own_console() {
     (void)SetFocus(console);
 }
 
-void print_menu() {
-    const auto settings = load_settings();
-    std::cout
-        << "\nserver_config\n"
-        << "  directory = " << settings.directory << "\n"
-        << "  logging = " << (settings.logging ? "on" : "off") << "\n"
-        << "  1. Show directory\n"
-        << "  2. Set directory\n"
-        << "  3. Exit\n"
-        << "> ";
-}
-
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -422,7 +333,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "server.ini";
+    const auto path = ini_path();
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
@@ -438,7 +349,7 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_writing_defaults(server_config);
-            if (!ensure_server_ini(false)) {
+            if (!write_server_ini({})) {
                 server_config.log_print(
                     "Server configuration was not initialized."
                 );
@@ -455,21 +366,13 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_configuration_missing(server_config);
-            const auto directory = prompt_init_directory();
-            if (!directory) {
+            if (!write_server_ini({})) {
                 server_config.log_print(
                     "Server configuration was not initialized."
                 );
                 return 1;
             }
-            const auto logging = prompt_init_logging();
-            if (!logging) {
-                server_config.log_print(
-                    "Server configuration was not initialized."
-                );
-                return 1;
-            }
-            if (!write_server_ini(Settings {*directory, *logging})) {
+            if (offer_configuration() != 0) {
                 server_config.log_print(
                     "Server configuration was not initialized."
                 );
@@ -480,33 +383,15 @@ int main(int argc, char* argv[]) {
         return launch_owned_init();
     }
 
-    if (!ensure_server_ini(true)) {
-        server_config.log_print("Server configuration was not initialized.");
-        return 1;
+    if (!present) {
+        if (!write_server_ini({})) {
+            server_config.log_print(
+                "Server configuration was not initialized."
+            );
+            return 1;
+        }
     }
 
     activate_own_console();
-    show_directory();
-
-    while (true) {
-        print_menu();
-        std::string choice;
-        if (!std::getline(std::cin, choice)) {
-            return 0;
-        }
-        if (choice == "1") {
-            show_directory();
-        }
-        else if (choice == "2") {
-            if (!set_directory()) {
-                return 1;
-            }
-        }
-        else if (choice == "3" || choice == "q" || choice == "Q") {
-            return 0;
-        }
-        else {
-            std::cout << "Unknown option.\n";
-        }
-    }
+    return run_configuration_menu();
 }

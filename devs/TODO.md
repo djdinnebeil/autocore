@@ -66,7 +66,7 @@ remaining failure is associated with the process elevation mismatch rather
 than startup timing.
 
 The current limitation and workarounds are documented in `README.md` and
-`docs/itunes.md`.
+`docs/manual/itunes.md`.
 
 Investigate whether the iTunes component can safely control an existing
 non-administrator iTunes process. Review why Auto Core requires elevation,

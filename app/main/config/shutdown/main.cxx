@@ -5,16 +5,37 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component shutdown_config {"shutdown_config"};
+
+constexpr std::string_view prompt_values[] {"popup", "console"};
+
+const menu::Setting settings[] {
+    {
+        .key = "delayed_shutdown_prompt",
+        .display_name = "Delayed shutdown prompt",
+        .summary = "How Main waits when a shutdown needs a response.",
+        .default_value = defaults::shutdown_prompt,
+        .choices = prompt_values,
+    },
+    {
+        .key = "shutdown_timeout_ms",
+        .display_name = "Shutdown timeout",
+        .summary = "Milliseconds Main waits for a generic child to exit.",
+        .default_value = "2000",
+        .constraint = "Enter a non-negative number of milliseconds.",
+    },
+};
 
 struct ShutdownValues {
     std::string prompt {defaults::shutdown_prompt};
@@ -56,133 +77,102 @@ ShutdownValues current_values() {
 bool write_values(const ShutdownValues& values) {
     return cfg::write_bytes(
         ini_path(),
-        defaults::ini_for_shutdown(values.prompt, values.timeout_ms)
+        menu::with_header(
+            settings,
+            defaults::ini_for_shutdown(values.prompt, values.timeout_ms)
+        )
     );
-}
-
-void show_settings() {
-    const auto values = current_values();
-    std::cout
-        << "Current config/shutdown.ini\n"
-        << "  delayed_shutdown_prompt = "
-        << values.prompt
-        << "\n  shutdown_timeout_ms = "
-        << values.timeout_ms
-        << '\n';
 }
 
 [[nodiscard]]
-std::optional<ShutdownValues> prompt_values(const ShutdownValues& suggestion) {
-    ShutdownValues values = suggestion;
-    const auto prompt = cfg::prompt_text(
-        "delayed_shutdown_prompt (popup or console)",
-        suggestion.prompt
-    );
-    if (!prompt) {
-        return std::nullopt;
-    }
-    if (*prompt == "popup" || *prompt == "console") {
-        values.prompt = *prompt;
-    }
-    else {
-        std::cout << "Enter popup or console. Using " << suggestion.prompt
-                  << ".\n";
-        values.prompt = suggestion.prompt;
-    }
-
-    const auto timeout = cfg::prompt_text(
-        "shutdown_timeout_ms",
-        std::to_string(suggestion.timeout_ms)
-    );
-    if (!timeout) {
-        return std::nullopt;
-    }
+std::optional<unsigned> parse_timeout(const std::string_view text) {
     unsigned milliseconds = 0;
     const auto parsed = std::from_chars(
-        timeout->data(),
-        timeout->data() + timeout->size(),
+        text.data(),
+        text.data() + text.size(),
         milliseconds
     );
-    if (parsed.ec == std::errc {} &&
-        parsed.ptr == timeout->data() + timeout->size()) {
-        values.timeout_ms = milliseconds;
+    if (parsed.ec != std::errc {} || parsed.ptr != text.data() + text.size()) {
+        return std::nullopt;
     }
-    else {
-        std::cout << "Enter a non-negative integer. Using "
-                  << suggestion.timeout_ms << ".\n";
-        values.timeout_ms = suggestion.timeout_ms;
-    }
-    return values;
+    return milliseconds;
 }
 
 [[nodiscard]]
-int first_time() {
-    std::cout
-        << "config/shutdown.ini is missing. Create it using the defaults.\n";
-    const auto values = prompt_values({});
-    if (!values) {
-        return 1;
+std::string current_text(const menu::Setting& setting) {
+    const auto values = current_values();
+    if (setting.key == "delayed_shutdown_prompt") {
+        return values.prompt;
     }
-    if (!write_values(*values)) {
-        shutdown_config.log_print(
-            "Failed to write {}.",
-            ini_path().string()
-        );
+    return std::to_string(values.timeout_ms);
+}
+
+[[nodiscard]]
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto values = current_values();
+    if (setting.key == "delayed_shutdown_prompt") {
+        values.prompt = std::string {value};
+    }
+    else {
+        const auto timeout = parse_timeout(value);
+        if (!timeout) {
+            return menu::ApplyResult::invalid;
+        }
+        values.timeout_ms = *timeout;
+    }
+    if (!write_values(values)) {
+        shutdown_config.log_print("Failed to write {}.", ini_path().string());
+        return menu::ApplyResult::failed;
+    }
+    shutdown_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Shutdown Configuration",
+        settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
+[[nodiscard]]
+int write_missing_defaults() {
+    if (!write_values({})) {
+        shutdown_config.log_print("Failed to write {}.", ini_path().string());
         return 1;
     }
     shutdown_config.log_print("Wrote {}", ini_path().string());
     return 0;
 }
 
-int configuration_mode() {
-    show_settings();
-    while (true) {
-        std::cout
-            << "\nshutdown_config\n"
-            << "  1. Modify settings\n"
-            << "  2. Restore defaults\n"
-            << "  3. Exit\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            const auto values = prompt_values(current_values());
-            if (!values) {
-                return 1;
-            }
-            if (!write_values(*values)) {
-                shutdown_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            shutdown_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_values({})) {
-                shutdown_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            shutdown_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
+[[nodiscard]]
+int initialize_missing() {
+    if (write_missing_defaults() != 0) {
+        return 1;
     }
+    const auto offer = menu::offer_configuration(
+        "Shutdown Configuration",
+        settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 } // namespace
@@ -215,11 +205,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_writing_defaults(shutdown_config);
-        if (!write_values({})) {
-            shutdown_config.log_print(
-                "Failed to write {}.",
-                ini_path().string()
-            );
+        if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(shutdown_config);
@@ -235,11 +221,20 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_configuration_missing(shutdown_config);
-        return first_time();
+        req::log_writing_defaults(shutdown_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(shutdown_config);
+        return 0;
     }
 
-    if (present) {
-        return configuration_mode();
+    if (!present) {
+        req::log_configuration_missing(shutdown_config);
+        req::log_writing_defaults(shutdown_config);
+        if (write_missing_defaults() != 0) {
+            return 1;
+        }
     }
-    return first_time();
+    return run_configuration_menu();
 }

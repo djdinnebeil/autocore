@@ -66,5 +66,5 @@ iTunes and Spotify notes: [app/components/itunes/tests/TESTING.md](../app/compon
 
 ## Security reports
 
-See [security.md](../docs/security.md). Do not file public issues that include
+See [security.md](../docs/manual/security.md). Do not file public issues that include
 secrets or exploit steps.

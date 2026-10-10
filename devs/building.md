@@ -20,11 +20,11 @@ Release binaries use the DLL CRT (`/MD`). If you run a `dist/` tree you did not 
 1. Clone or copy the project into a local development directory.
 2. Shared paths live in `msbuild/AutoCore.props` (repo-relative; do not edit after a clone).
 3. Build the core DLL, then the main executable, then any required component executables (`.\scripts\build-all.ps1` from the repo root).
-4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](../docs/configuration.md).
+4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](../docs/manual/configuration.md).
 
 ## Shortcut identity
 
-`Auto Core.lnk` at the installation root targets `bin\auto_core.exe` in that same root. The repository does not create this shortcut and does not install Auto Core.
+`Auto Core Setup.exe` at the installation root creates or refreshes `Auto Core.lnk` and `Auto Core Settings.lnk` beside itself, then launches `bin\auto_core_settings.exe`. `Auto Core.lnk` targets `bin\auto_core.exe`. `Auto Core Settings.lnk` targets `bin\auto_core_settings.exe`. Both shortcuts use `bin` as the working directory. The repository does not install Auto Core.
 
 Before the Task Manager field test, stamp the existing link with `System.AppUserModel.ID` = `Djdinn.AutoCore`. [`scripts/stamp_auto_core_shortcut.cxx`](../scripts/stamp_auto_core_shortcut.cxx) obtains `IPropertyStore` from `IShellLink`, calls `SetValue(PKEY_AppUserModel_ID, ...)`, commits, and saves the link.
 
@@ -118,6 +118,6 @@ From the repository root, Release x64, run [`scripts/build-all.ps1`](../scripts/
 | `AutoCoreBinDir` | `bin\` (executables, `auto_core.dll` published by `auto_core_dll`, and vendor DLLs from `scripts/copy-vendor-dlls.ps1`) |
 | `AutoCoreSymbolsDir` | `symbols\` (repository root; linker `.pdb` files) |
 
-Application `OutDir` is `bin\`. The core DLL `OutDir` is `lib\`. `IntDir` is `obj\<project>\`. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) copies `bin\*.exe` and `bin\*.dll` into `dist\bin\`.
+Application `OutDir` is `bin\`. The core DLL `OutDir` is `lib\`. `IntDir` is `obj\<project>\`. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) copies `bin\*.exe` and `bin\*.dll` into `dist\bin\`, except `Auto Core Setup.exe`, which it copies to `dist\`.
 
 An optional local directory junction or symlink for `obj` is not required for a clone. If you use one, point it at `obj` yourself; do not commit it.

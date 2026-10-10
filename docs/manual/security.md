@@ -4,7 +4,7 @@
 
 If you find a vulnerability in Auto Core, please do **not** open a public
 issue that includes exploit details. Email the copyright holders listed in
-[LICENSE](../license), or open a private GitHub security advisory on the
+[LICENSE](../../license), or open a private GitHub security advisory on the
 repository.
 
 Include what you observed, the Auto Core version or commit, and Windows
@@ -20,7 +20,7 @@ before you run a binary you did not build.
 
 The process may run elevated so some components (notably iTunes COM
 automation) can attach. Elevation mismatches are documented in
-[README.md](../readme.md) and [itunes.md](itunes.md).
+[README.md](../../readme.md) and [itunes.md](itunes.md).
 
 ## Secrets and local data
 

@@ -1,15 +1,17 @@
 import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
-import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.paths;
 import taskbar_defaults;
 import components_editor_request;
+import config_menu;
 
 import <Windows.h>;
 import <iostream>;
 import auto_core.core.shell;
+
+namespace menu = ac::config_menu;
 
 namespace {
 
@@ -18,20 +20,42 @@ ac::Component taskbar_config {
     ac::logging::config::LoggingScope {"taskbar"}
 };
 
+constexpr std::string_view on_off[] {"on", "off"};
+constexpr std::string_view modes[] {"live", "cache"};
+
+constexpr std::string_view menu_title =
+    "Restart taskbar_ac.exe before directory and mode changes apply.\n"
+    "Taskbar Configuration";
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "directory",
+        .display_name = "Directory",
+        .summary = "Folder that stores Taskbar data.",
+        .default_value = taskbar::defaults::directory,
+    },
+    {
+        .key = "mode",
+        .display_name = "Mode",
+        .summary =
+            "live discovers taskbar positions, and cache reuses a usable map.",
+        .default_value = taskbar::defaults::mode,
+        .choices = modes,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the Taskbar component.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
+
 struct Settings {
     std::string directory {std::string {taskbar::defaults::directory}};
     std::string mode {std::string {taskbar::defaults::mode}};
     bool logging = true;
 };
-
-std::wstring trim_wide(std::wstring_view value) {
-    const auto first = value.find_first_not_of(L" \t\r\n");
-    if (first == std::wstring_view::npos) {
-        return {};
-    }
-    const auto last = value.find_last_not_of(L" \t\r\n");
-    return std::wstring {value.substr(first, last - first + 1)};
-}
 
 std::string ascii_lower(std::string_view value) {
     std::string result {value};
@@ -53,10 +77,13 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
         );
         return false;
     }
-    const auto contents = taskbar::defaults::ini_for(
-        settings.directory,
-        settings.mode,
-        settings.logging
+    const auto contents = menu::with_header(
+        menu_settings,
+        taskbar::defaults::ini_for(
+            settings.directory,
+            settings.mode,
+            settings.logging
+        )
     );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
@@ -76,14 +103,19 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
     return true;
 }
 
-Settings read_settings(const std::filesystem::path& path) {
+Settings read_settings(
+    const std::filesystem::path& path,
+    const bool report
+) {
     Settings settings;
     const auto document = ac::ini::read(path);
     if (!document) {
-        taskbar_config.log_print(
-            "config/taskbar.ini is malformed. Using compiled defaults until "
-            "you save new settings."
-        );
+        if (report) {
+            taskbar_config.log_print(
+                "config/taskbar.ini is malformed. Using compiled defaults until "
+                "you save new settings."
+            );
+        }
         return settings;
     }
     if (const auto directory = document->find("taskbar", "directory")) {
@@ -96,7 +128,7 @@ Settings read_settings(const std::filesystem::path& path) {
         if (taskbar::defaults::is_mode(lower)) {
             settings.mode = lower;
         }
-        else {
+        else if (report) {
             taskbar_config.log_print(
                 "config/taskbar.ini mode is invalid. Using live."
             );
@@ -120,63 +152,27 @@ Settings read_settings(const std::filesystem::path& path) {
 }
 
 void say_restart() {
-    std::wcout
-        << L"Restart taskbar_ac.exe before directory and mode changes apply.\n";
-}
-
-std::optional<std::string> prompt_directory(
-    const std::wstring_view label,
-    const std::string_view current
-) {
-    std::wcout << label
-               << L" ["
-               << ac::encoding::to_utf16(current)
-               << L"]: ";
-    std::wcout.flush();
-    std::wstring input;
-    if (!std::getline(std::wcin, input)) {
-        return std::nullopt;
-    }
-    const auto value = trim_wide(input);
-    if (value.empty()) {
-        return std::string {current};
-    }
-    return ac::encoding::to_utf8(value);
+    std::cout
+        << "Restart taskbar_ac.exe before directory and mode changes apply.\n";
 }
 
 std::optional<std::string> read_console_line() {
-    std::wstring input;
-    if (!std::getline(std::wcin, input)) {
+    std::string input;
+    if (!std::getline(std::cin, input)) {
         return std::nullopt;
     }
-    return ac::encoding::to_utf8(trim_wide(input));
-}
-
-std::optional<std::string> prompt_mode(std::string_view current) {
-    while (true) {
-        std::wcout << L"Taskbar mode ["
-                   << ac::encoding::to_utf16(current)
-                   << L"]: ";
-        std::wcout.flush();
-        const auto value = read_console_line();
-        if (!value) {
-            return std::nullopt;
-        }
-        if (value->empty()) {
-            return std::string {current};
-        }
-        const auto lower = ascii_lower(*value);
-        if (taskbar::defaults::is_mode(lower)) {
-            return lower;
-        }
-        std::wcout << L"Enter live or cache.\n";
+    const auto first = input.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) {
+        return std::string {};
     }
+    const auto last = input.find_last_not_of(" \t\r\n");
+    return input.substr(first, last - first + 1);
 }
 
 std::optional<bool> prompt_yes(std::string_view question) {
     while (true) {
-        std::wcout << ac::encoding::to_utf16(question) << L' ';
-        std::wcout.flush();
+        std::cout << question << ' ';
+        std::cout.flush();
         const auto answer = read_console_line();
         if (!answer) {
             return std::nullopt;
@@ -187,87 +183,82 @@ std::optional<bool> prompt_yes(std::string_view question) {
         if (*answer == "n" || *answer == "N") {
             return false;
         }
-        std::wcout << L"Enter Y or N.\n";
+        std::cout << "Enter Y or N.\n";
     }
 }
 
-std::optional<bool> prompt_init_logging() {
-    while (true) {
-        std::wcout << L"Enable logging [on]: ";
-        std::wcout.flush();
-        const auto answer = read_console_line();
-        if (!answer) {
-            return std::nullopt;
-        }
-        const auto token = ascii_lower(*answer);
-        if (token.empty() || token == "on") {
-            return true;
-        }
-        if (token == "off") {
-            return false;
-        }
-        std::wcout << L"Enter on or off.\n";
-    }
+std::filesystem::path ini_path() {
+    return ac::paths::config_directory() / "taskbar.ini";
 }
 
-std::optional<Settings> prompt_init_settings() {
-    const auto directory = prompt_directory(
-        L"Taskbar directory",
-        taskbar::defaults::directory
+std::string current_text(const menu::Setting& setting) {
+    const auto settings = read_settings(ini_path(), false);
+    if (setting.key == "directory") {
+        return settings.directory;
+    }
+    if (setting.key == "mode") {
+        return settings.mode;
+    }
+    return settings.logging ? "on" : "off";
+}
+
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto settings = read_settings(ini_path(), false);
+    if (setting.key == "directory") {
+        settings.directory = std::string {value};
+    }
+    else if (setting.key == "mode") {
+        settings.mode = std::string {value};
+    }
+    else {
+        settings.logging = value == "on";
+    }
+    if (!write_ini(ini_path(), settings)) {
+        return menu::ApplyResult::failed;
+    }
+    return menu::ApplyResult::stored;
+}
+
+int run_configuration_menu() {
+    (void)read_settings(ini_path(), true);
+    const auto result = menu::run_menu(
+        menu_title,
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
     );
-    if (!directory) {
-        return std::nullopt;
-    }
-    const auto mode = prompt_mode(taskbar::defaults::mode);
-    if (!mode) {
-        return std::nullopt;
-    }
-    const auto logging = prompt_init_logging();
-    if (!logging) {
-        return std::nullopt;
-    }
-    return Settings {*directory, *mode, *logging};
+    return result.ok ? 0 : 1;
 }
 
-std::optional<Settings> prompt_settings(const Settings& current) {
-    const auto directory = prompt_directory(
-        L"Taskbar data directory",
-        current.directory
+int offer_configuration() {
+    (void)read_settings(ini_path(), true);
+    const auto offer = menu::offer_configuration(
+        "Taskbar Configuration",
+        menu_settings,
+        current_text,
+        std::cin,
+        std::cout
     );
-    if (!directory) {
-        return std::nullopt;
+    if (offer == menu::OfferResult::failed) {
+        return 1;
     }
-    const auto mode = prompt_mode(current.mode);
-    if (!mode) {
-        return std::nullopt;
+    if (offer == menu::OfferResult::configure) {
+        const auto result = menu::run_menu(
+            menu_title,
+            menu_settings,
+            current_text,
+            apply_setting,
+            std::cin,
+            std::cout
+        );
+        return result.ok ? 0 : 1;
     }
-    while (true) {
-        std::wcout << L"Enable logging? ["
-                   << (current.logging ? L"Y/n" : L"y/N")
-                   << L"]: ";
-        std::wcout.flush();
-        const auto answer = read_console_line();
-        if (!answer) {
-            return std::nullopt;
-        }
-        if (answer->empty()) {
-            return Settings {*directory, *mode, current.logging};
-        }
-        if (*answer == "y" || *answer == "Y") {
-            return Settings {*directory, *mode, true};
-        }
-        if (*answer == "n" || *answer == "N") {
-            return Settings {*directory, *mode, false};
-        }
-        std::wcout << L"Enter Y or n.\n";
-    }
-}
-
-void show_settings(const Settings& settings) {
-    std::wcout
-        << L"\ntaskbar_config\n"
-        << L"directory = " << ac::encoding::to_utf16(settings.directory) << L'\n'
-        << L"mode = " << ac::encoding::to_utf16(settings.mode) << L'\n';
+    return 0;
 }
 
 int launch_taskbar_builder(const std::wstring_view arguments) {
@@ -359,51 +350,6 @@ int offer_builder() {
     return launch_taskbar_builder({});
 }
 
-int edit_settings(const std::filesystem::path& path, Settings settings) {
-    say_restart();
-    while (true) {
-        show_settings(settings);
-        std::wcout
-            << L"  1. Set directory\n"
-            << L"  2. Set mode\n"
-            << L"  3. Exit\n"
-            << L"> ";
-        std::wcout.flush();
-        const auto selected = read_console_line();
-        if (!selected) {
-            return 0;
-        }
-        if (*selected == "3" || *selected == "q" || *selected == "Q") {
-            return 0;
-        }
-        if (*selected == "1") {
-            const auto directory = prompt_directory(
-                L"Taskbar data directory",
-                settings.directory
-            );
-            if (!directory) {
-                return 1;
-            }
-            settings.directory = *directory;
-        }
-        else if (*selected == "2") {
-            const auto mode = prompt_mode(settings.mode);
-            if (!mode) {
-                return 1;
-            }
-            settings.mode = *mode;
-        }
-        else {
-            std::wcout << L"Enter 1, 2, or 3.\n";
-            continue;
-        }
-        if (!write_ini(path, settings)) {
-            return 1;
-        }
-        say_restart();
-    }
-}
-
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -415,7 +361,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "taskbar.ini";
+    const auto path = ini_path();
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
@@ -451,14 +397,13 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_configuration_missing(taskbar_config);
-            const auto settings = prompt_init_settings();
-            if (!settings) {
+            if (!write_ini(path, Settings {})) {
                 taskbar_config.log_print(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
             }
-            if (!write_ini(path, *settings)) {
+            if (offer_configuration() != 0) {
                 taskbar_config.log_print(
                     "Taskbar configuration was not initialized."
                 );
@@ -472,17 +417,14 @@ int main(int argc, char* argv[]) {
 
     if (!present) {
         req::log_configuration_missing(taskbar_config);
-        const auto settings = prompt_settings(Settings {});
-        if (!settings || !write_ini(path, *settings)) {
+        if (!write_ini(path, Settings {})) {
             taskbar_config.log_print(
                 "Taskbar configuration was not initialized."
             );
             return 1;
         }
         req::log_configuration_initialized(taskbar_config);
-        say_restart();
-        return 0;
     }
 
-    return edit_settings(path, read_settings(path));
+    return run_configuration_menu();
 }

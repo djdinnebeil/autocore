@@ -8,28 +8,42 @@ import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
 import wake_data_directory;
-import wake_defaults;
 import components_editor_request;
+import config_menu;
+import wake_defaults;
 
 import <iostream>;
 import auto_core.core.shell;
 
+namespace menu = ac::config_menu;
+
 namespace {
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "directory",
+        .display_name = "Directory",
+        .summary =
+            "Wake data directory. A relative path resolves against the "
+            "installation root.",
+        .default_value = wake::defaults::directory,
+        .constraint = "Enter a relative or absolute directory.",
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the Wake component. History files stay independent of this switch.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
 
 ac::Component wake_config {
     "wake_config",
     ac::logging::config::LoggingScope {"wake"}
 };
-
-[[nodiscard]]
-std::string trim(const std::string_view value) {
-    const auto first = value.find_first_not_of(" \t");
-    if (first == std::string_view::npos) {
-        return {};
-    }
-    const auto last = value.find_last_not_of(" \t");
-    return std::string {value.substr(first, last - first + 1)};
-}
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
@@ -81,7 +95,10 @@ bool write_directory(const std::string_view directory, const bool logging) {
         return false;
     }
 
-    const auto contents = wake::defaults::ini_for(directory, logging);
+    const auto contents = menu::with_header(
+        menu_settings,
+        wake::defaults::ini_for(directory, logging)
+    );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
         wake_config.log_print("Failed to create {}", path.string());
@@ -98,43 +115,6 @@ bool write_directory(const std::string_view directory, const bool logging) {
     }
     wake_config.log_print("Wrote {}", path.string());
     return true;
-}
-
-[[nodiscard]]
-std::optional<std::string> prompt_directory(const std::string_view current) {
-    std::cout << "Wake data directory [" << current << "]: ";
-    std::string input;
-    if (!std::getline(std::cin, input)) {
-        wake_config.log_print("Failed to read Wake directory.");
-        return std::nullopt;
-    }
-    const auto value = trim(input);
-    if (value.empty()) {
-        return std::string {current};
-    }
-    return value;
-}
-
-[[nodiscard]]
-std::optional<bool> prompt_logging(const bool current) {
-    while (true) {
-        std::cout << "Enable logging? [" << (current ? "Y/n" : "y/N") << "]: ";
-        std::string input;
-        if (!std::getline(std::cin, input)) {
-            return std::nullopt;
-        }
-        const auto value = trim(input);
-        if (value.empty()) {
-            return current;
-        }
-        if (value == "y" || value == "Y") {
-            return true;
-        }
-        if (value == "n" || value == "N") {
-            return false;
-        }
-        std::cout << "Enter Y or n.\n";
-    }
 }
 
 std::wstring quote_argument(const std::wstring_view value) {
@@ -226,19 +206,41 @@ int provision_history() {
 }
 
 [[nodiscard]]
-int edit_directory() {
-    const auto directory = prompt_directory(current_directory());
-    if (!directory) {
-        return 1;
+std::string current_text(const menu::Setting& setting) {
+    if (setting.key == "directory") {
+        return current_directory();
     }
-    const auto logging = prompt_logging(current_logging());
-    if (!logging) {
-        return 1;
+    return current_logging() ? "on" : "off";
+}
+
+[[nodiscard]]
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    const auto directory = setting.key == "directory"
+        ? std::string {value}
+        : current_directory();
+    const bool logging = setting.key == "logging"
+        ? value == "on"
+        : current_logging();
+    if (!write_directory(directory, logging)) {
+        return menu::ApplyResult::failed;
     }
-    if (!write_directory(*directory, *logging)) {
-        return 1;
-    }
-    return 0;
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Wake Configuration",
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -282,15 +284,22 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_configuration_missing(wake_config);
-            const auto directory = prompt_directory(wake::defaults::directory);
-            if (!directory) {
+            req::log_writing_defaults(wake_config);
+            if (!write_directory(wake::defaults::directory, true)) {
                 return 1;
             }
-            const auto logging = prompt_logging(true);
-            if (!logging) {
+            const auto offer = menu::offer_configuration(
+                "Wake Configuration",
+                menu_settings,
+                current_text,
+                std::cin,
+                std::cout
+            );
+            if (offer == menu::OfferResult::failed) {
                 return 1;
             }
-            if (!write_directory(*directory, *logging)) {
+            if (offer == menu::OfferResult::configure &&
+                run_configuration_menu() != 0) {
                 return 1;
             }
             req::log_configuration_initialized(wake_config);
@@ -299,34 +308,11 @@ int main(int argc, char* argv[]) {
     }
 
     if (!exists) {
-        const auto directory = prompt_directory(wake::defaults::directory);
-        const auto logging = prompt_logging(true);
-        if (!directory || !logging || !write_directory(*directory, *logging)) {
+        req::log_configuration_missing(wake_config);
+        req::log_writing_defaults(wake_config);
+        if (!write_directory(wake::defaults::directory, true)) {
             return 1;
         }
     }
-
-    while (true) {
-        std::cout << "\nwake_config\n";
-        std::cout << "directory = " << current_directory() << "\n";
-        std::cout << "logging = " << (current_logging() ? "on" : "off") << "\n";
-        std::cout << "1. Set directory\n";
-        std::cout << "2. Exit\n";
-        std::cout << "Choice: ";
-        std::string choice;
-        if (!std::getline(std::cin, choice)) {
-            return 0;
-        }
-        if (choice == "1") {
-            if (edit_directory() != 0) {
-                return 1;
-            }
-        }
-        else if (choice == "2" || choice == "q" || choice == "Q") {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1 or 2.\n";
-        }
-    }
+    return run_configuration_menu();
 }

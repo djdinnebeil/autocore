@@ -6,6 +6,7 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <charconv>;
 import <iostream>;
@@ -13,6 +14,7 @@ import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
+namespace menu = ac::config_menu;
 
 namespace {
 
@@ -21,14 +23,32 @@ ac::Component logger_config {
     ac::logging::config::LoggingScope {"logger"}
 };
 
-void say_line(const std::string_view line) {
-    std::cout << line << '\n';
-    logger_config.log("{}", line);
-}
+constexpr std::string_view on_off[] {"on", "off"};
 
-void log_choice(const std::string_view name, const std::string_view value) {
-    logger_config.log("{} = {}", name, value);
-}
+const menu::Setting settings[] {
+    {
+        .key = "merge_interval_seconds",
+        .display_name = "Merge interval",
+        .summary =
+            "Seconds between periodic merges. 0 disables the periodic merge.",
+        .default_value = "60",
+        .constraint = "Enter 0 or a positive number of seconds.",
+    },
+    {
+        .key = "merge_logs_on_shutdown",
+        .display_name = "Merge logs on shutdown",
+        .summary = "Merge main logs after the hosted Logger exits.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for the Logger component.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
 
 struct LoggerValues {
     std::uint64_t merge_interval_seconds {
@@ -102,201 +122,98 @@ LoggerValues current_values() {
 bool write_values(const LoggerValues& values) {
     return cfg::write_bytes(
         ini_path(),
-        defaults::ini_for_logger(
-            values.merge_interval_seconds,
-            values.merge_logs_on_shutdown,
-            values.logging
+        menu::with_header(
+            settings,
+            defaults::ini_for_logger(
+                values.merge_interval_seconds,
+                values.merge_logs_on_shutdown,
+                values.logging
+            )
         )
     );
 }
 
-void show_settings() {
+[[nodiscard]]
+std::string current_text(const menu::Setting& setting) {
     const auto values = current_values();
-    say_line("Current config/logger.ini");
-    say_line(
-        std::string {"merge_interval_seconds = "} +
-        std::to_string(values.merge_interval_seconds)
-    );
-    say_line(
-        std::string {"merge_logs_on_shutdown = "} +
-        (values.merge_logs_on_shutdown ? "on" : "off")
-    );
-    say_line(
-        std::string {"logging = "} +
-        (values.logging ? "on" : "off")
-    );
-}
-
-[[nodiscard]]
-std::string lowered(std::string text) {
-    for (char& character : text) {
-        if (character >= 'A' && character <= 'Z') {
-            character = static_cast<char>(character - 'A' + 'a');
-        }
+    if (setting.key == "merge_interval_seconds") {
+        return std::to_string(values.merge_interval_seconds);
     }
-    return text;
-}
-
-[[nodiscard]]
-std::optional<bool> prompt_shutdown_merge(const bool suggestion) {
-    while (true) {
-        std::cout << "Merge main logs when Auto Core shuts down? ["
-                  << (suggestion ? "Y/n" : "y/N") << "]: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return std::nullopt;
-        }
-        logger_config.log(
-            "Merge main logs when Auto Core shuts down? {}",
-            *line
-        );
-        if (line->empty()) {
-            return suggestion;
-        }
-        const auto answer = lowered(*line);
-        if (answer == "y" || answer == "yes") {
-            return true;
-        }
-        if (answer == "n" || answer == "no") {
-            return false;
-        }
-        say_line("Enter Y or N.");
+    if (setting.key == "merge_logs_on_shutdown") {
+        return values.merge_logs_on_shutdown ? "on" : "off";
     }
+    return values.logging ? "on" : "off";
 }
 
 [[nodiscard]]
-std::optional<LoggerValues> prompt_values(const LoggerValues& suggestion) {
-    LoggerValues values = suggestion;
-    say_line("0 disables periodic merging.");
-    while (true) {
-        const auto interval = cfg::prompt_text(
-            "Periodic merge interval in seconds",
-            std::to_string(suggestion.merge_interval_seconds)
-        );
-        if (!interval) {
-            return std::nullopt;
-        }
-        const auto parsed = parse_interval(*interval);
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto values = current_values();
+    if (setting.key == "merge_interval_seconds") {
+        const auto parsed = parse_interval(value);
         if (!parsed) {
-            say_line("Enter 0 or a positive number of seconds.");
-            continue;
+            return menu::ApplyResult::invalid;
         }
         values.merge_interval_seconds = *parsed;
-        log_choice(
-            "merge_interval_seconds",
-            std::to_string(*parsed)
-        );
-        break;
     }
-
-    const auto shutdown_merge = prompt_shutdown_merge(
-        suggestion.merge_logs_on_shutdown
-    );
-    if (!shutdown_merge) {
-        return std::nullopt;
+    else if (setting.key == "merge_logs_on_shutdown") {
+        values.merge_logs_on_shutdown = value == "on";
     }
-    values.merge_logs_on_shutdown = *shutdown_merge;
-    log_choice(
-        "merge_logs_on_shutdown",
-        values.merge_logs_on_shutdown ? "on" : "off"
-    );
-    std::optional<bool> logging;
-    while (true) {
-        std::cout << "Enable logging? ["
-                  << (suggestion.logging ? "Y/n" : "y/N")
-                  << "]: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return std::nullopt;
-        }
-        if (line->empty()) {
-            logging = suggestion.logging;
-            break;
-        }
-        if (*line == "y" || *line == "Y") {
-            logging = true;
-            break;
-        }
-        if (*line == "n" || *line == "N") {
-            logging = false;
-            break;
-        }
-        say_line("Enter Y or n.");
+    else {
+        values.logging = value == "on";
     }
-    values.logging = *logging;
-    log_choice("logging", values.logging ? "on" : "off");
-    return values;
+    if (!write_values(values)) {
+        logger_config.log_print("Failed to write {}.", ini_path().string());
+        return menu::ApplyResult::failed;
+    }
+    logger_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
 }
 
 [[nodiscard]]
-int first_time() {
-    say_line("config/logger.ini is missing. Configure Logger.");
-    std::cout << '\n';
-    const auto values = prompt_values({});
-    if (!values) {
-        return 1;
-    }
-    if (!write_values(*values)) {
-        logger_config.log_print(
-            "Failed to write {}.",
-            ini_path().string()
-        );
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Logger Configuration",
+        settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
+    );
+    return result.ok ? 0 : 1;
+}
+
+[[nodiscard]]
+int write_missing_defaults() {
+    if (!write_values({})) {
+        logger_config.log_print("Failed to write {}.", ini_path().string());
         return 1;
     }
     logger_config.log_print("Wrote {}", ini_path().string());
     return 0;
 }
 
-int configuration_mode() {
-    show_settings();
-    while (true) {
-        std::cout << '\n';
-        say_line("logger_config");
-        say_line("1. Modify settings");
-        say_line("2. Restore defaults");
-        say_line("3. Exit");
-        std::cout << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        logger_config.log("Choice: {}", *line);
-        if (*line == "1") {
-            const auto values = prompt_values(current_values());
-            if (!values) {
-                return 1;
-            }
-            if (!write_values(*values)) {
-                logger_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            logger_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_values({})) {
-                logger_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            logger_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            say_line("Enter 1, 2, or 3.");
-        }
+[[nodiscard]]
+int initialize_missing() {
+    if (write_missing_defaults() != 0) {
+        return 1;
     }
+    const auto offer = menu::offer_configuration(
+        "Logger Configuration",
+        settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 } // namespace
@@ -329,11 +246,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_writing_defaults(logger_config);
-        if (!write_values({})) {
-            logger_config.log_print(
-                "Failed to write {}.",
-                ini_path().string()
-            );
+        if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(logger_config);
@@ -346,11 +259,20 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_configuration_missing(logger_config);
-        return first_time();
+        req::log_writing_defaults(logger_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(logger_config);
+        return 0;
     }
 
-    if (present) {
-        return configuration_mode();
+    if (!present) {
+        req::log_configuration_missing(logger_config);
+        req::log_writing_defaults(logger_config);
+        if (write_missing_defaults() != 0) {
+            return 1;
+        }
     }
-    return first_time();
+    return run_configuration_menu();
 }

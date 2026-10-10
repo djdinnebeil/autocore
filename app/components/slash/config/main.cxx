@@ -3,19 +3,45 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
-import slash_defaults;
-import slash_config_detail;
 import components_editor_request;
+import config_menu;
+import slash_config_detail;
+import slash_defaults;
 
 import <iostream>;
 import auto_core.core.shell;
 
+namespace menu = ac::config_menu;
+
 namespace {
+
+    constexpr std::string_view modes[] {"verbose", "concise", "silent"};
+    constexpr std::string_view on_off[] {"on", "off"};
+
+    const menu::Setting settings[] {
+        {
+            .key = "mode",
+            .display_name = "Mode",
+            .summary =
+                "verbose is the categorized report. concise reports the item "
+                "count. silent prints one line and does not insert text.",
+            .default_value = slash::defaults::mode_verbose,
+            .choices = modes,
+        },
+        {
+            .key = "logging",
+            .display_name = "Logging",
+            .summary = "Controls logging for the Slash component.",
+            .default_value = "on",
+            .choices = on_off,
+        },
+    };
 
     bool write_ini(
         ac::Component& slash_config,
         const std::filesystem::path& path,
-        std::string_view contents
+        const std::string_view mode,
+        const bool logging
     ) {
         std::error_code create_error;
         std::filesystem::create_directories(path.parent_path(), create_error);
@@ -26,6 +52,10 @@ namespace {
             );
             return false;
         }
+        const auto contents = menu::with_header(
+            settings,
+            slash::defaults::ini_for_mode(mode, logging)
+        );
         std::ofstream output(path, std::ios::binary | std::ios::trunc);
         if (!output) {
             slash_config.log_print("Failed to create {}", path.string());
@@ -70,16 +100,45 @@ namespace {
             return ac::logging::config::component_logging_default();
         }
         const auto value = document->find("slash", "logging");
-        if (!value) {
+        if (!value || (*value != "on" && *value != "off")) {
             return ac::logging::config::component_logging_default();
         }
-        if (*value == "off") {
-            return false;
-        }
-        if (*value == "on") {
-            return true;
-        }
-        return ac::logging::config::component_logging_default();
+        return *value == "on";
+    }
+
+    [[nodiscard]]
+    int run_configuration_menu(
+        ac::Component& slash_config,
+        const std::filesystem::path& path
+    ) {
+        const auto result = menu::run_menu(
+            "Slash Configuration",
+            settings,
+            [&](const menu::Setting& setting) {
+                if (setting.key == "mode") {
+                    return mode_in_file(slash_config, path);
+                }
+                return std::string {logging_in_file(path) ? "on" : "off"};
+            },
+            [&](const menu::Setting& setting, const std::string_view value) {
+                const auto mode = setting.key == "mode"
+                    ? std::string {value}
+                    : mode_in_file(slash_config, path);
+                if (mode.empty()) {
+                    return menu::ApplyResult::failed;
+                }
+                const bool logging = setting.key == "logging"
+                    ? value == "on"
+                    : logging_in_file(path);
+                if (!write_ini(slash_config, path, mode, logging)) {
+                    return menu::ApplyResult::failed;
+                }
+                return menu::ApplyResult::stored;
+            },
+            std::cin,
+            std::cout
+        );
+        return result.ok ? 0 : 1;
     }
 
 } // namespace
@@ -119,67 +178,53 @@ int main(int argc, char* argv[]) {
         case slash::config::Action::skip_initialization:
             req::log_initialization_skipped(slash_config, "config/slash.ini");
             return 0;
-        case slash::config::Action::configure: {
-            const auto current = mode_in_file(slash_config, path);
-            if (current.empty()) {
-                return 1;
-            }
-            const auto mode = slash::config::prompt_mode(
-                std::cin,
-                std::cout,
-                current
-            );
-            if (!mode) {
-                slash_config.log_print("Failed to read mode.");
-                return 1;
-            }
-            const auto logging = slash::config::prompt_logging(
-                std::cin,
-                std::cout,
-                logging_in_file(path)
-            );
-            if (!logging) {
-                return 1;
-            }
-            if (!write_ini(
-                slash_config,
-                path,
-                slash::defaults::ini_for_mode(*mode, *logging)
-            )) {
-                return 1;
-            }
-            return 0;
-        }
         case slash::config::Action::seed:
             req::log_writing_defaults(slash_config);
-            if (!write_ini(slash_config, path, slash::defaults::ini_text)) {
+            if (!write_ini(
+                    slash_config,
+                    path,
+                    slash::defaults::mode_verbose,
+                    true
+                )) {
                 return 1;
             }
             req::log_configuration_initialized(slash_config);
             return 0;
+        case slash::config::Action::configure:
+            return run_configuration_menu(slash_config, path);
         case slash::config::Action::initialize:
             break;
     }
+
     req::log_configuration_missing(slash_config);
-    const auto mode = slash::config::prompt_mode(
-        std::cin,
-        std::cout,
-        slash::defaults::mode_verbose
-    );
-    if (!mode) {
-        slash_config.log_print("Failed to read mode.");
+    req::log_writing_defaults(slash_config);
+    if (!write_ini(slash_config, path, slash::defaults::mode_verbose, true)) {
         return 1;
     }
-    const auto logging = slash::config::prompt_logging(std::cin, std::cout, true);
-    if (!logging) {
+    if (launch->init) {
+        const auto offer = menu::offer_configuration(
+            "Slash Configuration",
+            settings,
+            [&](const menu::Setting& setting) {
+                if (setting.key == "mode") {
+                    return mode_in_file(slash_config, path);
+                }
+                return std::string {logging_in_file(path) ? "on" : "off"};
+            },
+            std::cin,
+            std::cout
+        );
+        if (offer == menu::OfferResult::failed) {
+            return 1;
+        }
+        if (offer == menu::OfferResult::leave) {
+            req::log_configuration_initialized(slash_config);
+            return 0;
+        }
+    }
+    if (run_configuration_menu(slash_config, path) != 0) {
         return 1;
     }
-    if (!write_ini(
-        slash_config,
-        path,
-        slash::defaults::ini_for_mode(*mode, *logging)
-    )) {
-        return 1;
-    }
+    req::log_configuration_initialized(slash_config);
     return 0;
 }

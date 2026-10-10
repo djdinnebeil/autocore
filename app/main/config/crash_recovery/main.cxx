@@ -5,21 +5,38 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component crash_recovery_config {"crash_recovery_config"};
 
-[[nodiscard]]
-std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "crash_recovery.ini";
-}
+constexpr std::string_view yes_no[] {"yes", "no"};
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting settings[] {
+    {
+        .key = "default_response",
+        .display_name = "Default response",
+        .summary = "Answer Main uses for the previous-crash prompt.",
+        .default_value = defaults::crash_default_response,
+        .choices = yes_no,
+    },
+    {
+        .key = "crash_diagnostics",
+        .display_name = "Crash diagnostics",
+        .summary = "Write shared crash reports for every Auto Core executable.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
 
 struct Settings {
     std::string response {defaults::crash_default_response};
@@ -27,99 +44,92 @@ struct Settings {
 };
 
 [[nodiscard]]
+std::filesystem::path ini_path() {
+    return ac::paths::config_directory() / "crash_recovery.ini";
+}
+
+[[nodiscard]]
 Settings current_settings() {
-    Settings settings;
+    Settings loaded;
     const auto document = ac::ini::read(ini_path());
     if (!document) {
-        return settings;
+        return loaded;
     }
     if (const auto value = document->find(
             "crash_recovery", "default_response"
         ); value && (*value == "yes" || *value == "no")) {
-        settings.response = std::string {*value};
+        loaded.response = std::string {*value};
     }
     if (const auto value = document->find(
             "crash_recovery", "crash_diagnostics"
         ); value && (*value == "on" || *value == "off")) {
-        settings.diagnostics = *value == "on";
+        loaded.diagnostics = *value == "on";
     }
-    return settings;
+    return loaded;
 }
 
 [[nodiscard]]
-bool write_settings(const Settings& settings) {
+bool write_settings(const Settings& loaded) {
     return cfg::write_bytes(
         ini_path(),
-        defaults::ini_for_crash_recovery(
-            settings.response,
-            settings.diagnostics
+        menu::with_header(
+            settings,
+            defaults::ini_for_crash_recovery(
+                loaded.response,
+                loaded.diagnostics
+            )
         )
     );
 }
 
-void show_settings() {
-    const auto settings = current_settings();
-    std::cout
-        << "Current config/crash_recovery.ini\n"
-        << "  default_response = "
-        << settings.response
-        << "\n  crash_diagnostics = "
-        << (settings.diagnostics ? "on" : "off")
-        << '\n';
+[[nodiscard]]
+std::string current_text(const menu::Setting& setting) {
+    const auto loaded = current_settings();
+    if (setting.key == "default_response") {
+        return loaded.response;
+    }
+    return loaded.diagnostics ? "on" : "off";
 }
 
 [[nodiscard]]
-std::optional<std::string> prompt_response(const std::string_view suggestion) {
-    const auto line = cfg::prompt_text(
-        "default_response (yes or no)",
-        suggestion
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    auto loaded = current_settings();
+    if (setting.key == "default_response") {
+        loaded.response = std::string {value};
+    }
+    else {
+        loaded.diagnostics = value == "on";
+    }
+    if (!write_settings(loaded)) {
+        crash_recovery_config.log_print(
+            "Failed to write {}.",
+            ini_path().string()
+        );
+        return menu::ApplyResult::failed;
+    }
+    crash_recovery_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
+}
+
+[[nodiscard]]
+int run_configuration_menu() {
+    const auto result = menu::run_menu(
+        "Crash Recovery Configuration",
+        settings,
+        current_text,
+        apply_setting,
+        std::cin,
+        std::cout
     );
-    if (!line) {
-        return std::nullopt;
-    }
-    if (*line == "yes" || *line == "no") {
-        return *line;
-    }
-    std::cout << "Enter yes or no. Using " << suggestion << ".\n";
-    return std::string {suggestion};
+    return result.ok ? 0 : 1;
 }
 
 [[nodiscard]]
-std::optional<bool> prompt_diagnostics(const bool suggestion) {
-    const auto line = cfg::prompt_text(
-        "crash_diagnostics (on or off)",
-        suggestion ? "on" : "off"
-    );
-    if (!line) {
-        return std::nullopt;
-    }
-    if (*line == "on" || *line == "off") {
-        return *line == "on";
-    }
-    std::cout
-        << "Enter on or off. Using "
-        << (suggestion ? "on" : "off")
-        << ".\n";
-    return suggestion;
-}
-
-[[nodiscard]]
-int first_time() {
-    std::cout
-        << "config/crash_recovery.ini is missing. Create it using the "
-           "defaults.\n";
-    Settings settings;
-    const auto response = prompt_response(settings.response);
-    if (!response) {
-        return 1;
-    }
-    settings.response = *response;
-    const auto diagnostics = prompt_diagnostics(settings.diagnostics);
-    if (!diagnostics) {
-        return 1;
-    }
-    settings.diagnostics = *diagnostics;
-    if (!write_settings(settings)) {
+int write_missing_defaults() {
+    if (!write_settings(Settings {})) {
         crash_recovery_config.log_print(
             "Failed to write {}.",
             ini_path().string()
@@ -130,62 +140,25 @@ int first_time() {
     return 0;
 }
 
-int configuration_mode() {
-    show_settings();
-    while (true) {
-        std::cout
-            << "\ncrash_recovery_config\n"
-            << "  1. Modify settings\n"
-            << "  2. Restore defaults\n"
-            << "  3. Exit\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            auto settings = current_settings();
-            const auto response = prompt_response(settings.response);
-            if (!response) {
-                return 1;
-            }
-            settings.response = *response;
-            const auto diagnostics = prompt_diagnostics(settings.diagnostics);
-            if (!diagnostics) {
-                return 1;
-            }
-            settings.diagnostics = *diagnostics;
-            if (!write_settings(settings)) {
-                crash_recovery_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            crash_recovery_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_settings(Settings {})) {
-                crash_recovery_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            crash_recovery_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
+[[nodiscard]]
+int initialize_missing() {
+    if (write_missing_defaults() != 0) {
+        return 1;
     }
+    const auto offer = menu::offer_configuration(
+        "Crash Recovery Configuration",
+        settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return run_configuration_menu();
+    }
+    return 0;
 }
 
 } // namespace
@@ -221,11 +194,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_writing_defaults(crash_recovery_config);
-        if (!write_settings(Settings {})) {
-            crash_recovery_config.log_print(
-                "Failed to write {}.",
-                ini_path().string()
-            );
+        if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(crash_recovery_config);
@@ -241,11 +210,20 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         req::log_configuration_missing(crash_recovery_config);
-        return first_time();
+        req::log_writing_defaults(crash_recovery_config);
+        if (initialize_missing() != 0) {
+            return 1;
+        }
+        req::log_configuration_initialized(crash_recovery_config);
+        return 0;
     }
 
-    if (present) {
-        return configuration_mode();
+    if (!present) {
+        req::log_configuration_missing(crash_recovery_config);
+        req::log_writing_defaults(crash_recovery_config);
+        if (write_missing_defaults() != 0) {
+            return 1;
+        }
     }
-    return first_time();
+    return run_configuration_menu();
 }

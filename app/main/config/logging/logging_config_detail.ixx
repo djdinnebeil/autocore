@@ -1,107 +1,17 @@
 /**
  * \file logging_config_detail.ixx
- * \brief Launch selection, initialization menu, and prompts for logging.ini.
+ * \brief Launch selection and INI text for logging.ini.
  *
- * `--seed` takes precedence over `--init`. Prompt order matches the
- * serialized key order. Validation matches the existing on/off and
- * log/print rules.
+ * `--disable` is the noninteractive disable-all write. `--seed` takes
+ * precedence over `--init`. An existing file is preserved.
  */
 export module logging_config_detail;
 
 import std;
 import auto_core.main.defaults;
+import config_menu;
 
 namespace defaults = ac::main::defaults;
-
-namespace {
-
-    [[nodiscard]] std::string trim(const std::string_view value) {
-        const auto first = value.find_first_not_of(" \t");
-        if (first == std::string_view::npos) {
-            return {};
-        }
-        const auto last = value.find_last_not_of(" \t");
-        return std::string {value.substr(first, last - first + 1)};
-    }
-
-    [[nodiscard]] std::optional<std::string> read_line(std::istream& input) {
-        std::string line;
-        if (!std::getline(input, line)) {
-            return std::nullopt;
-        }
-        return trim(line);
-    }
-
-    [[nodiscard]] std::optional<std::string> prompt_text(
-        std::istream& input,
-        std::ostream& output,
-        const std::string_view label,
-        const std::string_view suggestion
-    ) {
-        output << label << " [" << suggestion << "]: ";
-        output.flush();
-        const auto line = read_line(input);
-        if (!line) {
-            return std::nullopt;
-        }
-        if (line->empty()) {
-            return std::string {suggestion};
-        }
-        return *line;
-    }
-
-    [[nodiscard]] std::optional<bool> prompt_on_off(
-        std::istream& input,
-        std::ostream& output,
-        const std::string_view label,
-        const bool suggestion
-    ) {
-        const auto suggested = suggestion ? "on" : "off";
-        const auto line = prompt_text(input, output, label, suggested);
-        if (!line) {
-            return std::nullopt;
-        }
-        std::string lowered {*line};
-        for (char& character : lowered) {
-            if (character >= 'A' && character <= 'Z') {
-                character = static_cast<char>(character - 'A' + 'a');
-            }
-        }
-        if (lowered == "on" || lowered == "off") {
-            return lowered == "on";
-        }
-        output
-            << "Enter on or off. Using "
-            << *line
-            << " is invalid; keeping "
-            << suggested
-            << ".\n";
-        return suggestion;
-    }
-
-    [[nodiscard]] std::optional<std::string> prompt_log_print_mode(
-        std::istream& input,
-        std::ostream& output,
-        const std::string_view current
-    ) {
-        while (true) {
-            output << "log_print_mode [" << current << "]: ";
-            output.flush();
-            const auto line = read_line(input);
-            if (!line) {
-                return std::nullopt;
-            }
-            if (line->empty()) {
-                return std::string {current};
-            }
-            if (*line == "log" || *line == "print") {
-                return *line;
-            }
-            output << "Enter log or print.\n";
-        }
-    }
-
-} // namespace
 
 export namespace ac::main::logging {
 
@@ -132,12 +42,61 @@ export namespace ac::main::logging {
         bool reported_success {false};
     };
 
-    /**
-     * \brief Selects the owner action.
-     *
-     * `--disable` is the noninteractive disable-all write. `--seed` takes
-     * precedence over `--init`. An existing file is preserved.
-     */
+    inline constexpr std::string_view on_off[] {"on", "off"};
+    inline constexpr std::string_view log_or_print[] {"log", "print"};
+
+    inline const ac::config_menu::Setting menu_settings[] {
+        {
+            .key = "disable_all",
+            .display_name = "Disable all logging",
+            .summary =
+                "Stops logging-controlled file and console output. Menus and "
+                "user-facing messages stay on the console.",
+            .default_value = "off",
+            .choices = on_off,
+        },
+        {
+            .key = "directory",
+            .display_name = "Directory",
+            .summary =
+                "Log directory. A relative path resolves against the "
+                "installation root.",
+            .default_value = defaults::logging_directory,
+            .constraint = "Enter a relative or absolute directory.",
+        },
+        {
+            .key = "write_logs_to_files",
+            .display_name = "Write logs to files",
+            .summary = "Write log records to files when logging is enabled.",
+            .default_value = "on",
+            .choices = on_off,
+        },
+        {
+            .key = "write_logs_to_console",
+            .display_name = "Write logs to console",
+            .summary = "Also send ordinary log records to the console.",
+            .default_value = "off",
+            .choices = on_off,
+        },
+        {
+            .key = "log_print_mode",
+            .display_name = "Log print mode",
+            .summary =
+                "print keeps log_print on the console. log treats it as a "
+                "logging record.",
+            .default_value = defaults::logging_log_print_mode,
+            .choices = log_or_print,
+        },
+        {
+            .key = "component_logging_default",
+            .display_name = "Component logging default",
+            .summary =
+                "Fallback when a component logging key is missing or invalid.",
+            .default_value = "on",
+            .choices = on_off,
+        },
+    };
+
     [[nodiscard]] Action select_action(
         const bool configuration_exists,
         const bool init_requested,
@@ -169,90 +128,17 @@ export namespace ac::main::logging {
     }
 
     [[nodiscard]] std::string ini_text(const Values& values) {
-        return defaults::ini_for_logging(
-            values.disable_all,
-            values.write_logs_to_files,
-            values.directory,
-            values.write_logs_to_console,
-            values.log_print_mode,
-            values.component_logging_default
+        return ac::config_menu::with_header(
+            menu_settings,
+            defaults::ini_for_logging(
+                values.disable_all,
+                values.write_logs_to_files,
+                values.directory,
+                values.write_logs_to_console,
+                values.log_print_mode,
+                values.component_logging_default
+            )
         );
-    }
-
-    [[nodiscard]] std::optional<Values> prompt_values(
-        std::istream& input,
-        std::ostream& output,
-        const Values& suggestion
-    ) {
-        Values values = suggestion;
-
-        const auto disable_all = prompt_on_off(
-            input,
-            output,
-            "disable_all",
-            suggestion.disable_all
-        );
-        if (!disable_all) {
-            return std::nullopt;
-        }
-        values.disable_all = *disable_all;
-
-        const auto directory = prompt_text(
-            input,
-            output,
-            "directory",
-            suggestion.directory
-        );
-        if (!directory) {
-            return std::nullopt;
-        }
-        values.directory = directory->empty()
-            ? std::string {defaults::logging_directory}
-            : *directory;
-
-        const auto files = prompt_on_off(
-            input,
-            output,
-            "write_logs_to_files",
-            suggestion.write_logs_to_files
-        );
-        if (!files) {
-            return std::nullopt;
-        }
-        values.write_logs_to_files = *files;
-
-        const auto console = prompt_on_off(
-            input,
-            output,
-            "write_logs_to_console",
-            suggestion.write_logs_to_console
-        );
-        if (!console) {
-            return std::nullopt;
-        }
-        values.write_logs_to_console = *console;
-
-        const auto mode = prompt_log_print_mode(
-            input,
-            output,
-            suggestion.log_print_mode
-        );
-        if (!mode) {
-            return std::nullopt;
-        }
-        values.log_print_mode = *mode;
-
-        const auto family = prompt_on_off(
-            input,
-            output,
-            "component_logging_default",
-            suggestion.component_logging_default
-        );
-        if (!family) {
-            return std::nullopt;
-        }
-        values.component_logging_default = *family;
-        return values;
     }
 
     /**
@@ -267,7 +153,7 @@ export namespace ac::main::logging {
         if (configuration_exists) {
             return {};
         }
-        if (!write(defaults::logging_ini)) {
+        if (!write(ini_text(compiled_defaults()))) {
             return {.code = 1, .reported_success = false};
         }
         return {.code = 0, .reported_success = true};

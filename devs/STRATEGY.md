@@ -43,7 +43,8 @@ section below already decides it, do not re-explore.
   normal build.
 - `dist/bin/` — ignored runtime copy. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1)
   is the only normal publisher. It copies `bin/*.exe` and `bin/*.dll`
-  into `dist/bin/`. `build-all.ps1` runs it after a successful build.
+  into `dist/bin/`, except `Auto Core Setup.exe`, which it copies to
+  `dist/`. `build-all.ps1` runs it after a successful build.
   The vendor script runs it after copying into `bin/`. `dist/` remains
   the installation root.
 - `symbols/` — gitignored linker program databases (`.pdb`). Outside

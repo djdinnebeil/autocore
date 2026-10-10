@@ -6,16 +6,38 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import components_editor_request;
+import config_menu;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
+namespace menu = ac::config_menu;
 
 namespace {
 
 ac::Component auto_core_config {"auto_core_config"};
+
+constexpr std::string_view on_off[] {"on", "off"};
+
+const menu::Setting menu_settings[] {
+    {
+        .key = "warn_without_winkey_mapping",
+        .display_name = "Warn without Win+key mapping",
+        .summary =
+            "Warn when Auto Core is not in taskbar positions 1 through 10.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+    {
+        .key = "logging",
+        .display_name = "Logging",
+        .summary = "Controls logging for auto_core.exe.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
@@ -58,98 +80,53 @@ bool current_logging(const bool fallback) {
 bool write_settings(const bool warn, const bool logging) {
     return cfg::write_bytes(
         ini_path(),
-        defaults::ini_for_auto_core(warn, logging)
+        menu::with_header(
+            menu_settings,
+            defaults::ini_for_auto_core(warn, logging)
+        )
     );
 }
 
-void show_settings() {
-    const bool warn = current_warn(defaults::warn_without_winkey_mapping);
-    const bool logging = current_logging(
-        ac::logging::config::component_logging_default()
-    );
-    std::cout
-        << "Current config/auto_core.ini\n"
-        << "  warn_without_winkey_mapping = "
-        << (warn ? "on" : "off")
-        << "\n"
-        << "  logging = "
-        << (logging ? "on" : "off")
-        << '\n';
+[[nodiscard]]
+std::string current_text(const menu::Setting& setting) {
+    if (setting.key == "warn_without_winkey_mapping") {
+        return current_warn(defaults::warn_without_winkey_mapping) ? "on" : "off";
+    }
+    return current_logging(ac::logging::config::component_logging_default())
+        ? "on"
+        : "off";
 }
 
 [[nodiscard]]
-std::optional<bool> prompt_warn(const bool suggestion) {
-    return cfg::prompt_on_off("warn_without_winkey_mapping", suggestion);
-}
-
-[[nodiscard]]
-std::optional<bool> prompt_logging(const bool suggestion) {
-    return cfg::prompt_on_off("logging", suggestion);
+menu::ApplyResult apply_setting(
+    const menu::Setting& setting,
+    const std::string_view value
+) {
+    const bool warn = setting.key == "warn_without_winkey_mapping"
+        ? value == "on"
+        : current_warn(defaults::warn_without_winkey_mapping);
+    const bool logging = setting.key == "logging"
+        ? value == "on"
+        : current_logging(ac::logging::config::component_logging_default());
+    if (!write_settings(warn, logging)) {
+        auto_core_config.log_print("Failed to write {}.", ini_path().string());
+        return menu::ApplyResult::failed;
+    }
+    auto_core_config.log_print("Wrote {}", ini_path().string());
+    return menu::ApplyResult::stored;
 }
 
 [[nodiscard]]
 int configure_settings() {
-    show_settings();
-    while (true) {
+    const auto result = menu::run_menu(
+        "Auto Core Configuration",
+        menu_settings,
+        current_text,
+        apply_setting,
+        std::cin,
         std::cout
-            << "\nauto_core settings\n"
-            << "  1. Modify settings\n"
-            << "  2. Restore defaults\n"
-            << "  3. Back\n"
-            << "Choice: ";
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            const auto warn = prompt_warn(
-                current_warn(defaults::warn_without_winkey_mapping)
-            );
-            if (!warn) {
-                return 1;
-            }
-            const auto logging = prompt_logging(
-                current_logging(
-                    ac::logging::config::component_logging_default()
-                )
-            );
-            if (!logging) {
-                return 1;
-            }
-            if (!write_settings(*warn, *logging)) {
-                auto_core_config.log_print(
-                    "Failed to write {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            auto_core_config.log_print("Wrote {}", ini_path().string());
-            show_settings();
-        }
-        else if (*line == "2") {
-            if (!write_settings(
-                    defaults::warn_without_winkey_mapping,
-                    defaults::auto_core_logging
-                )) {
-                auto_core_config.log_print(
-                    "Failed to restore defaults in {}.",
-                    ini_path().string()
-                );
-                return 1;
-            }
-            auto_core_config.log_print(
-                "Restored defaults in {}",
-                ini_path().string()
-            );
-            show_settings();
-        }
-        else if (*line == "3" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 1, 2, or 3.\n";
-        }
-    }
+    );
+    return result.ok ? 0 : 1;
 }
 
 void launch_owner(const std::string_view name) {
@@ -170,7 +147,7 @@ void print_menu() {
         << "3. Components settings\n"
         << "4. Shutdown settings\n"
         << "5. Crash recovery settings\n"
-        << "6. Exit\n"
+        << "0. Exit\n"
         << "Choice: ";
 }
 
@@ -198,11 +175,11 @@ int configuration_mode() {
         else if (*line == "5") {
             launch_owner("crash_recovery_config.exe");
         }
-        else if (*line == "6" || line->empty()) {
+        else if (*line == "0" || line->empty()) {
             return 0;
         }
         else {
-            std::cout << "Enter 1-6.\n";
+            std::cout << "Enter 0-5.\n";
         }
     }
 }
@@ -222,30 +199,27 @@ int create_auto_core_ini(const bool prompt) {
         return 0;
     }
 
-    std::cout
-        << "config/auto_core.ini is missing. Create it using the defaults.\n"
-        << "auto_core_init.exe initializes the other configuration files.\n";
-    const auto warn = prompt_warn(defaults::warn_without_winkey_mapping);
-    if (!warn) {
-        auto_core_config.log_print(
-            "Initial configuration did not finish. "
-            "config/auto_core.ini was not created."
-        );
-        return 1;
-    }
-    const auto logging = prompt_logging(defaults::auto_core_logging);
-    if (!logging) {
-        auto_core_config.log_print(
-            "Initial configuration did not finish. "
-            "config/auto_core.ini was not created."
-        );
-        return 1;
-    }
-    if (!write_settings(*warn, *logging)) {
+    if (!write_settings(
+            defaults::warn_without_winkey_mapping,
+            defaults::auto_core_logging
+        )) {
         auto_core_config.log_print("Failed to write {}.", path.string());
         return 1;
     }
     auto_core_config.log_print("Wrote {}", path.string());
+    const auto offer = menu::offer_configuration(
+        "Auto Core Configuration",
+        menu_settings,
+        current_text,
+        std::cin,
+        std::cout
+    );
+    if (offer == menu::OfferResult::failed) {
+        return 1;
+    }
+    if (offer == menu::OfferResult::configure) {
+        return configure_settings();
+    }
     return 0;
 }
 

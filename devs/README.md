@@ -2,7 +2,7 @@
 
 Developing Auto Core: contribution, building, architecture, maintenance, and internal project documentation.
 
-Using and configuring an installation is indexed in [docs/README.md](../docs/README.md).
+Using and configuring an installation starts at [Auto Core Guide](<../docs/Auto Core Guide.md>), [Auto Core Tutorial](<../docs/Auto Core Tutorial.md>), and [Auto Core Manual](<../docs/Auto Core Manual.md>).
 
 ## Guides
 
@@ -13,6 +13,7 @@ Using and configuring an installation is indexed in [docs/README.md](../docs/REA
 | [Strategy](STRATEGY.md) | Goals, locked decisions, agent git |
 | [Architecture inventory](architecture.md) | Phase 1A glossary, executables, subsystems, and internal protocols. Not the frozen standard. |
 | [Persistent state](persistent-state.md) | Phase 1A ledger of every non-INI file that survives process exit |
+| [Main](main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
 | [Development](development.md) | Shared protocols, runtime commands, adding a component |
 | [Adding a new component](new-component.md) | File → New → Project, portable `AutoCore.props`, live `components.ini` `[components]` |
 | [Modules](modules.md) | Phase 1A ledger of every production `.ixx`. Dispositions are pending. |

@@ -58,7 +58,10 @@ TEST_CASE("Fresh seed writes the exact default file", "[logging][init]") {
 
     CHECK(result.code == 0);
     CHECK(result.reported_success);
-    CHECK(written == default_ini);
+    CHECK(written == logging::ini_text(logging::compiled_defaults()));
+    CHECK(written.find("# disable_all = on | off\n") == 0);
+    CHECK(written.find("# directory") == std::string::npos);
+    CHECK(written.find(default_ini) != std::string::npos);
 }
 
 TEST_CASE("Init with seed behaves as seed", "[logging][init]") {
@@ -71,46 +74,32 @@ TEST_CASE("Init with seed behaves as seed", "[logging][init]") {
         return true;
     });
     CHECK(fresh.code == 0);
-    CHECK(written == default_ini);
+    CHECK(written == logging::ini_text(logging::compiled_defaults()));
 }
 
-TEST_CASE("Configure prompts all six settings in canonical order", "[logging][init]") {
-    std::istringstream input {"on\narchive\noff\non\nlog\noff\n"};
-    std::ostringstream output;
-    const auto values = logging::prompt_values(
-        input,
-        output,
-        logging::compiled_defaults()
-    );
+TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[logging][init]") {
+    logging::Values values;
+    values.disable_all = true;
+    values.directory = "archive";
+    values.write_logs_to_files = false;
+    values.write_logs_to_console = true;
+    values.log_print_mode = "log";
+    values.component_logging_default = false;
 
-    REQUIRE(values);
-    CHECK(logging::ini_text(*values) ==
+    const auto text = logging::ini_text(values);
+    CHECK(text.find("# disable_all = on | off\n") != std::string::npos);
+    CHECK(text.find("# log_print_mode = log | print\n") != std::string::npos);
+    CHECK(text.find("# directory") == std::string::npos);
+    CHECK(before(text, "# component_logging_default = on | off\n", "[logging]\n"));
+    CHECK(text.find(
         "[logging]\n"
         "disable_all = on\n"
         "directory = archive\n"
         "write_logs_to_files = off\n"
         "write_logs_to_console = on\n"
         "log_print_mode = log\n"
-        "component_logging_default = off\n");
-
-    const auto shown = output.str();
-    CHECK(before(shown, "disable_all [off]: ", "directory [logs]: "));
-    CHECK(before(shown, "directory [logs]: ", "write_logs_to_files [on]: "));
-    CHECK(before(
-        shown,
-        "write_logs_to_files [on]: ",
-        "write_logs_to_console [off]: "
-    ));
-    CHECK(before(
-        shown,
-        "write_logs_to_console [off]: ",
-        "log_print_mode [print]: "
-    ));
-    CHECK(before(
-        shown,
-        "log_print_mode [print]: ",
-        "component_logging_default [on]: "
-    ));
+        "component_logging_default = off\n"
+    ) != std::string::npos);
 }
 
 TEST_CASE("Disable writes the complete file with only disable_all on", "[logging][init]") {
@@ -125,7 +114,8 @@ TEST_CASE("Disable writes the complete file with only disable_all on", "[logging
     });
     CHECK(fresh.code == 0);
     CHECK(fresh.reported_success);
-    CHECK(written == disabled_ini);
+    CHECK(written == logging::ini_text(logging::disabled_defaults()));
+    CHECK(written.find(disabled_ini) != std::string::npos);
 
     int writes = 0;
     const auto existing = logging::commit_disable(true, [&](const std::string_view) {
@@ -173,16 +163,6 @@ TEST_CASE("Failed write does not report initialization success", "[logging][init
     });
     CHECK(disabled.code == 1);
     CHECK_FALSE(disabled.reported_success);
-}
-
-TEST_CASE("Configure cancellation returns no values", "[logging][init]") {
-    std::istringstream input {};
-    std::ostringstream output;
-    CHECK_FALSE(logging::prompt_values(
-        input,
-        output,
-        logging::compiled_defaults()
-    ));
 }
 
 TEST_CASE("Auto Core choice selects only auto_core_config", "[logging][init]") {
