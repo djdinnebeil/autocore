@@ -1,8 +1,9 @@
 /**
  * \file main.cxx
- * \brief Refreshes installation-root shortcuts and launches Settings.
+ * \brief Creates missing installation shortcuts, then initializes or opens Settings.
  *
  * The installation root is the directory that contains this executable.
+ * `config\auto_core.ini` is the only initialization sentinel.
  */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -79,6 +80,11 @@ bool create_shortcut(
     return saved;
 }
 
+bool is_file(const std::filesystem::path& path) {
+    std::error_code exists_error;
+    return std::filesystem::is_regular_file(path, exists_error);
+}
+
 bool launch_settings(
     const std::filesystem::path& executable,
     const std::filesystem::path& working_directory
@@ -108,6 +114,86 @@ bool launch_settings(
     return true;
 }
 
+bool launch_and_wait(
+    const std::filesystem::path& executable,
+    const std::filesystem::path& working_directory
+) {
+    STARTUPINFOW startup {};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process {};
+
+    if (CreateProcessW(
+            executable.c_str(),
+            nullptr,
+            nullptr,
+            nullptr,
+            FALSE,
+            0,
+            nullptr,
+            working_directory.c_str(),
+            &startup,
+            &process
+        ) == FALSE) {
+        return false;
+    }
+
+    AllowSetForegroundWindow(process.dwProcessId);
+    CloseHandle(process.hThread);
+    const DWORD waited = WaitForSingleObject(process.hProcess, INFINITE);
+    CloseHandle(process.hProcess);
+    return waited == WAIT_OBJECT_0;
+}
+
+bool ensure_console() {
+    if (GetConsoleWindow() == nullptr && AllocConsole() == FALSE) {
+        return false;
+    }
+    SetConsoleTitleW(L"Auto Core Setup");
+    return GetConsoleWindow() != nullptr;
+}
+
+void write_console(const wchar_t* text) {
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD written = 0;
+    WriteConsoleW(
+        output,
+        text,
+        static_cast<DWORD>(std::char_traits<wchar_t>::length(text)),
+        &written,
+        nullptr
+    );
+}
+
+void wait_for_key() {
+    const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    FlushConsoleInputBuffer(input);
+    for (;;) {
+        INPUT_RECORD record {};
+        DWORD read = 0;
+        if (ReadConsoleInputW(input, &record, 1, &read) == FALSE || read == 0) {
+            return;
+        }
+        if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown) {
+            return;
+        }
+    }
+}
+
+void show_complete() {
+    write_console(
+        L"\n"
+        L"Setup complete.\n"
+        L"\n"
+        L"Auto Core and Auto Core Settings shortcuts have been created.\n"
+        L"\n"
+        L"Pin Auto Core to your taskbar, preferably in positions 1\u201310, "
+        L"then launch it to begin using Auto Core.\n"
+        L"\n"
+        L"Press any key to exit."
+    );
+    wait_for_key();
+}
+
 } // namespace
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
@@ -122,10 +208,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     const std::filesystem::path bin = root / L"bin";
     const std::filesystem::path auto_core = bin / L"auto_core.exe";
     const std::filesystem::path settings = bin / L"auto_core_settings.exe";
+    const std::filesystem::path initialization = bin / L"auto_core_init.exe";
+    const std::filesystem::path sentinel = root / L"config" / L"auto_core.ini";
 
-    std::error_code exists_error;
-    if (!std::filesystem::is_regular_file(auto_core, exists_error) ||
-        !std::filesystem::is_regular_file(settings, exists_error)) {
+    if (!is_file(auto_core) || !is_file(settings)) {
         show_error(
             L"Could not find bin\\auto_core.exe and "
             L"bin\\auto_core_settings.exe beside this executable."
@@ -133,27 +219,58 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         return 1;
     }
 
-    const HRESULT initialized =
-        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    if (FAILED(initialized)) {
-        show_error(L"Could not initialize COM.");
-        return 1;
-    }
+    const std::filesystem::path auto_core_link = root / L"Auto Core.lnk";
+    const std::filesystem::path settings_link = root / L"Auto Core Settings.lnk";
+    const bool need_auto_core_link = !is_file(auto_core_link);
+    const bool need_settings_link = !is_file(settings_link);
+    if (need_auto_core_link || need_settings_link) {
+        const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        if (FAILED(com)) {
+            show_error(L"Could not initialize COM.");
+            return 1;
+        }
 
-    const bool shortcuts_saved =
-        create_shortcut(root / L"Auto Core.lnk", auto_core, bin) &&
-        create_shortcut(root / L"Auto Core Settings.lnk", settings, bin);
-    if (!shortcuts_saved) {
+        const bool shortcuts_saved =
+            (!need_auto_core_link ||
+             create_shortcut(auto_core_link, auto_core, bin)) &&
+            (!need_settings_link ||
+             create_shortcut(settings_link, settings, bin));
         CoUninitialize();
-        show_error(L"Could not create the shortcuts.");
+        if (!shortcuts_saved) {
+            show_error(L"Could not create the shortcuts.");
+            return 1;
+        }
+    }
+
+    if (is_file(sentinel)) {
+        if (!launch_settings(settings, bin)) {
+            show_error(L"Could not launch Auto Core Settings.");
+            return 1;
+        }
+        return 0;
+    }
+
+    if (!is_file(initialization)) {
+        show_error(
+            L"Could not find bin\\auto_core_init.exe beside this executable."
+        );
         return 1;
     }
 
-    const bool launched = launch_settings(settings, bin);
-    CoUninitialize();
-    if (!launched) {
-        show_error(L"Could not launch Auto Core Settings.");
+    if (!ensure_console()) {
+        show_error(L"Could not open the Setup console.");
         return 1;
     }
+
+    if (!launch_and_wait(initialization, bin)) {
+        show_error(L"Could not launch Auto Core initialization.");
+        return 1;
+    }
+    if (!is_file(sentinel)) {
+        show_error(L"Auto Core initialization did not complete.");
+        return 1;
+    }
+
+    show_complete();
     return 0;
 }

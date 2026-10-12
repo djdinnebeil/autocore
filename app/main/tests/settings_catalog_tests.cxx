@@ -29,31 +29,6 @@ std::filesystem::path make_bin() {
 }
 
 TEST_CASE(
-    "Settings startup shows the menu when the sentinel exists",
-    "[settings][unit]"
-) {
-    CHECK(
-        settings::startup_step(true) == settings::StartupStep::show_menu
-    );
-    CHECK(
-        settings::recheck_after_init(true) == settings::InitRecheck::show_menu
-    );
-}
-
-TEST_CASE(
-    "Settings startup launches init and stops when the sentinel stays missing",
-    "[settings][unit]"
-) {
-    CHECK(
-        settings::startup_step(false) == settings::StartupStep::launch_init
-    );
-    CHECK(
-        settings::recheck_after_init(false) ==
-        settings::InitRecheck::exit_uninitialized
-    );
-}
-
-TEST_CASE(
     "Settings discovery uses installed settings executables",
     "[settings][unit]"
 ) {
@@ -83,10 +58,10 @@ TEST_CASE(
     REQUIRE(rows.size() == 4);
     CHECK(rows[0].label == "Modify Auto Core settings");
     CHECK(rows[0].executable == "auto_core_config.exe");
-    CHECK(rows[1].label == "Modify alpha settings");
+    CHECK(rows[1].label == "Modify Alpha settings");
     CHECK(rows[1].executable == "alpha_settings.exe");
-    CHECK(rows[2].label == "Modify journal settings");
-    CHECK(rows[3].label == "Modify zebra settings");
+    CHECK(rows[2].label == "Modify Journal settings");
+    CHECK(rows[3].label == "Modify Zebra settings");
 
     std::filesystem::remove_all(bin);
 }
@@ -103,6 +78,11 @@ TEST_CASE(
 
     REQUIRE(names.size() == 1);
     CHECK(names[0] == "itunes");
+
+    const auto rows = settings::menu_rows(names);
+    REQUIRE(rows.size() == 2);
+    CHECK(rows[1].label == "Modify iTunes settings");
+    CHECK(rows[1].executable == "itunes_settings.exe");
 
     std::filesystem::remove_all(bin);
 }

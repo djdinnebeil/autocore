@@ -30,17 +30,10 @@ export namespace ac::main::config {
         std::error_code error;
         std::filesystem::create_directories(path.parent_path(), error);
         if (error) {
-            std::cerr
-                << "Failed to create "
-                << path.parent_path().string()
-                << ": "
-                << error.message()
-                << '\n';
             return false;
         }
         std::ofstream output(path, std::ios::binary | std::ios::trunc);
         if (!output) {
-            std::cerr << "Failed to create " << path.string() << '\n';
             return false;
         }
         output.write(
@@ -49,7 +42,6 @@ export namespace ac::main::config {
         );
         output.close();
         if (!output) {
-            std::cerr << "Failed to write " << path.string() << '\n';
             return false;
         }
         return true;
@@ -60,12 +52,6 @@ export namespace ac::main::config {
         std::error_code error;
         std::filesystem::create_directories(directory, error);
         if (error) {
-            std::cerr
-                << "Failed to create "
-                << directory.string()
-                << ": "
-                << error.message()
-                << '\n';
             return false;
         }
         return true;
@@ -182,10 +168,6 @@ export namespace ac::main::config {
                 &startup_info,
                 &process_info
             )) {
-            std::cerr
-                << "Unable to start "
-                << executable_path.string()
-                << '\n';
             return 1;
         }
 

@@ -33,6 +33,7 @@ const menu::Setting menu_settings[] {
         .display_name = "Directory",
         .summary = "Folder that stores Taskbar data.",
         .default_value = taskbar::defaults::directory,
+        .directory_path = true,
     },
     {
         .key = "mode",
@@ -41,6 +42,7 @@ const menu::Setting menu_settings[] {
             "live discovers taskbar positions, and cache reuses a usable map.",
         .default_value = taskbar::defaults::mode,
         .choices = modes,
+        .match_ignore_case = true,
     },
     {
         .key = "logging",
@@ -71,23 +73,25 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
     std::error_code create_error;
     std::filesystem::create_directories(path.parent_path(), create_error);
     if (create_error) {
-        taskbar_config.log_print(
+        taskbar_config.print(
             "Failed to create config directory: {}",
             create_error.message()
         );
         return false;
     }
-    const auto contents = menu::with_header(
-        menu_settings,
-        taskbar::defaults::ini_for(
-            settings.directory,
-            settings.mode,
-            settings.logging
-        )
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            taskbar::defaults::ini_for(
+                settings.directory,
+                settings.mode,
+                settings.logging
+            )
+        );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        taskbar_config.log_print("Failed to create {}", path.string());
+        taskbar_config.print("Failed to create {}", path.string());
         return false;
     }
     output.write(
@@ -96,10 +100,10 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
     );
     output.close();
     if (!output) {
-        taskbar_config.log_print("Failed to write {}", path.string());
+        taskbar_config.print("Failed to write {}", path.string());
         return false;
     }
-    taskbar_config.log_print("Wrote {}", path.string());
+    taskbar_config.log("Wrote {}", path.string());
     return true;
 }
 
@@ -111,7 +115,7 @@ Settings read_settings(
     const auto document = ac::ini::read(path);
     if (!document) {
         if (report) {
-            taskbar_config.log_print(
+            taskbar_config.print(
                 "config/taskbar.ini is malformed. Using compiled defaults until "
                 "you save new settings."
             );
@@ -129,7 +133,7 @@ Settings read_settings(
             settings.mode = lower;
         }
         else if (report) {
-            taskbar_config.log_print(
+            taskbar_config.print(
                 "config/taskbar.ini mode is invalid. Using live."
             );
         }
@@ -237,28 +241,14 @@ int run_configuration_menu() {
 
 int offer_configuration() {
     (void)read_settings(ini_path(), true);
-    const auto offer = menu::offer_configuration(
-        "Taskbar Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        const auto result = menu::run_menu(
-            menu_title,
-            menu_settings,
-            current_text,
-            apply_setting,
-            std::cin,
-            std::cout
-        );
-        return result.ok ? 0 : 1;
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 int launch_taskbar_builder(const std::wstring_view arguments) {
@@ -267,7 +257,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        taskbar_config.log_print("Missing {}.", executable_path.string());
+        taskbar_config.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -309,7 +299,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
             &startup_info,
             &process_info
         )) {
-        taskbar_config.log_print(
+        taskbar_config.print(
             "Unable to start {}.",
             executable_path.string()
         );
@@ -321,7 +311,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        taskbar_config.log_print(
+        taskbar_config.print(
             "Unable to read the exit code from taskbar_builder.exe."
         );
         return 1;
@@ -329,7 +319,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        taskbar_config.log_print(
+        taskbar_config.print(
             "Taskbar application provisioning failed. taskbar_builder.exe "
             "exited {}.",
             code
@@ -344,7 +334,7 @@ int offer_builder() {
         return 1;
     }
     if (!*accepted) {
-        taskbar_config.log_print("Taskbar builder was not requested.");
+        taskbar_config.log("Taskbar builder was not requested.");
         return 0;
     }
     return launch_taskbar_builder({});
@@ -365,7 +355,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        taskbar_config.log_print("Failed to inspect {}", path.string());
+        taskbar_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -378,14 +368,18 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(taskbar_config);
             if (!write_ini(path, Settings {})) {
-                taskbar_config.log_print(
+                taskbar_config.log(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(taskbar_config);
         }
-        return launch_taskbar_builder(L"--seed");
+        return req::finish_component_initialization(
+            taskbar_config,
+            launch_taskbar_builder(L"--seed"),
+            "Taskbar"
+        );
     }
 
     if (launch->init) {
@@ -398,13 +392,13 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(taskbar_config);
             if (!write_ini(path, Settings {})) {
-                taskbar_config.log_print(
+                taskbar_config.log(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                taskbar_config.log_print(
+                taskbar_config.log(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
@@ -412,13 +406,17 @@ int main(int argc, char* argv[]) {
             req::log_configuration_initialized(taskbar_config);
             say_restart();
         }
-        return offer_builder();
+        return req::finish_component_initialization(
+            taskbar_config,
+            offer_builder(),
+            "Taskbar"
+        );
     }
 
     if (!present) {
         req::log_configuration_missing(taskbar_config);
         if (!write_ini(path, Settings {})) {
-            taskbar_config.log_print(
+            taskbar_config.log(
                 "Taskbar configuration was not initialized."
             );
             return 1;

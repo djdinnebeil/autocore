@@ -29,6 +29,7 @@ const menu::Setting menu_settings[] {
         .display_name = "Directory",
         .summary = "Folder that stores Server data.",
         .default_value = server::defaults::directory,
+        .directory_path = true,
     },
     {
         .key = "logging",
@@ -85,7 +86,7 @@ bool write_server_ini(const Settings& settings) {
     std::error_code error;
     std::filesystem::create_directories(ac::paths::config_directory(), error);
     if (error) {
-        server_config.log_print(
+        server_config.print(
             "Failed to create config directory: {}",
             error.message()
         );
@@ -95,17 +96,19 @@ bool write_server_ini(const Settings& settings) {
     const auto path = ini_path();
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        server_config.log_print("Failed to create {}", path.string());
+        server_config.print("Failed to create {}", path.string());
         return false;
     }
-    const auto contents = menu::with_header(
-        menu_settings,
-        server::defaults::ini_for(settings.directory, settings.logging)
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            server::defaults::ini_for(settings.directory, settings.logging)
+        );
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        server_config.log_print("Failed to write {}", path.string());
+        server_config.print("Failed to write {}", path.string());
         return false;
     }
     return true;
@@ -115,7 +118,7 @@ bool cancelled(const std::string_view value) {
     if (value != "cancel") {
         return false;
     }
-    server_config.log_print("Cancelled.");
+    server_config.print("Cancelled.");
     return true;
 }
 
@@ -166,11 +169,11 @@ menu::ApplyResult apply_setting(
         settings.logging = value == "on";
     }
     if (!write_server_ini(settings)) {
-        server_config.log_print("Failed to write config/server.ini.");
+        server_config.print("Failed to write config/server.ini.");
         return menu::ApplyResult::failed;
     }
     if (setting.key == "directory") {
-        server_config.log_print("directory stored as {}.", settings.directory);
+        server_config.log("directory stored as {}.", settings.directory);
     }
     return menu::ApplyResult::stored;
 }
@@ -188,20 +191,14 @@ int run_configuration_menu() {
 }
 
 int offer_configuration() {
-    const auto offer = menu::offer_configuration(
-        "Server Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 std::wstring quote_argument(std::wstring_view value) {
@@ -221,7 +218,7 @@ int launch_owner(
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        server_config.log_print("Missing {}.", executable_path.string());
+        server_config.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -259,7 +256,7 @@ int launch_owner(
             &startup,
             &process
         )) {
-        server_config.log_print("Unable to start {}.", executable_path.string());
+        server_config.print("Unable to start {}.", executable_path.string());
         return 1;
     }
 
@@ -268,7 +265,7 @@ int launch_owner(
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        server_config.log_print(
+        server_config.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -277,7 +274,7 @@ int launch_owner(
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        server_config.log_print("{} exited {}.", executable_path.string(), code);
+        server_config.print("{} exited {}.", executable_path.string(), code);
     }
     return code;
 }
@@ -299,7 +296,7 @@ int launch_owned_init() {
     case SiteChoice::yes:
         return launch_owner(L"server_builder.exe", L"--seed");
     case SiteChoice::no:
-        server_config.log_print("Default site files were not requested.");
+        server_config.log("Default site files were not requested.");
         return 0;
     case SiteChoice::cancelled:
         return 1;
@@ -337,7 +334,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        server_config.log_print("Failed to inspect {}", path.string());
+        server_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -350,14 +347,18 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(server_config);
             if (!write_server_ini({})) {
-                server_config.log_print(
+                server_config.log(
                     "Server configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(server_config);
         }
-        return launch_owned_seed();
+        return req::finish_component_initialization(
+            server_config,
+            launch_owned_seed(),
+            "Server"
+        );
     }
 
     if (launch->init) {
@@ -367,25 +368,29 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(server_config);
             if (!write_server_ini({})) {
-                server_config.log_print(
+                server_config.log(
                     "Server configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                server_config.log_print(
+                server_config.log(
                     "Server configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(server_config);
         }
-        return launch_owned_init();
+        return req::finish_component_initialization(
+            server_config,
+            launch_owned_init(),
+            "Server"
+        );
     }
 
     if (!present) {
         if (!write_server_ini({})) {
-            server_config.log_print(
+            server_config.log(
                 "Server configuration was not initialized."
             );
             return 1;

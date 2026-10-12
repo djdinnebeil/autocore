@@ -109,10 +109,10 @@ menu::ApplyResult apply_setting(
         ? value == "on"
         : current_logging(ac::logging::config::component_logging_default());
     if (!write_settings(warn, logging)) {
-        auto_core_config.log_print("Failed to write {}.", ini_path().string());
+        auto_core_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    auto_core_config.log_print("Wrote {}", ini_path().string());
+    auto_core_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -131,7 +131,7 @@ int configure_settings() {
 
 void launch_owner(const std::string_view name) {
     if (cfg::run_config_exe(name) != 0) {
-        auto_core_config.log_print(
+        auto_core_config.print(
             "{} did not complete successfully.",
             name
         );
@@ -185,17 +185,17 @@ int configuration_mode() {
 }
 
 [[nodiscard]]
-int create_auto_core_ini(const bool prompt) {
+int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
     const auto path = ini_path();
     if (!prompt) {
         if (!write_settings(
                 defaults::warn_without_winkey_mapping,
                 defaults::auto_core_logging
             )) {
-            auto_core_config.log_print("Failed to write {}.", path.string());
+            auto_core_config.print("Failed to write {}.", path.string());
             return 1;
         }
-        auto_core_config.log_print("Wrote {}", path.string());
+        auto_core_config.log("Wrote {}", path.string());
         return 0;
     }
 
@@ -203,10 +203,21 @@ int create_auto_core_ini(const bool prompt) {
             defaults::warn_without_winkey_mapping,
             defaults::auto_core_logging
         )) {
-        auto_core_config.log_print("Failed to write {}.", path.string());
+        auto_core_config.print("Failed to write {}.", path.string());
         return 1;
     }
-    auto_core_config.log_print("Wrote {}", path.string());
+    auto_core_config.log("Wrote {}", path.string());
+    if (walk_settings) {
+        const auto result = menu::prompt_settings(
+            menu_settings,
+            current_text,
+            apply_setting,
+            std::cin,
+            std::cout,
+            "Runtime Configuration"
+        );
+        return result.ok ? 0 : 1;
+    }
     const auto offer = menu::offer_configuration(
         "Auto Core Configuration",
         menu_settings,
@@ -239,7 +250,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        auto_core_config.log_print(
+        auto_core_config.print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -252,14 +263,22 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (present) {
             req::log_seed_skipped(auto_core_config, "config/auto_core.ini");
-            return 0;
+            return req::finish_configuration_initialization(
+                auto_core_config,
+                0,
+                "Runtime"
+            );
         }
         req::log_writing_defaults(auto_core_config);
         if (create_auto_core_ini(false) != 0) {
             return 1;
         }
         req::log_configuration_initialized(auto_core_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            auto_core_config,
+            0,
+            "Runtime"
+        );
     }
 
     if (launch->init) {
@@ -268,10 +287,18 @@ int main(int argc, char* argv[]) {
                 auto_core_config,
                 "config/auto_core.ini"
             );
-            return 0;
+            return req::finish_configuration_initialization(
+                auto_core_config,
+                0,
+                "Runtime"
+            );
         }
         req::log_configuration_missing(auto_core_config);
-        return create_auto_core_ini(true);
+        return req::finish_configuration_initialization(
+            auto_core_config,
+            create_auto_core_ini(true, true),
+            "Runtime"
+        );
     }
 
     if (present) {

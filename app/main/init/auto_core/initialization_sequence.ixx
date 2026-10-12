@@ -2,9 +2,12 @@
  * \file initialization_sequence.ixx
  * \brief Ordered first-run owners launched by auto_core_init.exe.
  *
- * The Auto Core choice selects only auto_core_config.exe. logger_init.exe
- * and components_init.exe make their own decisions. No init executable
- * writes an INI file.
+ * Main configuration owners run before the optional components_init.exe
+ * stage. The Auto Core menu does not select that stage. Editors run after
+ * it, so the component list is seeded from INI files that component
+ * initialization may already have created. No init executable writes an
+ * INI file.
+ * logging.ini is established before this sequence.
  */
 export module auto_core_initialization;
 
@@ -13,12 +16,34 @@ import std;
 export namespace ac::main::init {
 
     enum class OwnerKind {
-        auto_core,
-        logger,
+        configured,
         components,
-        seeded_config,
         components_editor,
         keymap_editor
+    };
+
+    /**
+     * \brief How Main configuration owners are launched.
+     *
+     * This does not select `components_init.exe`. `seed` is `--seed`.
+     * `interactive` is `--init` and never includes `--seed`.
+     * `seeded_interactive` passes both flags.
+     */
+    enum class InitializationMode {
+        seed,
+        interactive,
+        seeded_interactive
+    };
+
+    /**
+     * \brief Whether to launch components_init.exe, and with which flag.
+     *
+     * Chosen by the Components menu, or forced to `seed` for plain `--seed`.
+     */
+    enum class ComponentLaunch {
+        seed,
+        configure,
+        skip
     };
 
     struct OwnerStep {
@@ -26,37 +51,53 @@ export namespace ac::main::init {
         OwnerKind kind;
     };
 
-    inline constexpr std::array<OwnerStep, 9> initialization_steps {{
-        {"auto_core_config.exe", OwnerKind::auto_core},
-        {"logger_init.exe", OwnerKind::logger},
+    inline constexpr std::array<OwnerStep, 8> initialization_steps {{
+        {"auto_core_config.exe", OwnerKind::configured},
+        {"components_config.exe", OwnerKind::configured},
+        {"shutdown_config.exe", OwnerKind::configured},
+        {"crash_recovery_config.exe", OwnerKind::configured},
+        {"keymap_config.exe", OwnerKind::configured},
         {"components_init.exe", OwnerKind::components},
-        {"keymap_config.exe", OwnerKind::seeded_config},
-        {"components_config.exe", OwnerKind::seeded_config},
-        {"shutdown_config.exe", OwnerKind::seeded_config},
-        {"crash_recovery_config.exe", OwnerKind::seeded_config},
         {"components_editor.exe", OwnerKind::components_editor},
         {"keymap_editor.exe", OwnerKind::keymap_editor}
     }};
 
-    /**
-     * \brief Arguments for one owner.
-     *
-     * `auto_core_defaults` applies only to `auto_core_config.exe`.
-     */
     [[nodiscard]]
     constexpr std::wstring_view arguments_for(
         const OwnerKind kind,
-        const bool auto_core_defaults
+        const InitializationMode mode
     ) noexcept {
         switch (kind) {
-        case OwnerKind::auto_core:
-            return auto_core_defaults ? L"--seed" : L"--init";
-        case OwnerKind::seeded_config:
+        case OwnerKind::configured:
+            switch (mode) {
+            case InitializationMode::seed:
+                return L"--seed";
+            case InitializationMode::interactive:
+                return L"--init";
+            case InitializationMode::seeded_interactive:
+                return L"--init --seed";
+            }
+            return L"";
+        case OwnerKind::components:
+            return L"";
         case OwnerKind::components_editor:
             return L"--seed";
-        case OwnerKind::logger:
-        case OwnerKind::components:
         case OwnerKind::keymap_editor:
+            return L"";
+        }
+        return L"";
+    }
+
+    [[nodiscard]]
+    constexpr std::wstring_view component_arguments(
+        const ComponentLaunch launch
+    ) noexcept {
+        switch (launch) {
+        case ComponentLaunch::seed:
+            return L"--seed";
+        case ComponentLaunch::configure:
+            return L"--init";
+        case ComponentLaunch::skip:
             return L"";
         }
         return L"";

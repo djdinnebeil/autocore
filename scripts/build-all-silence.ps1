@@ -5,9 +5,9 @@
 .DESCRIPTION
   Locates an MSBuild installation supporting MSVC v145 / Visual Studio 2026
   (version 18+) with vswhere and builds app\AutoCore.sln Release x64.
-  That solution build is the shipped DLL and executables. Test projects are
-  members and are not built. Renames locked symbol files so Link can
-  replace them. Does not publish dist\bin.
+  That solution is production projects only. Test projects are built from
+  app\Tests.sln. Renames locked symbol files so Link can replace them.
+  Does not publish dist\bin.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>

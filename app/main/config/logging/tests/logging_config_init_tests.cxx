@@ -1,16 +1,18 @@
 #include "catch_amalgamated.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 #include <string>
 
 import auto_core.main.defaults;
 import auto_core_initialization;
-import logger_init_detail;
+import logging_bootstrap;
 import logging_config_detail;
 
 namespace logging = ac::main::logging;
 namespace sequence = ac::main::init;
-namespace logger_menu = ac::main::logger_init;
+namespace boot = ac::main::logging_bootstrap;
 
 namespace {
 
@@ -165,71 +167,284 @@ TEST_CASE("Failed write does not report initialization success", "[logging][init
     CHECK_FALSE(disabled.reported_success);
 }
 
-TEST_CASE("Auto Core choice selects only auto_core_config", "[logging][init]") {
-    REQUIRE(sequence::initialization_steps.size() >= 3);
+TEST_CASE("Initialization mode propagates before components_init", "[logging][init]") {
+    REQUIRE(sequence::initialization_steps.size() == 8);
     CHECK(sequence::initialization_steps[0].executable == "auto_core_config.exe");
-    CHECK(sequence::initialization_steps[0].kind == sequence::OwnerKind::auto_core);
-    CHECK(sequence::arguments_for(sequence::OwnerKind::auto_core, true) == L"--seed");
-    CHECK(sequence::arguments_for(sequence::OwnerKind::auto_core, false) == L"--init");
+    CHECK(sequence::initialization_steps[1].executable == "components_config.exe");
+    CHECK(sequence::initialization_steps[2].executable == "shutdown_config.exe");
+    CHECK(sequence::initialization_steps[3].executable == "crash_recovery_config.exe");
+    CHECK(sequence::initialization_steps[4].executable == "keymap_config.exe");
+    CHECK(sequence::initialization_steps[5].executable == "components_init.exe");
+    CHECK(sequence::initialization_steps[6].executable == "components_editor.exe");
+    CHECK(sequence::initialization_steps[7].executable == "keymap_editor.exe");
 
-    CHECK(sequence::initialization_steps[1].executable == "logger_init.exe");
-    CHECK(sequence::arguments_for(sequence::OwnerKind::logger, true).empty());
-    CHECK(sequence::arguments_for(sequence::OwnerKind::logger, false).empty());
+    CHECK(sequence::initialization_steps[0].kind == sequence::OwnerKind::configured);
+    CHECK(sequence::initialization_steps[5].kind == sequence::OwnerKind::components);
+    CHECK(sequence::initialization_steps[6].kind == sequence::OwnerKind::components_editor);
+    CHECK(sequence::initialization_steps[7].kind == sequence::OwnerKind::keymap_editor);
 
-    CHECK(sequence::initialization_steps[2].executable == "components_init.exe");
-    CHECK(sequence::arguments_for(sequence::OwnerKind::components, true).empty());
-    CHECK(sequence::arguments_for(sequence::OwnerKind::components, false).empty());
+    using sequence::InitializationMode;
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::configured,
+        InitializationMode::seed
+    ) == L"--seed");
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::configured,
+        InitializationMode::interactive
+    ) == L"--init");
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::configured,
+        InitializationMode::seeded_interactive
+    ) == L"--init --seed");
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::components,
+        InitializationMode::interactive
+    ).empty());
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::components,
+        InitializationMode::seed
+    ).empty());
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::components,
+        InitializationMode::seeded_interactive
+    ).empty());
+    CHECK(sequence::component_arguments(sequence::ComponentLaunch::seed) == L"--seed");
+    CHECK(sequence::component_arguments(
+        sequence::ComponentLaunch::configure
+    ) == L"--init");
+    CHECK(sequence::component_arguments(sequence::ComponentLaunch::skip).empty());
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::components_editor,
+        InitializationMode::interactive
+    ) == L"--seed");
+    CHECK(sequence::arguments_for(
+        sequence::OwnerKind::keymap_editor,
+        InitializationMode::interactive
+    ).empty());
 
+    bool saw_components_init = false;
     for (const auto& step : sequence::initialization_steps) {
         CHECK(step.executable != "logging_config.exe");
         CHECK(step.executable != "logger_config.exe");
+        CHECK(step.executable != "logger_init.exe");
         CHECK(sequence::stops_on_failure(step.kind));
+        if (step.kind == sequence::OwnerKind::configured) {
+            CHECK_FALSE(saw_components_init);
+        }
+        if (step.executable == "components_init.exe") {
+            saw_components_init = true;
+        }
+        if (step.kind == sequence::OwnerKind::components_editor ||
+            step.kind == sequence::OwnerKind::keymap_editor) {
+            CHECK(saw_components_init);
+        }
     }
 }
 
-TEST_CASE("Logger menu offers three independent choices", "[logging][init]") {
-    std::istringstream invalid {"9\n1\n"};
-    std::ostringstream output;
-    const auto defaults = logger_menu::prompt_menu(invalid, output);
-    REQUIRE(defaults);
-    CHECK(*defaults == logger_menu::Choice::use_defaults);
-    CHECK(output.str().find("Enter 1, 2, or 3.") != std::string::npos);
-    CHECK(output.str().find("1. Use defaults") != std::string::npos);
-    CHECK(output.str().find("2. Configure") != std::string::npos);
-    CHECK(output.str().find("3. Disable logging") != std::string::npos);
+TEST_CASE("Interactive logging bootstrap selects seed or init", "[logging][init]") {
+    CHECK(boot::init_mode(false, false) == boot::InitMode::interactive);
+    CHECK(boot::init_mode(true, false) == boot::InitMode::interactive);
+    CHECK(boot::init_mode(false, true) == boot::InitMode::seed);
+    CHECK(boot::init_mode(true, true) == boot::InitMode::interactive_seed);
 
-    std::istringstream configure {"2\n"};
+    std::istringstream blank_then_blank {"\n\n"};
+    std::ostringstream blank_output;
+    const auto blank = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        blank_then_blank,
+        blank_output
+    );
+    CHECK_FALSE(blank.cancelled);
+    CHECK(blank.arguments == boot::ConfigArguments::seed);
+    CHECK(boot::config_arguments(blank.arguments) == L"--seed");
+    CHECK(blank_output.str().find("Enable logging? [Y/n]:") != std::string::npos);
+    CHECK(blank_output.str().find("1. Use defaults") != std::string::npos);
+
+    std::istringstream yes_configure {"Y\n2\n"};
     std::ostringstream configure_output;
-    const auto configured = logger_menu::prompt_menu(configure, configure_output);
-    REQUIRE(configured);
-    CHECK(*configured == logger_menu::Choice::configure);
+    const auto configured = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        yes_configure,
+        configure_output
+    );
+    CHECK_FALSE(configured.cancelled);
+    CHECK(configured.arguments == boot::ConfigArguments::initialize);
+    CHECK(boot::config_arguments(configured.arguments) == L"--init");
 
-    std::istringstream disable {"3\n"};
-    std::ostringstream disable_output;
-    const auto disabled = logger_menu::prompt_menu(disable, disable_output);
-    REQUIRE(disabled);
-    CHECK(*disabled == logger_menu::Choice::disable_logging);
+    std::istringstream lower_yes {"y\n1\n"};
+    std::ostringstream lower_output;
+    const auto lower = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        lower_yes,
+        lower_output
+    );
+    CHECK(lower.arguments == boot::ConfigArguments::seed);
 
-    std::istringstream eof {};
-    std::ostringstream eof_output;
-    CHECK_FALSE(logger_menu::prompt_menu(eof, eof_output));
+    std::istringstream invalid {"maybe\nn\n"};
+    std::ostringstream invalid_output;
+    const auto disabled = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        invalid,
+        invalid_output
+    );
+    CHECK_FALSE(disabled.cancelled);
+    CHECK(disabled.arguments == boot::ConfigArguments::disable);
+    CHECK(boot::config_arguments(disabled.arguments) == L"--disable");
+    CHECK(invalid_output.str().find("Enter Y or N.") != std::string::npos);
+    CHECK(invalid_output.str().find("Use defaults") == std::string::npos);
+
+    std::istringstream menu_invalid {"\n9\n2\n"};
+    std::ostringstream menu_output;
+    const auto menu = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        menu_invalid,
+        menu_output
+    );
+    CHECK(menu.arguments == boot::ConfigArguments::initialize);
+    CHECK(menu_output.str().find("Enter 1 or 2.") != std::string::npos);
 }
 
-TEST_CASE("Logger choices launch owners and do not write INI text", "[logging][init]") {
-    const auto defaults = logger_menu::launches_for(logger_menu::Choice::use_defaults);
-    REQUIRE(defaults.size() == 2);
-    CHECK(defaults[0].executable == "logging_config.exe");
-    CHECK(defaults[0].arguments == L"--seed");
-    CHECK(defaults[1].executable == "logger_config.exe");
-    CHECK(defaults[1].arguments == L"--seed");
+TEST_CASE("Seed modes do not show the logging configure menu", "[logging][init]") {
+    std::istringstream unread {"2\n"};
+    std::ostringstream seed_output;
+    const auto seeded = boot::select_logging_config(
+        boot::InitMode::seed,
+        false,
+        unread,
+        seed_output
+    );
+    CHECK_FALSE(seeded.cancelled);
+    CHECK(seeded.arguments == boot::ConfigArguments::seed);
+    CHECK(seed_output.str().empty());
+    CHECK(unread.peek() == '2');
 
-    const auto configure = logger_menu::launches_for(logger_menu::Choice::configure);
-    CHECK(configure[0].arguments == L"--init");
-    CHECK(configure[1].arguments == L"--init");
+    std::istringstream enabled {"\n"};
+    std::ostringstream enabled_output;
+    const auto interactive_seed = boot::select_logging_config(
+        boot::InitMode::interactive_seed,
+        false,
+        enabled,
+        enabled_output
+    );
+    CHECK(interactive_seed.arguments == boot::ConfigArguments::seed);
+    CHECK(enabled_output.str().find("Enable logging? [Y/n]:") != std::string::npos);
+    CHECK(enabled_output.str().find("Use defaults") == std::string::npos);
 
-    const auto disable = logger_menu::launches_for(logger_menu::Choice::disable_logging);
-    CHECK(disable[0].executable == "logging_config.exe");
-    CHECK(disable[0].arguments == L"--disable");
-    CHECK(disable[1].executable == "logger_config.exe");
-    CHECK(disable[1].arguments == L"--seed");
+    std::istringstream declined {"N\n"};
+    std::ostringstream declined_output;
+    const auto no = boot::select_logging_config(
+        boot::InitMode::interactive_seed,
+        false,
+        declined,
+        declined_output
+    );
+    CHECK(no.arguments == boot::ConfigArguments::disable);
+    CHECK(declined_output.str().find("Use defaults") == std::string::npos);
+}
+
+TEST_CASE("Existing logging.ini skips the logging bootstrap prompt", "[logging][init]") {
+    std::istringstream unread {"n\n"};
+    std::ostringstream output;
+    const auto preserved = boot::select_logging_config(
+        boot::InitMode::interactive,
+        true,
+        unread,
+        output
+    );
+    CHECK_FALSE(preserved.cancelled);
+    CHECK(preserved.arguments == boot::ConfigArguments::preserve);
+    CHECK(output.str().empty());
+    CHECK(unread.peek() == 'n');
+}
+
+TEST_CASE("EOF cancels logging bootstrap without creating auto_core.ini", "[logging][init]") {
+    const auto root =
+        std::filesystem::temp_directory_path() /
+        "auto-core-logging-bootstrap-cancel";
+    std::filesystem::remove_all(root);
+    const auto ini = root / "config" / "auto_core.ini";
+    std::filesystem::create_directories(ini.parent_path());
+
+    std::istringstream eof {};
+    std::ostringstream output;
+    const auto cancelled = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        eof,
+        output
+    );
+    CHECK(cancelled.cancelled);
+    CHECK_FALSE(std::filesystem::exists(ini));
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE("Disable logging writes before normal logging and adds no log files", "[logging][init]") {
+    const auto root =
+        std::filesystem::temp_directory_path() /
+        "auto-core-logging-bootstrap-disable";
+    std::filesystem::remove_all(root);
+    const auto logs = root / "logs";
+    std::filesystem::create_directories(logs);
+    {
+        std::ofstream unrelated {logs / "unrelated.txt"};
+        unrelated << "keep\n";
+    }
+
+    std::istringstream input {"n\n"};
+    std::ostringstream output;
+    const auto selection = boot::select_logging_config(
+        boot::InitMode::interactive,
+        false,
+        input,
+        output
+    );
+    REQUIRE_FALSE(selection.cancelled);
+    CHECK(selection.arguments == boot::ConfigArguments::disable);
+
+    bool file_present = false;
+    std::string written;
+    int logging_calls = 0;
+    const auto outcome = boot::run_logging_config(
+        selection.arguments,
+        [&](const boot::ConfigArguments arguments) {
+            CHECK(logging_calls == 0);
+            CHECK(arguments == boot::ConfigArguments::disable);
+            written = logging::ini_text(logging::disabled_defaults());
+            file_present = true;
+            return 0;
+        },
+        [&] { return file_present; },
+        [&] { ++logging_calls; }
+    );
+
+    CHECK(outcome.code == 0);
+    CHECK(outcome.logging_started);
+    CHECK(logging_calls == 1);
+    CHECK(written.find(disabled_ini) != std::string::npos);
+
+    int files = 0;
+    for (const auto& entry : std::filesystem::directory_iterator {logs}) {
+        CHECK(entry.path().filename() == "unrelated.txt");
+        ++files;
+    }
+    CHECK(files == 1);
+    std::filesystem::remove_all(root);
+}
+
+TEST_CASE("Failed logging launch does not start normal logging", "[logging][init]") {
+    int logging_calls = 0;
+    const auto outcome = boot::run_logging_config(
+        boot::ConfigArguments::disable,
+        [](const boot::ConfigArguments) { return 1; },
+        [] { return true; },
+        [&] { ++logging_calls; }
+    );
+    CHECK(outcome.code == 1);
+    CHECK_FALSE(outcome.logging_started);
+    CHECK(logging_calls == 0);
 }

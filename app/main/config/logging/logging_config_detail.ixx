@@ -63,6 +63,7 @@ export namespace ac::main::logging {
                 "installation root.",
             .default_value = defaults::logging_directory,
             .constraint = "Enter a relative or absolute directory.",
+            .directory_path = true,
         },
         {
             .key = "write_logs_to_files",
@@ -128,7 +129,7 @@ export namespace ac::main::logging {
     }
 
     [[nodiscard]] std::string ini_text(const Values& values) {
-        return ac::config_menu::with_header(
+        auto text = ac::config_menu::with_header(
             menu_settings,
             defaults::ini_for_logging(
                 values.disable_all,
@@ -139,6 +140,14 @@ export namespace ac::main::logging {
                 values.component_logging_default
             )
         );
+        constexpr std::string_view disable_all =
+            "# disable_all = on | off\n";
+        constexpr std::string_view directory =
+            "# directory = relative or absolute path\n";
+        if (text.starts_with(disable_all)) {
+            text.insert(disable_all.size(), directory);
+        }
+        return text;
     }
 
     /**

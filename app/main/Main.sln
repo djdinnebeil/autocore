@@ -32,8 +32,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_setup", "setup\au
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_init", "init\components\components_init.vcxproj", "{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_init", "init\logger\logger_init.vcxproj", "{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_config_tests", "config\logging\tests\logging_config_tests.vcxproj", "{7E4B1C90-2A55-4D18-8F63-0C9A6B5E2D41}"
 EndProject
 Global
@@ -100,10 +98,6 @@ Global
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Debug|x64.Build.0 = Debug|x64
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Release|x64.ActiveCfg = Release|x64
 		{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}.Release|x64.Build.0 = Release|x64
-		{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58}.Debug|x64.ActiveCfg = Debug|x64
-		{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58}.Debug|x64.Build.0 = Debug|x64
-		{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58}.Release|x64.ActiveCfg = Release|x64
-		{A1C84E27-5B90-4D36-8F12-6E3C9A7B4D58}.Release|x64.Build.0 = Release|x64
 		{7E4B1C90-2A55-4D18-8F63-0C9A6B5E2D41}.Debug|x64.ActiveCfg = Release|x64
 		{7E4B1C90-2A55-4D18-8F63-0C9A6B5E2D41}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection

@@ -145,10 +145,10 @@ menu::ApplyResult apply_setting(
         values.component_logging_default = value == "on";
     }
     if (!write_values(values)) {
-        logging_config.log_print("Failed to write {}.", ini_path().string());
+        logging_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    logging_config.log_print("Wrote {}", ini_path().string());
+    logging_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -171,21 +171,19 @@ int initialize_missing() {
         std::cerr << "Failed to write " << ini_path().string() << ".\n";
         return 1;
     }
-    logging_config.log_print("Wrote {}", ini_path().string());
-    const auto offer = menu::offer_configuration(
-        "Logging Configuration",
+    logging_config.log_main("logging_config.exe started");
+    ac::config::components_request::log_configuration_missing(logging_config);
+    ac::config::components_request::log_writing_defaults(logging_config);
+    logging_config.log("Wrote {}", ini_path().string());
+    const auto result = menu::prompt_settings(
         logging::menu_settings,
         current_text,
+        apply_setting,
         std::cin,
-        std::cout
+        std::cout,
+        "Logging Configuration"
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -246,9 +244,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (action == logging::Action::initialize) {
-        logging_config.log_main("logging_config.exe started");
-        req::log_configuration_missing(logging_config);
-        req::log_writing_defaults(logging_config);
         if (initialize_missing() != 0) {
             return 1;
         }
@@ -256,14 +251,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (action == logging::Action::create_missing) {
-        logging_config.log_main("logging_config.exe started");
-        req::log_configuration_missing(logging_config);
-        req::log_writing_defaults(logging_config);
         if (!write_values(logging::compiled_defaults())) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_config.log_print("Wrote {}", ini_path().string());
+        logging_config.log_main("logging_config.exe started");
+        req::log_configuration_missing(logging_config);
+        req::log_writing_defaults(logging_config);
+        logging_config.log("Wrote {}", ini_path().string());
         return run_configuration_menu();
     }
 
@@ -274,7 +269,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (disable_requested) {
-        logging_config.log_print(
+        logging_config.log(
             "Disable skipped; config/logging.ini already exists"
         );
         return 0;

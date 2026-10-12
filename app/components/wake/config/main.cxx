@@ -30,6 +30,7 @@ const menu::Setting menu_settings[] {
             "installation root.",
         .default_value = wake::defaults::directory,
         .constraint = "Enter a relative or absolute directory.",
+        .directory_path = true,
     },
     {
         .key = "logging",
@@ -88,20 +89,22 @@ bool write_directory(const std::string_view directory, const bool logging) {
     std::error_code create_error;
     std::filesystem::create_directories(path.parent_path(), create_error);
     if (create_error) {
-        wake_config.log_print(
+        wake_config.print(
             "Failed to create config directory: {}",
             create_error.message()
         );
         return false;
     }
 
-    const auto contents = menu::with_header(
-        menu_settings,
-        wake::defaults::ini_for(directory, logging)
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            wake::defaults::ini_for(directory, logging)
+        );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        wake_config.log_print("Failed to create {}", path.string());
+        wake_config.print("Failed to create {}", path.string());
         return false;
     }
     output.write(
@@ -110,10 +113,10 @@ bool write_directory(const std::string_view directory, const bool logging) {
     );
     output.close();
     if (!output) {
-        wake_config.log_print("Failed to write {}", path.string());
+        wake_config.print("Failed to write {}", path.string());
         return false;
     }
-    wake_config.log_print("Wrote {}", path.string());
+    wake_config.log("Wrote {}", path.string());
     return true;
 }
 
@@ -133,7 +136,7 @@ int launch_snapshot() {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        wake_config.log_print("Missing {}.", executable_path.string());
+        wake_config.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -171,7 +174,7 @@ int launch_snapshot() {
             &startup,
             &process
         )) {
-        wake_config.log_print("Unable to start {}.", executable_path.string());
+        wake_config.print("Unable to start {}.", executable_path.string());
         return 1;
     }
 
@@ -180,7 +183,7 @@ int launch_snapshot() {
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        wake_config.log_print(
+        wake_config.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -189,7 +192,7 @@ int launch_snapshot() {
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        wake_config.log_print("{} exited {}.", executable_path.string(), code);
+        wake_config.print("{} exited {}.", executable_path.string(), code);
     }
     return code;
 }
@@ -198,10 +201,10 @@ int launch_snapshot() {
 int provision_history() {
     const auto directory = wake::data_directory();
     if (wake::history::all_history_files_present(directory)) {
-        wake_config.log_print("Wake history is already present.");
+        wake_config.log("Wake history is already present.");
         return 0;
     }
-    wake_config.log_print("Launching wake_ac.exe --snapshot.");
+    wake_config.log("Launching wake_ac.exe --snapshot.");
     return launch_snapshot();
 }
 
@@ -258,7 +261,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool exists = std::filesystem::exists(ini_path(), error);
     if (error) {
-        wake_config.log_print("Failed to inspect {}", ini_path().string());
+        wake_config.print("Failed to inspect {}", ini_path().string());
         return 1;
     }
 
@@ -275,7 +278,11 @@ int main(int argc, char* argv[]) {
             }
             req::log_configuration_initialized(wake_config);
         }
-        return provision_history();
+        return req::finish_component_initialization(
+            wake_config,
+            provision_history(),
+            "Wake"
+        );
     }
 
     if (launch->init) {
@@ -288,23 +295,23 @@ int main(int argc, char* argv[]) {
             if (!write_directory(wake::defaults::directory, true)) {
                 return 1;
             }
-            const auto offer = menu::offer_configuration(
-                "Wake Configuration",
+            const auto result = menu::prompt_settings(
                 menu_settings,
                 current_text,
+                apply_setting,
                 std::cin,
                 std::cout
             );
-            if (offer == menu::OfferResult::failed) {
-                return 1;
-            }
-            if (offer == menu::OfferResult::configure &&
-                run_configuration_menu() != 0) {
+            if (!result.ok) {
                 return 1;
             }
             req::log_configuration_initialized(wake_config);
         }
-        return provision_history();
+        return req::finish_component_initialization(
+            wake_config,
+            provision_history(),
+            "Wake"
+        );
     }
 
     if (!exists) {

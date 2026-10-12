@@ -10,7 +10,7 @@ Test projects are omitted. There are no `.ixx` files under `tests/`.
 - `bare match`: the declared module name equals the file stem.
 - `partition`: `auto_core.core.component:<name>`.
 - `stem differs`: the declared name and the file stem are not the same identifier. `db_protocol.ixx` / `spotify_db_protocol` is the one C3 already names. The other stem differences are the rest of that list, including every `defaults.ixx`.
-- Main modules that are bare (`auto_core_initialization`, `logger_init_detail`, `logging_config_detail`) do not follow the `auto_core.main.*` scheme. **Inconsistent** with the proposed Main scheme, disposition pending.
+- Main modules that are bare (`auto_core_initialization`, `logging_bootstrap`, `logging_config_detail`) do not follow the `auto_core.main.*` scheme. **Inconsistent** with the proposed Main scheme, disposition pending.
 
 Layer, for every row:
 
@@ -126,7 +126,7 @@ Protocol, configuration, and persistent-state relationships are not copied onto 
 | `app/core/taskbar/core_taskbar.ixx` | `auto_core.taskbar` | Core | Shared native taskbar-position support for Auto Core processes. | public DLL | ac::taskbar | std only | prefixed; stem differs | Observed | pending |
 | `app/main/config/logging/logging_config_detail.ixx` | `logging_config_detail` | Main config | Launch selection, initialization menu, and prompts for logging.ini. | config-owner internal | ac::main::logging | auto_core.main.defaults | bare match; not auto_core.main.* | Observed | pending |
 | `app/main/init/auto_core/initialization_sequence.ixx` | `auto_core_initialization` | Main init | Ordered first-run owners launched by auto_core_init.exe. | init internal | ac::main::init | std only | stem differs | Observed | pending |
-| `app/main/init/logger/logger_init_detail.ixx` | `logger_init_detail` | Main init | Menu and owner launches for logger_init.exe. | init internal | ac::main::logger_init | std only | bare match; not auto_core.main.* | Observed | pending |
+| `app/main/init/auto_core/logging_bootstrap.ixx` | `logging_bootstrap` | Main init | Selects and launches logging_config.exe before normal logging. | init internal | ac::main::logging_bootstrap | std only | bare match; not auto_core.main.* | Observed | pending |
 | `app/main/runtime/components/ac_components.ixx` | `auto_core.main.components` | Main host | Generic host for v1 children and `AC_LAUNCH_DESCRIPTOR` launches. | executable-internal | command_registry, ac::main::components | std only | prefixed; stem differs | Observed | pending |
 | `app/main/runtime/components/main_component.ixx` | `auto_core.main.application` | Main host | Owns the Main `Component`, process launch, F-lock, and shutdown. | executable-internal | command_registry, main_component::runtime_commands, auto_core, ac::main, primary | auto_core.core.component | prefixed; stem differs | Observed | pending |
 | `app/main/runtime/keyboard/key_codes.ixx` | `auto_core.main.key_codes` | Main host | Defines normalized keyboard key codes and configuration-name resolution. This module defines the keyboard inputs supported by Auto Core. Most values match Wi... | executable-internal | key_codes | std only | prefixed match | Observed | pending |

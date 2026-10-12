@@ -8,10 +8,14 @@ Run:
 
 `Auto Core Setup.exe`
 
-This creates or refreshes:
+This creates any missing shortcut and leaves an existing shortcut unchanged:
 
 - `Auto Core.lnk`
 - `Auto Core Settings.lnk`
+
+On a new installation, Setup runs initialization in a console window. When that finishes, the same window tells you to pin Auto Core to the taskbar, preferably in positions 1–10, then launch it. Press any key to close the window.
+
+When Auto Core is already initialized, Setup opens Auto Core Settings and does not show that instruction.
 
 ## Run Auto Core
 

@@ -30,6 +30,7 @@ const menu::Setting menu_settings[] {
         .display_name = "Directory",
         .summary = "Folder that stores Writer data.",
         .default_value = writer::defaults::directory,
+        .directory_path = true,
     },
     {
         .key = "notes_subdirectory",
@@ -37,6 +38,7 @@ const menu::Setting menu_settings[] {
         .summary = "Relative notes folder inside the Writer directory.",
         .default_value = writer::defaults::notes_subdirectory,
         .constraint = "Enter a relative notes subdirectory.",
+        .directory_path = true,
     },
     {
         .key = "logging",
@@ -112,7 +114,7 @@ bool write_writer_ini(const Settings& settings) {
         create_error
     );
     if (create_error) {
-        writer_config.log_print(
+        writer_config.print(
             "Failed to create config directory: {}",
             create_error.message()
         );
@@ -122,17 +124,20 @@ bool write_writer_ini(const Settings& settings) {
     const auto path = writer_ini_path();
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        writer_config.log_print("Failed to create {}", path.string());
+        writer_config.print("Failed to create {}", path.string());
         return false;
     }
-    const auto contents = menu::with_header(
-        menu_settings,
-        writer::defaults::ini_for(
-            settings.directory,
-            settings.notes,
-            settings.logging
-        )
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n"
+        "# notes_subdirectory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            writer::defaults::ini_for(
+                settings.directory,
+                settings.notes,
+                settings.logging
+            )
+        );
     output.write(
         contents.data(),
         static_cast<std::streamsize>(contents.size())
@@ -156,7 +161,7 @@ int launch_writer_editor(const std::wstring_view arguments) {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        writer_config.log_print("Missing {}.", executable_path.string());
+        writer_config.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -198,7 +203,7 @@ int launch_writer_editor(const std::wstring_view arguments) {
             &startup,
             &process
         )) {
-        writer_config.log_print(
+        writer_config.print(
             "Unable to start {}.",
             executable_path.string()
         );
@@ -210,7 +215,7 @@ int launch_writer_editor(const std::wstring_view arguments) {
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        writer_config.log_print(
+        writer_config.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -219,7 +224,7 @@ int launch_writer_editor(const std::wstring_view arguments) {
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        writer_config.log_print(
+        writer_config.print(
             "{} exited {}.",
             executable_path.string(),
             code
@@ -249,7 +254,7 @@ menu::ApplyResult apply_setting(
     }
     else if (setting.key == "notes_subdirectory") {
         if (!is_relative_subdirectory(value)) {
-            writer_config.log_print(
+            writer_config.log(
                 "notes_subdirectory must be a relative path."
             );
             return menu::ApplyResult::invalid;
@@ -278,20 +283,14 @@ int run_configuration_menu() {
 }
 
 int offer_configuration() {
-    const auto offer = menu::offer_configuration(
-        "Writer Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 void activate_own_console() {
@@ -324,7 +323,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        writer_config.log_print("Failed to inspect {}", path.string());
+        writer_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -337,14 +336,18 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(writer_config);
             if (!write_writer_ini({})) {
-                writer_config.log_print(
+                writer_config.log(
                     "Writer configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(writer_config);
         }
-        return launch_writer_editor(L"--seed");
+        return req::finish_component_initialization(
+            writer_config,
+            launch_writer_editor(L"--seed"),
+            "Writer"
+        );
     }
 
     if (launch->init) {
@@ -354,25 +357,29 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(writer_config);
             if (!write_writer_ini({})) {
-                writer_config.log_print(
+                writer_config.log(
                     "Writer configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                writer_config.log_print(
+                writer_config.log(
                     "Writer configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(writer_config);
         }
-        return launch_writer_editor(L"--init");
+        return req::finish_component_initialization(
+            writer_config,
+            launch_writer_editor(L"--init"),
+            "Writer"
+        );
     }
 
     if (!present) {
         if (!write_writer_ini({})) {
-            writer_config.log_print(
+            writer_config.log(
                 "Writer configuration was not initialized."
             );
             return 1;

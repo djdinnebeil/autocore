@@ -15,8 +15,12 @@ export namespace ac::config_menu {
     /**
      * \brief One configurable INI key.
      *
-     * `choices` empty means a free-form value. `constraint` is shown when a
-     * free-form value is rejected. Closed sets also feed the `#` header.
+     * `choices` empty, `numeric_prompt` empty, and `directory_path` false
+     * means a free-form value. `numeric_prompt` is the `--init` label for a
+     * numeric setting. `directory_path` asks for a relative or absolute path.
+     * `constraint` is shown when a value is rejected. Closed sets also feed
+     * the `#` header. `match_ignore_case` folds a closed-set literal when
+     * that owner's reader already does.
      */
     struct Setting {
         std::string_view key {};
@@ -25,6 +29,9 @@ export namespace ac::config_menu {
         std::string_view default_value {};
         std::span<const std::string_view> choices {};
         std::string_view constraint {};
+        std::string_view numeric_prompt {};
+        bool match_ignore_case {false};
+        bool directory_path {false};
     };
 
 } // namespace ac::config_menu
@@ -92,6 +99,92 @@ namespace ac::config_menu::detail {
             return;
         }
         output << "That value is invalid.\n";
+    }
+
+    [[nodiscard]] std::string ascii_lower(const std::string_view value) {
+        std::string lowered {value};
+        for (char& character : lowered) {
+            if (character >= 'A' && character <= 'Z') {
+                character = static_cast<char>(character - 'A' + 'a');
+            }
+        }
+        return lowered;
+    }
+
+    [[nodiscard]] bool same_choice(
+        const std::string_view entered,
+        const std::string_view choice,
+        const bool ignore_case
+    ) {
+        if (!ignore_case) {
+            return entered == choice;
+        }
+        return ascii_lower(entered) == ascii_lower(choice);
+    }
+
+    [[nodiscard]] std::string bracket_value(
+        const ac::config_menu::Setting& setting,
+        const std::string& current
+    ) {
+        if (!current.empty()) {
+            return current;
+        }
+        return std::string {setting.default_value};
+    }
+
+    [[nodiscard]] std::optional<std::string> resolve_choice(
+        const ac::config_menu::Setting& setting,
+        const std::string_view entered
+    ) {
+        std::size_t selected = 0;
+        const auto parsed = std::from_chars(
+            entered.data(),
+            entered.data() + entered.size(),
+            selected
+        );
+        if (parsed.ec == std::errc {} &&
+            parsed.ptr == entered.data() + entered.size() &&
+            selected >= 1 &&
+            selected <= setting.choices.size()) {
+            return std::string {setting.choices[selected - 1]};
+        }
+        for (const auto choice : setting.choices) {
+            if (same_choice(entered, choice, setting.match_ignore_case)) {
+                return std::string {choice};
+            }
+        }
+        return std::nullopt;
+    }
+
+    void write_init_prompt(
+        std::ostream& output,
+        const ac::config_menu::Setting& setting,
+        const std::string_view shown
+    ) {
+        output << '\n' << setting.display_name << '\n';
+        if (!setting.choices.empty()) {
+            output << '\n';
+            for (std::size_t index = 0; index < setting.choices.size(); ++index) {
+                output
+                    << (index + 1)
+                    << ". "
+                    << setting.choices[index]
+                    << '\n';
+            }
+            output << "\nEnter value [" << shown << "]: ";
+            return;
+        }
+        output << '\n';
+        if (!setting.numeric_prompt.empty()) {
+            output << setting.numeric_prompt;
+        }
+        else if (setting.directory_path) {
+            output << "Enter a relative or absolute path";
+        }
+        else {
+            output << "Enter value";
+        }
+        output << " [" << shown << "]: ";
     }
 
 } // namespace ac::config_menu::detail
@@ -308,6 +401,70 @@ export namespace ac::config_menu {
                 break;
             }
         }
+    }
+
+    /**
+     * \brief Walk each setting once for interactive `--init`.
+     *
+     * Blank input keeps the bracketed value and does not call `apply`.
+     * A closed set accepts its number or its allowed value. A directory
+     * asks for a relative or absolute path. A numeric setting uses
+     * `numeric_prompt` and still validates through `apply`. A non-empty
+     * `heading` is printed once before the first setting. A completed
+     * walk prints `Configuration saved.` with one blank line before it
+     * and one blank line after it.
+     */
+    [[nodiscard]] MenuResult prompt_settings(
+        const std::span<const Setting> settings,
+        const CurrentValue& current,
+        const ApplyValue& apply,
+        std::istream& input,
+        std::ostream& output,
+        const std::string_view heading = {}
+    ) {
+        MenuResult result;
+        if (!heading.empty()) {
+            output << '\n' << heading << '\n';
+        }
+        for (const auto& setting : settings) {
+            while (true) {
+                const auto shown = detail::bracket_value(setting, current(setting));
+                detail::write_init_prompt(output, setting, shown);
+                output.flush();
+                const auto line = detail::read_line(input);
+                if (!line) {
+                    result.ok = false;
+                    return result;
+                }
+                if (line->empty()) {
+                    break;
+                }
+
+                std::string value = *line;
+                if (!setting.choices.empty()) {
+                    const auto resolved = detail::resolve_choice(setting, *line);
+                    if (!resolved) {
+                        detail::reject(output, setting);
+                        continue;
+                    }
+                    value = *resolved;
+                }
+
+                const auto applied = apply(setting, value);
+                if (applied == ApplyResult::failed) {
+                    result.ok = false;
+                    return result;
+                }
+                if (applied == ApplyResult::invalid) {
+                    detail::reject(output, setting);
+                    continue;
+                }
+                result.changed = true;
+                break;
+            }
+        }
+        output << "\nConfiguration saved.\n\n";
+        return result;
     }
 
     /**

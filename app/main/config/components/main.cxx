@@ -30,6 +30,7 @@ const menu::Setting menu_settings[] {
         .summary = "How a newly discovered component is added to the list.",
         .default_value = defaults::components_new_components,
         .choices = new_component_values,
+        .match_ignore_case = true,
     },
     {
         .key = "sort_components",
@@ -37,6 +38,7 @@ const menu::Setting menu_settings[] {
         .summary = "Sort the component list when it is rebuilt.",
         .default_value = "on",
         .choices = on_off,
+        .match_ignore_case = true,
     },
     {
         .key = "remove_missing_components",
@@ -44,6 +46,7 @@ const menu::Setting menu_settings[] {
         .summary = "Drop list entries whose component is no longer installed.",
         .default_value = "off",
         .choices = on_off,
+        .match_ignore_case = true,
     },
 };
 
@@ -65,15 +68,20 @@ catalog::Settings default_settings() {
 [[nodiscard]]
 bool write_settings(const catalog::Settings& settings) {
     if (!cfg::ensure_directory(ac::paths::config_directory())) {
+        components_config.print(
+            "Failed to create {}.",
+            ac::paths::config_directory().string()
+        );
         return false;
     }
     if (!cfg::write_bytes(
             ini_path(),
             menu::with_header(menu_settings, catalog::format_settings(settings))
         )) {
+        components_config.print("Failed to write {}.", ini_path().string());
         return false;
     }
-    components_config.log_print("Wrote {}", ini_path().string());
+    components_config.log("Wrote {}", ini_path().string());
     return true;
 }
 
@@ -86,7 +94,7 @@ bool file_exists(const std::filesystem::path& path, std::error_code& error) {
 std::optional<std::string> read_text(const std::filesystem::path& path) {
     std::ifstream input(path, std::ios::binary);
     if (!input) {
-        components_config.log_print("Failed to read {}", path.string());
+        components_config.print("Failed to read {}", path.string());
         return std::nullopt;
     }
     return std::string {
@@ -100,7 +108,7 @@ std::optional<catalog::Settings> load_settings() {
     std::error_code error;
     const bool ini_present = file_exists(ini_path(), error);
     if (error) {
-        components_config.log_print(
+        components_config.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -174,9 +182,9 @@ int offer_sync() {
     if (!*run_sync) {
         return 0;
     }
-    std::cout << "Running components_editor.exe...\n";
+    components_config.log("Running components_editor.exe...");
     if (cfg::run_config_exe("components_editor.exe") != 0) {
-        components_config.log_print(
+        components_config.print(
             "components_editor.exe did not complete successfully."
         );
         return 1;
@@ -189,21 +197,15 @@ int initialize_missing() {
     if (!write_settings(default_settings())) {
         return 1;
     }
-    const auto offer = menu::offer_configuration(
-        "Components Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
-        std::cout
+        std::cout,
+        "Components Configuration"
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        const auto result = run_configuration_menu();
-        return result.ok ? 0 : 1;
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -221,7 +223,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool ini_present = std::filesystem::exists(ini_path(), error);
     if (error) {
-        components_config.log_print(
+        components_config.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -233,14 +235,22 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (ini_present) {
             req::log_seed_skipped(components_config, "config/components.ini");
-            return 0;
+            return req::finish_configuration_initialization(
+                components_config,
+                0,
+                "Components"
+            );
         }
         req::log_writing_defaults(components_config);
         if (!write_settings(default_settings())) {
             return 1;
         }
         req::log_configuration_initialized(components_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            components_config,
+            0,
+            "Components"
+        );
     }
 
     if (launch->init) {
@@ -249,7 +259,11 @@ int main(int argc, char* argv[]) {
                 components_config,
                 "config/components.ini"
             );
-            return 0;
+            return req::finish_configuration_initialization(
+                components_config,
+                0,
+                "Components"
+            );
         }
         req::log_configuration_missing(components_config);
         req::log_writing_defaults(components_config);
@@ -257,7 +271,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(components_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            components_config,
+            0,
+            "Components"
+        );
     }
 
     if (!ini_present) {

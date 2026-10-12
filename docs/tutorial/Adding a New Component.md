@@ -48,7 +48,7 @@ This step is done when `<name>_settings.exe` can enable or disable the component
 
 ## 5. Join the repository build and publish binaries
 
-Add each `.vcxproj` to `<Name>.sln` and to `app/AutoCore.sln`.
+Add each production `.vcxproj` to `<Name>.sln` and to `app/AutoCore.sln`. A test project joins `<Name>.sln` and `app/Tests.sln`, which builds the complete test suite. Do not add a test project to `app/AutoCore.sln`.
 
 From the repository root, `scripts/build-all.ps1` builds that solution Release x64 and publishes `bin/*.exe` into `dist/bin/`.
 

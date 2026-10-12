@@ -59,7 +59,7 @@ int run_seed() {
         return 1;
     }
     if (exists) {
-        spotify_db.log_print("Seed skipped; history.db already exists");
+        spotify_db.log("Seed skipped; history.db already exists");
         return 0;
     }
 

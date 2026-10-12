@@ -104,13 +104,13 @@ menu::ApplyResult apply_setting(
         loaded.diagnostics = value == "on";
     }
     if (!write_settings(loaded)) {
-        crash_recovery_config.log_print(
+        crash_recovery_config.print(
             "Failed to write {}.",
             ini_path().string()
         );
         return menu::ApplyResult::failed;
     }
-    crash_recovery_config.log_print("Wrote {}", ini_path().string());
+    crash_recovery_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -130,13 +130,13 @@ int run_configuration_menu() {
 [[nodiscard]]
 int write_missing_defaults() {
     if (!write_settings(Settings {})) {
-        crash_recovery_config.log_print(
+        crash_recovery_config.print(
             "Failed to write {}.",
             ini_path().string()
         );
         return 1;
     }
-    crash_recovery_config.log_print("Wrote {}", ini_path().string());
+    crash_recovery_config.log("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -145,20 +145,15 @@ int initialize_missing() {
     if (write_missing_defaults() != 0) {
         return 1;
     }
-    const auto offer = menu::offer_configuration(
-        "Crash Recovery Configuration",
+    const auto result = menu::prompt_settings(
         settings,
         current_text,
+        apply_setting,
         std::cin,
-        std::cout
+        std::cout,
+        "Crash Recovery Configuration"
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -176,7 +171,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
-        crash_recovery_config.log_print(
+        crash_recovery_config.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -191,14 +186,22 @@ int main(int argc, char* argv[]) {
                 crash_recovery_config,
                 "config/crash_recovery.ini"
             );
-            return 0;
+            return req::finish_configuration_initialization(
+                crash_recovery_config,
+                0,
+                "Crash Recovery"
+            );
         }
         req::log_writing_defaults(crash_recovery_config);
         if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(crash_recovery_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            crash_recovery_config,
+            0,
+            "Crash Recovery"
+        );
     }
 
     if (launch->init) {
@@ -207,7 +210,11 @@ int main(int argc, char* argv[]) {
                 crash_recovery_config,
                 "config/crash_recovery.ini"
             );
-            return 0;
+            return req::finish_configuration_initialization(
+                crash_recovery_config,
+                0,
+                "Crash Recovery"
+            );
         }
         req::log_configuration_missing(crash_recovery_config);
         req::log_writing_defaults(crash_recovery_config);
@@ -215,7 +222,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(crash_recovery_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            crash_recovery_config,
+            0,
+            "Crash Recovery"
+        );
     }
 
     if (!present) {

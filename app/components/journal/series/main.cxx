@@ -431,7 +431,7 @@ int generate_missing_map() {
     if (!refresh_map(std::nullopt)) {
         return 1;
     }
-    journal_series.log_print("Wrote {}", map_path.string());
+    journal_series.log("Wrote {}", map_path.string());
     return 0;
 }
 

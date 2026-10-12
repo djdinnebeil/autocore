@@ -30,6 +30,7 @@ const menu::Setting menu_settings[] {
         .display_name = "Directory",
         .summary = "Folder that stores Journal data.",
         .default_value = journal::defaults::directory,
+        .directory_path = true,
     },
     {
         .key = "auto_select_new_series",
@@ -71,7 +72,7 @@ int launch_owner(
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        journal_config.log_print("Missing {}.", executable_path.string());
+        journal_config.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -109,7 +110,7 @@ int launch_owner(
             &startup,
             &process
         )) {
-        journal_config.log_print("Unable to start {}.", executable_path.string());
+        journal_config.print("Unable to start {}.", executable_path.string());
         return 1;
     }
 
@@ -118,7 +119,7 @@ int launch_owner(
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        journal_config.log_print(
+        journal_config.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -127,7 +128,7 @@ int launch_owner(
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        journal_config.log_print("{} exited {}.", executable_path.string(), code);
+        journal_config.print("{} exited {}.", executable_path.string(), code);
     }
     return code;
 }
@@ -205,24 +206,26 @@ bool write_settings(const JournalSettings& settings, const bool announce) {
     std::error_code create_error;
     std::filesystem::create_directories(path.parent_path(), create_error);
     if (create_error) {
-        journal_config.log_print(
+        journal_config.print(
             "Failed to create config directory: {}",
             create_error.message()
         );
         return false;
     }
-    const auto contents = menu::with_header(
-        menu_settings,
-        journal::defaults::ini_for(
-            settings.directory,
-            settings.logging,
-            settings.auto_select_new_series,
-            settings.remote_sync
-        )
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            journal::defaults::ini_for(
+                settings.directory,
+                settings.logging,
+                settings.auto_select_new_series,
+                settings.remote_sync
+            )
+        );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        journal_config.log_print("Failed to write {}", path.string());
+        journal_config.print("Failed to write {}", path.string());
         return false;
     }
     output.write(
@@ -231,11 +234,11 @@ bool write_settings(const JournalSettings& settings, const bool announce) {
     );
     output.close();
     if (!output) {
-        journal_config.log_print("Failed to write {}", path.string());
+        journal_config.print("Failed to write {}", path.string());
         return false;
     }
     if (announce) {
-        journal_config.log_print("Wrote {}", path.string());
+        journal_config.log("Wrote {}", path.string());
     }
     return true;
 }
@@ -294,20 +297,14 @@ int run_configuration_menu() {
 
 [[nodiscard]]
 int offer_configuration() {
-    const auto offer = menu::offer_configuration(
-        "Journal Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 void activate_own_console() {
@@ -340,7 +337,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        journal_config.log_print("Failed to inspect {}", path.string());
+        journal_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -353,14 +350,18 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(journal_config);
             if (!write_settings({}, false)) {
-                journal_config.log_print(
+                journal_config.log(
                     "Journal configuration was not initialized."
                 );
                 return 1;
             }
             req::log_configuration_initialized(journal_config);
         }
-        return launch_owned_stores(L"--seed");
+        return req::finish_component_initialization(
+            journal_config,
+            launch_owned_stores(L"--seed"),
+            "Journal"
+        );
     }
 
     if (launch->init) {
@@ -370,24 +371,28 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(journal_config);
             if (!write_settings({}, false)) {
-                journal_config.log_print(
+                journal_config.log(
                     "Journal configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                journal_config.log_print(
+                journal_config.log(
                     "Journal configuration was not initialized."
                 );
                 return 1;
             }
         }
-        return launch_owned_stores(L"--init");
+        return req::finish_component_initialization(
+            journal_config,
+            launch_owned_stores(L"--init"),
+            "Journal"
+        );
     }
 
     if (!present) {
         if (!write_settings({}, false)) {
-            journal_config.log_print(
+            journal_config.log(
                 "Journal configuration was not initialized."
             );
             return 1;

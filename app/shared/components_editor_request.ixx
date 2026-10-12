@@ -47,15 +47,15 @@ export namespace ac::config::components_request {
         const ConfigLaunch& launch
     ) {
         if (launch.init && launch.seed) {
-            logger.log_print("Initialization requested with seed mode");
+            logger.log("Initialization requested with seed mode");
             return;
         }
         if (launch.seed) {
-            logger.log_print("Seed requested");
+            logger.log("Seed requested");
             return;
         }
         if (launch.init) {
-            logger.log_print("Initialization requested");
+            logger.log("Initialization requested");
         }
     }
 
@@ -64,7 +64,7 @@ export namespace ac::config::components_request {
         Logger& logger,
         const std::string_view file
     ) {
-        logger.log_print("Seed skipped; {} already exists", file);
+        logger.log("Seed skipped; {} already exists", file);
     }
 
     template <typename Logger>
@@ -72,22 +72,64 @@ export namespace ac::config::components_request {
         Logger& logger,
         const std::string_view file
     ) {
-        logger.log_print("Initialization skipped; {} already exists", file);
+        logger.log("Initialization skipped; {} already exists", file);
     }
 
     template <typename Logger>
     inline void log_writing_defaults(Logger& logger) {
-        logger.log_print("Writing default configuration");
+        logger.log("Writing default configuration");
     }
 
     template <typename Logger>
     inline void log_configuration_initialized(Logger& logger) {
-        logger.log_print("Configuration initialized successfully");
+        logger.log("Configuration initialized successfully");
     }
 
     template <typename Logger>
     inline void log_configuration_missing(Logger& logger) {
-        logger.log_print("Configuration file missing; starting initialization");
+        logger.log("Configuration file missing; starting initialization");
+    }
+
+    template <typename Logger>
+    inline void report_component_initialized(
+        Logger& logger,
+        const std::string_view display_name
+    ) {
+        logger.print("{} initialized.", display_name);
+    }
+
+    template <typename Logger>
+    [[nodiscard]]
+    inline int finish_component_initialization(
+        Logger& logger,
+        const int code,
+        const std::string_view display_name
+    ) {
+        if (code == 0) {
+            report_component_initialized(logger, display_name);
+        }
+        return code;
+    }
+
+    template <typename Logger>
+    inline void report_configuration_initialized(
+        Logger& logger,
+        const std::string_view display_name
+    ) {
+        logger.print("{} configuration initialized.", display_name);
+    }
+
+    template <typename Logger>
+    [[nodiscard]]
+    inline int finish_configuration_initialization(
+        Logger& logger,
+        const int code,
+        const std::string_view display_name
+    ) {
+        if (code == 0) {
+            report_configuration_initialized(logger, display_name);
+        }
+        return code;
     }
 
     [[nodiscard]]

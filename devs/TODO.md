@@ -3,39 +3,6 @@
 DLL-specific deferred work is tracked in [app/core/TODO.md](../app/core/TODO.md).
 Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main/runtime/TODO.md).
 
-## Done: incremental main-log merge
-
-**Status:** `logger_ac.exe` merges local `.main.log` files.
-
-Each executable still writes `{date}_{name}.log` and `{date}_{name}.main.log`.
-`logger_ac.exe` appends new main-log records to `YYYY-MM-DD_main.log`.
-`config/logging.ini` sets `disable_all`, `directory`,
-`write_logs_to_files`, `write_logs_to_console`, `log_print_mode`, and
-`component_logging_default`. Each family INI sets `logging` (`on` except Dash `off`).
-`config/logger.ini` sets
-`merge_interval_seconds` and `merge_logs_on_shutdown`. The shutdown merge
-is a detached `logger_ac.exe --once` after the hosted logger has exited.
-
-## Parked: journal_config.exe menu
-
-**Status:** Deferred helper finetune
-
-`journal_config.exe` prompts for `journal.ini` when that file is missing and
-then launches each Journal data owner. It still writes only `journal.ini`.
-Extra menus beyond Journal settings are later work, not a clone or
-beta-tester blocker.
-
-## Parked: wake event filters
-
-**Status:** History directory landed; filters still deferred
-
-`[wake] directory` owns `current.event`, `previous.event`, and `wake_events.log`.
-Ordinary Wake logs still follow `logging.ini`.
-
-Later, `wake.ini` can hold filters to exclude certain system wake events and
-an `enabled` switch (`on` / `off` only)
-for the history capture itself. Do not add those keys until Wake needs them.
-
 ## Encapsulate interactive taskbar cycling
 
 `keyboard_input::process_key_event()` currently reads `taskbar.switch_set`

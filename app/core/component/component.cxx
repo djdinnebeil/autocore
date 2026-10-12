@@ -84,6 +84,9 @@ namespace ac {
             if (ac::logging::config::disable_all() || component_logging_on()) {
                 return;
             }
+            if (name.ends_with("_config")) {
+                return;
+            }
             if (disabled_notice_emitted.exchange(true)) {
                 return;
             }

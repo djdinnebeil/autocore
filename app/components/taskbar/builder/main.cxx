@@ -946,13 +946,13 @@ namespace {
         if (!write_taskbar_definition(item)) return false;
         item.created = true;
         if (is_windows_notepad_id(item.application.application_id)) {
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Windows Notepad uses ::runtime:: for [window] executable_path "
                 "because the WindowsApps executable path can change after upgrades."
             );
         }
         if (is_edge_id(item.application.application_id)) {
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Default value for Microsoft Edge fallback executable_path has "
                 "been used. If a different installation directory has been used, "
                 "this value should be changed."
@@ -1030,8 +1030,7 @@ namespace {
         std::error_code error;
         const bool present = std::filesystem::exists(executable_path, error);
         if (error || !present) {
-            taskbar_builder.log_print("Missing {}.", executable_path.string());
-            std::wcerr << L"Unable to refresh winkey_map.cache.\n";
+            taskbar_builder.print("Missing {}.", executable_path.string());
             return 1;
         }
 
@@ -1052,11 +1051,10 @@ namespace {
                 &startup_info,
                 &process_info
             )) {
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Unable to start {}.",
                 executable_path.string()
             );
-            std::wcerr << L"Unable to refresh winkey_map.cache.\n";
             return 1;
         }
 
@@ -1065,22 +1063,43 @@ namespace {
         DWORD exit_code = 1;
         if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
             ::CloseHandle(process_info.hProcess);
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Unable to read the exit code from taskbar_ac.exe."
             );
-            std::wcerr << L"Unable to refresh winkey_map.cache.\n";
             return 1;
         }
         ::CloseHandle(process_info.hProcess);
         const int code = static_cast<int>(exit_code);
         if (code != 0) {
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "taskbar_ac.exe --refresh-cache exited {}.",
                 code
             );
-            std::wcerr << L"Unable to refresh winkey_map.cache.\n";
         }
         return code;
+    }
+
+    std::wstring application_display_name(const GeneratedConfiguration& item) {
+        const std::wstring name = display_base(item.button.name);
+        if (!name.empty()) return name;
+        return item.application.path.filename().wstring();
+    }
+
+    void report_application_names(
+        const std::vector<TaskbarButton>& buttons,
+        const std::vector<GeneratedConfiguration>& generated,
+        const bool prompt_user
+    ) {
+        taskbar_builder.log("Applications:");
+        if (prompt_user) std::wcout << L"\nApplications:\n\n";
+        const std::size_t count = buttons.size() < generated.size()
+            ? buttons.size() : generated.size();
+        for (std::size_t index = 0; index < count; ++index) {
+            const std::wstring name = application_display_name(generated[index]);
+            if (name.empty()) continue;
+            taskbar_builder.log(name);
+            if (prompt_user) std::wcout << name << L'\n';
+        }
     }
 
     int generate_maps(
@@ -1090,8 +1109,7 @@ namespace {
         const auto buttons = discover_taskbar_buttons(configuration);
         const auto windows = enumerate_windows();
         if (!buttons || !windows) {
-            std::wcerr << L"Unable to collect taskbar or window metadata.\n";
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Unable to collect taskbar or window metadata."
             );
             return 1;
@@ -1100,8 +1118,7 @@ namespace {
         std::vector<GeneratedConfiguration> generated;
         if (!generate_configurations(
                 configuration, *buttons, *windows, generated, prompt_user)) {
-            std::wcerr << L"Unable to write generated configurations.\n";
-            taskbar_builder.log_print(
+            taskbar_builder.print(
                 "Unable to write generated configurations."
             );
             return 1;
@@ -1109,24 +1126,33 @@ namespace {
 
         unsigned created {};
         unsigned existing {};
-        std::wcout << L"Taskbar configuration generator\n"
-                   << L"Output: " << configuration.applications_directory.wstring()
-                   << L"\nTaskbar icons: " << buttons->size() << L"\n\n";
         for (const auto& item : generated) {
             const auto name = item.application.path.filename().wstring();
             if (item.created) {
                 ++created;
-                std::wcout << L"  created  " << name << L"  "
-                           << describe_matcher(item.application.matcher)
-                           << L"  (" << item.reason << L")\n";
+                taskbar_builder.log(
+                    L"created " + name + L" " +
+                    describe_matcher(item.application.matcher) +
+                    L" (" + item.reason + L")"
+                );
             }
             else {
                 ++existing;
-                std::wcout << L"  exists   " << name << L'\n';
+                taskbar_builder.log(L"already present " + name);
             }
         }
-        std::wcout << L"\nCreated " << created
-                   << L", already present " << existing << L".\n";
+        taskbar_builder.log("Taskbar builder");
+        taskbar_builder.log("Applications: {}", buttons->size());
+        taskbar_builder.log("Created: {}", created);
+        taskbar_builder.log("Already present: {}", existing);
+        if (prompt_user) {
+            std::wcout
+                << L"\nTaskbar builder\n\n"
+                << L"Applications: " << buttons->size() << L"\n"
+                << L"Created: " << created << L"\n"
+                << L"Already present: " << existing << L"\n";
+        }
+        report_application_names(*buttons, generated, prompt_user);
         taskbar_builder.log_main("taskbar applications generated");
         return 0;
     }
@@ -1170,14 +1196,6 @@ namespace {
         if (generate_maps_with_com(configuration, true) != 0) return 1;
         return launch_taskbar_ac_refresh();
     }
-
-    void wait_for_enter() {
-        if (!_isatty(_fileno(stdin))) return;
-        std::wcout << L"\nPress Enter to close taskbar_builder.exe.";
-        std::wcout.flush();
-        std::wstring ignored;
-        std::getline(std::wcin, ignored);
-    }
 }
 
 int wmain(int argc, wchar_t* argv[]) {
@@ -1192,7 +1210,7 @@ int wmain(int argc, wchar_t* argv[]) {
         if (argc == 2) {
             const std::wstring_view argument {argv[1]};
             if (argument == L"--seed") {
-                taskbar_builder.log_print("Seed requested");
+                taskbar_builder.log("Seed requested");
                 if (generate_maps_with_com(configuration, false) != 0) {
                     return 1;
                 }
@@ -1202,17 +1220,13 @@ int wmain(int argc, wchar_t* argv[]) {
             return 1;
         }
 
-        const int result = discover();
-        wait_for_enter();
-        return result;
+        return discover();
     }
     catch (const std::exception& error) {
-        std::cerr << "taskbar_builder.exe failed: " << error.what() << '\n';
-        taskbar_builder.log_print(
+        taskbar_builder.print(
             "taskbar_builder.exe failed: {}",
             error.what()
         );
-        wait_for_enter();
         return 1;
     }
 }

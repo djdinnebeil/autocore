@@ -55,13 +55,13 @@ int main() {
         return 0;
     }
     if (error) {
-        keymap_editor.log_print("Failed to inspect {}", path.string());
+        keymap_editor.print("Failed to inspect {}", path.string());
         return 1;
     }
     if (!cfg::write_bytes(path, mappings_seed())) {
-        keymap_editor.log_print("Failed to write {}.", path.string());
+        keymap_editor.print("Failed to write {}.", path.string());
         return 1;
     }
-    keymap_editor.log_print("Wrote {}", path.string());
+    keymap_editor.log("Wrote {}", path.string());
     return 0;
 }

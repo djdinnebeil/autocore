@@ -153,8 +153,6 @@ namespace {
         }
         const auto helper =
             ac::paths::bin_directory() / "auto_core_init.exe";
-        std::cout
-            << "config/auto_core.ini is missing. Launching auto_core_init.exe.\n";
         if (run_and_wait(helper) != 0 || !auto_core_ini_exists()) {
             std::cerr
                 << "Auto Core is not initialized. "

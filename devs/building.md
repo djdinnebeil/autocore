@@ -24,7 +24,7 @@ Release binaries use the DLL CRT (`/MD`). If you run a `dist/` tree you did not 
 
 ## Shortcut identity
 
-`Auto Core Setup.exe` at the installation root creates or refreshes `Auto Core.lnk` and `Auto Core Settings.lnk` beside itself, then launches `bin\auto_core_settings.exe`. `Auto Core.lnk` targets `bin\auto_core.exe`. `Auto Core Settings.lnk` targets `bin\auto_core_settings.exe`. Both shortcuts use `bin` as the working directory. The repository does not install Auto Core.
+`Auto Core Setup.exe` at the installation root creates `Auto Core.lnk` and `Auto Core Settings.lnk` beside itself when each link is missing. It does not overwrite an existing link. `Auto Core.lnk` targets `bin\auto_core.exe`. `Auto Core Settings.lnk` targets `bin\auto_core_settings.exe`. Both shortcuts use `bin` as the working directory. When `config\auto_core.ini` is missing, Setup opens a console, launches `bin\auto_core_init.exe` in that console, waits for it to exit, and prints the completion instruction there only if that file then exists. Setup then waits for a key. When `config\auto_core.ini` already exists, Setup launches `bin\auto_core_settings.exe`, does not open that console, and does not print that instruction. The repository does not install Auto Core.
 
 Before the Task Manager field test, stamp the existing link with `System.AppUserModel.ID` = `Djdinn.AutoCore`. [`scripts/stamp_auto_core_shortcut.cxx`](../scripts/stamp_auto_core_shortcut.cxx) obtains `IPropertyStore` from `IShellLink`, calls `SetValue(PKEY_AppUserModel_ID, ...)`, commits, and saves the link.
 
@@ -41,7 +41,9 @@ The tool writes `obj\stamp_auto_core_shortcut\stamp_auto_core_shortcut.exe`. It 
 
 A `.sln` is a workspace. A `.vcxproj` is one EXE, DLL, or test executable. A directory is an ownership boundary. An executable does not get its own `.sln`.
 
-[`app/AutoCore.sln`](../app/AutoCore.sln) contains every product and test project. Building that solution Release x64 builds the shipped DLL and executables. Test projects are in the solution and are not built by that default build. Build a test by selecting its project, or by invoking its `.vcxproj` with MSBuild.
+[`app/AutoCore.sln`](../app/AutoCore.sln) is the production solution. Building it Release x64 builds the shipped DLL and executables. It does not contain test projects.
+
+[`app/Tests.sln`](../app/Tests.sln) builds the complete test suite. A Release x64 build of that solution builds every test project and `auto_core_dll`. Build one suite by selecting its project, or by invoking its `.vcxproj` with MSBuild.
 
 The twelve family workspaces are:
 
@@ -74,7 +76,7 @@ Production tests:
 | Spotify | [`app/components/spotify/tests/spotify_tests.vcxproj`](../app/components/spotify/tests/spotify_tests.vcxproj) |
 | Writer | [`app/components/writer/tests/writer_tests.vcxproj`](../app/components/writer/tests/writer_tests.vcxproj) |
 
-iTunes, Spotify, Journal, Server, and Writer test notes: [`app/components/itunes/tests/TESTING.md`](../app/components/itunes/tests/TESTING.md), [`app/components/spotify/tests/TESTING.md`](../app/components/spotify/tests/TESTING.md), [`app/components/journal/tests/TESTING.md`](../app/components/journal/tests/TESTING.md), [`app/components/server/tests/TESTING.md`](../app/components/server/tests/TESTING.md), [`app/components/writer/tests/TESTING.md`](../app/components/writer/tests/TESTING.md). `build-all.ps1` does not build tests. Test `OutDir` is `obj\<project>\`. From the repository root, Release x64:
+iTunes, Spotify, Journal, Server, and Writer test notes: [`app/components/itunes/tests/TESTING.md`](../app/components/itunes/tests/TESTING.md), [`app/components/spotify/tests/TESTING.md`](../app/components/spotify/tests/TESTING.md), [`app/components/journal/tests/TESTING.md`](../app/components/journal/tests/TESTING.md), [`app/components/server/tests/TESTING.md`](../app/components/server/tests/TESTING.md), [`app/components/writer/tests/TESTING.md`](../app/components/writer/tests/TESTING.md). From the repository root, Release x64, [`app/Tests.sln`](../app/Tests.sln) builds the complete suite. `build-all.ps1` builds [`app/AutoCore.sln`](../app/AutoCore.sln) and does not build tests. Test `OutDir` is `obj\<project>\`. To build one suite:
 
 ```powershell
 msbuild app\core\tests\auto_core_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
@@ -101,7 +103,7 @@ msbuild app\components\writer\tests\writer_tests.vcxproj /m /p:Configuration=Rel
 
 ## MSBuild order
 
-From the repository root, Release x64, run [`scripts/build-all.ps1`](../scripts/build-all.ps1). It builds [`app/AutoCore.sln`](../app/AutoCore.sln). That default build is the shipped DLL and executables. It does not build tests. [`scripts/build-all-components.ps1`](../scripts/build-all-components.ps1) builds the twelve family solutions in order, Core first. Build the DLL before any executable that links `auto_core.lib`, or use the tracked `lib/auto_core.lib`. The linker searches `lib/`.
+From the repository root, Release x64, run [`scripts/build-all.ps1`](../scripts/build-all.ps1). It builds [`app/AutoCore.sln`](../app/AutoCore.sln). That default build is the shipped DLL and executables. It does not enumerate test projects. Build the complete test suite with [`app/Tests.sln`](../app/Tests.sln). [`scripts/build-all-components.ps1`](../scripts/build-all-components.ps1) builds the twelve family solutions in order, Core first. Build the DLL before any executable that links `auto_core.lib`, or use the tracked `lib/auto_core.lib`. The linker searches `lib/`.
 
 ## Output directories
 

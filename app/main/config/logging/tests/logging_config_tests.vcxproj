@@ -62,7 +62,7 @@
     <ClCompile Include="..\..\..\..\shared\config_menu.ixx" />
     <ClCompile Include="..\logging_config_detail.ixx" />
     <ClCompile Include="..\..\..\init\auto_core\initialization_sequence.ixx" />
-    <ClCompile Include="..\..\..\init\logger\logger_init_detail.ixx" />
+    <ClCompile Include="..\..\..\init\auto_core\logging_bootstrap.ixx" />
     <ClCompile Include="logging_config_init_tests.cxx" />
     <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
   </ItemGroup>

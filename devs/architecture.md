@@ -38,19 +38,18 @@ The failure this glossary exists to stop is "the database component of the iTune
 
 ## Executable taxonomy
 
-**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 61 production executables plus `auto_core.dll`. Each name appears once.
+**Proposed canonical** for the suffix chart. Member lists are **Observed** and are complete for the live `app/` tree: 60 production executables plus `auto_core.dll`. Each name appears once.
 
 | Executable | Project | Class | Lifetime | CLI | State |
 | --- | --- | --- | --- | --- | --- |
 | `auto_core.exe` | `app/main/runtime` | component host | long-running | no config menu | Finalized as the host. Not a Component. |
 | `auto_core.dll` | `app/core` | shared library | in-process | none | Finalized stem reservation. Not an executable. |
 | `auto_core_shell_launcher.exe` | `app/core/shell_launcher` | shell trampoline | one-shot | none | Observed. Not a Component. Does not link the DLL. |
-| `auto_core_init.exe` | `app/main/init/auto_core` | first-run orchestrator | one-shot | menu; launches owners | Finalized: does not write files. Removes `auto_core.ini` if a required step fails after this run created it. |
-| `logger_init.exe` | `app/main/init/logger` | first-run orchestrator | one-shot | menu; `--seed`, `--init`, or `--disable` on `logging_config.exe`, and `--seed` or `--init` on `logger_config.exe` | Finalized: does not write files. |
-| `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | menu; `--init --seed` or `--init` on each `<name>_config.exe` | Finalized: does not write files. Combined flags are Observed under C8. |
+| `auto_core_init.exe` | `app/main/init/auto_core` | first-run orchestrator | one-shot | Auto Core menu for Main owners; Components menu before `components_init.exe` except plain `--seed` | Finalized: does not write files. Establishes `logging.ini` before normal logging. Removes `auto_core.ini` if a required step fails after this run created it. Skipping components is not a failure. |
+| `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | per-component defaults, configure, or skip on no arguments and `--init`; `--seed` and `--init --seed` launch each `<name>_config.exe --init --seed` | Finalized: does not write files. Combined flags are Observed under C8. |
 | `auto_core_config.exe` | `app/main/config/auto_core` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `auto_core.ini`. |
-| `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Delegates first-run to `auto_core_init.exe` and launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
-| `Auto Core Setup.exe` | `app/main/setup` | installation bootstrap | one-shot | none | Observed. Not a Component, config owner, editor, or init orchestrator. Does not link the DLL. Creates or refreshes the two installation-root shortcuts, then launches `auto_core_settings.exe`. |
+| `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Settings menu only. Launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Does not launch initialization. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
+| `Auto Core Setup.exe` | `app/main/setup` | installation bootstrap | one-shot | none | Observed. Not a Component, config owner, editor, or init orchestrator. Does not link the DLL. Creates each installation-root shortcut only when that link is missing. When `config/auto_core.ini` is missing, opens a console, launches `auto_core_init.exe` in it, waits, and requires that file before printing the completion instruction and waiting for a key. When the file already exists, launches `auto_core_settings.exe` and does not open that console. |
 | `components_config.exe` | `app/main/config/components` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components.ini`. |
 | `keymap_config.exe` | `app/main/config/keymap` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `keymap.ini`. |
 | `logging_config.exe` | `app/main/config/logging` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging.ini`. `--disable` is an extra mode. Observed. |
@@ -115,7 +114,7 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 
 | Group | Members |
 | --- | --- |
-| Host session | `auto_core.exe`, `Auto Core Setup.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `logger_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
+| Host session | `auto_core.exe`, `Auto Core Setup.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
 | Component Settings | every `<name>_settings.exe` on `component_settings` |
 | Configuration owners | every `<name>_config.exe`, including Main |
 | Operational editors | `components_editor`, `keymap_editor`, `writer_editor`, `server_editor`, `dash_editor`, `spotify_editor`, `journal_series`, `journal_builder` (also a builder), `journal_clock` |

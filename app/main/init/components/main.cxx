@@ -1,6 +1,10 @@
 /**
  * \file main.cxx
  * \brief Coordinates component configuration executables. Does not write files.
+ *
+ * `--init` asks each component whether to seed, configure, or skip.
+ * `--seed` and `--init --seed` launch every component config with
+ * `--init --seed` and do not prompt.
  */
 #include "../../../core/component/components_list_detail.hpp"
 
@@ -26,7 +30,7 @@ std::optional<std::vector<std::string>> discover_components() {
     std::error_code error;
     const auto iterator = std::filesystem::directory_iterator(bin, error);
     if (error) {
-        components_init.log_print(
+        components_init.print(
             "Failed to inspect {}: {}",
             bin.string(),
             error.message()
@@ -57,17 +61,22 @@ LaunchOutcome launch_config(
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error || !present) {
-        components_init.log_print(
+        components_init.print(
             "Component config executable not found: {}",
             helper
         );
-        components_init.log_print("Skipping component: {}", name);
+        components_init.log("Skipping component: {}", name);
         return {.skipped = true, .code = 0};
     }
 
-    components_init.log_print("Launching {}", command);
+    components_init.log("Launching {}", command);
     const int code = cfg::run_config_exe(helper, std::wstring {arguments});
-    components_init.log_print("{} exited with code {}", helper, code);
+    if (code != 0) {
+        components_init.print("{} exited with code {}.", helper, code);
+    }
+    else {
+        components_init.log("{} exited with code {}", helper, code);
+    }
     return {.skipped = false, .code = code};
 }
 
@@ -77,11 +86,11 @@ void log_summary(
     const int skipped,
     const int failed
 ) {
-    components_init.log_print("Component initialization completed");
-    components_init.log_print("Components discovered: {}", discovered);
-    components_init.log_print("Components succeeded: {}", succeeded);
-    components_init.log_print("Components skipped: {}", skipped);
-    components_init.log_print("Components failed: {}", failed);
+    components_init.print("Component initialization complete.");
+    components_init.log("Components discovered: {}", discovered);
+    components_init.log("Components succeeded: {}", succeeded);
+    components_init.log("Components skipped: {}", skipped);
+    components_init.log("Components failed: {}", failed);
 }
 
 [[nodiscard]]
@@ -90,7 +99,7 @@ int use_defaults(const std::vector<std::string>& names) {
     int skipped = 0;
     int failed = 0;
     for (const auto& name : names) {
-        components_init.log_print("Discovered component: {}", name);
+        components_init.log("Discovered component: {}", name);
         const auto outcome = launch_config(name, L"--init --seed");
         if (outcome.skipped) {
             ++skipped;
@@ -111,21 +120,112 @@ int use_defaults(const std::vector<std::string>& names) {
     return 0;
 }
 
+enum class ComponentChoice {
+    defaults,
+    configure,
+    skip
+};
+
 [[nodiscard]]
-int configure_each(const std::vector<std::string>& names) {
+std::string prompt_title(const std::string_view name) {
+    if (name == "itunes") {
+        return "iTunes";
+    }
+    std::string title {name};
+    if (!title.empty() && title.front() >= 'a' && title.front() <= 'z') {
+        title.front() = static_cast<char>(title.front() - 'a' + 'A');
+    }
+    return title;
+}
+
+[[nodiscard]]
+bool config_executable_present(const std::string_view name) {
+    const auto helper = std::string {name} + "_config.exe";
+    std::error_code error;
+    const bool present = std::filesystem::exists(
+        ac::paths::bin_directory() / helper,
+        error
+    );
+    return !error && present;
+}
+
+[[nodiscard]]
+std::optional<ComponentChoice> prompt_component(const std::string_view name) {
+    const auto title = prompt_title(name);
+    while (true) {
+        std::cout
+            << '\n'
+            << title << "\n"
+            << "\n"
+            << "1. Use defaults\n"
+            << "2. Configure\n"
+            << "3. Skip\n"
+            << "\n"
+            << "Choice [1]: ";
+        const auto line = cfg::read_line();
+        if (!line) {
+            return std::nullopt;
+        }
+        if (line->empty() || *line == "1") {
+            return ComponentChoice::defaults;
+        }
+        if (*line == "2") {
+            return ComponentChoice::configure;
+        }
+        if (*line == "3") {
+            return ComponentChoice::skip;
+        }
+        std::cout << "Enter 1, 2, or 3.\n";
+    }
+}
+
+[[nodiscard]]
+int prompt_each(const std::vector<std::string>& names) {
     int succeeded = 0;
     int skipped = 0;
     int failed = 0;
     for (const auto& name : names) {
-        components_init.log_print("Discovered component: {}", name);
-        const auto outcome = launch_config(name, L"--init");
+        components_init.log("Discovered component: {}", name);
+        if (!config_executable_present(name)) {
+            components_init.print(
+                "Component config executable not found: {}_config.exe",
+                name
+            );
+            components_init.log("Skipping component: {}", name);
+            ++skipped;
+            continue;
+        }
+
+        const auto choice = prompt_component(name);
+        if (!choice) {
+            components_init.print(
+                "Component initialization cancelled."
+            );
+            log_summary(
+                static_cast<int>(names.size()),
+                succeeded,
+                skipped,
+                failed
+            );
+            return 2;
+        }
+        if (*choice == ComponentChoice::skip) {
+            components_init.log("Skipping component: {}", name);
+            ++skipped;
+            continue;
+        }
+
+        const auto arguments = *choice == ComponentChoice::configure
+            ? L"--init"
+            : L"--init --seed";
+        const auto outcome = launch_config(name, arguments);
         if (outcome.skipped) {
             ++skipped;
             continue;
         }
         if (outcome.code != 0) {
             ++failed;
-            components_init.log_print(
+            components_init.log(
                 "Component initialization stopped after a non-zero "
                 "interactive result"
             );
@@ -148,59 +248,67 @@ int configure_each(const std::vector<std::string>& names) {
     return 0;
 }
 
-void print_menu() {
-    std::cout
-        << "\nComponent Initialization\n"
-        << "\n"
-        << "1. Use default settings for components\n"
-        << "2. Configure settings for each component\n"
-        << "3. Exit\n"
-        << "Choice: ";
+struct LaunchMode {
+    bool init {false};
+    bool seed {false};
+};
+
+[[nodiscard]]
+std::optional<LaunchMode> parse_launch(const int argc, char* argv[]) {
+    LaunchMode mode;
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view argument {argv[i]};
+        if (argument == "--init" || argument == "--initialize") {
+            mode.init = true;
+            continue;
+        }
+        if (argument == "--seed") {
+            mode.seed = true;
+            continue;
+        }
+        std::cerr << "Unknown argument: " << argument << '\n';
+        return std::nullopt;
+    }
+    return mode;
+}
+
+[[nodiscard]]
+int run_discovered(const bool interactive) {
+    components_init.log(
+        "Component initialization mode: {}",
+        interactive ? "interactive" : "defaults"
+    );
+    const auto names = discover_components();
+    if (!names) {
+        return 1;
+    }
+    if (names->empty()) {
+        components_init.print("No components were discovered.");
+        components_init.print("Component initialization complete.");
+        components_init.log("Components discovered: 0");
+        components_init.log("Components succeeded: 0");
+        components_init.log("Components skipped: 0");
+        components_init.log("Components failed: 0");
+        return 0;
+    }
+    if (interactive) {
+        return prompt_each(*names);
+    }
+    return use_defaults(*names);
 }
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     components_init.log_main("components_init.exe started");
 
-    while (true) {
-        print_menu();
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "3" || line->empty()) {
-            components_init.log_print(
-                "Component initialization cancelled by user"
-            );
-            return 2;
-        }
-        if (*line != "1" && *line != "2") {
-            std::cout << "Enter 1, 2, or 3.\n";
-            continue;
-        }
-
-        components_init.log_print(
-            "Component initialization mode: {}",
-            *line == "1" ? "defaults" : "interactive"
-        );
-        const auto names = discover_components();
-        if (!names) {
-            return 1;
-        }
-        if (names->empty()) {
-            components_init.log_print("No components were discovered.");
-            components_init.log_print("Component initialization completed");
-            components_init.log_print("Components discovered: 0");
-            components_init.log_print("Components succeeded: 0");
-            components_init.log_print("Components skipped: 0");
-            components_init.log_print("Components failed: 0");
-            return 0;
-        }
-        if (*line == "1") {
-            return use_defaults(*names);
-        }
-        return configure_each(*names);
+    const auto launch = parse_launch(argc, argv);
+    if (!launch) {
+        return 1;
     }
+    if (launch->seed) {
+        return run_discovered(false);
+    }
+    return run_discovered(true);
 }

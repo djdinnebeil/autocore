@@ -2,21 +2,28 @@
  * \file main.cxx
  * \brief First-run orchestration for Auto Core. Does not write configuration files.
  *
- * When this run creates `config/auto_core.ini`, a failed or cancelled required
- * step removes that file before exit. Logger and Components initialization
- * are required stages with their own menus.
+ * logging.ini is established before any normal logging call. When this run
+ * creates `config/auto_core.ini`, a failed or cancelled required step removes
+ * that file before exit. The Auto Core menu selects Main configuration
+ * owners only. Interactive runs then ask whether to seed, configure, or
+ * skip components_init.exe. The editors run after that stage.
  */
 import std;
 import auto_core.core.component;
 import auto_core.core.encoding;
+import auto_core.core.logging.config;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core_initialization;
+import components_editor_request;
+import logging_bootstrap;
 
 import <iostream>;
 import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
+namespace boot = ac::main::logging_bootstrap;
+namespace sequence = ac::main::init;
 
 namespace {
 
@@ -37,21 +44,29 @@ int run_owner(
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error || !present) {
-        auto_core_init.log_print("{} was not found.", executable_name);
-        std::cout << executable_name << " was not found.\n";
+        auto_core_init.print("{} was not found.", executable_name);
         return 1;
     }
 
-    auto_core_init.log_print("Launching {}", command);
+    auto_core_init.log("Launching {}", command);
     const int code = cfg::run_config_exe(
         executable_name,
         std::wstring {arguments}
     );
-    auto_core_init.log_print(
-        "{} exited with code {}",
-        executable_name,
-        code
-    );
+    if (code != 0) {
+        auto_core_init.print(
+            "{} exited with code {}.",
+            executable_name,
+            code
+        );
+    }
+    else {
+        auto_core_init.log(
+            "{} exited with code {}",
+            executable_name,
+            code
+        );
+    }
     return code;
 }
 
@@ -78,7 +93,7 @@ struct SentinelGuard {
         std::error_code error;
         const bool removed = std::filesystem::remove(path, error);
         if (error) {
-            auto_core_init.log_print(
+            auto_core_init.print(
                 "Failed to remove {}: {}",
                 path.string(),
                 error.message()
@@ -86,7 +101,7 @@ struct SentinelGuard {
             return;
         }
         if (removed) {
-            auto_core_init.log_print(
+            auto_core_init.print(
                 "Removed {} because initialization did not complete.",
                 path.string()
             );
@@ -99,10 +114,55 @@ struct SentinelGuard {
 };
 
 [[nodiscard]]
-int run_sequence(const bool defaults) {
-    auto_core_init.log_print(
+std::string_view mode_name(const sequence::InitializationMode mode) {
+    switch (mode) {
+    case sequence::InitializationMode::seed:
+        return "defaults";
+    case sequence::InitializationMode::interactive:
+        return "interactive";
+    case sequence::InitializationMode::seeded_interactive:
+        return "seeded interactive";
+    }
+    return "defaults";
+}
+
+[[nodiscard]]
+std::optional<sequence::ComponentLaunch> prompt_components() {
+    while (true) {
+        std::cout
+            << '\n'
+            << "Components\n"
+            << "\n"
+            << "1. Use defaults for components\n"
+            << "2. Configure components\n"
+            << "3. Skip components\n"
+            << "\n"
+            << "Choice [1]: ";
+        const auto line = cfg::read_line();
+        if (!line) {
+            return std::nullopt;
+        }
+        if (line->empty() || *line == "1") {
+            return sequence::ComponentLaunch::seed;
+        }
+        if (*line == "2") {
+            return sequence::ComponentLaunch::configure;
+        }
+        if (*line == "3") {
+            return sequence::ComponentLaunch::skip;
+        }
+        std::cout << "Enter 1, 2, or 3.\n";
+    }
+}
+
+[[nodiscard]]
+int run_sequence(
+    const sequence::InitializationMode mode,
+    const bool prompt_for_components
+) {
+    auto_core_init.log(
         "Initialization mode selected: {}",
-        defaults ? "defaults" : "interactive"
+        mode_name(mode)
     );
     const auto ini = ac::paths::config_directory() / "auto_core.ini";
     std::error_code exists_error;
@@ -112,48 +172,144 @@ int run_sequence(const bool defaults) {
         !exists_error && !already_present
     };
 
-    namespace sequence = ac::main::init;
     for (const auto& step : sequence::initialization_steps) {
-        const auto arguments = sequence::arguments_for(step.kind, defaults);
-        if (step.kind == sequence::OwnerKind::auto_core) {
-            auto_core_init.log_print("Starting auto_core.ini creation");
+        std::wstring_view arguments;
+        if (step.kind == sequence::OwnerKind::components) {
+            auto launch = sequence::ComponentLaunch::seed;
+            if (prompt_for_components) {
+                const auto choice = prompt_components();
+                if (!choice) {
+                    auto_core_init.print(
+                        "Component initialization cancelled."
+                    );
+                    return 1;
+                }
+                launch = *choice;
+            }
+            if (launch == sequence::ComponentLaunch::skip) {
+                auto_core_init.print("Component initialization skipped.");
+                continue;
+            }
+            arguments = sequence::component_arguments(launch);
+        }
+        else {
+            arguments = sequence::arguments_for(step.kind, mode);
+        }
+        if (step.executable == "auto_core_config.exe") {
+            auto_core_init.log("Starting auto_core.ini creation");
         }
         const int code = run_owner(step.executable, arguments);
         if (code != 0) {
-            auto_core_init.log_print("Required child failed");
+            auto_core_init.log("Required child failed");
             return 1;
-        }
-        if (step.kind == sequence::OwnerKind::logger) {
-            std::error_code logging_error;
-            const auto logging_ini =
-                ac::paths::config_directory() / "logging.ini";
-            const bool logging_present =
-                std::filesystem::exists(logging_ini, logging_error);
-            if (logging_error || !logging_present) {
-                auto_core_init.log_print("Required child failed");
-                return 1;
-            }
         }
     }
     sentinel.release();
-    auto_core_init.log_print("Initialization completed successfully");
+    auto_core_init.print("Configuration initialized successfully.");
     return 0;
 }
 
 void print_menu() {
     std::cout
-        << "Auto Core\n"
+        << "Auto Core Configuration\n"
         << "\n"
         << "1. Use defaults\n"
         << "2. Configure\n"
-        << "Choice: ";
+        << "\n"
+        << "Choice [1]: ";
+}
+
+[[nodiscard]]
+bool logging_ini_exists() {
+    std::error_code error;
+    return std::filesystem::exists(
+        ac::paths::config_directory() / "logging.ini",
+        error
+    ) && !error;
+}
+
+[[nodiscard]]
+int launch_logging_config(const std::wstring_view arguments) {
+    const auto path =
+        ac::paths::bin_directory() / boot::logging_config_executable;
+    std::error_code error;
+    const bool present = std::filesystem::exists(path, error);
+    if (error || !present) {
+        std::cout << boot::logging_config_executable << " was not found.\n";
+        return 1;
+    }
+    return cfg::run_config_exe(
+        boot::logging_config_executable,
+        std::wstring {arguments}
+    );
+}
+
+[[nodiscard]]
+int establish_logging(const boot::InitMode mode) {
+    const auto selection = boot::select_logging_config(
+        mode,
+        logging_ini_exists(),
+        std::cin,
+        std::cout
+    );
+    if (selection.cancelled) {
+        return 1;
+    }
+    const auto outcome = boot::run_logging_config(
+        selection.arguments,
+        [](const boot::ConfigArguments arguments) {
+            return launch_logging_config(boot::config_arguments(arguments));
+        },
+        [] { return logging_ini_exists(); },
+        [] { ac::logging::config::resolve(); }
+    );
+    if (outcome.code != 0 || !outcome.logging_started) {
+        if (!logging_ini_exists()) {
+            std::cerr << "config/logging.ini was not created.\n";
+        }
+        return 1;
+    }
+    return 0;
 }
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
+    const auto launch =
+        ac::config::components_request::parse_config_launch(argc, argv);
+    if (!launch) {
+        return 1;
+    }
+
+    const auto mode = boot::init_mode(launch->init, launch->seed);
+    if (mode != boot::InitMode::seed) {
+        std::cout << "Auto Core Initialization\n";
+    }
+    if (establish_logging(mode) != 0) {
+        return 1;
+    }
     auto_core_init.log_main("auto_core_init.exe started");
+    std::error_code ini_error;
+    const bool ini_present = std::filesystem::exists(
+        ac::paths::config_directory() / "auto_core.ini",
+        ini_error
+    );
+    if (!ini_error && !ini_present) {
+        auto_core_init.log(
+            "config/auto_core.ini is missing. Launching auto_core_init.exe."
+        );
+    }
+
+    if (mode == boot::InitMode::seed) {
+        return run_sequence(sequence::InitializationMode::seed, false);
+    }
+    if (mode == boot::InitMode::interactive_seed) {
+        return run_sequence(
+            sequence::InitializationMode::seeded_interactive,
+            true
+        );
+    }
 
     while (true) {
         print_menu();
@@ -161,11 +317,11 @@ int main() {
         if (!line) {
             return 1;
         }
-        if (*line == "1") {
-            return run_sequence(true);
+        if (line->empty() || *line == "1") {
+            return run_sequence(sequence::InitializationMode::seed, true);
         }
         if (*line == "2") {
-            return run_sequence(false);
+            return run_sequence(sequence::InitializationMode::interactive, true);
         }
         std::cout << "Enter 1 or 2.\n";
     }

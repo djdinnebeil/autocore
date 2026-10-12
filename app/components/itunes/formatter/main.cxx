@@ -263,7 +263,7 @@ bool replace_format_file(
         itunes_formatter.log_print("Failed to replace {}", path.string());
         return false;
     }
-    itunes_formatter.log_print("Wrote {}", path.string());
+    itunes_formatter.log("Wrote {}", path.string());
     return true;
 }
 
@@ -355,7 +355,7 @@ int format_song(const std::filesystem::path& directory) {
             continue;
         }
         if (current_matches_file && *accepted == current) {
-            itunes_formatter.log_print(
+            itunes_formatter.log(
                 "Left existing {} unchanged.",
                 format_path.string()
             );
@@ -448,7 +448,7 @@ int configure_library_columns(const std::filesystem::path& directory) {
         !loaded.error &&
         chosen_text == shown.format_text &&
         chosen_count == shown.column_count) {
-        itunes_formatter.log_print(
+        itunes_formatter.log(
             "Left existing {} unchanged.",
             format_path.string()
         );
@@ -521,7 +521,7 @@ int seed_formats(const std::filesystem::path& directory) {
         return 1;
     }
     if (*library_present) {
-        itunes_formatter.log_print("Seed skipped; library.format already exists");
+        itunes_formatter.log("Seed skipped; library.format already exists");
     }
     else {
         const itunes::library_format::detail::LibraryFormat format;
@@ -539,7 +539,7 @@ int seed_formats(const std::filesystem::path& directory) {
         return 1;
     }
     if (*song_present) {
-        itunes_formatter.log_print("Seed skipped; song.format already exists");
+        itunes_formatter.log("Seed skipped; song.format already exists");
         return 0;
     }
     const auto accepted = itunes::song::detail::accepted_song_format(

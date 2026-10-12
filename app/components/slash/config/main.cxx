@@ -46,7 +46,7 @@ namespace {
         std::error_code create_error;
         std::filesystem::create_directories(path.parent_path(), create_error);
         if (create_error) {
-            slash_config.log_print(
+            slash_config.print(
                 "Failed to create config directory: {}",
                 create_error.message()
             );
@@ -58,7 +58,7 @@ namespace {
         );
         std::ofstream output(path, std::ios::binary | std::ios::trunc);
         if (!output) {
-            slash_config.log_print("Failed to create {}", path.string());
+            slash_config.print("Failed to create {}", path.string());
             return false;
         }
         output.write(
@@ -67,10 +67,10 @@ namespace {
         );
         output.close();
         if (!output) {
-            slash_config.log_print("Failed to write {}", path.string());
+            slash_config.print("Failed to write {}", path.string());
             return false;
         }
-        slash_config.log_print("Wrote {}", path.string());
+        slash_config.log("Wrote {}", path.string());
         return true;
     }
 
@@ -80,14 +80,14 @@ namespace {
     ) {
         const auto document = ac::ini::read(path);
         if (!document) {
-            slash_config.log_print("Failed to read {}", path.string());
+            slash_config.print("Failed to read {}", path.string());
             return {};
         }
         const auto mode = document->find("slash", "mode");
         if (mode && slash::defaults::is_mode(*mode)) {
             return std::string {*mode};
         }
-        slash_config.log_print(
+        slash_config.print(
             "config/slash.ini mode is missing or invalid. Using verbose."
         );
         return std::string {slash::defaults::mode_verbose};
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        slash_config.log_print("Failed to inspect {}", path.string());
+        slash_config.print("Failed to inspect {}", path.string());
         return 1;
     }
     namespace req = ac::config::components_request;
@@ -174,10 +174,10 @@ int main(int argc, char* argv[]) {
     switch (action) {
         case slash::config::Action::skip_seed:
             req::log_seed_skipped(slash_config, "config/slash.ini");
-            return 0;
+            return req::finish_component_initialization(slash_config, 0, "Slash");
         case slash::config::Action::skip_initialization:
             req::log_initialization_skipped(slash_config, "config/slash.ini");
-            return 0;
+            return req::finish_component_initialization(slash_config, 0, "Slash");
         case slash::config::Action::seed:
             req::log_writing_defaults(slash_config);
             if (!write_ini(
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             req::log_configuration_initialized(slash_config);
-            return 0;
+            return req::finish_component_initialization(slash_config, 0, "Slash");
         case slash::config::Action::configure:
             return run_configuration_menu(slash_config, path);
         case slash::config::Action::initialize:
@@ -202,8 +202,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     if (launch->init) {
-        const auto offer = menu::offer_configuration(
-            "Slash Configuration",
+        const auto result = menu::prompt_settings(
             settings,
             [&](const menu::Setting& setting) {
                 if (setting.key == "mode") {
@@ -211,16 +210,29 @@ int main(int argc, char* argv[]) {
                 }
                 return std::string {logging_in_file(path) ? "on" : "off"};
             },
+            [&](const menu::Setting& setting, const std::string_view value) {
+                const auto mode = setting.key == "mode"
+                    ? std::string {value}
+                    : mode_in_file(slash_config, path);
+                if (mode.empty()) {
+                    return menu::ApplyResult::failed;
+                }
+                const bool logging = setting.key == "logging"
+                    ? value == "on"
+                    : logging_in_file(path);
+                if (!write_ini(slash_config, path, mode, logging)) {
+                    return menu::ApplyResult::failed;
+                }
+                return menu::ApplyResult::stored;
+            },
             std::cin,
             std::cout
         );
-        if (offer == menu::OfferResult::failed) {
+        if (!result.ok) {
             return 1;
         }
-        if (offer == menu::OfferResult::leave) {
-            req::log_configuration_initialized(slash_config);
-            return 0;
-        }
+        req::log_configuration_initialized(slash_config);
+        return req::finish_component_initialization(slash_config, 0, "Slash");
     }
     if (run_configuration_menu(slash_config, path) != 0) {
         return 1;

@@ -94,8 +94,9 @@ build outputs. Path derivation stays in Locked: clone and runtime paths.
 Clone vs `dist/` stays in Locked: two audiences.
 
 - `app/` — build input (source, projects, resources). Not source-only.
-  [`app/AutoCore.sln`](../app/AutoCore.sln) is the repository workspace.
-  Shared props are not here.
+  [`app/AutoCore.sln`](../app/AutoCore.sln) is the production workspace.
+  [`app/Tests.sln`](../app/Tests.sln) builds the complete test suite
+  Release x64, including `auto_core_dll`. Shared props are not here.
 - `app/components/` — child executable projects that publish to `bin/`
   and run from `dist/bin/`.
   The component root holds one family `.sln` and responsibility folders:
@@ -180,9 +181,9 @@ Main must not know that component at compile time.
   delegate to config, editors, builders, formatters, OAuth, and domain
   tools, and it may enable or disable the component. It does not own
   the INI. `auto_core_settings.exe` is the installation settings
-  application. It delegates a missing `auto_core.ini` to
-  `auto_core_init.exe`, then offers `auto_core_config.exe` and every
-  installed `<name>_settings.exe` except itself. Discovery is the
+  application. It is the Settings menu only. It offers
+  `auto_core_config.exe` and every installed `<name>_settings.exe`
+  except itself, and it does not launch initialization. Discovery is the
   `*_settings.exe` filename, not `components.list` and not `*_ac.exe`.
   A missing
   `components.list` is reconstructible: Main launches no-arg
@@ -215,20 +216,31 @@ Name-specific protocols live under that child's `shared/`.
   `<name>_ac.exe` never create or rewrite them. The presence of
   `auto_core.ini` means Auto Core is initialized. There is no
   `initialized` key. `auto_core.exe` checks that file first. If it is
-  missing, the installation is new. `auto_core_init.exe` asks only
-  for Auto Core configuration, then runs `auto_core_config.exe --seed`
-  or `--init`. `logger_init.exe` and `components_init.exe` then make
-  their own choices. The remaining owners are
-  `keymap_config.exe --seed`, `components_config.exe --seed`,
-  `shutdown_config.exe --seed`, `crash_recovery_config.exe --seed`,
-  `components_editor.exe --seed`, and `keymap_editor.exe`.
-  `logger_init.exe` launches `logging_config.exe` and
-  `logger_config.exe` and does not write those files.
+  missing, the installation is new. `auto_core_init.exe` establishes
+  `logging.ini` through `logging_config.exe` before it asks for Auto
+  Core configuration. `1. Use defaults` propagates `--seed`.
+  `2. Configure` propagates `--init` and does not attach `--seed`.
+  `--seed` skips that menu and the Components menu, launching
+  `components_init.exe --seed`. `--init --seed` skips the Auto Core menu,
+  passes both flags to the Main configuration owners, then shows the
+  Components menu. That Main mode is passed to `auto_core_config.exe`,
+  `components_config.exe`, `shutdown_config.exe`,
+  `crash_recovery_config.exe`, and `keymap_config.exe`. It does not select
+  `components_init.exe`. No-argument, `--init`, and `--init --seed` then
+  offer defaults (`components_init.exe --seed`), configure
+  (`components_init.exe --init`), or skip. Skip is not a failure.
+  `components_init.exe --init` asks each component whether to use defaults,
+  configure, or skip. `components_init.exe --seed` does not prompt and
+  creates `logger.ini` through `logger_config.exe` on the defaults path.
+  After that stage,
+  `components_editor.exe --seed` and `keymap_editor.exe` run.
+  No Main configuration owner runs after `components_init.exe`.
+  `auto_core_init.exe` does not write `logging.ini`.
   `auto_core_config.exe` writes `auto_core.ini` from
   `[auto_core] warn_without_winkey_mapping` (default `on`) and
   `logging` (default `on`). `logging` is the family switch for
   `auto_core.exe`. If a required step fails or the user cancels that
-  step, including Logger or Components initialization, and this run
+  step, including Components initialization, and this run
   created `auto_core.ini`, the orchestrator removes the file before
   it exits. Only `auto_core_config.exe` creates or rewrites it.
   `config/components.ini` is written only by
@@ -281,7 +293,7 @@ sinks. Family logging is `config/<scope>.ini` `[<scope>] logging`.
 A normal missing key uses `component_logging_default`. Dash uses scope
 `dash` with fallback off, so a missing key is off. A `Component` with no
 scope does not read a component INI. A relative `directory` resolves from
-the installation root. On a new installation, `logger_init.exe` asks
+the installation root. On a new installation, `auto_core_init.exe` asks
 `logging_config.exe` to create a missing `logging.ini`. On an established installation, a missing
 `logging.ini` keeps those defaults in memory. Main warns, and the file
 is not created.

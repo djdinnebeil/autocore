@@ -1,6 +1,6 @@
 /**
  * \file settings_app.ixx
- * \brief Top-level Settings menu. It delegates and writes no configuration.
+ * \brief Top-level Settings menu. It writes no configuration and does not initialize.
  */
 module;
 
@@ -20,15 +20,6 @@ import auto_core.core.shell;
 namespace {
 
     ac::Component settings_app {"auto_core_settings"};
-
-    [[nodiscard]]
-    bool sentinel_exists() {
-        std::error_code error;
-        return std::filesystem::exists(
-            ac::paths::config_directory() / "auto_core.ini",
-            error
-        ) && !error;
-    }
 
     [[nodiscard]]
     int run_and_wait(const std::filesystem::path& executable_path) {
@@ -71,29 +62,6 @@ namespace {
     }
 
     [[nodiscard]]
-    bool ensure_initialized() {
-        if (ac::main::settings::startup_step(sentinel_exists()) ==
-            ac::main::settings::StartupStep::show_menu) {
-            return true;
-        }
-
-        const auto helper = ac::paths::bin_directory() / "auto_core_init.exe";
-        settings_app.log_print(
-            "config/auto_core.ini is missing. Launching auto_core_init.exe."
-        );
-        (void)run_and_wait(helper);
-        if (ac::main::settings::recheck_after_init(sentinel_exists()) ==
-            ac::main::settings::InitRecheck::show_menu) {
-            return true;
-        }
-
-        settings_app.log_print(
-            "Auto Core is not initialized. config/auto_core.ini was not created."
-        );
-        return false;
-    }
-
-    [[nodiscard]]
     std::string trim_line(const std::string_view value) {
         const auto first = value.find_first_not_of(" \t\r");
         if (first == std::string_view::npos) {
@@ -104,7 +72,7 @@ namespace {
     }
 
     void show_menu(const std::vector<ac::main::settings::MenuRow>& rows) {
-        settings_app.log_print("Auto Core Settings");
+        settings_app.log_print("Auto Core Settings\n");
         for (std::size_t index = 0; index < rows.size(); ++index) {
             settings_app.log_print("{}. {}", index + 1, rows[index].label);
         }
@@ -117,10 +85,6 @@ namespace {
 export int run_settings_application() {
     ac::shell::set_process_app_user_model_id();
     SetConsoleTitleW(L"Auto Core Settings");
-
-    if (!ensure_initialized()) {
-        return 1;
-    }
 
     while (true) {
         const auto identities = ac::main::settings::discover_settings_executables(

@@ -53,7 +53,7 @@ DataDirectory load_data_directory() {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {
-        server_builder.log_print(
+        server_builder.print(
             "Failed to inspect {}: {}",
             ini_path.string(),
             error.message()
@@ -72,7 +72,7 @@ DataDirectory load_data_directory() {
 
     const auto document = ac::ini::read(ini_path);
     if (!document) {
-        server_builder.log_print(
+        server_builder.print(
             "Failed to read {}. Site files were not written.",
             ini_path.string()
         );
@@ -103,7 +103,7 @@ bool write_if_missing(
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        server_builder.log_print(
+        server_builder.print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -111,22 +111,22 @@ bool write_if_missing(
         return false;
     }
     if (present) {
-        server_builder.log_print("Left existing {} unchanged.", path.string());
+        server_builder.log("Left existing {} unchanged.", path.string());
         return true;
     }
 
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        server_builder.log_print("Failed to create {}", path.string());
+        server_builder.print("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        server_builder.log_print("Failed to write {}", path.string());
+        server_builder.print("Failed to write {}", path.string());
         return false;
     }
-    server_builder.log_print("Created {}", path.string());
+    server_builder.log("Created {}", path.string());
     return true;
 }
 
@@ -140,7 +140,7 @@ int seed_site() {
     std::error_code error;
     const bool present = std::filesystem::exists(scalar_path, error);
     if (error || !present) {
-        server_builder.log_print(
+        server_builder.print(
             "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
         );
         return 1;
@@ -148,7 +148,7 @@ int seed_site() {
 
     std::ifstream input(scalar_path, std::ios::binary);
     if (!input) {
-        server_builder.log_print(
+        server_builder.print(
             "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
         );
         return 1;
@@ -157,14 +157,14 @@ int seed_site() {
     contents << input.rdbuf();
     const auto stored = server::data::parse_document_root(contents.str());
     if (!stored) {
-        server_builder.log_print(
+        server_builder.print(
             "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
         );
         return 1;
     }
 
     if (server::data::document_root_is_absolute(*stored)) {
-        server_builder.log_print(
+        server_builder.print(
             "document_root.id is absolute. server_builder.exe does not modify that directory."
         );
         return 1;
@@ -175,7 +175,7 @@ int seed_site() {
         directory.path
     );
     if (!document_root) {
-        server_builder.log_print(
+        server_builder.print(
             "document_root.id resolves outside the Server data directory. Starter files were not written."
         );
         return 1;
@@ -183,7 +183,7 @@ int seed_site() {
 
     std::filesystem::create_directories(*document_root, error);
     if (error) {
-        server_builder.log_print(
+        server_builder.print(
             "Failed to create {}: {}",
             document_root->string(),
             error.message()

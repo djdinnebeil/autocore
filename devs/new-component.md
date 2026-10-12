@@ -17,9 +17,10 @@ app/components/example/
 ```
 
 The component root holds the family solution and those folders. Optional `tests/` if
-the child has Catch2 tests. Extra executables (Spotify `oauth/`, Server
-`builder/` for `server_builder.exe`) are sibling folders. Add each `.vcxproj`
-to `Example.sln`. Do not add a solution per executable.
+the child has Catch2 tests. A test project joins `Example.sln` and `app/Tests.sln`.
+It does not join `app/AutoCore.sln`. Extra executables (Spotify `oauth/`, Server
+`builder/` for `server_builder.exe`) are sibling folders. Add each production `.vcxproj`
+to `Example.sln` and `app/AutoCore.sln`. Do not add a solution per executable.
 
 Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_print`), uses those defaults in memory, and does **not** create the file.
 
@@ -31,7 +32,7 @@ Each heading is tagged **source**, **compile**, or **runtime configuration**.
 
 ## Project creation (source)
 
-Create **two** Console App projects (C++, Windows, Console; not CMake; no precompiled header). Place each project in its responsibility directory (`runtime/`, `config/`) and add both to `Example.sln` at the component root. The repository workspace is `app/AutoCore.sln`.
+Create **two** Console App projects (C++, Windows, Console; not CMake; no precompiled header). Place each project in its responsibility directory (`runtime/`, `config/`) and add both to `Example.sln` at the component root. The production workspace is `app/AutoCore.sln`. A test project joins the family solution and `app/Tests.sln`, which builds the complete test suite.
 
 1. **Runtime:** Name `example`. Location `<repo>\app\components\example\runtime`. Target Name later: `example_ac`.
 2. **Config:** Name `example_config`. Location `<repo>\app\components\example\config`. Target Name: `example_config` (unsuffixed).
@@ -339,7 +340,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
 
 - `.vcxproj`, `.vcxproj.filters`
 - `main.cxx` and other source
-- The family `.sln` at the component root (`Example.sln`), plus `app/AutoCore.sln`, `app/core/Core.sln`, or `app/main/Main.sln` when the new project belongs there. Do not add a `.sln` beside each executable.
+- The family `.sln` at the component root (`Example.sln`), plus `app/AutoCore.sln`, `app/core/Core.sln`, or `app/main/Main.sln` when the new production project belongs there. A test project also joins `app/Tests.sln`. Do not add a `.sln` beside each executable.
 - `msbuild/AutoCore.props` only if you are changing shared build policy (this workflow does not)
 - `shared/defaults.ixx` for that child's portable INI text
 

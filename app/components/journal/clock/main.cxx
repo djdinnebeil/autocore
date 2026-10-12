@@ -143,7 +143,7 @@ bool write_clock_file(const journal::extended_hours::ExtendedHours& hours) {
         journal_clock.log_print("Failed to write {}", path.string());
         return false;
     }
-    journal_clock.log_print("Wrote {}", path.string());
+    journal_clock.log("Wrote {}", path.string());
     return true;
 }
 

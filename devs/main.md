@@ -12,20 +12,35 @@ process only.
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
 2. If `config/auto_core.ini` is missing, the installation is new. Launch
-   `auto_core_init.exe` and wait. Its menu is `Auto Core` with
-   `1. Use defaults` and `2. Configure`. That choice runs only
-   `auto_core_config.exe --seed` or `auto_core_config.exe --init`. It then
-   launches `logger_init.exe`, which has its own menu (`1. Use defaults`,
-   `2. Configure`, `3. Disable logging`) and launches `logging_config.exe`
-   and `logger_config.exe`. Use defaults passes `--seed`. Configure passes
-   `--init`. Disable logging passes `--disable` to `logging_config.exe`,
-   which writes the compiled logging file with `disable_all = on`, and
-   `--seed` to `logger_config.exe`. Neither init executable writes an INI.
-   `components_init.exe` then shows its own defaults/configure menu.
-   The remaining owners are seeded: `keymap_config.exe`,
+   `auto_core_init.exe` and wait. Before its Auto Core menu, it establishes
+   `config/logging.ini` with console I/O only. No-argument and `--init` ask
+   `Enable logging? [Y/n]:`. No runs `logging_config.exe --disable`, which
+   writes the compiled logging file with `disable_all = on`. Yes asks
+   `1. Use defaults` or `2. Configure`, which run `logging_config.exe --seed`
+   or `logging_config.exe --init`. `--seed` runs `logging_config.exe --seed`
+   and does not prompt. `--init --seed` asks only the enable question.
+   An existing `logging.ini` is preserved. `auto_core_init.exe` does not
+   write the file. After logging is resolved, its menu is `Auto Core` with
+   `1. Use defaults` and `2. Configure`. Use defaults propagates `--seed`.
+   Configure propagates `--init` and does not attach `--seed`.
+   `--seed` skips that menu and also skips the Components menu, launching
+   `components_init.exe --seed`. `--init --seed` skips the Auto Core menu,
+   passes both flags to the Main configuration owners, then shows the
+   Components menu. That Main mode is passed to `auto_core_config.exe`,
    `components_config.exe`, `shutdown_config.exe`,
-   `crash_recovery_config.exe`, and `components_editor.exe --seed`, then
-   `keymap_editor.exe`. A failed or cancelled Logger or Components stage
+   `crash_recovery_config.exe`, and `keymap_config.exe`. It does not select
+   `components_init.exe`. After those owners succeed, no-argument, `--init`,
+   and `--init --seed` ask `1. Use defaults for components`
+   (`components_init.exe --seed`), `2. Configure components`
+   (`components_init.exe --init`), or `3. Skip components`. Blank input
+   selects defaults. Skip does not launch `components_init.exe` and is not
+   a failure. `components_init.exe --init` asks each discovered component
+   whether to use defaults, configure, or skip. `components_init.exe --seed`
+   does not prompt and launches each component config with `--init --seed`,
+   which creates `logger.ini` by launching `logger_config.exe`.
+   After component initialization, `components_editor.exe --seed` and
+   `keymap_editor.exe` run. No Main configuration owner runs after
+   `components_init.exe`. A failed or cancelled required stage
    stops initialization. After the orchestrator returns, resolve the shared
    logging policy. If `logging.ini` is still missing, exit `1`.
    `auto_core_config.exe` writes `auto_core.ini`. Presence of the file means

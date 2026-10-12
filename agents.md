@@ -17,7 +17,7 @@ Within Main and components, directories follow executable responsibility:
 `runtime/`, `config/`, `builder/`, `settings/`, and `shared/`. Main uses
 `editors/` and `init/`. A component editor directory is `editor/`.
 
-A `.vcxproj` represents one executable or library. `app/AutoCore.sln` is the repository workspace; subsystem and component directories may also provide focused `.sln` files.
+A `.vcxproj` represents one executable or library. `app/AutoCore.sln` is the production workspace. `app/Tests.sln` builds the complete test suite. Subsystem and component directories may also provide focused `.sln` files.
 
 ## Architecture
 

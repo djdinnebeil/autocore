@@ -147,7 +147,9 @@
     <ClCompile Include="..\..\..\core\config\ini.ixx" />
     <ClCompile Include="..\..\..\core\config\paths.ixx" />
     <ClCompile Include="..\..\shared\config_support.ixx" />
+    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
     <ClCompile Include="initialization_sequence.ixx" />
+    <ClCompile Include="logging_bootstrap.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>

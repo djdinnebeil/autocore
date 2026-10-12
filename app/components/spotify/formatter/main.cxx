@@ -211,7 +211,7 @@ bool replace_song_format(
         spotify_formatter.log_print("Failed to replace {}", path.string());
         return false;
     }
-    spotify_formatter.log_print("Wrote {}", path.string());
+    spotify_formatter.log("Wrote {}", path.string());
     return true;
 }
 
@@ -305,7 +305,7 @@ int edit_song_format() {
             continue;
         }
         if (current_matches_file && *accepted == current) {
-            spotify_formatter.log_print(
+            spotify_formatter.log(
                 "Left existing {} unchanged.",
                 format_path.string()
             );
@@ -334,7 +334,7 @@ int run_seed() {
         return 1;
     }
     if (exists) {
-        spotify_formatter.log_print("Seed skipped; song.format already exists");
+        spotify_formatter.log("Seed skipped; song.format already exists");
         return 0;
     }
     if (!replace_song_format(format_path, spotify::song::default_template)) {

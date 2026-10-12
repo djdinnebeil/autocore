@@ -33,6 +33,7 @@ const menu::Setting settings[] {
             "Seconds between periodic merges. 0 disables the periodic merge.",
         .default_value = "60",
         .constraint = "Enter 0 or a positive number of seconds.",
+        .numeric_prompt = "Enter an integer, or 0 to disable",
     },
     {
         .key = "merge_logs_on_shutdown",
@@ -122,6 +123,7 @@ LoggerValues current_values() {
 bool write_values(const LoggerValues& values) {
     return cfg::write_bytes(
         ini_path(),
+        "# merge_interval_seconds = 0 to disable, or a positive integer\n" +
         menu::with_header(
             settings,
             defaults::ini_for_logger(
@@ -165,10 +167,10 @@ menu::ApplyResult apply_setting(
         values.logging = value == "on";
     }
     if (!write_values(values)) {
-        logger_config.log_print("Failed to write {}.", ini_path().string());
+        logger_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    logger_config.log_print("Wrote {}", ini_path().string());
+    logger_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -188,10 +190,10 @@ int run_configuration_menu() {
 [[nodiscard]]
 int write_missing_defaults() {
     if (!write_values({})) {
-        logger_config.log_print("Failed to write {}.", ini_path().string());
+        logger_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    logger_config.log_print("Wrote {}", ini_path().string());
+    logger_config.log("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -200,20 +202,14 @@ int initialize_missing() {
     if (write_missing_defaults() != 0) {
         return 1;
     }
-    const auto offer = menu::offer_configuration(
-        "Logger Configuration",
+    const auto result = menu::prompt_settings(
         settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -231,7 +227,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
-        logger_config.log_print(
+        logger_config.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -243,20 +239,20 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (present) {
             req::log_seed_skipped(logger_config, "config/logger.ini");
-            return 0;
+            return req::finish_component_initialization(logger_config, 0, "Logger");
         }
         req::log_writing_defaults(logger_config);
         if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(logger_config);
-        return 0;
+        return req::finish_component_initialization(logger_config, 0, "Logger");
     }
 
     if (launch->init) {
         if (present) {
             req::log_initialization_skipped(logger_config, "config/logger.ini");
-            return 0;
+            return req::finish_component_initialization(logger_config, 0, "Logger");
         }
         req::log_configuration_missing(logger_config);
         req::log_writing_defaults(logger_config);
@@ -264,7 +260,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(logger_config);
-        return 0;
+        return req::finish_component_initialization(logger_config, 0, "Logger");
     }
 
     if (!present) {

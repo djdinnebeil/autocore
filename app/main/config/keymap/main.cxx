@@ -72,10 +72,10 @@ menu::ApplyResult apply_setting(const menu::Setting&, const std::string_view val
     KeymapFlags flags;
     flags.silence_nonset_warning = value == "on";
     if (!write_flags(flags)) {
-        keymap_config.log_print("Failed to write {}.", ini_path().string());
+        keymap_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    keymap_config.log_print("Wrote {}", ini_path().string());
+    keymap_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -95,10 +95,10 @@ int run_configuration_menu() {
 [[nodiscard]]
 int write_missing_defaults() {
     if (!write_flags({})) {
-        keymap_config.log_print("Failed to write {}.", ini_path().string());
+        keymap_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    keymap_config.log_print("Wrote {}", ini_path().string());
+    keymap_config.log("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -107,20 +107,15 @@ int initialize_missing() {
     if (write_missing_defaults() != 0) {
         return 1;
     }
-    const auto offer = menu::offer_configuration(
-        "Keymap Configuration",
+    const auto result = menu::prompt_settings(
         settings,
         current_text,
+        apply_setting,
         std::cin,
-        std::cout
+        std::cout,
+        "Keymap Configuration"
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -138,7 +133,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
-        keymap_config.log_print("Failed to inspect {}", ini_path().string());
+        keymap_config.print("Failed to inspect {}", ini_path().string());
         return 1;
     }
 
@@ -147,20 +142,32 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (present) {
             req::log_seed_skipped(keymap_config, "config/keymap.ini");
-            return 0;
+            return req::finish_configuration_initialization(
+                keymap_config,
+                0,
+                "Keymap"
+            );
         }
         req::log_writing_defaults(keymap_config);
         if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(keymap_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            keymap_config,
+            0,
+            "Keymap"
+        );
     }
 
     if (launch->init) {
         if (present) {
             req::log_initialization_skipped(keymap_config, "config/keymap.ini");
-            return 0;
+            return req::finish_configuration_initialization(
+                keymap_config,
+                0,
+                "Keymap"
+            );
         }
         req::log_configuration_missing(keymap_config);
         req::log_writing_defaults(keymap_config);
@@ -168,7 +175,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(keymap_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            keymap_config,
+            0,
+            "Keymap"
+        );
     }
 
     if (!present) {

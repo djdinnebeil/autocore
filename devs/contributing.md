@@ -24,8 +24,9 @@ C++ workload is required. From the repository root:
 ```
 
 Or follow the MSBuild order in [building.md](building.md). The
-linker searches `lib/auto_core.lib`. The repository workspace is
-`app/AutoCore.sln`. `auto_core_dll` publishes `lib/auto_core.dll` to
+linker searches `lib/auto_core.lib`. The production workspace is
+`app/AutoCore.sln`. The complete test suite is built from
+`app/Tests.sln` Release x64. `auto_core_dll` publishes `lib/auto_core.dll` to
 `bin/auto_core.dll`. Application executables publish to tracked `bin/`.
 [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal
 publisher of `dist/bin/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
@@ -46,9 +47,11 @@ child does not need a Main `register_with` entry.
 
 ## Tests
 
-Build the DLL first, or use the tracked `lib/auto_core.dll`. Test
-`OutDir` is `obj\<project>\`. Default Catch2 runs should exclude
-`[live]` (`"~[live]"`). `build-all.ps1` does not build tests.
+Build the DLL first, or use the tracked `lib/auto_core.dll`. From the
+repository root, Release x64, `app/Tests.sln` builds the complete test
+suite, including `auto_core_dll`. Test `OutDir` is `obj\<project>\`.
+Default Catch2 runs should exclude `[live]` (`"~[live]"`).
+`build-all.ps1` builds `app/AutoCore.sln` and does not build tests.
 
 ```powershell
 msbuild app\core\tests\auto_core_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64

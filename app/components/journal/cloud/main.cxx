@@ -76,7 +76,7 @@ int run_seed() {
         journal_cloud.log_print("{}", written.error());
         return 1;
     }
-    journal_cloud.log_print("Wrote {}", path.string());
+    journal_cloud.log("Wrote {}", path.string());
     req::log_configuration_initialized(journal_cloud);
     return 0;
 }
@@ -111,7 +111,7 @@ int run_init() {
                 journal_cloud.log_print("{}", written.error());
                 return 1;
             }
-            journal_cloud.log_print("Wrote {}", path.string());
+            journal_cloud.log("Wrote {}", path.string());
             return 0;
         }
         const auto written = journal::firebase::write_url(path, value);
@@ -120,7 +120,7 @@ int run_init() {
             std::cout << written.error() << '\n';
             continue;
         }
-        journal_cloud.log_print("Wrote {}", path.string());
+        journal_cloud.log("Wrote {}", path.string());
         return 0;
     }
 }
@@ -156,7 +156,7 @@ int run_menu() {
                 std::cout << written.error() << '\n';
                 continue;
             }
-            journal_cloud.log_print("Wrote {}", journal::firebase::file_path().string());
+            journal_cloud.log("Wrote {}", journal::firebase::file_path().string());
         }
         else if (choice == "2" || choice == "q" || choice == "Q") {
             return 0;

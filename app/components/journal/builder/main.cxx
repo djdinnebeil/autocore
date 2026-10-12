@@ -35,7 +35,7 @@ std::optional<std::string> prompt_default(
     }
     const auto value = trim(input);
     if (value == "cancel") {
-        journal_builder.log_print("Cancelled.");
+        journal_builder.print("Cancelled.");
         return std::nullopt;
     }
     if (value.empty()) {
@@ -97,11 +97,10 @@ bool save_aliases(
     );
     const std::string text = journal::factories::serialize_alias_file(id, aliases);
     if (!journal::factories::write_alias_file(path, text, true)) {
-        journal_builder.log_print("Failed to write {}", path.string());
-        std::cout << "Could not write " << path.string() << ".\n";
+        journal_builder.print("Failed to write {}", path.string());
         return false;
     }
-    journal_builder.log_print("Wrote {}", path.string());
+    journal_builder.log("Wrote {}", path.string());
     std::cout << "Wrote " << path.string() << ".\n";
     std::cout << "Restart Journal before the catalog changes.\n";
     return true;
@@ -365,7 +364,7 @@ int initialize_missing_factory(
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        journal_builder.log_print(
+        journal_builder.print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -382,7 +381,7 @@ int initialize_missing_factory(
     const journal::factories::AliasFile parsed =
         journal::factories::parse_alias_file(starter, descriptor.id);
     if (parsed.aliases.empty() || !parsed.issues.empty()) {
-        journal_builder.log_print(
+        journal_builder.print(
             "The starter for {} is not a valid alias file.",
             path.string()
         );
@@ -461,13 +460,13 @@ int run_seed() {
     try {
         const std::filesystem::path directory = journal::data_directory();
         if (journal::factories::seed_missing_alias_files(directory) != 0) {
-            journal_builder.log_print("Failed to create journal alias files.");
+            journal_builder.print("Failed to create journal alias files.");
             return 1;
         }
         return 0;
     }
     catch (const std::exception& error) {
-        journal_builder.log_print("{}", error.what());
+        journal_builder.print("{}", error.what());
         return 1;
     }
 }
@@ -494,7 +493,7 @@ int main(int argc, char* argv[]) {
         }
     }
     catch (const std::exception& error) {
-        journal_builder.log_print("{}", error.what());
+        journal_builder.print("{}", error.what());
         return 1;
     }
     if (argc > 1) {
@@ -506,7 +505,7 @@ int main(int argc, char* argv[]) {
         return run_menu();
     }
     catch (const std::exception& error) {
-        journal_builder.log_print("{}", error.what());
+        journal_builder.print("{}", error.what());
         return 1;
     }
 }

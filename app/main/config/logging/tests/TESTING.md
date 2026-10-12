@@ -2,7 +2,7 @@
 
 `logging_config_tests.vcxproj` covers seed precedence, `--disable`,
 canonical prompt order, preservation of an existing file, failed writes,
-the three independent first-run decisions, and the Logger menu launches.
+the logging bootstrap prompts, and the first-run owner sequence.
 
 Build and run Release x64:
 

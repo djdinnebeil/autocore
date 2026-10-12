@@ -3,9 +3,9 @@
 .SYNOPSIS
   Build Auto Core Release x64 in the documented solution order.
 .DESCRIPTION
-  Builds app\AutoCore.sln Release x64 with devenv.com. That solution build
-  is the shipped DLL and executables. Test projects are members and are not
-  built. After a successful build, publishes bin\ into dist\bin.
+  Builds app\AutoCore.sln Release x64 with devenv.com. That solution is
+  production projects only. Test projects are built from app\Tests.sln.
+  After a successful build, publishes bin\ into dist\bin.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>

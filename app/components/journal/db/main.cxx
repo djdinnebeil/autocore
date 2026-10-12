@@ -435,7 +435,7 @@ int create_series(const std::string_view name, const int padding) {
         remove_quiet(temporary);
         return 1;
     }
-    journal_db.log_print("Wrote {}", path.string());
+    journal_db.log("Wrote {}", path.string());
     return 0;
 }
 

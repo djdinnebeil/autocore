@@ -47,9 +47,10 @@ catalog::Settings default_settings() {
 [[nodiscard]]
 bool write_list(const catalog::Document& document) {
     if (!cfg::write_bytes(list_path(), catalog::format_list(document))) {
+        components_editor.print("Failed to write {}.", list_path().string());
         return false;
     }
-    components_editor.log_print("Wrote {}", list_path().string());
+    components_editor.log("Wrote {}", list_path().string());
     return true;
 }
 
@@ -69,7 +70,7 @@ bool component_ini_exists(const std::string_view name) {
 std::optional<std::string> read_text(const std::filesystem::path& path) {
     std::ifstream input(path, std::ios::binary);
     if (!input) {
-        components_editor.log_print("Failed to read {}", path.string());
+        components_editor.print("Failed to read {}", path.string());
         return std::nullopt;
     }
     return std::string {
@@ -83,7 +84,7 @@ std::optional<catalog::Settings> load_settings() {
     std::error_code error;
     const bool ini_present = file_exists(ini_path(), error);
     if (error) {
-        components_editor.log_print(
+        components_editor.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -111,7 +112,7 @@ std::optional<catalog::Document> load_document() {
     std::error_code error;
     const bool list_present = file_exists(list_path(), error);
     if (error) {
-        components_editor.log_print(
+        components_editor.print(
             "Failed to inspect {}",
             list_path().string()
         );
@@ -199,14 +200,14 @@ int full_synchronize() {
 [[nodiscard]]
 int set_explicit_state(const std::string_view name, const bool enabled) {
     if (!list::is_valid_component_name(name)) {
-        components_editor.log_print(
+        components_editor.print(
             "Invalid component name: {}",
             name
         );
         return 1;
     }
     if (!component_ini_exists(name)) {
-        components_editor.log_print(
+        components_editor.print(
             "config/{}.ini is missing. components.list was not modified.",
             name
         );
@@ -216,14 +217,14 @@ int set_explicit_state(const std::string_view name, const bool enabled) {
     std::error_code error;
     const bool list_present = file_exists(list_path(), error);
     if (error) {
-        components_editor.log_print(
+        components_editor.print(
             "Failed to inspect {}",
             list_path().string()
         );
         return 1;
     }
     if (!list_present) {
-        components_editor.log_print(
+        components_editor.print(
             "components.list is missing. It was not modified."
         );
         return 1;
@@ -235,30 +236,31 @@ int set_explicit_state(const std::string_view name, const bool enabled) {
     }
     const auto updated = catalog::set_listed_state(*text, name, enabled);
     if (!updated) {
-        components_editor.log_print(
+        components_editor.print(
             "Invalid component name: {}",
             name
         );
         return 1;
     }
     if (!cfg::write_bytes(list_path(), *updated)) {
+        components_editor.print("Failed to write {}.", list_path().string());
         return 1;
     }
-    components_editor.log_print("Wrote {}", list_path().string());
+    components_editor.log("Wrote {}", list_path().string());
     return 0;
 }
 
 [[nodiscard]]
 int single_component_update(const std::string_view name) {
     if (!list::is_valid_component_name(name)) {
-        components_editor.log_print(
+        components_editor.print(
             "Invalid component name: {}",
             name
         );
         return 1;
     }
     if (!component_ini_exists(name)) {
-        components_editor.log_print(
+        components_editor.print(
             "config/{}.ini is missing. components.list was not modified.",
             name
         );
@@ -364,14 +366,14 @@ int main(int argc, char* argv[]) {
         std::error_code error;
         const bool list_present = file_exists(list_path(), error);
         if (error) {
-            components_editor.log_print(
+            components_editor.print(
                 "Failed to inspect {}",
                 list_path().string()
             );
             return 1;
         }
         if (list_present) {
-            components_editor.log_print("components.list already exists.");
+            components_editor.log("components.list already exists.");
             return 0;
         }
         return full_synchronize();

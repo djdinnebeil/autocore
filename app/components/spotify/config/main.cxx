@@ -30,6 +30,7 @@ const menu::Setting menu_settings[] {
         .display_name = "Directory",
         .summary = "Folder that stores Spotify data.",
         .default_value = spotify::defaults::directory,
+        .directory_path = true,
     },
     {
         .key = "auto_launch_oauth",
@@ -64,7 +65,7 @@ bool write_bytes(
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        spotify_config.log_print(
+        spotify_config.print(
             "Failed to create config directory: {}",
             error.message()
         );
@@ -72,7 +73,7 @@ bool write_bytes(
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        spotify_config.log_print("Failed to create {}", path.string());
+        spotify_config.print("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
@@ -94,7 +95,7 @@ std::optional<bool> prompt_yes_no(std::string_view question) {
         std::cout << question;
         std::string line;
         if (!std::getline(std::cin, line)) {
-            spotify_config.log_print("Failed to read Spotify configuration.");
+            spotify_config.print("Failed to read Spotify configuration.");
             return std::nullopt;
         }
         if (const auto answer = spotify::defaults::accepted_yes_no(trim(line))) {
@@ -112,7 +113,7 @@ std::optional<int> launch_process(
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        spotify_config.log_print("Missing {}.", executable_path.string());
+        spotify_config.print("Missing {}.", executable_path.string());
         return std::nullopt;
     }
 
@@ -136,7 +137,7 @@ std::optional<int> launch_process(
             &startup_info,
             &process_info
         )) {
-        spotify_config.log_print("Unable to start {}.", executable_path.string());
+        spotify_config.print("Unable to start {}.", executable_path.string());
         return std::nullopt;
     }
 
@@ -145,7 +146,7 @@ std::optional<int> launch_process(
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        spotify_config.log_print(
+        spotify_config.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -154,7 +155,7 @@ std::optional<int> launch_process(
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        spotify_config.log_print("{} exited {}.", executable_path.string(), code);
+        spotify_config.print("{} exited {}.", executable_path.string(), code);
     }
     return code;
 }
@@ -184,7 +185,7 @@ std::optional<Settings> load_settings(const bool report_failure) {
     const auto document = ac::ini::read(ini_path());
     if (!document) {
         if (report_failure) {
-            spotify_config.log_print("Failed to read {}.", ini_path().string());
+            spotify_config.print("Failed to read {}.", ini_path().string());
         }
         return std::nullopt;
     }
@@ -215,6 +216,7 @@ std::optional<Settings> load_settings(const bool report_failure) {
 bool write_settings(const Settings& settings) {
     return write_bytes(
         ini_path(),
+        "# directory = relative or absolute path\n" +
         menu::with_header(
             menu_settings,
             spotify::defaults::ini_for(
@@ -266,7 +268,7 @@ menu::ApplyResult apply_setting(
     if (!write_settings(*settings)) {
         return menu::ApplyResult::failed;
     }
-    spotify_config.log_print("Wrote {}.", ini_path().string());
+    spotify_config.log("Wrote {}.", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -283,27 +285,21 @@ int run_configuration_menu() {
 }
 
 int offer_configuration() {
-    const auto offer = menu::offer_configuration(
-        "Spotify Configuration",
+    const auto result = menu::prompt_settings(
         menu_settings,
         current_text,
+        apply_setting,
         std::cin,
         std::cout
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 std::optional<bool> file_present(const std::filesystem::path& path) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        spotify_config.log_print(
+        spotify_config.print(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -314,11 +310,11 @@ std::optional<bool> file_present(const std::filesystem::path& path) {
 }
 
 void report_complete() {
-    spotify_config.log_print("Spotify initialization complete.");
+    spotify_config.log("Spotify initialization complete.");
 }
 
 void report_incomplete() {
-    spotify_config.log_print(
+    spotify_config.print(
         "Spotify initialization incomplete: User Authorization has not been completed."
     );
 }
@@ -428,7 +424,7 @@ int report_seeded_authorization() {
         return 1;
     }
     if (!spotify::data::load_client_id() || !*tokens) {
-        spotify_config.log_print("Spotify files have been seeded.");
+        spotify_config.log("Spotify files have been seeded.");
         report_incomplete();
     }
     return 0;
@@ -450,7 +446,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        spotify_config.log_print("Failed to inspect {}", path.string());
+        spotify_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -462,7 +458,7 @@ int main(int argc, char* argv[]) {
             if (!write_settings({})) {
                 return 1;
             }
-            spotify_config.log_print("Wrote {}.", path.string());
+            spotify_config.log("Wrote {}.", path.string());
         }
         else if (!load_settings(true)) {
             return 1;
@@ -493,7 +489,7 @@ int main(int argc, char* argv[]) {
         if (!write_settings({})) {
             return 1;
         }
-        spotify_config.log_print("Wrote {}.", path.string());
+        spotify_config.log("Wrote {}.", path.string());
         if (offer_configuration() != 0) {
             return 1;
         }
@@ -505,8 +501,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (!launch->init) {
-        return report_seeded_authorization();
-    }
-    return finish_authorization();
+    const int authorization = !launch->init
+        ? report_seeded_authorization()
+        : finish_authorization();
+    return req::finish_component_initialization(
+        spotify_config,
+        authorization,
+        "Spotify"
+    );
 }

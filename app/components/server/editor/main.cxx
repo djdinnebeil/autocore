@@ -133,7 +133,7 @@ bool write_new_file(
         return false;
     }
     if (present) {
-        server_editor.log_print("Left existing {} unchanged.", path.string());
+        server_editor.log("Left existing {} unchanged.", path.string());
         return true;
     }
 

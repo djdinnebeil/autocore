@@ -34,6 +34,7 @@ const menu::Setting settings[] {
         .summary = "Milliseconds Main waits for a generic child to exit.",
         .default_value = "2000",
         .constraint = "Enter a non-negative number of milliseconds.",
+        .numeric_prompt = "Enter an integer",
     },
 };
 
@@ -75,13 +76,18 @@ ShutdownValues current_values() {
 
 [[nodiscard]]
 bool write_values(const ShutdownValues& values) {
-    return cfg::write_bytes(
-        ini_path(),
-        menu::with_header(
-            settings,
-            defaults::ini_for_shutdown(values.prompt, values.timeout_ms)
-        )
+    auto text = menu::with_header(
+        settings,
+        defaults::ini_for_shutdown(values.prompt, values.timeout_ms)
     );
+    constexpr std::string_view prompt =
+        "# delayed_shutdown_prompt = popup | console\n";
+    constexpr std::string_view timeout =
+        "# shutdown_timeout_ms = a positive integer in milliseconds\n";
+    if (const auto at = text.find(prompt); at != std::string::npos) {
+        text.insert(at + prompt.size(), timeout);
+    }
+    return cfg::write_bytes(ini_path(), text);
 }
 
 [[nodiscard]]
@@ -124,10 +130,10 @@ menu::ApplyResult apply_setting(
         values.timeout_ms = *timeout;
     }
     if (!write_values(values)) {
-        shutdown_config.log_print("Failed to write {}.", ini_path().string());
+        shutdown_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    shutdown_config.log_print("Wrote {}", ini_path().string());
+    shutdown_config.log("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -147,10 +153,10 @@ int run_configuration_menu() {
 [[nodiscard]]
 int write_missing_defaults() {
     if (!write_values({})) {
-        shutdown_config.log_print("Failed to write {}.", ini_path().string());
+        shutdown_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    shutdown_config.log_print("Wrote {}", ini_path().string());
+    shutdown_config.log("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -159,20 +165,15 @@ int initialize_missing() {
     if (write_missing_defaults() != 0) {
         return 1;
     }
-    const auto offer = menu::offer_configuration(
-        "Shutdown Configuration",
+    const auto result = menu::prompt_settings(
         settings,
         current_text,
+        apply_setting,
         std::cin,
-        std::cout
+        std::cout,
+        "Shutdown Configuration"
     );
-    if (offer == menu::OfferResult::failed) {
-        return 1;
-    }
-    if (offer == menu::OfferResult::configure) {
-        return run_configuration_menu();
-    }
-    return 0;
+    return result.ok ? 0 : 1;
 }
 
 } // namespace
@@ -190,7 +191,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path(), error);
     if (error) {
-        shutdown_config.log_print(
+        shutdown_config.print(
             "Failed to inspect {}",
             ini_path().string()
         );
@@ -202,14 +203,22 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (present) {
             req::log_seed_skipped(shutdown_config, "config/shutdown.ini");
-            return 0;
+            return req::finish_configuration_initialization(
+                shutdown_config,
+                0,
+                "Shutdown"
+            );
         }
         req::log_writing_defaults(shutdown_config);
         if (write_missing_defaults() != 0) {
             return 1;
         }
         req::log_configuration_initialized(shutdown_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            shutdown_config,
+            0,
+            "Shutdown"
+        );
     }
 
     if (launch->init) {
@@ -218,7 +227,11 @@ int main(int argc, char* argv[]) {
                 shutdown_config,
                 "config/shutdown.ini"
             );
-            return 0;
+            return req::finish_configuration_initialization(
+                shutdown_config,
+                0,
+                "Shutdown"
+            );
         }
         req::log_configuration_missing(shutdown_config);
         req::log_writing_defaults(shutdown_config);
@@ -226,7 +239,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(shutdown_config);
-        return 0;
+        return req::finish_configuration_initialization(
+            shutdown_config,
+            0,
+            "Shutdown"
+        );
     }
 
     if (!present) {

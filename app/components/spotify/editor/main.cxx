@@ -85,7 +85,7 @@ int set_client_id(const bool allow_blank) {
             return 1;
         }
         if (spotify::data::load_client_id()) {
-            spotify_editor.log_print(
+            spotify_editor.log(
                 "Left existing {} unchanged.",
                 spotify::data::client_id_path().string()
             );
@@ -100,7 +100,7 @@ int set_client_id(const bool allow_blank) {
     if (!replace_file(spotify::data::client_id_path(), std::string {chosen})) {
         return 1;
     }
-    spotify_editor.log_print("Wrote {}.", spotify::data::client_id_path().string());
+    spotify_editor.log("Wrote {}.", spotify::data::client_id_path().string());
     return 0;
 }
 
@@ -120,7 +120,7 @@ int seed_client_id() {
         return 1;
     }
     if (exists) {
-        spotify_editor.log_print("Seed skipped; client.id already exists");
+        spotify_editor.log("Seed skipped; client.id already exists");
         return 0;
     }
     if (!replace_file(path, {})) {
@@ -176,7 +176,7 @@ int retrieve_devices() {
         )) {
         return 1;
     }
-    spotify_editor.log_print("Wrote {}.", spotify::data::devices_list_path().string());
+    spotify_editor.log("Wrote {}.", spotify::data::devices_list_path().string());
     return 0;
 }
 

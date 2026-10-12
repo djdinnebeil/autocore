@@ -26,6 +26,7 @@ const menu::Setting menu_settings[] {
             "installation root.",
         .default_value = itunes::defaults::directory,
         .constraint = "Enter a relative or absolute directory.",
+        .directory_path = true,
     },
     {
         .key = "auto_start",
@@ -60,7 +61,7 @@ bool write_bytes(
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        log.log_print(
+        log.print(
             "Failed to create config directory: {}",
             error.message()
         );
@@ -68,13 +69,13 @@ bool write_bytes(
     }
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        log.log_print("Failed to create {}", path.string());
+        log.print("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        log.log_print("Failed to write {}", path.string());
+        log.print("Failed to write {}", path.string());
         return false;
     }
     return true;
@@ -94,7 +95,7 @@ PromptValues values_in_file(
     readable = false;
     const auto document = ac::ini::read(path);
     if (!document) {
-        log.log_print("Failed to read {}", path.string());
+        log.print("Failed to read {}", path.string());
         return {};
     }
     readable = true;
@@ -138,18 +139,20 @@ bool write_prompted(
     const std::filesystem::path& path,
     const PromptValues& values
 ) {
-    const auto contents = menu::with_header(
-        menu_settings,
-        itunes::defaults::ini_for(
-            values.directory,
-            values.auto_start,
-            values.logging
-        )
-    );
+    const auto contents =
+        "# directory = relative or absolute path\n" +
+        menu::with_header(
+            menu_settings,
+            itunes::defaults::ini_for(
+                values.directory,
+                values.auto_start,
+                values.logging
+            )
+        );
     if (!write_bytes(log, path, contents)) {
         return false;
     }
-    log.log_print("Wrote {}", path.string());
+    log.log("Wrote {}", path.string());
     return true;
 }
 
@@ -171,7 +174,7 @@ int launch_owner(
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        log.log_print("Missing {}.", executable_path.string());
+        log.print("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -193,7 +196,7 @@ int launch_owner(
             &startup_info,
             &process_info
         )) {
-        log.log_print("Unable to start {}.", executable_path.string());
+        log.print("Unable to start {}.", executable_path.string());
         return 1;
     }
 
@@ -202,7 +205,7 @@ int launch_owner(
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        log.log_print(
+        log.print(
             "Unable to read the exit code from {}.",
             executable_path.string()
         );
@@ -211,7 +214,7 @@ int launch_owner(
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        log.log_print("{} exited {}.", executable_path.string(), code);
+        log.print("{} exited {}.", executable_path.string(), code);
     }
     return code;
 }
@@ -305,7 +308,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        itunes_config.log_print("Failed to inspect {}", path.string());
+        itunes_config.print("Failed to inspect {}", path.string());
         return 1;
     }
 
@@ -320,13 +323,18 @@ int main(int argc, char* argv[]) {
             if (!write_bytes(
                     itunes_config,
                     path,
+                    "# directory = relative or absolute path\n" +
                     menu::with_header(menu_settings, itunes::defaults::ini_text)
                 )) {
                 return 1;
             }
             req::log_configuration_initialized(itunes_config);
         }
-        return launch_owned_stores(itunes_config, L"--seed");
+        return req::finish_component_initialization(
+            itunes_config,
+            launch_owned_stores(itunes_config, L"--seed"),
+            "iTunes"
+        );
     }
 
     if (launch->init) {
@@ -339,24 +347,26 @@ int main(int argc, char* argv[]) {
             if (!write_prompted(itunes_config, path, {})) {
                 return 1;
             }
-            const auto offer = menu::offer_configuration(
-                "iTunes Configuration",
+            const auto result = menu::prompt_settings(
                 menu_settings,
                 [&](const menu::Setting& setting) {
                     return current_text(itunes_config, path, setting);
                 },
+                [&](const menu::Setting& setting, const std::string_view value) {
+                    return apply_setting(itunes_config, path, setting, value);
+                },
                 std::cin,
                 std::cout
             );
-            if (offer == menu::OfferResult::failed) {
-                return 1;
-            }
-            if (offer == menu::OfferResult::configure &&
-                run_configuration_menu(itunes_config, path) != 0) {
+            if (!result.ok) {
                 return 1;
             }
         }
-        return launch_owned_stores(itunes_config, L"--init");
+        return req::finish_component_initialization(
+            itunes_config,
+            launch_owned_stores(itunes_config, L"--init"),
+            "iTunes"
+        );
     }
 
     if (!exists) {

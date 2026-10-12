@@ -19,39 +19,27 @@ namespace ac::main::settings {
 
     namespace list = ac::config::components_list;
 
-    enum class StartupStep {
-        show_menu,
-        launch_init
-    };
-
-    enum class InitRecheck {
-        show_menu,
-        exit_uninitialized
-    };
-
     struct MenuRow {
         std::string label;
         std::string executable;
     };
 
     [[nodiscard]]
-    inline StartupStep startup_step(const bool sentinel_exists) noexcept {
-        return sentinel_exists
-            ? StartupStep::show_menu
-            : StartupStep::launch_init;
-    }
-
-    [[nodiscard]]
-    inline InitRecheck recheck_after_init(const bool sentinel_exists) noexcept {
-        return sentinel_exists
-            ? InitRecheck::show_menu
-            : InitRecheck::exit_uninitialized;
+    inline std::string component_display_name(const std::string_view identity) {
+        if (identity == "itunes") {
+            return "iTunes";
+        }
+        std::string name {identity};
+        if (!name.empty() && name.front() >= 'a' && name.front() <= 'z') {
+            name.front() = static_cast<char>(name.front() - 'a' + 'A');
+        }
+        return name;
     }
 
     [[nodiscard]]
     inline std::string component_row_label(const std::string_view identity) {
         std::string label = "Modify ";
-        label.append(identity);
+        label.append(component_display_name(identity));
         label.append(" settings");
         return label;
     }

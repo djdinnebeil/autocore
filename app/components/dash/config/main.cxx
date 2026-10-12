@@ -48,7 +48,7 @@ namespace {
         std::error_code create_error;
         std::filesystem::create_directories(path.parent_path(), create_error);
         if (create_error) {
-            log.log_print(
+            log.print(
                 "Failed to create config directory: {}",
                 create_error.message()
             );
@@ -56,7 +56,7 @@ namespace {
         }
         std::ofstream output(path, std::ios::binary | std::ios::trunc);
         if (!output) {
-            log.log_print("Failed to create {}", path.string());
+            log.print("Failed to create {}", path.string());
             return false;
         }
         const auto contents = menu::with_header(
@@ -69,7 +69,7 @@ namespace {
         );
         output.close();
         if (!output) {
-            log.log_print("Failed to write {}", path.string());
+            log.print("Failed to write {}", path.string());
             return false;
         }
         return true;
@@ -90,7 +90,7 @@ namespace {
                 if (!write_dash_ini(log, path, value == "on")) {
                     return menu::ApplyResult::failed;
                 }
-                log.log_print("Wrote {}", path.string());
+                log.log("Wrote {}", path.string());
                 return menu::ApplyResult::stored;
             },
             std::cin,
@@ -107,26 +107,26 @@ namespace {
         if (!write_dash_ini(log, path, false)) {
             return 1;
         }
-        log.log_print(
+        log.log(
             "Wrote default {} (vault path is not configured here).",
             path.string()
         );
-        const auto offer = menu::offer_configuration(
-            menu_title,
+        const auto result = menu::prompt_settings(
             settings,
             [&](const menu::Setting&) {
                 return logging_in_file(path) ? "on" : "off";
             },
+            [&](const menu::Setting&, const std::string_view value) {
+                if (!write_dash_ini(log, path, value == "on")) {
+                    return menu::ApplyResult::failed;
+                }
+                log.log("Wrote {}", path.string());
+                return menu::ApplyResult::stored;
+            },
             std::cin,
             std::cout
         );
-        if (offer == menu::OfferResult::failed) {
-            return 1;
-        }
-        if (offer == menu::OfferResult::configure) {
-            return run_configuration_menu(log, path);
-        }
-        return 0;
+        return result.ok ? 0 : 1;
     }
 
 } // namespace
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        dash_config.log_print("Failed to inspect {}", path.string());
+        dash_config.print("Failed to inspect {}", path.string());
         return 1;
     }
     namespace req = ac::config::components_request;
@@ -160,23 +160,23 @@ int main(int argc, char* argv[]) {
     if (launch->seed) {
         if (exists) {
             req::log_seed_skipped(dash_config, "config/dash.ini");
-            return 0;
+            return req::finish_component_initialization(dash_config, 0, "Dash");
         }
         req::log_writing_defaults(dash_config);
         if (!write_dash_ini(dash_config, path, false)) {
             return 1;
         }
-        dash_config.log_print(
+        dash_config.log(
             "Wrote default {} (vault path is not configured here).",
             path.string()
         );
         req::log_configuration_initialized(dash_config);
-        return 0;
+        return req::finish_component_initialization(dash_config, 0, "Dash");
     }
     if (launch->init) {
         if (exists) {
             req::log_initialization_skipped(dash_config, "config/dash.ini");
-            return 0;
+            return req::finish_component_initialization(dash_config, 0, "Dash");
         }
         req::log_configuration_missing(dash_config);
         req::log_writing_defaults(dash_config);
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         req::log_configuration_initialized(dash_config);
-        return 0;
+        return req::finish_component_initialization(dash_config, 0, "Dash");
     }
     if (!exists) {
         req::log_configuration_missing(dash_config);
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
         if (!write_dash_ini(dash_config, path, false)) {
             return 1;
         }
-        dash_config.log_print(
+        dash_config.log(
             "Wrote {} (vault path is not configured here).",
             path.string()
         );

@@ -101,7 +101,7 @@ bool write_missing_file(
         return false;
     }
     if (state == StoreState::present) {
-        writer_editor.log_print("Left existing {} unchanged.", file.string());
+        writer_editor.log("Left existing {} unchanged.", file.string());
         return true;
     }
 
@@ -341,7 +341,7 @@ int seed_notes(const writer::data::Layout& layout) {
         return 1;
     }
     if (state == StoreState::present) {
-        writer_editor.log_print(
+        writer_editor.log(
             "Left existing {} unchanged.",
             layout.notes.string()
         );
