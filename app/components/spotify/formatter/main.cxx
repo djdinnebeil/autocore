@@ -124,7 +124,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     }
 
     spotify_formatter.log_print(
-        "config/spotify.ini is missing. Running spotify_config.exe --init."
+        "config/components/spotify.ini is missing. Running spotify_config.exe --init."
     );
     if (launch_config_init() != 0) {
         spotify_formatter.log_print(
@@ -137,7 +137,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     const bool created = std::filesystem::exists(path, error);
     if (error || !created || !ini_readable(path)) {
         spotify_formatter.log_print(
-            "config/spotify.ini is still unavailable. Song format was not edited."
+            "config/components/spotify.ini is still unavailable. Song format was not edited."
         );
         return 1;
     }
@@ -145,7 +145,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
 }
 
 int require_readable_ini() {
-    const auto path = ac::paths::config_directory() / "spotify.ini";
+    const auto path = ac::paths::component_config_file("spotify");
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
@@ -158,7 +158,7 @@ int require_readable_ini() {
     }
     if (!present || !ini_readable(path)) {
         spotify_formatter.log_print(
-            "config/spotify.ini is missing or unreadable. spotify_config.exe owns it."
+            "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
     }
@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
         return run_init();
     }
 
-    const auto ini_path = ac::paths::config_directory() / "spotify.ini";
+    const auto ini_path = ac::paths::component_config_file("spotify");
     if (ensure_spotify_ini(ini_path) != 0) {
         return 1;
     }

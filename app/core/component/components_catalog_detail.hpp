@@ -1,7 +1,7 @@
 /**
  * \file components_catalog_detail.hpp
- * \brief Parse, format, and merge `config/components.ini` `[settings]` and
- *        `components.list`. `components_config.exe` writes the INI;
+ * \brief Parse, format, and merge `config/components_policy.ini` `[settings]` and
+ *        `components.list`. `components_policy_config.exe` writes the INI;
  *        `components_editor.exe` writes the list.
  *
  * Runtime enablement uses `components_list_detail.hpp` on `components.list`.

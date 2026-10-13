@@ -9,4 +9,4 @@ msbuild app\components\writer\tests\writer_tests.vcxproj /m /p:Configuration=Rel
 
 `writer_data_tests.cxx` covers the seeded `writer.ini` text, the starter bytes for `session_prompts.list` and `task_list.txt`, resolution of `[writer] directory` and `notes_subdirectory`, and the required baseline. The notes directory is not part of that baseline.
 
-`writer_config.exe` writes `config/writer.ini` only. `--init` and `--seed` then delegate missing `session_prompts.list`, `task_list.txt`, and the notes directory to `writer_editor.exe`. An existing file is not replaced. A custom `directory` is followed; the compiled `writer` and `notes` values are used only when that configuration is missing. `writer_ac.exe` does not create these stores.
+`writer_config.exe` writes `config/components/writer.ini` only. `--init` and `--seed` then delegate missing `session_prompts.list`, `task_list.txt`, and the notes directory to `writer_editor.exe`. An existing file is not replaced. A custom `directory` is followed; the compiled `writer` and `notes` values are used only when that configuration is missing. `writer_ac.exe` does not create these stores.

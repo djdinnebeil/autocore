@@ -3,7 +3,7 @@
  * \brief Creates missing Server starter files for `server_builder.exe`.
  *
  * `--seed` is the only successful invocation. It resolves the Server data
- * directory from `config/server.ini`, then reads `document_root.id`.
+ * directory from `config/components/server.ini`, then reads `document_root.id`.
  * `index.html` and `styles.css` are created independently when each file
  * is missing. An existing file is left unchanged. Starter files are written
  * only for a relative document root that stays inside the data directory.
@@ -49,7 +49,7 @@ struct DataDirectory {
 };
 
 DataDirectory load_data_directory() {
-    const auto ini_path = ac::paths::config_directory() / "server.ini";
+    const auto ini_path = ac::paths::component_config_file("server");
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {

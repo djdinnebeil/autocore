@@ -196,7 +196,7 @@ Store::~Store() {
 }
 
 std::filesystem::path file_path() {
-    const auto ini_path = ac::paths::config_directory() / "itunes.ini";
+    const auto ini_path = ac::paths::component_config_file("itunes");
     const auto document = ac::ini::read(ini_path);
     std::optional<std::string_view> stored;
     if (document) {

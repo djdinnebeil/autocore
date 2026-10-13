@@ -501,7 +501,7 @@ namespace {
 
     Configuration load_configuration() {
         Configuration config;
-        std::ifstream input(ac::paths::config_directory() / "taskbar.ini");
+        std::ifstream input(ac::paths::component_config_file("taskbar"));
         if (input) {
             std::string section;
             std::string line;

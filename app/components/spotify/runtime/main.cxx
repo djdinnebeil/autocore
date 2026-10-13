@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     } device_request_guard;
 
     {
-        const auto ini_path = ac::paths::config_directory() / "spotify.ini";
+        const auto ini_path = ac::paths::component_config_file("spotify");
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =

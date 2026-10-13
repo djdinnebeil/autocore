@@ -2,9 +2,9 @@
 
 Phase 1A discovery. This file records the live tree: glossary words, every production executable, the subsystem groups, and every internal protocol. Decision states are on each item. **Finalized** rows restate locks that already exist. **Proposed canonical** and **Observed** rows are not conformance rules. Nothing in this file is the frozen prerelease standard.
 
-Test executables under `obj\*_tests\` and `scripts/stamp_auto_core_shortcut` are build tools. They are outside the taxonomy. `auto_core.dll` is the shared library. It is listed with the host because the stem `auto_core` is reserved for it and for `auto_core.exe`.
+Test executables under `obj\*_tests\` are build tools. They are outside the taxonomy. `auto_core.dll` is the shared library. It is listed with the host because the stem `auto_core` is reserved for it and for `auto_core.exe`.
 
-The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](../docs/manual/configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
+The module ledger is [modules.md](modules.md). INI keys are in [configuration.md](configuration.md). Non-INI files are in [persistent-state.md](persistent-state.md).
 
 ## Glossary
 
@@ -45,29 +45,29 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `auto_core.exe` | `app/main/runtime` | component host | long-running | no config menu | Finalized as the host. Not a Component. |
 | `auto_core.dll` | `app/core` | shared library | in-process | none | Finalized stem reservation. Not an executable. |
 | `auto_core_shell_launcher.exe` | `app/core/shell_launcher` | shell trampoline | one-shot | none | Observed. Not a Component. Does not link the DLL. |
-| `auto_core_init.exe` | `app/main/init/auto_core` | first-run orchestrator | one-shot | Auto Core menu for Main owners; Components menu before `components_init.exe` except plain `--seed` | Finalized: does not write files. Establishes `logging.ini` before normal logging. Removes `auto_core.ini` if a required step fails after this run created it. Skipping components is not a failure. |
+| `auto_core_init.exe` | `app/main/init/auto_core` | first-run orchestrator | one-shot | Auto Core menu for Main owners; Components menu before `components_init.exe` except plain `--seed` | Finalized: does not write files. Establishes `logging_policy.ini` before normal logging. Removes `auto_core.ini` if a required step fails after this run created it. Skipping components is not a failure. |
 | `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | per-component defaults, configure, or skip on no arguments and `--init`; `--seed` and `--init --seed` launch each `<name>_config.exe --init --seed` | Finalized: does not write files. Combined flags are Observed under C8. |
 | `auto_core_config.exe` | `app/main/config/auto_core` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `auto_core.ini`. |
 | `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Settings menu only. Launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Does not launch initialization. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
 | `Auto Core Setup.exe` | `app/main/setup` | installation bootstrap | one-shot | none | Observed. Not a Component, config owner, editor, or init orchestrator. Does not link the DLL. Creates each installation-root shortcut only when that link is missing. When `config/auto_core.ini` is missing, opens a console, launches `auto_core_init.exe` in it, waits, and requires that file before printing the completion instruction and waiting for a key. When the file already exists, launches `auto_core_settings.exe` and does not open that console. |
-| `components_config.exe` | `app/main/config/components` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components.ini`. |
-| `keymap_config.exe` | `app/main/config/keymap` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `keymap.ini`. |
-| `logging_config.exe` | `app/main/config/logging` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging.ini`. `--disable` is an extra mode. Observed. |
+| `components_policy_config.exe` | `app/main/config/components_policy` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components_policy.ini`. |
+| `warnings_config.exe` | `app/main/config/warnings` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `warnings.ini`. |
+| `logging_policy_config.exe` | `app/main/config/logging_policy` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging_policy.ini`. `--disable` is an extra mode. Observed. |
 | `shutdown_config.exe` | `app/main/config/shutdown` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `shutdown.ini`. |
 | `crash_recovery_config.exe` | `app/main/config/crash_recovery` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `crash_recovery.ini`. |
 | `components_editor.exe` | `app/main/editors/components` | operational editor | one-shot | menu, `--seed`, `--component` with `--on` or `--off` | Finalized sole writer of `components.list`. |
 | `keymap_editor.exe` | `app/main/editors/keymap` | operational editor | one-shot | menu, `--seed` | Finalized sole writer of `keymap.map`. |
 | `dash_ac.exe` | `app/components/dash/runtime` | Component, on-demand | one-shot per launch | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor supplies `launch_dash`, a new console, and foreground context. |
-| `dash_config.exe` | `app/components/dash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `dash.ini`. |
+| `dash_config.exe` | `app/components/dash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/dash.ini`. |
 | `dash_editor.exe` | `app/components/dash/editor` | operational editor | one-shot | menu | Observed owner of the DPAPI vault. |
 | `dash_settings.exe` | `app/components/dash/settings` | settings application | one-shot | shared menu | Observed. Does not write the list or the INI. |
 | `itunes_ac.exe` | `app/components/itunes/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. |
-| `itunes_config.exe` | `app/components/itunes/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `itunes.ini`. |
+| `itunes_config.exe` | `app/components/itunes/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/itunes.ini`. |
 | `itunes_db.exe` | `app/components/itunes/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--owner-handle`, menu | Observed. |
 | `itunes_formatter.exe` | `app/components/itunes/formatter` | format-definition owner | one-shot | `--seed`, `--init`, menu | Observed owner of `song.format` and `library.format`. |
 | `itunes_settings.exe` | `app/components/itunes/settings` | settings application | one-shot | shared menu | Observed. |
 | `journal_ac.exe` | `app/components/journal/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. |
-| `journal_config.exe` | `app/components/journal/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `journal.ini`. |
+| `journal_config.exe` | `app/components/journal/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/journal.ini`. |
 | `journal_db.exe` | `app/components/journal/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--init`, `--owner-handle` | Observed. Reconnect-per-call. |
 | `journal_builder.exe` | `app/components/journal/builder` | recipe materializer | one-shot | `--seed`, `--init`, interactive edit | Observed. Interactive edit is a mode of this owner. |
 | `journal_series.exe` | `app/components/journal/series` | domain-named store owner | one-shot | `--seed`, `--init`, menu; may launch `journal_db.exe --serve` | Observed. Not renamed to `_editor`. |
@@ -75,38 +75,38 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `journal_cloud.exe` | `app/components/journal/cloud` | domain-named service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--init`, `--owner-handle` | Observed. |
 | `journal_settings.exe` | `app/components/journal/settings` | settings application | one-shot | shared menu | Observed. |
 | `logger_ac.exe` | `app/components/logger/runtime` | Component | hosted long-running; `--once` one-shot | `--once`, `--shutdown` as a label on `--once` | **Exception** candidate: same owner, extra CLI mode. Proposed until the taxonomy decision. |
-| `logger_config.exe` | `app/components/logger/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `logger.ini` only. |
+| `logger_config.exe` | `app/components/logger/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/logger.ini` only. |
 | `logger_settings.exe` | `app/components/logger/settings` | settings application | one-shot | shared menu | Observed. |
 | `server_ac.exe` | `app/components/server/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed. HTTP server. Not a service in the glossary sense. |
-| `server_config.exe` | `app/components/server/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `server.ini`. |
+| `server_config.exe` | `app/components/server/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/server.ini`. |
 | `server_editor.exe` | `app/components/server/editor` | operational editor | one-shot | `--seed`, `--init`, menu | Observed owner of `port.id` and `document_root.id`. |
 | `server_builder.exe` | `app/components/server/builder` | recipe materializer | one-shot | `--seed` only | Observed. |
 | `server_settings.exe` | `app/components/server/settings` | settings application | one-shot | shared menu | Observed. |
 | `slash_ac.exe` | `app/components/slash/runtime` | Component, on-demand | one-shot per command | `AC_LAUNCH_DESCRIPTOR` | Listed in `components.list`. Not a v1 child. The embedded descriptor names the commands and waits until the process exits. |
-| `slash_config.exe` | `app/components/slash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `slash.ini`. |
+| `slash_config.exe` | `app/components/slash/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/slash.ini`. |
 | `slash_settings.exe` | `app/components/slash/settings` | settings application | one-shot | shared menu | Observed. |
 | `spotify_ac.exe` | `app/components/spotify/runtime` | Component | long-running while hosted | `ac.component.v1`; also the devices pipe host | Observed hosted member. |
-| `spotify_config.exe` | `app/components/spotify/config` | INI writer | one-shot | `--seed`, `--init`, both, menu | Finalized owner of `spotify.ini`. Combined flags continue into authorization. See C8. |
+| `spotify_config.exe` | `app/components/spotify/config` | INI writer | one-shot | `--seed`, `--init`, both, menu | Finalized owner of `config/components/spotify.ini`. Combined flags continue into authorization. See C8. |
 | `spotify_db.exe` | `app/components/spotify/db` | database service | `--serve` long-running; otherwise one-shot | `--serve`, `--seed`, `--owner-handle`, menu | Observed. |
 | `spotify_editor.exe` | `app/components/spotify/editor` | operational editor | one-shot | `--seed`, `--client-id`, menu | Observed. Pipe client of `ac.spotify.devices.v1`. Not a service. |
 | `spotify_formatter.exe` | `app/components/spotify/formatter` | format-definition owner | one-shot | `--seed`, `--init`, menu | Observed owner of `song.format`. |
 | `spotify_oauth.exe` | `app/components/spotify/oauth` | authorization helper | one-shot | OAuth flow | Observed. Initial `tokens.map` write. `spotify_ac.exe` also writes that file on refresh. |
 | `spotify_settings.exe` | `app/components/spotify/settings` | settings application | one-shot | shared menu | Observed. |
 | `taskbar_ac.exe` | `app/components/taskbar/runtime` | Component | hosted long-running; `--refresh-cache` one-shot | `ac.component.v1`, `--refresh-cache` | **Exception** candidate: same owner, extra CLI mode. |
-| `taskbar_config.exe` | `app/components/taskbar/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `taskbar.ini`. |
+| `taskbar_config.exe` | `app/components/taskbar/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/taskbar.ini`. |
 | `taskbar_builder.exe` | `app/components/taskbar/builder` | recipe materializer | one-shot | `--seed`, menu | Observed. After application maps are written, launches `taskbar_ac.exe --refresh-cache`. |
 | `taskbar_settings.exe` | `app/components/taskbar/settings` | settings application | one-shot | shared menu | Observed. |
 | `wake_ac.exe` | `app/components/wake/runtime` | Component | long-running while hosted; `--snapshot` one-shot | `ac.component.v1`, `--snapshot` | Observed. `--snapshot` is an extra mode used by `wake_config.exe`. |
-| `wake_config.exe` | `app/components/wake/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `wake.ini`. |
+| `wake_config.exe` | `app/components/wake/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/wake.ini`. |
 | `wake_settings.exe` | `app/components/wake/settings` | settings application | one-shot | shared menu | Observed. |
 | `writer_ac.exe` | `app/components/writer/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. The daily-note command launches `writer_editor.exe --daily-note`. |
-| `writer_config.exe` | `app/components/writer/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `writer.ini`. |
+| `writer_config.exe` | `app/components/writer/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/writer.ini`. |
 | `writer_editor.exe` | `app/components/writer/editor` | operational editor | one-shot | `--seed`, `--init`, `--daily-note`, menu | Observed owner of `task_list.txt`, `session_prompts.list`, and the daily note. |
 | `writer_settings.exe` | `app/components/writer/settings` | settings application | one-shot | shared menu | Observed. |
 
 `--initialize` is a compatibility alias of `--init` in `parse_config_launch`. **Legacy** alias. It is not a second mode. Production INI parsers that use that function accept it.
 
-No-argument `<name>_config.exe` uses `app/shared/config_menu.ixx` to list that owner's settings. The module is presentation only. The owner still defines each key, default, and validation rule, and it is still the only writer of `config/<name>.ini`. Closed-value settings are also written as a leading `# key = a | b` comment. `auto_core_config.exe` keeps its hub of the other Main configuration owners and leaves that hub with `0. Exit`. OAuth, editors, builders, and database initialization stay outside the setting menu. See [configuration.md](../docs/manual/configuration.md).
+No-argument `<name>_config.exe` uses `app/shared/config_menu.ixx` to list that owner's settings. The module is presentation only. The owner still defines each key, default, and validation rule, and it is still the only writer of `config/components/<name>.ini`. Closed-value settings are also written as a leading `# key = a | b` comment. `auto_core_config.exe` keeps its hub of the other Main configuration owners and leaves that hub with `0. Exit`. OAuth, editors, builders, and database initialization stay outside the setting menu. Ownership, launch flags, and Main keys are in [configuration.md](configuration.md).
 
 ## Subsystems
 
@@ -254,7 +254,7 @@ Status is the status already assigned. This pass did not promote any Proposed ca
 | C2 | Finalized | Live folders are `runtime/`. |
 | C3 | Proposed canonical | Stem differences are in [modules.md](modules.md). `db_protocol.ixx` declares `spotify_db_protocol`. |
 | C4 | Finalized for location and ownership | Section-equals-stem and `snake_case` stay proposed. |
-| C5 | Finalized | No production INI parser accepts `true`/`false`. `components.ini` lowercases values before compare. |
+| C5 | Finalized | No production INI parser accepts `true`/`false`. `components_policy.ini` lowercases values before compare. |
 | C6 | Proposed spelling. Finalized single-version policy. | Taskbar wire is the spelling exception. No second wire found. |
 | C7 | Proposed canonical | Catalog table above. |
 | C8 | Finalized for `--seed`, `--init`, init orchestrators, and `--component`. Proposed for `--serve` and the extra flags. | `--init --seed` is two flags. Seed wins, except Spotify continues. Not a third mode. |

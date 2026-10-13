@@ -21,7 +21,7 @@ ac::Component components_editor {"components_editor"};
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "components.ini";
+    return ac::paths::config_directory() / "components_policy.ini";
 }
 
 [[nodiscard]]
@@ -31,7 +31,7 @@ std::filesystem::path list_path() {
 
 [[nodiscard]]
 std::filesystem::path component_ini_path(const std::string_view name) {
-    return ac::paths::config_directory() / (std::string {name} + ".ini");
+    return ac::paths::component_config_file(name);
 }
 
 [[nodiscard]]
@@ -208,7 +208,7 @@ int set_explicit_state(const std::string_view name, const bool enabled) {
     }
     if (!component_ini_exists(name)) {
         components_editor.print(
-            "config/{}.ini is missing. components.list was not modified.",
+            "config/components/{}.ini is missing. components.list was not modified.",
             name
         );
         return 1;
@@ -261,7 +261,7 @@ int single_component_update(const std::string_view name) {
     }
     if (!component_ini_exists(name)) {
         components_editor.print(
-            "config/{}.ini is missing. components.list was not modified.",
+            "config/components/{}.ini is missing. components.list was not modified.",
             name
         );
         return 1;

@@ -88,7 +88,7 @@ namespace {
             return std::string {*mode};
         }
         slash_config.print(
-            "config/slash.ini mode is missing or invalid. Using verbose."
+            "config/components/slash.ini mode is missing or invalid. Using verbose."
         );
         return std::string {slash::defaults::mode_verbose};
     }
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "slash.ini";
+    const auto path = ac::paths::component_config_file("slash");
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
@@ -173,10 +173,10 @@ int main(int argc, char* argv[]) {
     );
     switch (action) {
         case slash::config::Action::skip_seed:
-            req::log_seed_skipped(slash_config, "config/slash.ini");
+            req::log_seed_skipped(slash_config, "config/components/slash.ini");
             return req::finish_component_initialization(slash_config, 0, "Slash");
         case slash::config::Action::skip_initialization:
-            req::log_initialization_skipped(slash_config, "config/slash.ini");
+            req::log_initialization_skipped(slash_config, "config/components/slash.ini");
             return req::finish_component_initialization(slash_config, 0, "Slash");
         case slash::config::Action::seed:
             req::log_writing_defaults(slash_config);

@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/journal.ini`.
+ * \brief Portable defaults for `config/components/journal.ini`.
  */
 export module journal_defaults;
 

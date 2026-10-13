@@ -4,7 +4,7 @@
  *
  * `log_last_wake` runs `powercfg /lastwake` and compares the output against
  * `previous.event` under `[wake] directory`. Those history files are
- * operational state. Ordinary component logs still follow `logging.ini`.
+ * operational state. Ordinary component logs still follow `logging_policy.ini`.
  */
 module;
 
@@ -30,7 +30,7 @@ export ac::Component wake_component(
 
 export void log_init() {
 	wake_component.log_main("wake_ac.exe started");
-    const auto ini_path = ac::paths::config_directory() / "wake.ini";
+    const auto ini_path = ac::paths::component_config_file("wake");
     if (!ac::ini::read(ini_path)) {
         std::error_code exists_error;
         const bool present =

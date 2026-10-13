@@ -2,7 +2,7 @@
  * \file journal_data_directory.ixx
  * \brief Resolved Journal data directory.
  *
- * Reads `[journal] directory` from `config/journal.ini`. The compiled
+ * Reads `[journal] directory` from `config/components/journal.ini`. The compiled
  * portable default stays in `journal::defaults::directory`.
  */
 export module journal_data_directory;
@@ -25,7 +25,7 @@ export namespace journal {
     inline const std::filesystem::path& data_directory() {
         static const std::filesystem::path& directory =
             ac::paths::configured_directory(
-                ac::paths::config_directory() / "journal.ini",
+                ac::paths::component_config_file("journal"),
                 "journal",
                 "directory",
                 ac::paths::installation_root() / "components" / "journal"

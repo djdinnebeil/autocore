@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/wake.ini`.
+ * \brief Portable defaults for `config/components/wake.ini`.
  *
  * `[wake] directory` is Wake's operational history folder. Ordinary
  * component logs stay under the shared logging tree.

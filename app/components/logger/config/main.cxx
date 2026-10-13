@@ -61,7 +61,7 @@ struct LoggerValues {
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "logger.ini";
+    return ac::paths::component_config_file("logger");
 }
 
 [[nodiscard]]
@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(logger_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(logger_config, "config/logger.ini");
+            req::log_seed_skipped(logger_config, "config/components/logger.ini");
             return req::finish_component_initialization(logger_config, 0, "Logger");
         }
         req::log_writing_defaults(logger_config);
@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (present) {
-            req::log_initialization_skipped(logger_config, "config/logger.ini");
+            req::log_initialization_skipped(logger_config, "config/components/logger.ini");
             return req::finish_component_initialization(logger_config, 0, "Logger");
         }
         req::log_configuration_missing(logger_config);

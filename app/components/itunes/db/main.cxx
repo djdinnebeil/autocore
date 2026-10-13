@@ -63,10 +63,10 @@ void create_database() {
 }
 
 int run_seed() {
-    const auto ini_path = ac::paths::config_directory() / "itunes.ini";
+    const auto ini_path = ac::paths::component_config_file("itunes");
     if (!ac::ini::read(ini_path)) {
         itunes_db.log_print(
-            "config/itunes.ini is missing or unreadable. itunes_config.exe owns it."
+            "config/components/itunes.ini is missing or unreadable. itunes_config.exe owns it."
         );
         return 1;
     }

@@ -298,10 +298,10 @@ Do not rebuild Main or the DLL for this child. `scripts/build-all.ps1` is option
 
 ## Enable the child (runtime configuration)
 
-Edit live `dist\config\components.ini` `[settings]` if needed, list the name in `dist\components.list`, run
+Edit live `dist\config\components_policy.ini` `[settings]` if needed, list the name in `dist\components.list`, run
 `<name>_config.exe` so it sends `components_editor.exe --component <name>`,
 or run `components_editor.exe` with no arguments to full-sync discovered
-`*_ac.exe` names that already have `config/<name>.ini`:
+`*_ac.exe` names that already have `config/components/<name>.ini`:
 
 ```ini
 example
@@ -348,7 +348,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
 
 - `.vs/`, `*.user`, `*.suo`
 - `obj/`, `dist/`
-- Live `dist\config\components.ini` and `dist\keymap\keymap.map`
+- Live `dist\config\components_policy.ini` and `dist\keymap\keymap.map`
 - Absolute property-sheet imports
 - Per-user IDE caches
 
@@ -368,8 +368,8 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 
 ## Adding a New Auto Core Component
 
-1. **Source.** Create `app/components/<name>/runtime`, `config`, and `shared`, plus `<Name>.sln` at the component root. Write `main.cxx` that speaks `ac.component.v1`, loads `config/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `settings/main.cxx` that calls `ac::component_settings::run("<name>")`.
+1. **Source.** Create `app/components/<name>/runtime`, `config`, and `shared`, plus `<Name>.sln` at the component root. Write `main.cxx` that speaks `ac.component.v1`, loads `config/components/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `settings/main.cxx` that calls `ac::component_settings::run("<name>")`.
 2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `bin\<name>_ac.exe` and `bin\<name>_config.exe`.
-3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/<name>.ini`. Enable the name with `<name>_settings.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
+3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/components/<name>.ini`. Enable the name with `<name>_settings.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/bin/auto_core.exe`. Press the key.
 
 Auto Core knows how to host a component. It does not need to know which components exist when `auto_core.exe` is compiled.

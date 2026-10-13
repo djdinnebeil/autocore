@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/dash.ini`.
+ * \brief Portable defaults for `config/components/dash.ini`.
  *
  * The vault stays under `%LOCALAPPDATA%\Auto Core`. `logging` is the family
  * switch; the compiled default is off.

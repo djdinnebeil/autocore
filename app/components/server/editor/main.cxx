@@ -41,7 +41,7 @@ struct DataDirectory {
 };
 
 DataDirectory load_data_directory() {
-    const auto ini_path = ac::paths::config_directory() / "server.ini";
+    const auto ini_path = ac::paths::component_config_file("server");
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {

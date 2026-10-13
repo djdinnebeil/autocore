@@ -2,9 +2,11 @@
  * \file main.cxx
  * \brief First-run orchestration for Auto Core. Does not write configuration files.
  *
- * logging.ini is established before any normal logging call. When this run
- * creates `config/auto_core.ini`, a failed or cancelled required step removes
- * that file before exit. The Auto Core menu selects Main configuration
+ * logging_policy.ini is established before any normal logging call.
+ * `auto_core.ini` is created during initialization and retained as the
+ * sentinel only if the required initialization sequence succeeds. When this
+ * run creates `config/auto_core.ini`, a failed or cancelled required step
+ * removes that file before exit. The Auto Core menu selects Main configuration
  * owners only. Interactive runs then ask whether to seed, configure, or
  * skip components_init.exe. The editors run after that stage.
  */
@@ -223,7 +225,7 @@ void print_menu() {
 bool logging_ini_exists() {
     std::error_code error;
     return std::filesystem::exists(
-        ac::paths::config_directory() / "logging.ini",
+        ac::paths::config_directory() / "logging_policy.ini",
         error
     ) && !error;
 }
@@ -265,7 +267,7 @@ int establish_logging(const boot::InitMode mode) {
     );
     if (outcome.code != 0 || !outcome.logging_started) {
         if (!logging_ini_exists()) {
-            std::cerr << "config/logging.ini was not created.\n";
+            std::cerr << "config/logging_policy.ini was not created.\n";
         }
         return 1;
     }

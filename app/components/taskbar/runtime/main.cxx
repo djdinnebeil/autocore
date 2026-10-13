@@ -67,15 +67,15 @@ namespace {
     }
 
     void report_taskbar_mappings(const ac::taskbar::SnapshotInfo& snapshot) {
-        if (ac::config::core_settings().warn_without_winkey_mapping &&
+        if (ac::config::core_settings().missing_winkey_mapping &&
             !ac::taskbar::get_native_taskbar_position("auto_core")) {
             taskbar_component().log_print(
                 "Performance warning: Auto Core is not mapped to taskbar "
                 "positions 1 through 10. Auto Core will use direct console "
                 "window activation as a fallback, which can occasionally "
                 "have higher latency. Set "
-                "warn_without_winkey_mapping = off under [auto_core] in "
-                "config/auto_core.ini to silence this warning."
+                "missing_winkey_mapping = off under [warnings] in "
+                "config/warnings.ini to silence this warning."
             );
         }
 
@@ -194,7 +194,7 @@ int main(const int argument_count, char* arguments[]) {
     auto registry = create_taskbar_command_registry();
     if (argument_count == 2 &&
         std::string_view {arguments[1]} == "--refresh-cache") {
-        const auto ini_path = ac::paths::config_directory() / "taskbar.ini";
+        const auto ini_path = ac::paths::component_config_file("taskbar");
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =
@@ -271,7 +271,7 @@ int main(const int argument_count, char* arguments[]) {
     taskbar_component().log_main("taskbar_ac.exe started");
 
     {
-        const auto ini_path = ac::paths::config_directory() / "taskbar.ini";
+        const auto ini_path = ac::paths::component_config_file("taskbar");
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =

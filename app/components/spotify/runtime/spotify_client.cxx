@@ -27,7 +27,7 @@ Spotify::Spotify() {
         song_format_error = loaded.error;
     }
     if (const auto document = ac::ini::read(
-            ac::paths::config_directory() / "spotify.ini"
+            ac::paths::component_config_file("spotify")
         )) {
         if (const auto value = document->find("spotify", "auto_launch_oauth")) {
             auto_launch_oauth =

@@ -178,7 +178,7 @@ struct Settings {
 };
 
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "spotify.ini";
+    return ac::paths::component_config_file("spotify");
 }
 
 std::optional<Settings> load_settings(const bool report_failure) {
@@ -468,7 +468,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->seed) {
         if (exists) {
-            req::log_seed_skipped(spotify_config, "config/spotify.ini");
+            req::log_seed_skipped(spotify_config, "config/components/spotify.ini");
         }
         else {
             req::log_writing_defaults(spotify_config);
@@ -482,7 +482,7 @@ int main(int argc, char* argv[]) {
         }
     }
     else if (exists) {
-        req::log_initialization_skipped(spotify_config, "config/spotify.ini");
+        req::log_initialization_skipped(spotify_config, "config/components/spotify.ini");
     }
     else {
         req::log_configuration_missing(spotify_config);

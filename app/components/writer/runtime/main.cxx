@@ -16,7 +16,7 @@ namespace {
 
 void report_invalid_notes_subdirectory() {
     const auto document = ac::ini::read(
-        ac::paths::config_directory() / "writer.ini"
+        ac::paths::component_config_file("writer")
     );
     if (!document) {
         return;
@@ -42,7 +42,7 @@ void report_invalid_notes_subdirectory() {
         return;
     }
     writer_component().log_print(
-        "config/writer.ini has an invalid notes_subdirectory. "
+        "config/components/writer.ini has an invalid notes_subdirectory. "
         "Using the notes folder under the Writer directory. "
         "The file will not be rewritten."
     );
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     writer_component().log_main("writer_ac.exe started");
 
     {
-        const auto ini_path = ac::paths::config_directory() / "writer.ini";
+        const auto ini_path = ac::paths::component_config_file("writer");
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =

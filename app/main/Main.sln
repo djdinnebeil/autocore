@@ -8,13 +8,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_main_tests", "tes
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_config", "config\auto_core\auto_core_config.vcxproj", "{B7C1A2D4-91E0-4F3A-8B5C-11A22B33C44D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_config", "config\components\components_config.vcxproj", "{D9E3C4F6-B3A2-4F5C-AD7E-33C44D55E660}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_policy_config", "config\components_policy\components_policy_config.vcxproj", "{D9E3C4F6-B3A2-4F5C-AD7E-33C44D55E660}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "crash_recovery_config", "config\crash_recovery\crash_recovery_config.vcxproj", "{A2B6F7C9-E6D5-428F-DA01-66F770881994}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "keymap_config", "config\keymap\keymap_config.vcxproj", "{E0F4D5A7-C4B3-406D-BE8F-44D55E66F772}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "warnings_config", "config\warnings\warnings_config.vcxproj", "{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_config", "config\logging\logging_config.vcxproj", "{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_policy_config", "config\logging_policy\logging_policy_config.vcxproj", "{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shutdown_config", "config\shutdown\shutdown_config.vcxproj", "{F1A5E6B8-D5C4-417E-CF90-55E66F770883}"
 EndProject
@@ -32,7 +32,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_setup", "setup\au
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "components_init", "init\components\components_init.vcxproj", "{3C8E5B21-6A49-4D70-8F12-1B7C4A9E0D56}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_config_tests", "config\logging\tests\logging_config_tests.vcxproj", "{7E4B1C90-2A55-4D18-8F63-0C9A6B5E2D41}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_policy_config_tests", "config\logging_policy\tests\logging_policy_config_tests.vcxproj", "{7E4B1C90-2A55-4D18-8F63-0C9A6B5E2D41}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -58,10 +58,10 @@ Global
 		{A2B6F7C9-E6D5-428F-DA01-66F770881994}.Debug|x64.Build.0 = Debug|x64
 		{A2B6F7C9-E6D5-428F-DA01-66F770881994}.Release|x64.ActiveCfg = Release|x64
 		{A2B6F7C9-E6D5-428F-DA01-66F770881994}.Release|x64.Build.0 = Release|x64
-		{E0F4D5A7-C4B3-406D-BE8F-44D55E66F772}.Debug|x64.ActiveCfg = Debug|x64
-		{E0F4D5A7-C4B3-406D-BE8F-44D55E66F772}.Debug|x64.Build.0 = Debug|x64
-		{E0F4D5A7-C4B3-406D-BE8F-44D55E66F772}.Release|x64.ActiveCfg = Release|x64
-		{E0F4D5A7-C4B3-406D-BE8F-44D55E66F772}.Release|x64.Build.0 = Release|x64
+		{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}.Debug|x64.ActiveCfg = Debug|x64
+		{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}.Debug|x64.Build.0 = Debug|x64
+		{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}.Release|x64.ActiveCfg = Release|x64
+		{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}.Release|x64.Build.0 = Release|x64
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Debug|x64.ActiveCfg = Debug|x64
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Debug|x64.Build.0 = Debug|x64
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Release|x64.ActiveCfg = Release|x64

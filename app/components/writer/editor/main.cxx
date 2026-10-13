@@ -30,7 +30,7 @@ std::string_view trim(std::string_view value) {
 }
 
 bool writer_initialized() {
-    const auto path = ac::paths::config_directory() / "writer.ini";
+    const auto path = ac::paths::component_config_file("writer");
     std::error_code error;
     return std::filesystem::exists(path, error) && !error;
 }
@@ -254,14 +254,14 @@ std::optional<std::filesystem::path> path_from_setting(std::string_view text) {
     }
     catch (...) {
         writer_editor.log_print(
-            "Failed to read config/writer.ini. Writer data files were not written."
+            "Failed to read config/components/writer.ini. Writer data files were not written."
         );
         return std::nullopt;
     }
 }
 
 std::optional<writer::data::Layout> load_layout() {
-    const auto ini_path = ac::paths::config_directory() / "writer.ini";
+    const auto ini_path = ac::paths::component_config_file("writer");
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {
@@ -304,7 +304,7 @@ std::optional<writer::data::Layout> load_layout() {
                 notes_label = std::string {text};
                 if (!writer::data::is_relative_subdirectory(*notes)) {
                     writer_editor.log_print(
-                        "config/writer.ini has an invalid notes_subdirectory. "
+                        "config/components/writer.ini has an invalid notes_subdirectory. "
                         "Using the notes folder under the Writer directory. "
                         "The file will not be rewritten."
                     );

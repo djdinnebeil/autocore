@@ -67,8 +67,8 @@ TEST_CASE(
     CHECK(ac::paths::keymap_file() == root / "keymap.map");
     CHECK(ac::paths::components_list_file() == root / "components.list");
     CHECK(
-        ac::paths::keymap_settings_file() ==
-        config / "keymap.ini"
+        ac::paths::component_config_file("taskbar") ==
+        config / "components" / "taskbar.ini"
     );
     CHECK(
         ac::paths::keymap_commands_file() ==

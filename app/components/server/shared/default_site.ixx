@@ -3,7 +3,7 @@
  * \brief Compiled starter page for the Server document root.
  *
  * `server_builder.exe` writes these strings only when the matching file
- * is missing. `defaults.ixx` stays limited to `config/server.ini`.
+ * is missing. `defaults.ixx` stays limited to `config/components/server.ini`.
  */
 export module server_default_site;
 

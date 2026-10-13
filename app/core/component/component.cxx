@@ -169,7 +169,8 @@ namespace ac {
 
     void Component::report_ini_unavailable(const bool malformed) {
         const auto& component_name = impl_->name;
-        const auto file = std::string {"config/"} + component_name + ".ini";
+        const auto file =
+            std::string {"config/components/"} + component_name + ".ini";
         const auto exe = component_name + "_config.exe";
         if (malformed) {
             log_print(

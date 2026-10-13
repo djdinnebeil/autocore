@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "dash.ini";
+    const auto path = ac::paths::component_config_file("dash");
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(dash_config, *launch);
     if (launch->seed) {
         if (exists) {
-            req::log_seed_skipped(dash_config, "config/dash.ini");
+            req::log_seed_skipped(dash_config, "config/components/dash.ini");
             return req::finish_component_initialization(dash_config, 0, "Dash");
         }
         req::log_writing_defaults(dash_config);
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     }
     if (launch->init) {
         if (exists) {
-            req::log_initialization_skipped(dash_config, "config/dash.ini");
+            req::log_initialization_skipped(dash_config, "config/components/dash.ini");
             return req::finish_component_initialization(dash_config, 0, "Dash");
         }
         req::log_configuration_missing(dash_config);

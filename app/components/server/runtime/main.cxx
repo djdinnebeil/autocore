@@ -2,7 +2,7 @@
  * \file main.cxx
  * \brief Local loopback file server for `server_ac.exe`.
  *
- * Resolves `[server] directory` from `config/server.ini`, then requires
+ * Resolves `[server] directory` from `config/components/server.ini`, then requires
  * `port.id` and `document_root.id`. A relative document root resolves
  * under that directory. A missing document-root directory fails startup.
  * This process does not write those files and does not launch
@@ -42,7 +42,7 @@ namespace {
     };
 
     std::filesystem::path resolve_data_directory() {
-        const auto ini_path = ac::paths::config_directory() / "server.ini";
+        const auto ini_path = ac::paths::component_config_file("server");
         std::optional<std::string> stored;
         if (const auto document = ac::ini::read(ini_path)) {
             if (const auto value = document->find("server", "directory")) {

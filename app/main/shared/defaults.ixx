@@ -10,12 +10,10 @@ import std;
 
 export namespace ac::main::defaults {
 
-    constexpr bool warn_without_winkey_mapping = true;
     constexpr bool auto_core_logging = true;
 
     constexpr std::string_view auto_core_ini =
         "[auto_core]\n"
-        "warn_without_winkey_mapping = on\n"
         "logging = on\n";
 
     constexpr std::string_view components_new_components = "on";
@@ -83,27 +81,25 @@ export namespace ac::main::defaults {
         "merge_logs_on_shutdown = on\n"
         "logging = on\n";
 
-    constexpr bool keymap_silence_nonset_warning = false;
+    constexpr bool warnings_missing_winkey_mapping = true;
+    constexpr bool warnings_unmapped_key = true;
 
-    constexpr std::string_view keymap_ini =
-        "[keymap]\n"
-        "silence_nonset_warning = off\n";
+    constexpr std::string_view warnings_ini =
+        "[warnings]\n"
+        "missing_winkey_mapping = on\n"
+        "unmapped_key = on\n";
 
     [[nodiscard]]
     inline std::string ini_for_auto_core(
-        const bool warn,
         const bool logging = auto_core_logging
     ) {
-        if (warn == warn_without_winkey_mapping && logging == auto_core_logging) {
+        if (logging == auto_core_logging) {
             return std::string {auto_core_ini};
         }
         return std::string {
             "[auto_core]\n"
-            "warn_without_winkey_mapping = "
-        } + std::string {warn ? "on" : "off"} +
-            "\n"
-            "logging = " +
-            std::string {logging ? "on" : "off"} +
+            "logging = "
+        } + std::string {logging ? "on" : "off"} +
             "\n";
     }
 
@@ -214,14 +210,22 @@ export namespace ac::main::defaults {
     }
 
     [[nodiscard]]
-    inline std::string ini_for_keymap(const bool silence) {
-        if (silence == keymap_silence_nonset_warning) {
-            return std::string {keymap_ini};
+    inline std::string ini_for_warnings(
+        const bool missing_winkey_mapping,
+        const bool unmapped_key
+    ) {
+        if (missing_winkey_mapping == warnings_missing_winkey_mapping &&
+            unmapped_key == warnings_unmapped_key) {
+            return std::string {warnings_ini};
         }
         return std::string {
-            "[keymap]\n"
-            "silence_nonset_warning = on\n"
-        };
+            "[warnings]\n"
+            "missing_winkey_mapping = "
+        } + std::string {missing_winkey_mapping ? "on" : "off"} +
+            "\n"
+            "unmapped_key = " +
+            std::string {unmapped_key ? "on" : "off"} +
+            "\n";
     }
 
 } // namespace ac::main::defaults

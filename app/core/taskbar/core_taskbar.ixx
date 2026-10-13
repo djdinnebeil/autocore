@@ -86,7 +86,7 @@ export namespace ac::taskbar {
      * \brief Replaces `winkey_map.cache` from one live taskbar discovery.
      *
      * Resolves the Taskbar directory through the existing configuration
-     * path. An unavailable `config/taskbar.ini` uses the compiled default
+     * path. An unavailable `config/components/taskbar.ini` uses the compiled default
      * directory. Does not start the snapshot authority or the control pipe.
      * `mode = cache` does not select the existing cache.
      *

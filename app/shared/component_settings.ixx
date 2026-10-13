@@ -279,8 +279,7 @@ namespace ac::component_settings {
             const std::string_view name,
             std::string& error
         ) {
-            const auto path = ac::paths::config_directory() /
-                (std::string {name} + ".ini");
+            const auto path = ac::paths::component_config_file(name);
             std::error_code code;
             const bool present = std::filesystem::exists(path, code);
             if (code) {

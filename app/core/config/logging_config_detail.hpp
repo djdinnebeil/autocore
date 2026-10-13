@@ -43,7 +43,7 @@ namespace ac::logging::config::detail {
     };
 
     /**
-     * \brief Resolves `logging.ini` keys.
+     * \brief Resolves `logging_policy.ini` keys.
      *
      * `disable_all` defaults to off. `write_logs_to_files` defaults to on.
      * `write_logs_to_console` defaults to off. `log_print_mode` defaults to

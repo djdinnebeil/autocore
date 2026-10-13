@@ -1768,7 +1768,7 @@ ac::main::components::Session ac::main::components::initialize() {
 
     if (ac::logger::config::ini_missing()) {
         auto_core.log_print(
-            "config/logger.ini is missing. Run logger_config.exe to "
+            "config/components/logger.ini is missing. Run logger_config.exe to "
             "generate it. Using built-in defaults; the file will not be "
             "created."
         );

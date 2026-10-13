@@ -4,7 +4,7 @@ module;
 
 /**
  * \file logging_config.cxx
- * \brief Loads logging.ini for Auto Core processes.
+ * \brief Loads logging_policy.ini for Auto Core processes.
  */
 module auto_core.core.logging.config;
 
@@ -59,7 +59,7 @@ namespace ac::logging::config {
                         : std::string {};
 
                 const auto ini_path =
-                    ac::paths::config_directory() / "logging.ini";
+                    ac::paths::config_directory() / "logging_policy.ini";
                 const auto document = ac::ini::read(ini_path);
                 if (!document) {
                     std::error_code exists_error;
@@ -79,8 +79,8 @@ namespace ac::logging::config {
                     directory = resolved.directory;
                     components_directory = resolved.components_directory;
                     report = ini_missing
-                        ? "Logging configuration:\nlogging.ini unavailable; using defaults\n"
-                        : "Logging configuration:\nlogging.ini unreadable; using defaults\n";
+                        ? "Logging configuration:\nlogging_policy.ini unavailable; using defaults\n"
+                        : "Logging configuration:\nlogging_policy.ini unreadable; using defaults\n";
                     const auto body = resolved.report.find('\n');
                     if (body != std::string::npos) {
                         report += resolved.report.substr(body + 1);
@@ -152,8 +152,9 @@ namespace ac::logging::config {
         }
 
         bool read_family_logging(const LoggingScope& scope) {
-            const auto ini_path = ac::paths::config_directory() /
-                (std::string {scope.name} + ".ini");
+            const auto ini_path = scope.name == "auto_core"
+                ? ac::paths::config_directory() / "auto_core.ini"
+                : ac::paths::component_config_file(scope.name);
             const auto document = ac::ini::read(ini_path);
             std::optional<std::string> owned;
             std::optional<std::string_view> logging;

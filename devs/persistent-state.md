@@ -1,8 +1,8 @@
 # Persistent state
 
-Phase 1A discovery of every file that survives process exit. INI keys are in [configuration.md](../docs/manual/configuration.md). This ledger is what the general sole-writer rule (C9, **Proposed canonical**) has to match. It is not that rule made normative.
+Phase 1A discovery of every file that survives process exit. INI keys are in [configuration.md](configuration.md). This ledger is what the general sole-writer rule (C9, **Proposed canonical**) has to match. It is not that rule made normative.
 
-Paths are relative to the installation root (`dist/` after a normal build) unless the row says otherwise. A Component data directory comes from that Component's `directory` key. Compiled defaults are in the configuration ledger.
+Paths are relative to the installation root (`dist/` after a normal build) unless the row says otherwise. A Component data directory comes from that Component's `directory` key. Compiled defaults are in [configuration.md](configuration.md).
 
 Shared missing-file behavior for non-INI files is **Proposed canonical** and not yet a conformance rule: the owner's `--seed` creates a missing file, and readers use a documented in-memory default or fail the operation. Rows below record what the code does now (**Observed**).
 
@@ -29,7 +29,7 @@ Logs and crash reports are written by whichever process produced them. That is m
 | `crash/<event>/crash.txt` and `crash.dmp` | crash report | the process that crashed, except `auto_core_shell_launcher.exe` | people | directory created on the event | no | dumps can contain process data | none. Not deleted automatically. |
 | `errors/errors.log` | best-effort stderr companion | `auto_core.core.error` in whichever process called it | people | created on the first report | no | may contain local detail | none |
 
-Family logging does not gate Wake history. Crash reports are independent of `logging.ini`, including `disable_all = on`.
+Family logging does not gate Wake history. Crash reports are independent of `logging_policy.ini`, including `disable_all = on`.
 
 ## Dash
 

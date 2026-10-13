@@ -24,7 +24,7 @@ bool file_missing(const std::filesystem::path& path) {
 }
 
 bool scalars_incomplete() {
-    const auto ini_path = ac::paths::config_directory() / "server.ini";
+    const auto ini_path = ac::paths::component_config_file("server");
     const auto document = ac::ini::read(ini_path);
     if (!document) {
         return true;

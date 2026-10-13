@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/slash.ini`.
+ * \brief Portable defaults for `config/components/slash.ini`.
  *
  * `mode` selects the recycle-bin report. `verbose` is today's categorized
  * report and the compiled default.

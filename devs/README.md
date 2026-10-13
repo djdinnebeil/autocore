@@ -12,10 +12,11 @@ Using and configuring an installation starts at [Auto Core Guide](<../docs/Auto 
 | [Building](building.md) | Solutions, MSBuild order, output directories |
 | [Strategy](STRATEGY.md) | Goals, locked decisions, agent git |
 | [Architecture inventory](architecture.md) | Phase 1A glossary, executables, subsystems, and internal protocols. Not the frozen standard. |
+| [Configuration](configuration.md) | INI ownership, launch flags, missing values, and Main keys |
 | [Persistent state](persistent-state.md) | Phase 1A ledger of every non-INI file that survives process exit |
 | [Main](main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
 | [Development](development.md) | Shared protocols, runtime commands, adding a component |
-| [Adding a new component](new-component.md) | File → New → Project, portable `AutoCore.props`, live `components.ini` `[components]` |
+| [Adding a new component](new-component.md) | File → New → Project, portable `AutoCore.props`, live `components_policy.ini` `[settings]` |
 | [Modules](modules.md) | Phase 1A ledger of every production `.ixx`. Dispositions are pending. |
 | [Follow-up work](TODO.md) | Product follow-ups |
 

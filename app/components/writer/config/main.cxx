@@ -67,7 +67,7 @@ bool is_relative_subdirectory(std::string_view value) {
 }
 
 std::filesystem::path writer_ini_path() {
-    return ac::paths::config_directory() / "writer.ini";
+    return ac::paths::component_config_file("writer");
 }
 
 struct Settings {
@@ -331,7 +331,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(writer_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(writer_config, "config/writer.ini");
+            req::log_seed_skipped(writer_config, "config/components/writer.ini");
         }
         else {
             req::log_writing_defaults(writer_config);
@@ -352,7 +352,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (present) {
-            req::log_initialization_skipped(writer_config, "config/writer.ini");
+            req::log_initialization_skipped(writer_config, "config/components/writer.ini");
         }
         else {
             req::log_configuration_missing(writer_config);

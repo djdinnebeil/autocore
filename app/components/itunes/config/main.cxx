@@ -304,7 +304,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const auto path = ac::paths::config_directory() / "itunes.ini";
+    const auto path = ac::paths::component_config_file("itunes");
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(itunes_config, *launch);
     if (launch->seed) {
         if (exists) {
-            req::log_seed_skipped(itunes_config, "config/itunes.ini");
+            req::log_seed_skipped(itunes_config, "config/components/itunes.ini");
         }
         else {
             req::log_writing_defaults(itunes_config);
@@ -339,7 +339,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (exists) {
-            req::log_initialization_skipped(itunes_config, "config/itunes.ini");
+            req::log_initialization_skipped(itunes_config, "config/components/itunes.ini");
         }
         else {
             req::log_configuration_missing(itunes_config);

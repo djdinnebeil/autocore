@@ -61,10 +61,10 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
 }
 
 int require_readable_ini() {
-    const auto path = ac::paths::config_directory() / "spotify.ini";
+    const auto path = ac::paths::component_config_file("spotify");
     if (!ac::ini::read(path)) {
         spotify_editor.log_print(
-            "config/spotify.ini is missing or unreadable. spotify_config.exe owns it."
+            "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
     }

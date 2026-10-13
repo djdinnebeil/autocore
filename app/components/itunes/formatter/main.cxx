@@ -130,7 +130,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     }
 
     itunes_formatter.log_print(
-        "config/itunes.ini is missing. Running itunes_config.exe --init."
+        "config/components/itunes.ini is missing. Running itunes_config.exe --init."
     );
     if (launch_config_init() != 0) {
         itunes_formatter.log_print(
@@ -143,7 +143,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     const bool created = std::filesystem::exists(path, error);
     if (error || !created || !ini_readable(path)) {
         itunes_formatter.log_print(
-            "config/itunes.ini is still unavailable. Song format was not edited."
+            "config/components/itunes.ini is still unavailable. Song format was not edited."
         );
         return 1;
     }
@@ -151,7 +151,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
 }
 
 std::filesystem::path itunes_data_directory() {
-    const auto path = ac::paths::config_directory() / "itunes.ini";
+    const auto path = ac::paths::component_config_file("itunes");
     const auto document = ac::ini::read(path);
     std::optional<std::string_view> stored;
     if (document) {
@@ -483,12 +483,12 @@ std::optional<bool> file_present(const std::filesystem::path& path) {
 }
 
 bool itunes_ini_readable() {
-    const auto path = ac::paths::config_directory() / "itunes.ini";
+    const auto path = ac::paths::component_config_file("itunes");
     if (ac::ini::read(path)) {
         return true;
     }
     itunes_formatter.log_print(
-        "config/itunes.ini is missing or unreadable. itunes_config.exe owns it."
+        "config/components/itunes.ini is missing or unreadable. itunes_config.exe owns it."
     );
     return false;
 }
@@ -689,7 +689,7 @@ export int run_itunes_formatter(int argc, char* argv[]) {
         return run_initialization(seed);
     }
 
-    const auto ini_path = ac::paths::config_directory() / "itunes.ini";
+    const auto ini_path = ac::paths::component_config_file("itunes");
     if (ensure_itunes_ini(ini_path) != 0) {
         return 1;
     }

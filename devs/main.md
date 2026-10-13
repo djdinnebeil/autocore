@@ -13,13 +13,13 @@ process only.
    mutex, held until this process ends).
 2. If `config/auto_core.ini` is missing, the installation is new. Launch
    `auto_core_init.exe` and wait. Before its Auto Core menu, it establishes
-   `config/logging.ini` with console I/O only. No-argument and `--init` ask
-   `Enable logging? [Y/n]:`. No runs `logging_config.exe --disable`, which
+   `config/logging_policy.ini` with console I/O only. No-argument and `--init` ask
+   `Enable logging? [Y/n]:`. No runs `logging_policy_config.exe --disable`, which
    writes the compiled logging file with `disable_all = on`. Yes asks
-   `1. Use defaults` or `2. Configure`, which run `logging_config.exe --seed`
-   or `logging_config.exe --init`. `--seed` runs `logging_config.exe --seed`
+   `1. Use defaults` or `2. Configure`, which run `logging_policy_config.exe --seed`
+   or `logging_policy_config.exe --init`. `--seed` runs `logging_policy_config.exe --seed`
    and does not prompt. `--init --seed` asks only the enable question.
-   An existing `logging.ini` is preserved. `auto_core_init.exe` does not
+   An existing `logging_policy.ini` is preserved. `auto_core_init.exe` does not
    write the file. After logging is resolved, its menu is `Auto Core` with
    `1. Use defaults` and `2. Configure`. Use defaults propagates `--seed`.
    Configure propagates `--init` and does not attach `--seed`.
@@ -27,8 +27,8 @@ process only.
    `components_init.exe --seed`. `--init --seed` skips the Auto Core menu,
    passes both flags to the Main configuration owners, then shows the
    Components menu. That Main mode is passed to `auto_core_config.exe`,
-   `components_config.exe`, `shutdown_config.exe`,
-   `crash_recovery_config.exe`, and `keymap_config.exe`. It does not select
+   `components_policy_config.exe`, `shutdown_config.exe`,
+   `crash_recovery_config.exe`, and `warnings_config.exe`. It does not select
    `components_init.exe`. After those owners succeed, no-argument, `--init`,
    and `--init --seed` ask `1. Use defaults for components`
    (`components_init.exe --seed`), `2. Configure components`
@@ -42,7 +42,7 @@ process only.
    `keymap_editor.exe` run. No Main configuration owner runs after
    `components_init.exe`. A failed or cancelled required stage
    stops initialization. After the orchestrator returns, resolve the shared
-   logging policy. If `logging.ini` is still missing, exit `1`.
+   logging policy. If `logging_policy.ini` is still missing, exit `1`.
    `auto_core_config.exe` writes `auto_core.ini`. Presence of the file means
    Auto Core is initialized. There is no `initialized` key. If a required
    step fails or the user cancels that step, and this run created
@@ -53,15 +53,15 @@ process only.
    The file is not created. A missing `keymap.map` installs the emergency
    keymap in memory and is not created.
 3. If `auto_core.ini` already exists, resolve the shared logging policy
-   before any other startup log. A missing `logging.ini` uses built-in
+   before any other startup log. A missing `logging_policy.ini` uses built-in
    defaults (`disable_all = off`, `directory = logs`,
    `write_logs_to_files = on`, `write_logs_to_console = off`,
    `log_print_mode = print`, `component_logging_default = on`), prints
-   `config/logging.ini is missing; using built-in logging defaults.`,
+   `config/logging_policy.ini is missing; using built-in logging defaults.`,
    and does not create the file.
-4. Load `[auto_core] warn_without_winkey_mapping` from `config/auto_core.ini`.
-   Missing or invalid values use `on` and are reported; the file is not
-   created.
+4. Load `[warnings] missing_winkey_mapping` and `unmapped_key` from
+   `config/warnings.ini`. Missing or invalid values use `on` and are
+   reported; the file is not created.
 5. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
 6. If `<installation_root>/crash/.crash` exists, prompt whether to continue. Yes removes the
@@ -147,7 +147,7 @@ empty. Both sides empty leaves the key unbound; it is not in
 `active_keymap` and is not logged as invalid. A missing line is the same as
 unbound. After a successful load, each `key_codes` name not in
 `active_keymap` prints `numpad 2 hasn't been set` (underscore in the INI
-name becomes a space), unless `silence_nonset_warning` is exactly `on`. Unbound keys are not Auto
+name becomes a space), when `[warnings] unmapped_key` is `on`. Unbound keys are not Auto
 Core's: the hook calls `CallNextHookEx`, so Windows and the focused app still
 see the physical key. A key with at least one filled side is in the map and
 eats the keystroke (`return 1`); an empty side is a no-op. Unknown command
@@ -157,10 +157,10 @@ skipped. Zero usable rows (no resolved command), or a file that cannot be
 opened, uses the emergency map. Unset messages are not printed after
 emergency fallback.
 
-Optional `config/keymap.ini` `[keymap] silence_nonset_warning` must be
-exactly `on` to skip the load-time unset messages. A missing file keeps
-the flag off and is reported; the file is not created. Any other value
-leaves the flag off. See [configuration.md](../docs/manual/configuration.md).
+`config/warnings.ini` `[warnings] unmapped_key` defaults to `on`, which
+prints the load-time unset messages. Only exact `off` skips them. A missing
+file keeps the warning on and is reported; the file is not created. Any
+other value leaves the warning on. See [configuration.md](configuration.md).
 
 ### Why keymap.map is the only map
 
@@ -202,7 +202,7 @@ Main separately preserves its recovery policy: it writes
 `<installation_root>/crash/.crash`, starts the installed `auto_core.exe`, then
 runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
 written, the handler does not restart. See
-[configuration.md](../docs/manual/configuration.md) for `crash_recovery.ini`.
+[configuration.md](configuration.md) for `crash_recovery.ini`.
 
 `send_crash_command` is a diagnostic keymap name that forces this path.
 `encoding_test` round-trips UTF-16 through core encoding and prints PASS/FAIL.
@@ -266,7 +266,7 @@ On-demand components are not started here. An enabled name whose
 command runs. Dash's descriptor asks for a new console, the foreground HWND,
 and the parent PID, and does not wait. Slash's descriptor passes the command
 on the command line and waits until the process exits. See
-[dash.md](../docs/manual/dash.md) for the `--target` / `--parent-pid` launch line.
+[dash.md](../docs/manual/components/dash.md) for the `--target` / `--parent-pid` launch line.
 
 Wake and server are generic v1 children. Wake has no advertised keymap
 names. Server shutdown uses the control pipe.
@@ -283,7 +283,7 @@ source edit.
 Registering runtime commands and adding a new child project are in
 [development.md](development.md). Per-component product docs:
 
-- [Dash](../docs/manual/dash.md)
-- [iTunes](../docs/manual/itunes.md)
-- [Spotify](../docs/manual/spotify.md)
-- [Taskbar](../docs/manual/taskbar.md)
+- [Dash](../docs/manual/components/dash.md)
+- [iTunes](../docs/manual/components/itunes.md)
+- [Spotify](../docs/manual/components/spotify.md)
+- [Taskbar](../docs/manual/components/taskbar.md)

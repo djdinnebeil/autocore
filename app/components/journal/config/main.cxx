@@ -154,7 +154,7 @@ int launch_owned_stores(const std::wstring_view mode) {
 }
 
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "journal.ini";
+    return ac::paths::component_config_file("journal");
 }
 
 struct JournalSettings {
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(journal_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(journal_config, "config/journal.ini");
+            req::log_seed_skipped(journal_config, "config/components/journal.ini");
         }
         else {
             req::log_writing_defaults(journal_config);
@@ -366,7 +366,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (present) {
-            req::log_initialization_skipped(journal_config, "config/journal.ini");
+            req::log_initialization_skipped(journal_config, "config/components/journal.ini");
         }
         else {
             req::log_configuration_missing(journal_config);

@@ -30,7 +30,7 @@ The current baseline is 44 test cases with 209 assertions. Coverage includes:
 - numeric and named command routing through real local Windows pipes;
 - unknown named commands and truncated named-command payloads;
 - song-format compile, token rendering, load fallback, and replace. The
-  format tests do not read `config/spotify.ini`, call Spotify, or launch
+  format tests do not read `config/components/spotify.ini`, call Spotify, or launch
   `spotify_formatter.exe`;
 - `client.id`, `devices.list`, and `tokens.map` parsing, including missing,
   empty, malformed, and valid text, plus a `tokens.map` serialization
@@ -48,4 +48,4 @@ active device, downloads album art, writes credentials or tokens, inserts text,
 or modifies `history.db`.
 
 The component contract, authorization files, command behavior, persistence,
-and known limitations are documented in `docs/manual/spotify.md`.
+and known limitations are documented in `docs/manual/components/spotify.md`.

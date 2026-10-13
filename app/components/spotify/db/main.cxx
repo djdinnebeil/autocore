@@ -40,10 +40,10 @@ bool database_exists() {
 }
 
 int run_seed() {
-    const auto ini_path = ac::paths::config_directory() / "spotify.ini";
+    const auto ini_path = ac::paths::component_config_file("spotify");
     if (!ac::ini::read(ini_path)) {
         spotify_db.log_print(
-            "config/spotify.ini is missing or unreadable. spotify_config.exe owns it."
+            "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
     }

@@ -2,7 +2,7 @@
 
 Auto Core is intended for developer-configured use. Shared Visual Studio settings live in [`msbuild/AutoCore.props`](../msbuild/AutoCore.props). From the repository root, [`scripts/build-all.ps1`](../scripts/build-all.ps1) runs the Release x64 sequence below.
 
-Build artifacts go to repo-root `obj/`, `lib/`, `bin/`, and `dist/`. Intermediate objects are under `obj/`. The core DLL `OutDir` is `lib/` (`auto_core.dll`, `auto_core.lib`, and gitignored `auto_core.exp`). After `auto_core_dll` links, its `PublishAutoCoreDll` target copies `lib/auto_core.dll` to `bin/auto_core.dll`. Application executables publish to `bin/`. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal publisher of `dist/bin/`; [`scripts/build-all.ps1`](../scripts/build-all.ps1) runs it after a successful build. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1) is a manual refresh of vendored runtime DLLs from [`third_party/*/bin/`](../third_party/) into `bin/`, then it runs `publish-dist.ps1`. Normal builds do not run that script. The build does not create the Server data directory. `server_config.exe --seed` writes a missing `config/server.ini`, then `server_editor.exe --seed` creates missing `port.id` and `document_root.id`, then `server_builder.exe --seed` creates missing `index.html` and `styles.css` under the configured relative document root (default `dist/components/server/site`). `dist/` is gitignored. Product third-party libraries live under `third_party/<dependency>/` (`include/`, `lib/`, `bin/`). Catch2 is amalgamated test source at `third_party/catch2/`. `msbuild/` contains source-controlled Visual Studio property sheets, not compiler output.
+Build artifacts go to repo-root `obj/`, `lib/`, `bin/`, and `dist/`. Intermediate objects are under `obj/`. The core DLL `OutDir` is `lib/` (`auto_core.dll`, `auto_core.lib`, and gitignored `auto_core.exp`). After `auto_core_dll` links, its `PublishAutoCoreDll` target copies `lib/auto_core.dll` to `bin/auto_core.dll`. Application executables publish to `bin/`. [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal publisher of `dist/bin/`; [`scripts/build-all.ps1`](../scripts/build-all.ps1) runs it after a successful build. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1) is a manual refresh of vendored runtime DLLs from [`third_party/*/bin/`](../third_party/) into `bin/`, then it runs `publish-dist.ps1`. Normal builds do not run that script. The build does not create the Server data directory. `server_config.exe --seed` writes a missing `config/components/server.ini`, then `server_editor.exe --seed` creates missing `port.id` and `document_root.id`, then `server_builder.exe --seed` creates missing `index.html` and `styles.css` under the configured relative document root (default `dist/components/server/site`). `dist/` is gitignored. Product third-party libraries live under `third_party/<dependency>/` (`include/`, `lib/`, `bin/`). Catch2 is amalgamated test source at `third_party/catch2/`. `msbuild/` contains source-controlled Visual Studio property sheets, not compiler output.
 
 Wipe `obj/` anytime. Rebuilding the core DLL overwrites `lib/` in place. Paths are repo-relative in [`msbuild/AutoCore.props`](../msbuild/AutoCore.props); a clone does not edit that file.
 
@@ -20,22 +20,11 @@ Release binaries use the DLL CRT (`/MD`). If you run a `dist/` tree you did not 
 1. Clone or copy the project into a local development directory.
 2. Shared paths live in `msbuild/AutoCore.props` (repo-relative; do not edit after a clone).
 3. Build the core DLL, then the main executable, then any required component executables (`.\scripts\build-all.ps1` from the repo root).
-4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](../docs/manual/configuration.md).
+4. Runtime files belong under `dist`. The whole tree is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). See [configuration.md](configuration.md).
 
-## Shortcut identity
+## Setup shortcuts
 
 `Auto Core Setup.exe` at the installation root creates `Auto Core.lnk` and `Auto Core Settings.lnk` beside itself when each link is missing. It does not overwrite an existing link. `Auto Core.lnk` targets `bin\auto_core.exe`. `Auto Core Settings.lnk` targets `bin\auto_core_settings.exe`. Both shortcuts use `bin` as the working directory. When `config\auto_core.ini` is missing, Setup opens a console, launches `bin\auto_core_init.exe` in that console, waits for it to exit, and prints the completion instruction there only if that file then exists. Setup then waits for a key. When `config\auto_core.ini` already exists, Setup launches `bin\auto_core_settings.exe`, does not open that console, and does not print that instruction. The repository does not install Auto Core.
-
-Before the Task Manager field test, stamp the existing link with `System.AppUserModel.ID` = `Djdinn.AutoCore`. [`scripts/stamp_auto_core_shortcut.cxx`](../scripts/stamp_auto_core_shortcut.cxx) obtains `IPropertyStore` from `IShellLink`, calls `SetValue(PKEY_AppUserModel_ID, ...)`, commits, and saves the link.
-
-From the repository root, Release x64:
-
-```powershell
-msbuild scripts\stamp_auto_core_shortcut.vcxproj /m /p:Configuration=Release /p:Platform=x64
-.\obj\stamp_auto_core_shortcut\stamp_auto_core_shortcut.exe "<installation_root>\Auto Core.lnk"
-```
-
-The tool writes `obj\stamp_auto_core_shortcut\stamp_auto_core_shortcut.exe`. It is a field-test stamp, not a product runtime and not an installer. If the link is missing, the tool reports that and exits. Create the link so it targets `<installation_root>\bin\auto_core.exe`, then run the tool again.
 
 ## Solutions
 

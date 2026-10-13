@@ -27,15 +27,15 @@ This repository is for people who want to **build or extend** the source and **r
 
 Build from source (below), then run from `dist/` (`dist\bin\auto_core.exe`, runtime DLLs, and the component executables). Projects use the DLL CRT (`/MD`); if you run binaries you did not build on that PC, install the matching **MSVC v145** redistributable.
 
-1. Start `auto_core.exe` from `dist\bin` (or `Auto Core.lnk` at the installation root). If `config/auto_core.ini` is missing, Main launches `auto_core_init.exe`. That orchestrator writes `auto_core.ini` with `auto_core_config.exe` first, then the other Main INIs, runs `components_init.exe` for component INIs, then `components_editor.exe --seed` and `keymap_editor.exe`. Presence of `auto_core.ini` means Auto Core is initialized. There is no `initialized` key. A failed required step removes `auto_core.ini` when that run created it. If a component INI is missing at runtime, that process uses the defaults in `app/components/<name>/shared/defaults.ixx` and reports the gap; it does not write the file.
+1. Start `auto_core.exe` from `dist\bin` (or `Auto Core.lnk` at the installation root). If `config/auto_core.ini` is missing, Main launches `auto_core_init.exe`. That orchestrator creates `auto_core.ini` with `auto_core_config.exe` first, then the other Main INIs, runs `components_init.exe` for component INIs, then `components_editor.exe --seed` and `keymap_editor.exe`. `auto_core.ini` is created during initialization and retained as the sentinel only if the required initialization sequence succeeds. There is no `initialized` key. A failed required step removes `auto_core.ini` when that run created it. If a component INI is missing at runtime, that process uses the defaults in `app/components/<name>/shared/defaults.ixx` and reports the gap; it does not write the file.
 2. Edit `dist/keymap.map` if you want a custom map. If the file is missing, run `keymap_editor.exe` to write a seed (`numpad_0` / `numpad_1` filled, every other `key_codes` name blank). An existing file is not overwritten.
-3. Run `taskbar_builder.exe` from `dist\bin` so `taskbar/applications/*.map` matches the programs you pin. See [Taskbar](docs/manual/taskbar.md).
-4. Run `<name>_config.exe` from `dist\bin` to generate `config/<name>.ini`. Spotify tokens still use `spotify_oauth.exe` ([Spotify](docs/manual/spotify.md)). Restart `server_ac.exe` after rewriting `server.ini`, `port.id`, or `document_root.id`.
+3. Run `taskbar_builder.exe` from `dist\bin` so `taskbar/applications/*.map` matches the programs you pin. See [Taskbar](docs/manual/components/taskbar.md).
+4. Run `<name>_config.exe` from `dist\bin` to generate `config/components/<name>.ini`. Spotify tokens still use `spotify_oauth.exe` ([Spotify](docs/manual/components/spotify.md)). Restart `server_ac.exe` after rewriting `config/components/server.ini`, `port.id`, or `document_root.id`.
 5. Windows may prompt for elevation; that is required for some iTunes setups.
 
-`dist/` is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](app/main/shared/defaults.ixx) for Main host INIs. `*.local.ini` / `*.local.ixx` also stay off git. See [configuration](docs/manual/configuration.md).
+`dist/` is gitignored. Portable defaults are compiled in each child's `shared/defaults.ixx` and in [`app/main/shared/defaults.ixx`](app/main/shared/defaults.ixx) for Main host INIs. `*.local.ini` / `*.local.ixx` also stay off git. See [configuration](devs/configuration.md).
 
-To run the same build on another Windows 11 PC, copy the `dist/` folder, then retune machine-specific files: install the **MSVC v145** redistributable if that PC did not build the binaries; do not copy `components/spotify/tokens.map` (run `spotify_oauth.exe` there); retarget `config/logging.ini` if `directory` is an absolute path; re-run `taskbar_builder.exe` when pins or exe paths differ. Dash is not portable between Windows installs. Details are in [configuration](docs/manual/configuration.md#copying-dist-to-another-windows-11-pc).
+To run the same build on another Windows 11 PC, copy the `dist/` folder, then retune machine-specific files: install the **MSVC v145** redistributable if that PC did not build the binaries; do not copy `components/spotify/tokens.map` (run `spotify_oauth.exe` there); retarget `config/logging_policy.ini` if `directory` is an absolute path; re-run `taskbar_builder.exe` when pins or exe paths differ. Dash is not portable between Windows installs.
 
 ## Building
 
@@ -75,26 +75,26 @@ The main application, core DLL, shared protocols, and component projects are sep
 
 | Component | Purpose | Executable | Notes |
 | --- | --- | --- | --- |
-| `dash` | Local secret insertion | `dash_ac.exe` | Current-user DPAPI with a Windows Hello access check; see [Dash](docs/manual/dash.md) |
+| `dash` | Local secret insertion | `dash_ac.exe` | Current-user DPAPI with a Windows Hello access check; see [Dash](docs/manual/components/dash.md) |
 | `journal` | Journaling titles and file workflow | `journal_ac.exe` | Pipe child of Auto Core; episode counters in `series.db` under `[journal] directory` |
-| `logger` | Merged main log | `logger_ac.exe` | Reads local `.main.log` files into `YYYY-MM-DD_main.log`. See [Logger](docs/manual/logger.md) |
-| `journal_config` | Journal configuration | `journal_config.exe` | Writes only `config/journal.ini`. `--init` and `--seed` launch the owners of the other Journal stores |
+| `logger` | Merged main log | `logger_ac.exe` | Reads local `.main.log` files into `YYYY-MM-DD_main.log`. See [Logger](docs/manual/components/logger.md) |
+| `journal_config` | Journal configuration | `journal_config.exe` | Writes only `config/components/journal.ini`. `--init` and `--seed` launch the owners of the other Journal stores |
 | `journal_builder` | Journal alias files | `journal_builder.exe` | Owns `<factory_name>.list` under the journal data directory. Interactive add/edit/delete; `--seed` creates missing starter files; `--init` prompts for each missing file |
 | `journal_clock` | Journal extended hours | `journal_clock.exe` | Owns `extended_hour.clock` in the journal data directory (`components\journal` by default). Interactive token edit; `--seed` writes `extended_hours = +0` when the file is missing |
 | `journal_db` | Journal series database | `journal_db.exe` | Owns `series.db`. `--serve` is the private database process. `--seed` creates a missing database and adds `Auto Core` with padding `2` |
 | `journal_series` | Journal series map | `journal_series.exe` | Owns `series.map`. Select, add, count, padding, and refresh. `--seed` and `--init` refresh a missing map from `series.db`. Does not open SQLite |
 | `journal_cloud` | Journal Firebase | `journal_cloud.exe` | Owns `firebase.id`. Interactive URL menu, and `--serve` when `remote_sync` is `on`. `--seed` creates a missing empty file |
-| `itunes` | iTunes controller | `itunes_ac.exe` | Dedicated-owner-thread COM automation; see [iTunes](docs/manual/itunes.md) |
-| `server` | Local file server | `server_ac.exe` | Loopback HTTP; `server_config.exe` owns `server.ini`; `server_editor.exe` owns `port.id` and `document_root.id`; `server_builder.exe` writes only missing starter files under a relative document root |
+| `itunes` | iTunes controller | `itunes_ac.exe` | Dedicated-owner-thread COM automation; see [iTunes](docs/manual/components/itunes.md) |
+| `server` | Local file server | `server_ac.exe` | Loopback HTTP; `server_config.exe` owns `config/components/server.ini`; `server_editor.exe` owns `port.id` and `document_root.id`; `server_builder.exe` writes only missing starter files under a relative document root |
 | `slash` | Recycle bin utility | `slash_ac.exe` | Prints deleted items |
-| `spotify` | Spotify controller | `spotify_ac.exe` | Web API playback control and local history; see [Spotify](docs/manual/spotify.md) |
+| `spotify` | Spotify controller | `spotify_ac.exe` | Web API playback control and local history; see [Spotify](docs/manual/components/spotify.md) |
 | `spotify_oauth` | Spotify authorization helper | `spotify_oauth.exe` | Handles the OAuth authorization flow (`spotify/oauth`) |
-| `taskbar` | Native taskbar activation | `taskbar_ac.exe` | Snapshot authority for Win+position mappings; see [Taskbar](docs/manual/taskbar.md) |
-| `taskbar_config` | Taskbar configuration | `taskbar_config.exe` | Writes only `config/taskbar.ini` |
+| `taskbar` | Native taskbar activation | `taskbar_ac.exe` | Snapshot authority for Win+position mappings; see [Taskbar](docs/manual/components/taskbar.md) |
+| `taskbar_config` | Taskbar configuration | `taskbar_config.exe` | Writes only `config/components/taskbar.ini` |
 | `taskbar_builder` | Taskbar application definitions | `taskbar_builder.exe` | Owns `taskbar/applications/*.map` |
 | `wake` | System wake tracker | `wake_ac.exe` | Logs resume timestamps |
 | `writer` | Text insertion and notes | `writer_ac.exe` | Pipe child of Auto Core; notepad, timestamps, and task list |
-| `writer_config` | Writer configuration | `writer_config.exe` | Writes only `config/writer.ini`. `--init` and `--seed` delegate data provisioning to `writer_editor.exe` |
+| `writer_config` | Writer configuration | `writer_config.exe` | Writes only `config/components/writer.ini`. `--init` and `--seed` delegate data provisioning to `writer_editor.exe` |
 | `writer_editor` | Writer data | `writer_editor.exe` | Sole Auto Core writer of `task_list.txt`, `session_prompts.list`, and notes |
 
 ## Project Folder Structure
@@ -150,7 +150,7 @@ Build artifacts are generated under `obj/` (intermediates), `lib/` (canonical `a
 
 Dash stores and inserts revocable, noncritical secrets without plaintext secret files. Auto Core launches it with the `launch_dash` keymap command. Dash is not a general password manager, and its vault is not portable between ordinary Windows installations.
 
-See [Dash secret storage](docs/manual/dash.md) for the contract, threat model, storage location, recovery policy, and disclaimers.
+See [Dash secret storage](docs/manual/components/dash.md) for the contract, threat model, storage location, recovery policy, and disclaimers.
 
 ## iTunes
 
@@ -159,19 +159,19 @@ The iTunes component controls playback through the iTunes COM automation interfa
 > [!IMPORTANT]
 > An elevated Auto Core process cannot connect to an iTunes instance that is already running without Administrator privileges. Either start Auto Core before iTunes, or close iTunes and restart it with Administrator privileges before starting Auto Core.
 
-See [iTunes component](docs/manual/itunes.md). Follow-up work is in [devs/TODO.md](devs/TODO.md).
+See [iTunes component](docs/manual/components/itunes.md). Follow-up work is in [devs/TODO.md](devs/TODO.md).
 
 ## Spotify
 
 The Spotify component runs as `spotify_ac.exe` and provides Web API playback control, queue and current-track formatting, playback-device transfer, album art download, and a local listening-history database.
 
-See [Spotify component](docs/manual/spotify.md).
+See [Spotify component](docs/manual/components/spotify.md).
 
 ## Taskbar
 
-`taskbar_ac.exe` publishes live Win+1 through Win+10 mappings from `taskbar/applications/*.map`. `taskbar_builder.exe` creates missing program files. `taskbar_config.exe` writes only `config/taskbar.ini`.
+`taskbar_ac.exe` publishes live Win+1 through Win+10 mappings from `taskbar/applications/*.map`. `taskbar_builder.exe` creates missing program files. `taskbar_config.exe` writes only `config/components/taskbar.ini`.
 
-See [Taskbar component](docs/manual/taskbar.md).
+See [Taskbar component](docs/manual/components/taskbar.md).
 
 ## Requirements
 
@@ -186,7 +186,8 @@ Using and configuring an installation starts at [Auto Core Guide](<docs/Auto Cor
 
 | Document | Topic |
 | --- | --- |
-| [Configuration](docs/manual/configuration.md) | INI files, keymap, logging, copying `dist/` |
+| [Configuration](docs/manual/configuration.md) | Changing settings in an installation |
+| [Configuration contract](devs/configuration.md) | INI ownership, launch flags, and Main keys |
 | [Main](devs/main.md) | `auto_core.exe` startup, hook, crash restart, shutdown |
 | [Security](docs/manual/security.md) | Keyboard hook, secrets, reporting |
 | [Building](devs/building.md) | Solutions, MSBuild order, output directories |

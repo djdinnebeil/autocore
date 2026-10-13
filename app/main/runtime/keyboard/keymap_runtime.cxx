@@ -6,7 +6,7 @@ module auto_core.main.keymap.runtime;
 
 import std;
 
-import auto_core.core.ini;
+import auto_core.core.config;
 import auto_core.core.paths;
 import auto_core.main.components;
 import command_registry;
@@ -39,49 +39,11 @@ static const command_registry::Registry& runtime_command_registry() {
 }
 
 struct KeymapSettings {
-    bool silence_nonset_warning = false;
+    bool unmapped_key = true;
 };
 
 static KeymapSettings keymap_settings() {
-    const auto path = ac::paths::keymap_settings_file();
-    const auto document = ac::ini::read(path);
-    if (!document) {
-        std::error_code exists_error;
-        const bool present = std::filesystem::exists(path, exists_error);
-        if (present && !exists_error) {
-            auto_core.log_print(
-                "config/keymap.ini is malformed. Run keymap_config.exe to "
-                "generate a valid file. Using built-in defaults; the file "
-                "will not be created."
-            );
-        }
-        else {
-            auto_core.log_print(
-                "config/keymap.ini is missing. Run keymap_config.exe to "
-                "generate it. Using built-in defaults; the file will not "
-                "be created."
-            );
-        }
-        return {};
-    }
-
-    const auto silence = document->find("keymap", "silence_nonset_warning");
-    if (!silence) {
-        auto_core.log_print(
-            "config/keymap.ini is missing an expected [keymap] key. Run "
-            "keymap_config.exe to repair it. Using built-in defaults for "
-            "missing keys; the file will not be rewritten."
-        );
-    }
-    else if (*silence != "on" && *silence != "off") {
-        auto_core.log_print(
-            "config/keymap.ini contains an invalid value. Run "
-            "keymap_config.exe to repair it. Using built-in defaults for "
-            "invalid keys; the file will not be rewritten."
-        );
-    }
-
-    return { silence == "on" };
+    return { ac::config::core_settings().unmapped_key };
 }
 
 static std::string autocomplete_contents(
@@ -340,7 +302,7 @@ static bool set_keymap_from_stream(
         return false;
     }
 
-    if (!settings.silence_nonset_warning) {
+    if (settings.unmapped_key) {
         for (const auto& key : key_codes::keys) {
             if (!active_keymap.contains(key.code)) {
                 auto_core.log_print(

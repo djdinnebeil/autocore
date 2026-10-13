@@ -37,7 +37,7 @@ void load_library_format(itunes_client& client) {
 
 void itunes_client::set_config() {
     const std::filesystem::path itunes_config_path =
-        ac::paths::config_directory() / "itunes.ini";
+        ac::paths::component_config_file("itunes");
 
     const auto document = ac::ini::read(itunes_config_path);
     std::optional<std::string_view> stored_directory;

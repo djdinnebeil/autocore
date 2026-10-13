@@ -6,22 +6,22 @@ Reference documentation is under `manual\`.
 
 [Security](manual/security.md)
 
-[Dash](manual/dash.md)
+[Dash](manual/components/dash.md)
 
-[iTunes](manual/itunes.md)
+[iTunes](manual/components/itunes.md)
 
-[Journal](manual/journal.md)
+[Journal](manual/components/journal.md)
 
-[Logger](manual/logger.md)
+[Logger](manual/components/logger.md)
 
-[Server](manual/server.md)
+[Server](manual/components/server.md)
 
-[Slash](manual/slash.md)
+[Slash](manual/components/slash.md)
 
-[Spotify](manual/spotify.md)
+[Spotify](manual/components/spotify.md)
 
-[Taskbar](manual/taskbar.md)
+[Taskbar](manual/components/taskbar.md)
 
-[Wake](manual/wake.md)
+[Wake](manual/components/wake.md)
 
-[Writer](manual/writer.md)
+[Writer](manual/components/writer.md)

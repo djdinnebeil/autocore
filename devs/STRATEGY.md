@@ -115,8 +115,8 @@ Clone vs `dist/` stays in Locked: two audiences.
   (`components_editor.exe` owns `components.list`, `keymap_editor.exe`
   owns `keymap.map`). `config/` holds configuration-management
   executables (`auto_core_config.exe` owns `config/auto_core.ini`,
-  `components_config.exe` owns `config/components.ini`,
-  `keymap_config.exe` owns `config/keymap.ini`,
+  `components_policy_config.exe` owns `config/components_policy.ini`,
+  `warnings_config.exe` owns `config/warnings.ini`,
   `crash_recovery_config.exe` owns `config/crash_recovery.ini`,
   `shutdown_config.exe` owns `config/shutdown.ini`). `shared/` is code,
   defaults, and helpers used by those executables and not generic enough
@@ -170,13 +170,13 @@ Main must not know that component at compile time.
   session for that name. Dash and Slash embed that resource. The shared list
   parser does not name them. The list is the enable switch when the file is
   readable. `discover_ac_executables` returns every valid `*_ac.exe` name
-  from `bin_directory`. `components_config.exe` owns
-  `config/components.ini` (`[settings]` only: `new_components`,
+  from `bin_directory`. `components_policy_config.exe` owns
+  `config/components_policy.ini` (`[settings]` only: `new_components`,
   `sort_components`, `remove_missing_components`) and launches missing
   `<name>_config.exe` programs. `components_editor.exe` is the exclusive
   writer of `components.list`.   Child `_config.exe` programs write
-  `config/<name>.ini` and do not launch `components_editor.exe`.
-  They never write `components.ini` or `components.list`.
+  `config/components/<name>.ini` and do not launch `components_editor.exe`.
+  They never write `components_policy.ini` or `components.list`.
   `<name>_settings.exe` is the user-facing settings application. It may
   delegate to config, editors, builders, formatters, OAuth, and domain
   tools, and it may enable or disable the component. It does not own
@@ -206,7 +206,7 @@ Main must not know that component at compile time.
 
 ## Locked: component configuration
 
-Every production child defines `dist/config/<name>.ini`, ships
+Every production child defines `dist/config/components/<name>.ini`, ships
 `<name>_config.exe`, and keeps typed defaults in that child's
 `shared/defaults.ixx`. Main host INIs are owned by helpers under
 `app/main/config/`. `component_protocol` stays in `app/shared`.
@@ -217,42 +217,43 @@ Name-specific protocols live under that child's `shared/`.
   `auto_core.ini` means Auto Core is initialized. There is no
   `initialized` key. `auto_core.exe` checks that file first. If it is
   missing, the installation is new. `auto_core_init.exe` establishes
-  `logging.ini` through `logging_config.exe` before it asks for Auto
+  `logging_policy.ini` through `logging_policy_config.exe` before it asks for Auto
   Core configuration. `1. Use defaults` propagates `--seed`.
   `2. Configure` propagates `--init` and does not attach `--seed`.
   `--seed` skips that menu and the Components menu, launching
   `components_init.exe --seed`. `--init --seed` skips the Auto Core menu,
   passes both flags to the Main configuration owners, then shows the
   Components menu. That Main mode is passed to `auto_core_config.exe`,
-  `components_config.exe`, `shutdown_config.exe`,
-  `crash_recovery_config.exe`, and `keymap_config.exe`. It does not select
+  `components_policy_config.exe`, `shutdown_config.exe`,
+  `crash_recovery_config.exe`, and `warnings_config.exe`. It does not select
   `components_init.exe`. No-argument, `--init`, and `--init --seed` then
   offer defaults (`components_init.exe --seed`), configure
   (`components_init.exe --init`), or skip. Skip is not a failure.
   `components_init.exe --init` asks each component whether to use defaults,
   configure, or skip. `components_init.exe --seed` does not prompt and
-  creates `logger.ini` through `logger_config.exe` on the defaults path.
+  creates `config/components/logger.ini` through `logger_config.exe` on the defaults path.
   After that stage,
   `components_editor.exe --seed` and `keymap_editor.exe` run.
   No Main configuration owner runs after `components_init.exe`.
-  `auto_core_init.exe` does not write `logging.ini`.
+  `auto_core_init.exe` does not write `logging_policy.ini`.
+  `auto_core.ini` is created during initialization and retained as the
+  sentinel only if the required initialization sequence succeeds.
   `auto_core_config.exe` writes `auto_core.ini` from
-  `[auto_core] warn_without_winkey_mapping` (default `on`) and
-  `logging` (default `on`). `logging` is the family switch for
+  `[auto_core] logging` (default `on`). `logging` is the family switch for
   `auto_core.exe`. If a required step fails or the user cancels that
   step, including Components initialization, and this run
   created `auto_core.ini`, the orchestrator removes the file before
   it exits. Only `auto_core_config.exe` creates or rewrites it.
-  `config/components.ini` is written only by
-  `components_config.exe`. `components.list` is written only by
+  `config/components_policy.ini` is written only by
+  `components_policy_config.exe`. `components.list` is written only by
   `components_editor.exe`. `components_init.exe` launches
   `<name>_config.exe` and does not write the list or any INI.
-  `components_config.exe` may offer a no-arg `components_editor.exe`
-  full sync after the user changes `components.ini`.
+  `components_policy_config.exe` may offer a no-arg `components_editor.exe`
+  full sync after the user changes `components_policy.ini`.
   `components_editor.exe --seed` creates a missing list and leaves an
   existing list unchanged.
   `components_editor.exe` reconstructs `components.list` from installed
-  `*_ac.exe` names that already have `config/<name>.ini`, using INI
+  `*_ac.exe` names that already have `config/components/<name>.ini`, using INI
   settings or compiled defaults. Targeted `--component <name>` requires
   that INI to exist and does not prune missing names.
   `--component <name> --on` or `--off` rewrites that one entry to
@@ -266,7 +267,7 @@ Name-specific protocols live under that child's `shared/`.
   file is not created. Per-key invalid values in a readable file keep that
   key's default and do not rewrite the file.
 - Portable INI text lives in each child's `shared/defaults.ixx`. Main host
-  INI text (`auto_core`, `components`, `keymap`, `shutdown`,
+  INI text (`auto_core`, `components`, `warnings`, `shutdown`,
   `crash_recovery`, `logging`, `logger`) lives in `app/main/shared/defaults.ixx`.
   `crash_recovery.ini` uses `[crash_recovery] default_response` (default `no`)
   and `crash_diagnostics` (default `on`). The latter is independent of logging
@@ -281,29 +282,31 @@ Each executable writes `{date}_{name}.log` and `{date}_{name}.main.log` under
 `logs/components/<name>/`. `.main.log` is an exact subset of `.log`. The `nl`
 logging names use the same routes and leave the record open.
 
-`config/logging.ini` is the shared logging policy written by
-`logging_config.exe` (`app/main/config/logging`). The canonical keys, in
+`config/logging_policy.ini` is the shared logging policy written by
+`logging_policy_config.exe` (`app/main/config/logging_policy`). The canonical keys, in
 file order, are `disable_all = off`, `directory = logs`,
 `write_logs_to_files = on`, `write_logs_to_console = off`,
 `log_print_mode = print`, and `component_logging_default = on`.
 `disable_all` stops logging-controlled file and console output.
 `write_logs_to_files` and `write_logs_to_console` are the two sinks.
 `log_print_mode` classifies `log_print` as `log` or `print` before those
-sinks. Family logging is `config/<scope>.ini` `[<scope>] logging`.
+sinks. Family logging is `[<scope>] logging`. Scope `auto_core` reads
+`config/auto_core.ini`. Every other scope reads
+`config/components/<scope>.ini`.
 A normal missing key uses `component_logging_default`. Dash uses scope
 `dash` with fallback off, so a missing key is off. A `Component` with no
 scope does not read a component INI. A relative `directory` resolves from
 the installation root. On a new installation, `auto_core_init.exe` asks
-`logging_config.exe` to create a missing `logging.ini`. On an established installation, a missing
-`logging.ini` keeps those defaults in memory. Main warns, and the file
+`logging_policy_config.exe` to create a missing `logging_policy.ini`. On an established installation, a missing
+`logging_policy.ini` keeps those defaults in memory. Main warns, and the file
 is not created.
 
-`config/logger.ini` is merger configuration written by `logger_config.exe`
+`config/components/logger.ini` is merger configuration written by `logger_config.exe`
 (`app/components/logger/config`). The canonical keys are
 `merge_interval_seconds` and `merge_logs_on_shutdown`. A missing file
 keeps those defaults in memory. Main reports that and tells the operator
 to run `logger_config.exe`. The file is not created. `logger_ac.exe`,
-like every other executable, uses the shared `logging.ini` directory for
+like every other executable, uses the shared `logging_policy.ini` directory for
 its local logs and for merged output. `logger.ini` controls only when
 merging occurs. `logger_ac.exe` incrementally merges `.main.log`
 files into `YYYY-MM-DD_main.log`. The hosted process does not merge on

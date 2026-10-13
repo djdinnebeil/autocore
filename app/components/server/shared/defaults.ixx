@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/server.ini` and Server seed files.
+ * \brief Portable defaults for `config/components/server.ini` and Server seed files.
  *
  * `port` and `document_root` are seed values for `server_editor.exe`.
  * They are not `server.ini` keys and they are not runtime fallbacks.

@@ -2,7 +2,7 @@
  * \file data_directory.ixx
  * \brief Resolved Wake operational-history directory.
  *
- * Reads `[wake] directory` from `config/wake.ini`. The compiled portable
+ * Reads `[wake] directory` from `config/components/wake.ini`. The compiled portable
  * default stays in `wake::defaults::directory`. Ordinary component logs
  * stay under the shared logging tree.
  */
@@ -27,7 +27,7 @@ export namespace wake {
     inline const std::filesystem::path& data_directory() {
         static const std::filesystem::path& directory =
             ac::paths::configured_directory(
-                ac::paths::config_directory() / "wake.ini",
+                ac::paths::component_config_file("wake"),
                 "wake",
                 "directory",
                 ac::paths::installation_root() /

@@ -77,11 +77,14 @@ export namespace ac::paths {
         components_list_file();
 
     /**
-     * \brief Returns `<config directory>/keymap.ini`.
+     * \brief Returns `<config directory>/components/<name>.ini`.
+     *
+     * The result is not cached. `name` is the component name, not a path.
+     * The file is not created or validated.
      */
     [[nodiscard]]
-    AC_API const std::filesystem::path&
-        keymap_settings_file();
+    AC_API std::filesystem::path
+        component_config_file(std::string_view name);
 
     /**
      * \brief Returns `<keymap directory>/keymap_commands.txt`.
@@ -112,7 +115,7 @@ export namespace ac::paths {
     /**
      * \brief Returns the Taskbar data directory.
      *
-     * Reads `[taskbar] directory` from `config/taskbar.ini`. A relative path
+     * Reads `[taskbar] directory` from `config/components/taskbar.ini`. A relative path
      * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
      * `<installation root>/taskbar`. The live file is not rewritten.
@@ -136,7 +139,7 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer data directory.
      *
-     * Reads `[writer] directory` from `config/writer.ini`. A relative path
+     * Reads `[writer] directory` from `config/components/writer.ini`. A relative path
      * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
      * `<installation root>/writer`. The live file is not rewritten.
@@ -150,7 +153,7 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer notes directory.
      *
-     * Reads `[writer] notes_subdirectory` from `config/writer.ini`. The
+     * Reads `[writer] notes_subdirectory` from `config/components/writer.ini`. The
      * value must be relative: no root-name and no root-directory. A
      * relative value is resolved against `writer_directory()`. A missing
      * file, missing key, empty value, or non-relative value keeps

@@ -7,7 +7,7 @@
  * it, so the component list is seeded from INI files that component
  * initialization may already have created. No init executable writes an
  * INI file.
- * logging.ini is established before this sequence.
+ * logging_policy.ini is established before this sequence.
  */
 export module auto_core_initialization;
 
@@ -53,10 +53,10 @@ export namespace ac::main::init {
 
     inline constexpr std::array<OwnerStep, 8> initialization_steps {{
         {"auto_core_config.exe", OwnerKind::configured},
-        {"components_config.exe", OwnerKind::configured},
+        {"components_policy_config.exe", OwnerKind::configured},
         {"shutdown_config.exe", OwnerKind::configured},
         {"crash_recovery_config.exe", OwnerKind::configured},
-        {"keymap_config.exe", OwnerKind::configured},
+        {"warnings_config.exe", OwnerKind::configured},
         {"components_init.exe", OwnerKind::components},
         {"components_editor.exe", OwnerKind::components_editor},
         {"keymap_editor.exe", OwnerKind::keymap_editor}

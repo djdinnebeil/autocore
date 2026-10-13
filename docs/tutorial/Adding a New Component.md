@@ -4,7 +4,7 @@ A short path for a hosted component under `app/components/<name>/`. The other no
 
 Follow `app/components/wake/` for the tree: `runtime/` (`wake_ac.exe`), `config/` (`wake_config.exe`), `settings/` (`wake_settings.exe`), `shared/defaults.ixx`, and `Wake.sln`. Wake does not advertise keymap commands. `app/components/slash/` shows a command catalog.
 
-Auto Core does not learn the component name when `auto_core.exe` is built. `<name>_config.exe` writes only `config/<name>.ini`. `<name>_settings.exe` can enable or disable the component. `components_editor.exe` is the only writer of `components.list`.
+Auto Core does not learn the component name when `auto_core.exe` is built. `<name>_config.exe` writes only `config/components/<name>.ini`. `<name>_settings.exe` can enable or disable the component. `components_editor.exe` is the only writer of `components.list`.
 
 Dash and Slash embed an `AC_LAUNCH_DESCRIPTOR` resource. They are started on demand and are outside this sequence.
 
@@ -20,7 +20,7 @@ Project creation and folder layout: `devs/new-component.md` and `devs/STRATEGY.m
 
 ## 2. Define runtime behavior and defaults
 
-Put the portable INI text in `shared/defaults.ixx`. The `config/` executable owns `config/<name>.ini`.
+Put the portable INI text in `shared/defaults.ixx`. The `config/` executable owns `config/components/<name>.ini`.
 
 `runtime/main.cxx` connects as the pipe client on `ac_<name>_pipe`, sends an `ac.component.v1` hello, and handles invoke and shutdown. If the INI is missing or unreadable, the runtime uses those defaults in memory and does not create the file.
 
@@ -58,7 +58,7 @@ Build outputs: `devs/building.md`.
 
 ## 6. Enable the component and verify it
 
-Run `<name>_config.exe` so a missing `dist/config/<name>.ini` is written. Enable the name with `<name>_settings.exe`. Restart `dist/bin/auto_core.exe`.
+Run `<name>_config.exe` so a missing `dist/config/components/<name>.ini` is written. Enable the name with `<name>_settings.exe`. Restart `dist/bin/auto_core.exe`.
 
 This step is done when the host starts `<name>_ac.exe` on `ac_<name>_pipe` and any advertised command can be bound in `dist/keymap.map`.
 

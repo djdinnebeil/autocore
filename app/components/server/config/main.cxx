@@ -55,7 +55,7 @@ struct Settings {
 };
 
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "server.ini";
+    return ac::paths::component_config_file("server");
 }
 
 Settings load_settings() {
@@ -169,7 +169,7 @@ menu::ApplyResult apply_setting(
         settings.logging = value == "on";
     }
     if (!write_server_ini(settings)) {
-        server_config.print("Failed to write config/server.ini.");
+        server_config.print("Failed to write config/components/server.ini.");
         return menu::ApplyResult::failed;
     }
     if (setting.key == "directory") {
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(server_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(server_config, "config/server.ini");
+            req::log_seed_skipped(server_config, "config/components/server.ini");
         }
         else {
             req::log_writing_defaults(server_config);
@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (present) {
-            req::log_initialization_skipped(server_config, "config/server.ini");
+            req::log_initialization_skipped(server_config, "config/components/server.ini");
         }
         else {
             req::log_configuration_missing(server_config);

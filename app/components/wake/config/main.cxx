@@ -48,7 +48,7 @@ ac::Component wake_config {
 
 [[nodiscard]]
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "wake.ini";
+    return ac::paths::component_config_file("wake");
 }
 
 [[nodiscard]]
@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(wake_config, *launch);
     if (launch->seed) {
         if (exists) {
-            req::log_seed_skipped(wake_config, "config/wake.ini");
+            req::log_seed_skipped(wake_config, "config/components/wake.ini");
         }
         else {
             req::log_writing_defaults(wake_config);
@@ -287,7 +287,7 @@ int main(int argc, char* argv[]) {
 
     if (launch->init) {
         if (exists) {
-            req::log_initialization_skipped(wake_config, "config/wake.ini");
+            req::log_initialization_skipped(wake_config, "config/components/wake.ini");
         }
         else {
             req::log_configuration_missing(wake_config);

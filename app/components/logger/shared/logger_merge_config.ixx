@@ -1,6 +1,6 @@
 /**
  * \file logger_merge_config.ixx
- * \brief Cached `config/logger.ini` merge policy for Logger and Main.
+ * \brief Cached `config/components/logger.ini` merge policy for Logger and Main.
  *
  * The file is read once per process and is not written here.
  */
@@ -24,7 +24,7 @@ namespace {
 
         Cache() {
             const auto ini_path =
-                ac::paths::config_directory() / "logger.ini";
+                ac::paths::component_config_file("logger");
             const auto document = ac::ini::read(ini_path);
             if (!document) {
                 std::error_code exists_error;

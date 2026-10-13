@@ -23,14 +23,6 @@ constexpr std::string_view on_off[] {"on", "off"};
 
 const menu::Setting menu_settings[] {
     {
-        .key = "warn_without_winkey_mapping",
-        .display_name = "Warn without Win+key mapping",
-        .summary =
-            "Warn when Auto Core is not in taskbar positions 1 through 10.",
-        .default_value = "on",
-        .choices = on_off,
-    },
-    {
         .key = "logging",
         .display_name = "Logging",
         .summary = "Controls logging for auto_core.exe.",
@@ -42,19 +34,6 @@ const menu::Setting menu_settings[] {
 [[nodiscard]]
 std::filesystem::path ini_path() {
     return ac::paths::config_directory() / "auto_core.ini";
-}
-
-[[nodiscard]]
-bool current_warn(const bool fallback) {
-    const auto document = ac::ini::read(ini_path());
-    if (!document) {
-        return fallback;
-    }
-    const auto value = document->find("auto_core", "warn_without_winkey_mapping");
-    if (!value) {
-        return fallback;
-    }
-    return *value != "off";
 }
 
 [[nodiscard]]
@@ -77,21 +56,18 @@ bool current_logging(const bool fallback) {
 }
 
 [[nodiscard]]
-bool write_settings(const bool warn, const bool logging) {
+bool write_settings(const bool logging) {
     return cfg::write_bytes(
         ini_path(),
         menu::with_header(
             menu_settings,
-            defaults::ini_for_auto_core(warn, logging)
+            defaults::ini_for_auto_core(logging)
         )
     );
 }
 
 [[nodiscard]]
-std::string current_text(const menu::Setting& setting) {
-    if (setting.key == "warn_without_winkey_mapping") {
-        return current_warn(defaults::warn_without_winkey_mapping) ? "on" : "off";
-    }
+std::string current_text(const menu::Setting&) {
     return current_logging(ac::logging::config::component_logging_default())
         ? "on"
         : "off";
@@ -99,16 +75,11 @@ std::string current_text(const menu::Setting& setting) {
 
 [[nodiscard]]
 menu::ApplyResult apply_setting(
-    const menu::Setting& setting,
+    const menu::Setting&,
     const std::string_view value
 ) {
-    const bool warn = setting.key == "warn_without_winkey_mapping"
-        ? value == "on"
-        : current_warn(defaults::warn_without_winkey_mapping);
-    const bool logging = setting.key == "logging"
-        ? value == "on"
-        : current_logging(ac::logging::config::component_logging_default());
-    if (!write_settings(warn, logging)) {
+    const bool logging = value == "on";
+    if (!write_settings(logging)) {
         auto_core_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
@@ -143,8 +114,8 @@ void print_menu() {
         << "\nAuto Core Configuration\n"
         << "\n"
         << "1. Auto Core settings\n"
-        << "2. Keymap settings\n"
-        << "3. Components settings\n"
+        << "2. Warnings\n"
+        << "3. Component policy\n"
         << "4. Shutdown settings\n"
         << "5. Crash recovery settings\n"
         << "0. Exit\n"
@@ -164,10 +135,10 @@ int configuration_mode() {
             }
         }
         else if (*line == "2") {
-            launch_owner("keymap_config.exe");
+            launch_owner("warnings_config.exe");
         }
         else if (*line == "3") {
-            launch_owner("components_config.exe");
+            launch_owner("components_policy_config.exe");
         }
         else if (*line == "4") {
             launch_owner("shutdown_config.exe");
@@ -188,10 +159,7 @@ int configuration_mode() {
 int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
     const auto path = ini_path();
     if (!prompt) {
-        if (!write_settings(
-                defaults::warn_without_winkey_mapping,
-                defaults::auto_core_logging
-            )) {
+        if (!write_settings(defaults::auto_core_logging)) {
             auto_core_config.print("Failed to write {}.", path.string());
             return 1;
         }
@@ -199,10 +167,7 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
         return 0;
     }
 
-    if (!write_settings(
-            defaults::warn_without_winkey_mapping,
-            defaults::auto_core_logging
-        )) {
+    if (!write_settings(defaults::auto_core_logging)) {
         auto_core_config.print("Failed to write {}.", path.string());
         return 1;
     }

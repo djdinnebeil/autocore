@@ -116,7 +116,7 @@ Settings read_settings(
     if (!document) {
         if (report) {
             taskbar_config.print(
-                "config/taskbar.ini is malformed. Using compiled defaults until "
+                "config/components/taskbar.ini is malformed. Using compiled defaults until "
                 "you save new settings."
             );
         }
@@ -134,7 +134,7 @@ Settings read_settings(
         }
         else if (report) {
             taskbar_config.print(
-                "config/taskbar.ini mode is invalid. Using live."
+                "config/components/taskbar.ini mode is invalid. Using live."
             );
         }
     }
@@ -192,7 +192,7 @@ std::optional<bool> prompt_yes(std::string_view question) {
 }
 
 std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "taskbar.ini";
+    return ac::paths::component_config_file("taskbar");
 }
 
 std::string current_text(const menu::Setting& setting) {
@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
     req::log_config_request(taskbar_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(taskbar_config, "config/taskbar.ini");
+            req::log_seed_skipped(taskbar_config, "config/components/taskbar.ini");
         }
         else {
             req::log_writing_defaults(taskbar_config);
@@ -386,7 +386,7 @@ int main(int argc, char* argv[]) {
         if (present) {
             req::log_initialization_skipped(
                 taskbar_config,
-                "config/taskbar.ini"
+                "config/components/taskbar.ini"
             );
         }
         else {

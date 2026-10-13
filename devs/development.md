@@ -26,7 +26,7 @@ To make a function available to the keymap, advertise it from a hosted child's `
 
 The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, Taskbar commands that run in Main, hosted hello catalogs and enabled on-demand commands, then configured `activate_*` names last so a taskbar `.map` cannot override a reserved name. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches a Main-local command is skipped silently. A collision with an earlier child's catalog skips and logs.
 
-Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [configuration.md](../docs/manual/configuration.md).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [main.md](main.md#keymap).
 
 ## Defaults vs live files
 
@@ -34,13 +34,13 @@ A public clone should not contain another person's keymap, journal print-choice 
 
 - `components/journal/<factory_name>.list` — `journal_builder.exe --seed` writes a missing starter alias file from [`journal_factories.ixx`](../app/components/journal/shared/journal_factories.ixx). An existing file is left unchanged. `journal_config.exe --init` and `--seed` launch that owner, then `journal_cloud.exe`, `journal_clock.exe`, `journal_db.exe`, and `journal_series.exe`, each for its own missing file.
 - `keymap.map` — `keymap_editor.exe` writes a seed (`numpad_0` / `numpad_1` filled, every other `key_codes` name blank)
-- `components.list` — `components_editor.exe --seed` creates it from installed `*_ac.exe` names that already have `config/<name>.ini`
+- `components.list` — `components_editor.exe --seed` creates it from installed `*_ac.exe` names that already have `config/components/<name>.ini`
 - `config/*.ini` — Main host INIs are written only by the matching `_config.exe` from [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). Component `<name>.ini` is written only by `<name>_config.exe` from that child's `shared/defaults.ixx`
-- `dist/components/server/` — default Server data directory. `server_config.exe --init` and `--seed` write a missing `config/server.ini`, then launch `server_editor.exe` for missing `port.id` and `document_root.id` and `server_builder.exe --seed` for missing `index.html` and `styles.css`. `--seed` always requests the starter site. `--init` asks first. An existing file is left unchanged. The builder reads `document_root.id` and writes only under a relative document root from [`default_site.ixx`](../app/components/server/shared/default_site.ixx)
+- `dist/components/server/` — default Server data directory. `server_config.exe --init` and `--seed` write a missing `config/components/server.ini`, then launch `server_editor.exe` for missing `port.id` and `document_root.id` and `server_builder.exe --seed` for missing `index.html` and `styles.css`. `--seed` always requests the starter site. `--init` asks first. An existing file is left unchanged. The builder reads `document_root.id` and writes only under a relative document root from [`default_site.ixx`](../app/components/server/shared/default_site.ixx)
 
 An existing `keymap.map`, `components.list`, or Journal `<factory_name>.list` file is left unchanged. `*.local.ini` / `*.local.ixx` are gitignored and are not loaded.
 
-Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe` and `journal_builder.exe`. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_builder.exe` creates a missing `.map` and does not overwrite an existing one. `taskbar_config.exe` writes only `config/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
+Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe` and `journal_builder.exe`. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_builder.exe` creates a missing `.map` and does not overwrite an existing one. `taskbar_config.exe` writes only `config/components/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
 
 ## Main process session
 
@@ -99,7 +99,7 @@ component that embeds that resource.
 
 Run `<name>_settings.exe` to enable the component, or run `components_editor.exe`
 with no arguments so a live catalog full-syncs
-discovered `<name>_ac.exe` names that already have `config/<name>.ini`. The portable
+discovered `<name>_ac.exe` names that already have `config/components/<name>.ini`. The portable
 `[components]` seed is `components_list` in
 [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx).
 Do not put ordinary component names in `auto_core.dll`.

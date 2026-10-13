@@ -126,7 +126,7 @@ namespace {
 
         if (first_run) {
             if (ac::logging::config::logging_ini_missing()) {
-                std::cerr << "config/logging.ini was not created.\n";
+                std::cerr << "config/logging_policy.ini was not created.\n";
                 return false;
             }
             if (!ac::logging::config::disable_all() &&
@@ -140,7 +140,7 @@ namespace {
 
         if (ac::logging::config::logging_ini_missing()) {
             auto_core.log_print(
-                "config/logging.ini is missing; using built-in logging defaults."
+                "config/logging_policy.ini is missing; using built-in logging defaults."
             );
         }
         return true;

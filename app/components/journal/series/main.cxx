@@ -242,7 +242,7 @@ void add_series() {
         return;
     }
     const auto document = ac::ini::read(
-        ac::paths::config_directory() / "journal.ini"
+        ac::paths::component_config_file("journal")
     );
     const bool select_new = journal::auto_select::enabled(
         document ? document->find("journal", "auto_select_new_series") : std::nullopt

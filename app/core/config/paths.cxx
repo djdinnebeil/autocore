@@ -111,12 +111,10 @@ namespace ac::paths {
         return file;
     }
 
-    const std::filesystem::path&
-        keymap_settings_file() {
-        static const std::filesystem::path file =
-            config_directory() / "keymap.ini";
-
-        return file;
+    std::filesystem::path
+        component_config_file(const std::string_view name) {
+        return config_directory() / "components" /
+            (std::string {name} + ".ini");
     }
 
     const std::filesystem::path&
@@ -201,7 +199,7 @@ namespace ac::paths {
     const std::filesystem::path&
         taskbar_directory() {
         static const std::filesystem::path& directory = configured_directory(
-            config_directory() / "taskbar.ini",
+            component_config_file("taskbar"),
             "taskbar",
             "directory",
             installation_root() / "taskbar"
@@ -221,7 +219,7 @@ namespace ac::paths {
     const std::filesystem::path&
         writer_directory() {
         static const std::filesystem::path& directory = configured_directory(
-            config_directory() / "writer.ini",
+            component_config_file("writer"),
             "writer",
             "directory",
             installation_root() / "writer"
@@ -237,7 +235,7 @@ namespace ac::paths {
                 writer_directory() / "notes";
 
             const auto document = ac::ini::read(
-                config_directory() / "writer.ini"
+                component_config_file("writer")
             );
             if (!document) {
                 return fallback;

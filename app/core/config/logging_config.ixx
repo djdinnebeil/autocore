@@ -2,7 +2,7 @@
  * \file logging_config.ixx
  * \brief Cached logging policy shared by Auto Core processes.
  *
- * Shared file and console policy is loaded from `config/logging.ini`.
+ * Shared file and console policy is loaded from `config/logging_policy.ini`.
  * The file is cached on first use for the process lifetime and is not
  * written here. `resolve()` loads the shared policy at a caller-chosen
  * point. A missing `components.list` is noted in the startup report.
@@ -43,7 +43,9 @@ export namespace ac::logging::config {
     /**
      * \brief Explicit family logging scope.
      *
-     * `name` selects `config/<name>.ini` and section `[name]`.
+     * `name` selects section `[name]`. Scope `auto_core` reads
+     * `config/auto_core.ini`. Every other scope reads
+     * `config/components/<name>.ini`.
      * `fallback` is data. The resolver does not infer it from `name`.
      */
     struct LoggingScope {
@@ -52,7 +54,7 @@ export namespace ac::logging::config {
     };
 
     /**
-     * \brief Loads `config/logging.ini` into the process cache.
+     * \brief Loads `config/logging_policy.ini` into the process cache.
      *
      * The first call reads the file. Later calls reuse that result.
      * Call this after first-run handling and before normal startup logs.
@@ -102,7 +104,9 @@ export namespace ac::logging::config {
     /**
      * \brief Returns whether logging is on for an explicit family scope.
      *
-     * Reads `config/<scope.name>.ini` section `[scope.name]` key `logging`
+     * Reads section `[scope.name]` key `logging` from `config/auto_core.ini`
+     * when the scope is `auto_core`, otherwise from
+     * `config/components/<scope.name>.ini`. The file is read
      * at most once per scope for the process lifetime. Does not write the
      * file and does not report through `ac::Component`. When `disable_all`
      * is on, returns false without reading the component INI.
@@ -110,7 +114,7 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API bool component_logging_enabled(const LoggingScope& scope);
 
     /**
-     * \brief Returns the shared log directory from `logging.ini`.
+     * \brief Returns the shared log directory from `logging_policy.ini`.
      *
      * Reads optional `[logging] directory`. A missing or empty setting uses
      * `ac::paths::log_directory()`. Relative paths are resolved against the
@@ -129,7 +133,7 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API const std::filesystem::path& components_directory();
 
     /**
-     * \brief Returns whether `config/logging.ini` is absent.
+     * \brief Returns whether `config/logging_policy.ini` is absent.
      *
      * True only when the file does not exist. A present but unreadable
      * file stays false. The file is not created.
@@ -137,7 +141,7 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API bool logging_ini_missing();
 
     /**
-     * \brief Returns a startup report describing applied `logging.ini` settings.
+     * \brief Returns a startup report describing applied `logging_policy.ini` settings.
      *
      * The string is produced on first load and remains valid for the process
      * lifetime.

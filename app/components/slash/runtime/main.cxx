@@ -281,7 +281,7 @@ namespace {
     };
 
     ReportMode configured_mode() {
-        const auto ini_path = ac::paths::config_directory() / "slash.ini";
+        const auto ini_path = ac::paths::component_config_file("slash");
         const auto document = ac::ini::read(ini_path);
         if (!document) {
             std::error_code exists_error;
@@ -293,7 +293,7 @@ namespace {
         const auto mode = document->find("slash", "mode");
         if (!mode || !slash::defaults::is_mode(*mode)) {
             slash_component.log_print(
-                "config/slash.ini mode is missing or invalid. Using verbose."
+                "config/components/slash.ini mode is missing or invalid. Using verbose."
             );
             return ReportMode::verbose;
         }

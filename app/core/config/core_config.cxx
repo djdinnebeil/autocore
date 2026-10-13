@@ -13,8 +13,16 @@ namespace ac::config {
     namespace {
 
         constexpr CoreSettings default_settings {
-            .warn_without_winkey_mapping = true
+            .missing_winkey_mapping = true,
+            .unmapped_key = true
         };
+
+        void append_report(std::string& report, const std::string_view text) {
+            if (!report.empty()) {
+                report.push_back(' ');
+            }
+            report += text;
+        }
 
         struct Data {
             std::optional<CoreSettings> settings;
@@ -22,7 +30,7 @@ namespace ac::config {
 
             Data() {
                 const auto path =
-                    ac::paths::config_directory() / "auto_core.ini";
+                    ac::paths::config_directory() / "warnings.ini";
                 const auto document = ac::ini::read(path);
                 if (!document) {
                     settings = default_settings;
@@ -31,47 +39,71 @@ namespace ac::config {
                         std::filesystem::exists(path, exists_error);
                     if (present && !exists_error) {
                         report =
-                            "config/auto_core.ini is malformed. Run "
-                            "auto_core_config.exe to generate a valid file. "
+                            "config/warnings.ini is malformed. Run "
+                            "warnings_config.exe to generate a valid file. "
                             "Using built-in defaults; the file will not be "
                             "created.";
                     }
                     else {
                         report =
-                            "config/auto_core.ini is missing. Run "
-                            "auto_core_config.exe to generate it. Using "
+                            "config/warnings.ini is missing. Run "
+                            "warnings_config.exe to generate it. Using "
                             "built-in defaults; the file will not be created.";
                     }
                     return;
                 }
 
-                const auto raw = document->find(
-                    "auto_core",
-                    "warn_without_winkey_mapping"
+                const auto winkey = document->find(
+                    "warnings",
+                    "missing_winkey_mapping"
                 );
-                if (!raw) {
-                    settings = default_settings;
-                    report =
-                        "config/auto_core.ini is missing [auto_core] "
-                        "warn_without_winkey_mapping. Run auto_core_config.exe "
-                        "to repair it. Using built-in defaults; the file will "
-                        "not be rewritten.";
-                    return;
-                }
-
+                const auto unmapped = document->find(
+                    "warnings",
+                    "unmapped_key"
+                );
                 const auto resolved = detail::resolve({
-                    .warn_without_winkey_mapping = raw
+                    .missing_winkey_mapping = winkey,
+                    .unmapped_key = unmapped
                 });
                 settings = CoreSettings {
-                    .warn_without_winkey_mapping =
-                        resolved.warn_without_winkey_mapping
+                    .missing_winkey_mapping = resolved.missing_winkey_mapping,
+                    .unmapped_key = resolved.unmapped_key
                 };
-                if (*raw != "on" && *raw != "off") {
-                    report =
-                        "config/auto_core.ini [auto_core] "
-                        "warn_without_winkey_mapping is invalid. Run "
-                        "auto_core_config.exe to repair it. Using the "
-                        "default; the file will not be rewritten.";
+
+                if (!winkey) {
+                    append_report(
+                        report,
+                        "config/warnings.ini is missing [warnings] "
+                        "missing_winkey_mapping. Run warnings_config.exe to "
+                        "repair it. Using the default; the file will not be "
+                        "rewritten."
+                    );
+                }
+                else if (*winkey != "on" && *winkey != "off") {
+                    append_report(
+                        report,
+                        "config/warnings.ini [warnings] "
+                        "missing_winkey_mapping is invalid. Run "
+                        "warnings_config.exe to repair it. Using the default; "
+                        "the file will not be rewritten."
+                    );
+                }
+
+                if (!unmapped) {
+                    append_report(
+                        report,
+                        "config/warnings.ini is missing [warnings] "
+                        "unmapped_key. Run warnings_config.exe to repair it. "
+                        "Using the default; the file will not be rewritten."
+                    );
+                }
+                else if (*unmapped != "on" && *unmapped != "off") {
+                    append_report(
+                        report,
+                        "config/warnings.ini [warnings] unmapped_key is "
+                        "invalid. Run warnings_config.exe to repair it. Using "
+                        "the default; the file will not be rewritten."
+                    );
                 }
             }
         };

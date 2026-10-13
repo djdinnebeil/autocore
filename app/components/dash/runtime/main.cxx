@@ -330,7 +330,7 @@ int wmain(int argument_count, wchar_t* arguments[]) {
             }
         };
         {
-            const auto ini_path = ac::paths::config_directory() / "dash.ini";
+            const auto ini_path = ac::paths::component_config_file("dash");
             if (!ac::ini::read(ini_path)) {
                 std::error_code exists_error;
                 const bool present =

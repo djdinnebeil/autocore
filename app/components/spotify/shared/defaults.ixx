@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/spotify.ini`.
+ * \brief Portable defaults for `config/components/spotify.ini`.
  */
 export module spotify_defaults;
 

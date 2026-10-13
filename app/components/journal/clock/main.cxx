@@ -37,7 +37,7 @@ std::wstring quote_argument(std::wstring_view value) {
 }
 
 bool journal_ini_present(bool& present) {
-    const auto path = ac::paths::config_directory() / "journal.ini";
+    const auto path = ac::paths::component_config_file("journal");
     std::error_code error;
     present = std::filesystem::exists(path, error);
     if (error) {

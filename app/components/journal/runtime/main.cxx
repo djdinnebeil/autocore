@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     } database_service_guard;
 
     {
-        const auto ini_path = ac::paths::config_directory() / "journal.ini";
+        const auto ini_path = ac::paths::component_config_file("journal");
         const auto document = ac::ini::read(ini_path);
         if (!document) {
             std::error_code exists_error;

@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/writer.ini`.
+ * \brief Portable defaults for `config/components/writer.ini`.
  */
 export module writer_defaults;
 

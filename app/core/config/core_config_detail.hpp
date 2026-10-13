@@ -1,6 +1,6 @@
 /**
  * \file core_config_detail.hpp
- * \brief Pure resolution of shared Auto Core configuration values.
+ * \brief Pure resolution of shared warning configuration values.
  */
 #pragma once
 
@@ -10,11 +10,13 @@
 namespace ac::config::detail {
 
     struct RawSettings {
-        std::optional<std::string_view> warn_without_winkey_mapping;
+        std::optional<std::string_view> missing_winkey_mapping;
+        std::optional<std::string_view> unmapped_key;
     };
 
     struct Settings {
-        bool warn_without_winkey_mapping;
+        bool missing_winkey_mapping;
+        bool unmapped_key;
     };
 
     Settings resolve(const RawSettings& raw);

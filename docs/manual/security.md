@@ -20,7 +20,7 @@ before you run a binary you did not build.
 
 The process may run elevated so some components (notably iTunes COM
 automation) can attach. Elevation mismatches are documented in
-[README.md](../../readme.md) and [itunes.md](itunes.md).
+[README.md](../../readme.md) and [itunes.md](components/itunes.md).
 
 ## Secrets and local data
 
@@ -32,8 +32,8 @@ automation) can attach. Elevation mismatches are documented in
 - `.env` files, logs, crash dumps, writer notes, or a private
   `bindings.local.ini`
 
-Dash is **not** a password manager. See [dash.md](dash.md).
-Spotify tokens are machine-local; see [spotify.md](spotify.md).
+Dash is **not** a password manager. See [dash.md](components/dash.md).
+Spotify tokens are machine-local; see [spotify.md](components/spotify.md).
 
 ## Local file server
 
@@ -42,7 +42,7 @@ Spotify tokens are machine-local; see [spotify.md](spotify.md).
 port. There is no authentication. Files reached through a symbolic link
 or junction inside that root are still served. Do not point the document
 root at secrets. Do not change the bind to a LAN address. See
-[server.md](server.md).
+[server.md](components/server.md).
 
 ## Privilege and IPC
 

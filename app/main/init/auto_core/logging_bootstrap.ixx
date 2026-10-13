@@ -1,8 +1,8 @@
 /**
  * \file logging_bootstrap.ixx
- * \brief Selects and launches logging_config.exe before normal logging.
+ * \brief Selects and launches logging_policy_config.exe before normal logging.
  *
- * This module does not write logging.ini and does not run the Auto Core
+ * This module does not write logging_policy.ini and does not run the Auto Core
  * menu or the owner sequence. Console streams are the only I/O used while
  * the file is missing.
  */
@@ -36,7 +36,7 @@ export namespace ac::main::logging_bootstrap {
     };
 
     inline constexpr std::string_view logging_config_executable {
-        "logging_config.exe"
+        "logging_policy_config.exe"
     };
 
     [[nodiscard]]
@@ -79,7 +79,7 @@ export namespace ac::main::logging_bootstrap {
     );
 
     /**
-     * Launches logging_config.exe when a write is required.
+     * Launches logging_policy_config.exe when a write is required.
      *
      * `start_logging` runs only after the file is present. A failed launch
      * or a missing file leaves logging unstarted.

@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/taskbar.ini`.
+ * \brief Portable defaults for `config/components/taskbar.ini`.
  */
 export module taskbar_defaults;
 

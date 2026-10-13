@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for `config/itunes.ini` and `song.format`.
+ * \brief Portable defaults for `config/components/itunes.ini` and `song.format`.
  */
 module;
 

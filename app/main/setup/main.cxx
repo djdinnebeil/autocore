@@ -3,7 +3,8 @@
  * \brief Creates missing installation shortcuts, then initializes or opens Settings.
  *
  * The installation root is the directory that contains this executable.
- * `config\auto_core.ini` is the only initialization sentinel.
+ * `config\auto_core.ini` is the only initialization sentinel. It is retained
+ * only after the required initialization sequence succeeds.
  */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
