@@ -278,7 +278,7 @@ int run_discovered(const bool interactive) {
         "Component initialization mode: {}",
         interactive ? "interactive" : "defaults"
     );
-    const auto names = discover_components();
+    auto names = discover_components();
     if (!names) {
         return 1;
     }
@@ -291,6 +291,7 @@ int run_discovered(const bool interactive) {
         components_init.log("Components failed: 0");
         return 0;
     }
+    list::prioritize_taskbar(*names);
     if (interactive) {
         return prompt_each(*names);
     }

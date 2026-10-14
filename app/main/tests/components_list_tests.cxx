@@ -288,6 +288,14 @@ TEST_CASE("Missing list load_runtime_catalog discovers executables", "[component
     std::filesystem::remove_all(directory);
 }
 
+TEST_CASE("Component initialization prioritizes Taskbar", "[components-list][unit]") {
+    std::vector<std::string> names {"itunes", "journal", "taskbar", "writer"};
+    list::prioritize_taskbar(names);
+    CHECK(names == std::vector<std::string> {
+        "taskbar", "itunes", "journal", "writer"
+    });
+}
+
 TEST_CASE("Readable components.list is authoritative over discovery", "[components-list][unit]") {
     const auto directory =
         std::filesystem::temp_directory_path() /

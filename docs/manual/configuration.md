@@ -6,18 +6,19 @@ Auto Core configuration files are stored in:
 config\
 ```
 
-Most settings can be changed by running the corresponding configuration executable:
+Most settings can be changed through `Auto Core Settings.lnk`. The individual
+configuration programs are under `bin\`:
 
 ```text
-<name>_config.exe
+bin\<name>_config.exe
 ```
 
 For example:
 
 ```text
-taskbar_config.exe
-spotify_config.exe
-writer_config.exe
+bin\taskbar_config.exe
+bin\spotify_config.exe
+bin\writer_config.exe
 ```
 
 Auto Core also includes configuration programs for Main settings such as logging policy, shutdown behavior, crash recovery, component policy, and warnings.
@@ -35,7 +36,8 @@ The following files configure Auto Core itself:
 | `config\logging_policy.ini` | `logging_policy_config.exe` |
 | `config\warnings.ini` | `warnings_config.exe` |
 
-Run the corresponding configuration program to view or change these settings.
+Use Auto Core Settings, or run the corresponding program under `bin\`, to view
+or change these settings.
 
 ## Component configuration
 
@@ -69,7 +71,7 @@ The enabled component list itself is stored separately:
 components.list
 ```
 
-`components_editor.exe` manages `components.list`.
+`bin\components_editor.exe` manages `components.list`.
 
 `components_policy.ini` and `components.list` serve different purposes.
 
@@ -85,9 +87,10 @@ Key bindings are stored in:
 keymap.map
 ```
 
-`keymap_editor.exe` manages `keymap.map`.
-
-See the Keymap documentation for information about assigning keys and commands.
+`bin\keymap_editor.exe` creates a starter `keymap.map` when the file is
+missing. Edit an existing map as a text file. Available command names are
+listed in `keymap\keymap_commands.txt`; component-specific lists are under
+`keymap\components\`. Restart Auto Core after editing the map.
 
 ## Paths
 

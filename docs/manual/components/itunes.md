@@ -20,6 +20,7 @@ iTunes controls the desktop iTunes application: playback, current-track text, a 
 
 | Command | What it does |
 | --- | --- |
+| `activate_itunes` | Fallback notice when Taskbar has no `itunes.map`; Taskbar activation takes precedence when that map exists. |
 | `itunes_play_pause` | Toggles play and pause. |
 | `itunes_next_song` | Skips to the next track. |
 | `itunes_stop_song` | Stops playback and inserts the current track text. |
@@ -43,7 +44,17 @@ These files live in the iTunes directory.
 
 Listening history is approximate. Playback is sampled about every five seconds. A playback change, including skip, is observed sooner.
 
-Auto Core cannot attach to an iTunes process that is already running at a lower privilege level. Start Auto Core before iTunes, or close iTunes and start it again at the same privilege level as Auto Core.
+## Compatibility issue
+
+Auto Core should normally be run without Administrator privileges.
+
+Auto Core and iTunes must run at the same privilege level. If iTunes is
+configured to run as an administrator, Auto Core must also be run as an
+administrator. Mixing privilege levels can cause communication issues,
+including output not appearing correctly in the Auto Core console window.
+
+For the standard configuration, run both Auto Core and iTunes normally without
+Administrator privileges.
 
 ## Component tools
 

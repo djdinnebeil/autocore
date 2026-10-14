@@ -33,8 +33,11 @@ void start_title_action(void (*action)()) {
 
 } // namespace
 
-command_registry::Registry create_journal_command_registry() {
+command_registry::Registry create_journal_command_registry(
+    command_registry::Action activate_word
+) {
     command_registry::Registry registry;
+    registry.add("activate_word", std::move(activate_word));
     registry.add(
         std::string {::print_extended_timestamp.name},
         actions::print_extended_timestamp
@@ -48,4 +51,10 @@ command_registry::Registry create_journal_command_registry() {
     journal::factories::register_factory_commands(registry);
     journal::factories::load_alias_commands(registry);
     return registry;
+}
+
+command_registry::Registry create_journal_command_registry() {
+    return create_journal_command_registry([] {
+        journal_component().print(word_activation_fallback_message);
+    });
 }

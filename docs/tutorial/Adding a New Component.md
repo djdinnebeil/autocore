@@ -1,6 +1,9 @@
 # Adding a New Component
 
-A short path for a hosted component under `app/components/<name>/`. The other notes in this set are listed in [Auto Core Tutorial](<../Auto Core Tutorial.md>).
+A short path for a hosted component under `app/components/<name>/`. This
+tutorial requires an Auto Core source checkout; paths under `app\`, `devs\`,
+and `scripts\` refer to that checkout rather than the installed directory. The
+other notes in this set are listed in [Auto Core Tutorial](<../Auto Core Tutorial.md>).
 
 Follow `app/components/wake/` for the tree: `runtime/` (`wake_ac.exe`), `config/` (`wake_config.exe`), `settings/` (`wake_settings.exe`), `shared/defaults.ixx`, and `Wake.sln`. Wake does not advertise keymap commands. `app/components/slash/` shows a command catalog.
 

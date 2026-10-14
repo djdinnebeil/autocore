@@ -11,10 +11,11 @@ Writer inserts prompts, dates, and clipboard text, and opens the daily note and 
 | Setting | Default | Values | Description |
 | --- | --- | --- | --- |
 | `directory` | `writer` | A directory path | Folder that stores Writer data. A relative path is relative to the installation root. An absolute path is used as stored. |
-| `notes_subdirectory` | `notes` | A relative path | Notes folder inside the Writer directory. An absolute path is not accepted. |
+| `notes_subdirectory` | `notes` | A relative or absolute directory path | A relative path is a subdirectory beneath the Writer directory. An absolute path is used directly as the folder for new notes. |
 | `logging` | `on` | `on`, `off` | Controls logging for the Writer component. |
 
-The default notes folder is `<installation root>\writer\notes`.
+The default notes folder is `<installation root>\writer\notes`. Changing the
+Writer directory does not affect an absolute `notes_subdirectory`.
 
 ## Commands
 

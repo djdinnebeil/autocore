@@ -4,6 +4,19 @@ Spotify controls playback through the Spotify Web API, inserts the current track
 
 Playback commands need a client ID and a completed authorization. Sign-in uses Authorization Code with PKCE on a loopback callback. There is no client secret.
 
+## First-time setup
+
+Spotify Web API playback requires a Spotify Premium account.
+
+1. Sign in to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and create an application that uses the Web API.
+2. Choose an unused local port. In the application's redirect URI settings, add `http://127.0.0.1:<port>/callback`, replacing `<port>` with that port number. Use `127.0.0.1`, not `localhost`.
+3. Copy the application's client ID. Auto Core does not use the client secret.
+4. Open Auto Core Settings, choose Spotify, then use **Manage client and devices** and **Set client ID**.
+5. Return to Spotify Settings and choose **Authorize Spotify**. Enter the same port number when `spotify_oauth.exe` asks for it.
+6. Approve access in the browser. The local callback completes authorization and `tokens.map` is written in the Spotify directory.
+
+The redirect URI configured in Spotify and the URI used during authorization must match. The callback listens only on this computer.
+
 `auto_launch_oauth` does not start authorization at startup. It starts authorization only when the saved authorization is incomplete, the local refresh expiration is missing or past, or Spotify rejects the refresh. The seven-day warning does not start sign-in.
 
 A refresh token expires about six months after authorization. Refreshing it does not extend that lifetime. The component warns seven days before that local expiration and requires sign-in again when the marker passes or Spotify rejects the refresh. `tokens.map` belongs to this computer. Copying it can invalidate one of the copies, because a refresh often replaces the saved token.
@@ -24,6 +37,7 @@ A refresh token expires about six months after authorization. Refreshing it does
 
 | Command | What it does |
 | --- | --- |
+| `activate_spotify` | Fallback notice when Taskbar has no `spotify.map`; Taskbar activation takes precedence when that map exists. |
 | `spotify_play_pause` | Toggles play and pause. |
 | `spotify_next_song` | Skips to the next track. |
 | `spotify_print_songs` | Inserts the tracks heard since the last time this command ran, including the current track. |

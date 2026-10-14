@@ -3,6 +3,24 @@
 DLL-specific deferred work is tracked in [app/core/TODO.md](../app/core/TODO.md).
 Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main/runtime/TODO.md).
 
+## Prerelease documentation and product-surface follow-ups
+
+- Add an end-user Keymap reference covering supported key names, binding
+  syntax, primary and secondary actions, the function-key toggle, command
+  catalogs, editing, and when changes are loaded.
+- Review the standard command surface before release. In particular,
+  `send_crash_command` is registered and can be placed in a user keymap; decide
+  whether diagnostic commands should be absent from normal command catalogs.
+- Review Writer's special/test insertion commands and decide whether they are
+  intended end-user features or diagnostics.
+- Align Writer with the intended `notes_subdirectory` contract. Relative paths
+  belong beneath the configured Writer directory; absolute paths should be
+  used directly. The current runtime and configuration program reject an
+  absolute value and fall back to the `notes` subdirectory.
+- Define a clean prerelease staging procedure for `dist\` that excludes
+  machine-specific shortcuts, authorization data, logs, histories, caches,
+  personal Writer and Journal data, and an initialization sentinel.
+
 ## Encapsulate interactive taskbar cycling
 
 `keyboard_input::process_key_event()` currently reads `taskbar.switch_set`
@@ -20,6 +38,14 @@ After the migration has stabilized:
 
 The instance member should continue to use object member access. The C++ scope
 resolution operator is not appropriate for per-instance cycling state.
+
+## Investigate Windows application identity and icon behavior
+
+- On some systems, `auto_core.exe` displays the standard Command Prompt icon
+  when running normally, while Administrator mode displays the Auto Core icon
+  correctly. Determine whether this can be corrected through AppUserModelID
+  (AUMID), Registry configuration, shortcut metadata, or another Windows
+  setting without requiring Administrator privileges.
 
 ## Investigate iTunes privilege compatibility and security
 

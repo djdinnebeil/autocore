@@ -188,6 +188,14 @@ namespace ac::config::components_list {
         return names;
     }
 
+    /** Places Taskbar first while preserving every other component's order. */
+    inline void prioritize_taskbar(std::vector<std::string>& names) {
+        const auto taskbar = std::ranges::find(names, "taskbar");
+        if (taskbar != names.end()) {
+            std::rotate(names.begin(), taskbar, std::next(taskbar));
+        }
+    }
+
     [[nodiscard]]
     inline ParseResult parse(const std::string_view text) {
         ParseResult result;

@@ -4,11 +4,10 @@
 
 If you find a vulnerability in Auto Core, please do **not** open a public
 issue that includes exploit details. Email the copyright holders listed in
-[LICENSE](../../license), or open a private GitHub security advisory on the
-repository.
+`legal\license`, or open a private security advisory on the repository.
 
 Include what you observed, the Auto Core version or commit, and Windows
-build when you can. Do not send Dash vault files, `dist/spotify/` tokens, or
+build when you can. Do not send Dash vault files, Spotify tokens, or
 other secrets.
 
 ## What this software does
@@ -18,19 +17,20 @@ swallowed and run as keymap commands. Antivirus and SmartScreen may flag
 this. That is expected for a system keyboard manager; review the source
 before you run a binary you did not build.
 
-The process may run elevated so some components (notably iTunes COM
-automation) can attach. Elevation mismatches are documented in
-[README.md](../../readme.md) and [itunes.md](components/itunes.md).
+Run Auto Core without Administrator privileges unless your setup requires
+otherwise. Auto Core and applications it controls must run at compatible
+Windows integrity levels. The iTunes requirements are documented in
+[itunes.md](components/itunes.md).
 
 ## Secrets and local data
 
-`dist/` is gitignored. Do not share or copy:
+Do not share or copy:
 
-- `dist/components/spotify/` — Spotify `client.id` and `tokens.map` (`spotify_codes.ini`, `spotify_tokens.ini`, and `spotify_history.db` are ignored)
-- `dist/components/journal/` — `series.db`, `series.map`, `firebase.id`, and per-factory alias `.list` files
+- `components\spotify\tokens.map` or a populated `client.id`
+- private data under `components\journal\`, including `series.db`,
+  `series.map`, `firebase.id`, and alias `.list` files
 - Dash vault at `%LOCALAPPDATA%\Auto Core\dash.vault`
-- `.env` files, logs, crash dumps, writer notes, or a private
-  `bindings.local.ini`
+- logs, crash reports, or Writer notes and task lists
 
 Dash is **not** a password manager. See [dash.md](components/dash.md).
 Spotify tokens are machine-local; see [spotify.md](components/spotify.md).

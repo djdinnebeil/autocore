@@ -8,17 +8,22 @@ import itunes_protocol;
 import itunes_registry;
 
 TEST_CASE("iTunes registry contains every canonical command", "[itunes][registry][unit]") {
-    std::array<int, 6> invocations {};
+    CHECK(itunes_activation_fallback_message ==
+        "Pin or start iTunes, then run taskbar_builder.exe to generate "
+        "itunes.map.");
+    std::array<int, 7> invocations {};
     auto registry = create_itunes_command_registry({
-        .print_songs = [&] { ++invocations[0]; },
-        .next_song = [&] { ++invocations[1]; },
-        .print_next_up = [&] { ++invocations[2]; },
-        .play_pause = [&] { ++invocations[3]; },
-        .stop_song = [&] { ++invocations[4]; },
-        .remove_song = [&] { ++invocations[5]; }
+        .activate_itunes = [&] { ++invocations[0]; },
+        .print_songs = [&] { ++invocations[1]; },
+        .next_song = [&] { ++invocations[2]; },
+        .print_next_up = [&] { ++invocations[3]; },
+        .play_pause = [&] { ++invocations[4]; },
+        .stop_song = [&] { ++invocations[5]; },
+        .remove_song = [&] { ++invocations[6]; }
     });
 
     const std::vector<std::string> expected {
+        "activate_itunes",
         "itunes_next_song",
         "itunes_play_pause",
         "itunes_print_next_up",
@@ -37,15 +42,19 @@ TEST_CASE("iTunes registry contains every canonical command", "[itunes][registry
 }
 
 TEST_CASE("iTunes registry dispatches each command to its action", "[itunes][registry][unit]") {
-    std::array<int, 6> invocations {};
+    std::array<int, 7> invocations {};
     auto registry = create_itunes_command_registry({
-        .print_songs = [&] { ++invocations[0]; },
-        .next_song = [&] { ++invocations[1]; },
-        .print_next_up = [&] { ++invocations[2]; },
-        .play_pause = [&] { ++invocations[3]; },
-        .stop_song = [&] { ++invocations[4]; },
-        .remove_song = [&] { ++invocations[5]; }
+        .activate_itunes = [&] { ++invocations[0]; },
+        .print_songs = [&] { ++invocations[1]; },
+        .next_song = [&] { ++invocations[2]; },
+        .print_next_up = [&] { ++invocations[3]; },
+        .play_pause = [&] { ++invocations[4]; },
+        .stop_song = [&] { ++invocations[5]; },
+        .remove_song = [&] { ++invocations[6]; }
     });
+
+    REQUIRE(registry.resolve("activate_itunes"));
+    registry.resolve("activate_itunes")();
 
     for (const auto command : itunes::commands::all) {
         const auto action = registry.resolve(command.name);
@@ -53,7 +62,7 @@ TEST_CASE("iTunes registry dispatches each command to its action", "[itunes][reg
         action();
     }
 
-    const std::array<int, 6> expected {1, 1, 1, 1, 1, 1};
+    const std::array<int, 7> expected {1, 1, 1, 1, 1, 1, 1};
     CHECK(invocations == expected);
     CHECK_FALSE(registry.resolve("unknown_itunes_command"));
 }

@@ -20,10 +20,12 @@ export namespace taskbar_runtime_commands {
      */
     void register_reserved_with(command_registry::Registry& registry);
     /**
-     * Registers `refresh_firefox`, `start_reddit_new_tab`, `activate()`,
-     * and INI `activate_*`. Call this after child catalogs so a map file
-     * cannot replace a reserved name.
+     * Registers activation commands from Taskbar application maps. Call this
+     * after reserved Main commands and before child catalogs so Taskbar wins
+     * only those duplicate names.
      */
+    void register_configured_with(command_registry::Registry& registry);
+    /** Registers the remaining Main-owned Taskbar command surface. */
     void register_with(command_registry::Registry& registry);
 }
 

@@ -588,7 +588,11 @@ void taskbar_runtime_commands::register_with(
         &::configured_activation_action,
         "activate(\"application\")"
     );
+}
 
+void taskbar_runtime_commands::register_configured_with(
+    command_registry::Registry& registry
+) {
     for (const auto& command :
          ac::taskbar::configured_activation_commands()) {
         if (registry.contains(command.command)) {

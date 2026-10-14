@@ -1,11 +1,15 @@
 module itunes_registry;
 
 import itunes_client;
+import itunes_component;
 import itunes_monitor;
 import itunes_removal;
 
 command_registry::Registry create_itunes_command_registry() {
     return create_itunes_command_registry({
+        .activate_itunes = [] {
+            itunes_component.print(itunes_activation_fallback_message);
+        },
         .print_songs = &print_itunes_songs,
         .next_song = &itunes_next_song,
         .print_next_up = &print_next_up_song_list,

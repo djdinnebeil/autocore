@@ -24,9 +24,13 @@ static command_registry::Registry create_runtime_command_registry() {
     test_commands::runtime_commands::register_with(registry);
     main_component::runtime_commands::register_with(registry);
     taskbar_runtime_commands::register_reserved_with(registry);
+    // Configuration-defined Taskbar activation commands bind before child
+    // catalogs. Reserved Main commands above remain authoritative because
+    // Taskbar skips names that are already registered. A child command with
+    // the same name therefore remains only a fallback when no application
+    // map supplied that command.
+    taskbar_runtime_commands::register_configured_with(registry);
     ac::main::components::register_with(registry);
-    // Configuration-defined taskbar commands are registered last so a
-    // manual INI file can never override a reserved Main command.
     taskbar_runtime_commands::register_with(registry);
 
     return registry;

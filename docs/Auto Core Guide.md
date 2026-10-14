@@ -37,6 +37,6 @@ to change Auto Core settings, configure components, and enable or disable compon
 
 ## More documentation
 
-See `Auto Core Tutorial.md` for guided workflows.
+See `Auto Core Tutorial.md` for customization and extension walkthroughs.
 
 See `Auto Core Manual.md` for reference documentation. Component settings, commands, files, and other reference pages are under `manual\`.

@@ -7,6 +7,7 @@ command_registry::Registry create_itunes_command_registry(
     itunes_command_actions actions
 ) {
     command_registry::Registry registry;
+    registry.add("activate_itunes", std::move(actions.activate_itunes));
     registry.add(std::string {itunes::commands::print_songs.name}, std::move(actions.print_songs));
     registry.add(std::string {itunes::commands::next_song.name}, std::move(actions.next_song));
     registry.add(std::string {itunes::commands::print_next_up.name}, actions.print_next_up);
