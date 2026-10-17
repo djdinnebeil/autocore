@@ -9,7 +9,7 @@ import taskbar_protocol;
 
 void activate_auto_core() {
     if (ac::taskbar::try_activate_native("auto_core")) {
-        taskbar_component().log_main(
+        taskbar_component().log_info(
             "activate_auto_core() - used the current Winkey mapping"
         );
         return;
@@ -17,26 +17,26 @@ void activate_auto_core() {
 
     const auto activated = ac::console::activate();
     if (!activated) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Unable to activate the shared Auto Core console: {}.",
             ac::console::error_message(activated.error())
         );
         return;
     }
-    taskbar_component().log_main(
+    taskbar_component().log_info(
         "activate_auto_core() - activated the shared Auto Core console"
     );
 }
 
 void refresh_taskbar_positions() {
-    taskbar_component().log_main("refresh_taskbar_positions");
+    taskbar_component().log_info("refresh_taskbar_positions");
     if (!ac::taskbar::request_refresh()) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Unable to update Winkey mappings."
         );
         return;
     }
-    taskbar_component().log_print("Winkey mappings updated");
+    taskbar_component().log_alert("Winkey mappings updated");
 }
 
 command_registry::Registry create_taskbar_command_registry() {

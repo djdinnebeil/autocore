@@ -45,7 +45,7 @@ DataDirectory load_data_directory() {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to inspect {}: {}",
             ini_path.string(),
             error.message()
@@ -64,7 +64,7 @@ DataDirectory load_data_directory() {
 
     const auto document = ac::ini::read(ini_path);
     if (!document) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to read {}. Server data files were not written.",
             ini_path.string()
         );
@@ -125,7 +125,7 @@ bool write_new_file(
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -133,22 +133,22 @@ bool write_new_file(
         return false;
     }
     if (present) {
-        server_editor.log("Left existing {} unchanged.", path.string());
+        server_editor.log_debug("Left existing {} unchanged.", path.string());
         return true;
     }
 
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        server_editor.log_print("Failed to create {}", path.string());
+        server_editor.log_alert("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        server_editor.log_print("Failed to write {}", path.string());
+        server_editor.log_alert("Failed to write {}", path.string());
         return false;
     }
-    server_editor.log_print("Created {}", path.string());
+    server_editor.log_alert("Created {}", path.string());
     return true;
 }
 
@@ -159,7 +159,7 @@ bool replace_scalar(
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to create {}: {}",
             path.parent_path().string(),
             error.message()
@@ -169,13 +169,13 @@ bool replace_scalar(
 
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        server_editor.log_print("Failed to create {}", path.string());
+        server_editor.log_alert("Failed to create {}", path.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        server_editor.log_print("Failed to write {}", path.string());
+        server_editor.log_alert("Failed to write {}", path.string());
         return false;
     }
     return true;
@@ -193,7 +193,7 @@ bool cancelled(const std::string_view value) {
     if (value != "cancel") {
         return false;
     }
-    server_editor.log_print("Cancelled.");
+    server_editor.log_alert("Cancelled.");
     return true;
 }
 
@@ -246,7 +246,7 @@ int ensure_data_directory(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     if (error) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to create {}: {}",
             directory.string(),
             error.message()
@@ -265,7 +265,7 @@ int init_files(const std::filesystem::path& directory) {
     const auto port = port_path(directory);
     const auto port_text = read_scalar(port);
     if (port_text.status == ScalarFile::unreadable) {
-        server_editor.log_print("Failed to read {}", port.string());
+        server_editor.log_alert("Failed to read {}", port.string());
         return 1;
     }
     if (port_text.status == ScalarFile::ok) {
@@ -284,7 +284,7 @@ int init_files(const std::filesystem::path& directory) {
     const auto root = document_root_path(directory);
     const auto root_text = read_scalar(root);
     if (root_text.status == ScalarFile::unreadable) {
-        server_editor.log_print("Failed to read {}", root.string());
+        server_editor.log_alert("Failed to read {}", root.string());
         return 1;
     }
     if (root_text.status == ScalarFile::ok) {
@@ -373,10 +373,10 @@ void set_port(const std::filesystem::path& directory) {
     }
     const auto contents = std::to_string(*port) + "\n";
     if (!replace_scalar(port_path(directory), contents)) {
-        server_editor.log_print("Failed to write port.id.");
+        server_editor.log_alert("Failed to write port.id.");
         return;
     }
-    server_editor.log_print("Port stored as {}.", *port);
+    server_editor.log_alert("Port stored as {}.", *port);
 }
 
 void set_document_root(const std::filesystem::path& directory) {
@@ -399,10 +399,10 @@ void set_document_root(const std::filesystem::path& directory) {
         return;
     }
     if (!replace_scalar(document_root_path(directory), stored + "\n")) {
-        server_editor.log_print("Failed to write document_root.id.");
+        server_editor.log_alert("Failed to write document_root.id.");
         return;
     }
-    server_editor.log_print("document_root stored as {}.", stored);
+    server_editor.log_alert("document_root stored as {}.", stored);
 }
 
 void open_folder(const std::filesystem::path& directory) {
@@ -411,7 +411,7 @@ void open_folder(const std::filesystem::path& directory) {
         ? server::data::parse_document_root(text.text)
         : std::nullopt;
     if (!stored) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
         );
         return;
@@ -421,7 +421,7 @@ void open_folder(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(root, error);
     if (error) {
-        server_editor.log_print(
+        server_editor.log_alert(
             "Failed to create {}: {}",
             root.string(),
             error.message()
@@ -438,7 +438,7 @@ void open_folder(const std::filesystem::path& directory) {
         SW_SHOWNORMAL
     );
     if (reinterpret_cast<std::intptr_t>(result) <= 32) {
-        server_editor.log_print("Failed to open {}", root.string());
+        server_editor.log_alert("Failed to open {}", root.string());
     }
 }
 
@@ -492,7 +492,7 @@ int run_menu(const std::filesystem::path& directory) {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    server_editor.log_main("server_editor.exe started");
+    server_editor.log_info("server_editor.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

@@ -1,0 +1,20 @@
+[application]
+key = microsoft_teams
+
+[taskbar]
+application_id = MSTeams_8wekyb3d8bbwe!MSTeams
+
+[window]
+process_name = ms-teams.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = one-shot
+
+[fallback]
+executable_path = shell:AppsFolder\MSTeams_8wekyb3d8bbwe!MSTeams
+
+[commands]
+activate = activate_microsoft_teams

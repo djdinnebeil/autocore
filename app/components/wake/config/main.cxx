@@ -116,7 +116,7 @@ bool write_directory(const std::string_view directory, const bool logging) {
         wake_config.print("Failed to write {}", path.string());
         return false;
     }
-    wake_config.log("Wrote {}", path.string());
+    wake_config.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -201,10 +201,10 @@ int launch_snapshot() {
 int provision_history() {
     const auto directory = wake::data_directory();
     if (wake::history::all_history_files_present(directory)) {
-        wake_config.log("Wake history is already present.");
+        wake_config.log_debug("Wake history is already present.");
         return 0;
     }
-    wake_config.log("Launching wake_ac.exe --snapshot.");
+    wake_config.log_debug("Launching wake_ac.exe --snapshot.");
     return launch_snapshot();
 }
 
@@ -250,7 +250,7 @@ int run_configuration_menu() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    wake_config.log_main("wake_config.exe started");
+    wake_config.log_info("wake_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

@@ -1,0 +1,11 @@
+[taskbar]
+auto_core = 1
+file_explorer = 2
+word = 3
+visual_studio_code = 4
+itunes = 5
+discord = 6
+spotify = 7
+visual_studio = 8
+google_chrome = 9
+firefox = 10

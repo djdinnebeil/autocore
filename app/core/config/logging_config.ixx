@@ -19,13 +19,18 @@ import std;
 export namespace ac::logging::config {
 
     /**
-     * \brief How `log_print` is classified before routing.
+     * \brief Minimum diagnostic severity from `[logging] level`.
      *
-     * `log` is logging-controlled. `print` is user-facing.
+     * `trace` admits trace, debug, info, alert.
+     * `debug` admits debug, info, and alert.
+     * `info` admits info, alert.
+     *  `alert` admits alert.
      */
-    enum class LogPrintMode {
-        log,
-        print
+    enum class LogLevel : unsigned char {
+        trace = 0,
+        debug = 1,
+        info = 2,
+        alert = 3
     };
 
     /**
@@ -64,34 +69,63 @@ export namespace ac::logging::config {
     /**
      * \brief Returns whether `[logging] disable_all` is on.
      *
-     * The default is off. When on, logging-controlled output is suppressed
-     * and component-family logging is not resolved. User-facing console
+     * The default is off. When on, diagnostic output is suppressed,
+     * the file copy of `print` / `printnl` is suppressed, and
+     * component-family logging is not resolved. `print` console
      * output remains available.
      */
     [[nodiscard]] AC_API bool disable_all();
 
     /**
+     * \brief Returns whether `[logging] experimental` is on.
+     *
+     * The default is on. This temporary setting controls the cleanup
+     * utility's startup report channel.
+     */
+    [[nodiscard]] AC_API bool experimental();
+
+    /**
+     * \brief Returns whether `[logging] log_console_output` is on.
+     *
+     * The default is on. When on, `print` / `printnl` output participates
+     * in the component file sink. It does not control the console write.
+     * The file copy also requires `disable_all` off, family logging on,
+     * and `write_logs_to_files` on.
+     */
+    [[nodiscard]] AC_API bool log_console_output();
+
+    /**
      * \brief Returns whether `[logging] write_logs_to_files` is on.
      *
-     * The default is on. This is the global file sink. It applies only
-     * after `disable_all` is off and family logging is on.
+     * The default is on. This is the master file-output gate for component
+     * logging, including eligible `print` / `printnl` copies. It applies
+     * only after `disable_all` is off and family logging is on.
      */
     [[nodiscard]] AC_API bool write_logs_to_files();
 
     /**
      * \brief Returns whether `[logging] write_logs_to_console` is on.
      *
-     * The default is off. When off, logging-controlled output does not
-     * go to the console. User-facing calls are unaffected.
+     * The default is off. When on, enabled diagnostic logs are mirrored
+     * to the console. `print` is unaffected.
      */
     [[nodiscard]] AC_API bool write_logs_to_console();
 
     /**
-     * \brief Returns `[logging] log_print_mode`.
+     * \brief Returns `[logging] level`.
      *
-     * The default is `print`. Missing or invalid values use `print`.
+     * The default is `debug`. Missing or invalid values use `debug`.
      */
-    [[nodiscard]] AC_API LogPrintMode log_print_mode();
+    [[nodiscard]] AC_API LogLevel level();
+
+    /**
+     * \brief Returns whether `[logging] write_alerts_to_console` is on.
+     *
+     * The default is on. Enabled alerts are shown on the console when
+     * this is on. A message already mirrored by `write_logs_to_console`
+     * is written once. This does not copy `print` output into the log.
+     */
+    [[nodiscard]] AC_API bool write_alerts_to_console();
 
     /**
      * \brief Returns `[logging] component_logging_default`.
@@ -124,11 +158,27 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API const std::filesystem::path& directory();
 
     /**
+     * \brief Returns `[logging] max_directory_mb`.
+     *
+     * The default is 100. Missing, partial, or negative values use 100.
+     * `0` is stored as written and does not disable logging.
+     */
+    [[nodiscard]] AC_API std::int64_t max_directory_mb();
+
+    /**
+     * \brief Returns `[logging] retention_days`.
+     *
+     * The default is 30. Missing, partial, or negative values use 30.
+     * `0` is stored as written and does not disable logging.
+     */
+    [[nodiscard]] AC_API std::int64_t retention_days();
+
+    /**
      * \brief Returns `<log directory>/components`.
      *
-     * Each `ac::Component` writes `{date}_{name}.log` and
-     * `{date}_{name}.main.log` under `components/<name>/` when file
-     * logging is enabled. Cached for the process lifetime.
+     * Each `ac::Component` writes `{date}_{name}.log` under
+     * `components/<name>/` when file logging is enabled. Cached for the
+     * process lifetime.
      */
     [[nodiscard]] AC_API const std::filesystem::path& components_directory();
 
@@ -141,10 +191,10 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API bool logging_ini_missing();
 
     /**
-     * \brief Returns a startup report describing applied `logging_policy.ini` settings.
+     * \brief Returns diagnostics from resolving `logging_policy.ini`.
      *
-     * The string is produced on first load and remains valid for the process
-     * lifetime.
+     * Successful resolution returns an empty string. The string is produced
+     * on first load and remains valid for the process lifetime.
      */
     [[nodiscard]] AC_API std::string_view configuration_report();
 

@@ -292,7 +292,7 @@ namespace {
         }
         const auto mode = document->find("slash", "mode");
         if (!mode || !slash::defaults::is_mode(*mode)) {
-            slash_component.log_print(
+            slash_component.log_alert(
                 "config/components/slash.ini mode is missing or invalid. Using verbose."
             );
             return ReportMode::verbose;
@@ -342,7 +342,7 @@ namespace {
                 "Failed to empty the Recycle Bin ({:#010x})",
                 static_cast<std::uint32_t>(empty_result)
             );
-            slash_component.log_print("{}", message);
+            slash_component.log_alert("{}", message);
             throw std::runtime_error(message);
         }
         return EmptyResult::emptied;
@@ -445,7 +445,7 @@ int main(int argument_count, char* arguments[]) {
     try {
         auto action = registry.resolve(command_name);
         if (!action) {
-            slash_component.log_print(
+            slash_component.log_alert(
                 "Unknown Slash command: {}",
                 command_name
             );

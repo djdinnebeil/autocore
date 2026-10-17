@@ -27,7 +27,7 @@ BOOL WINAPI oauth_console_control(DWORD event) {
 int run_authorize() {
     const auto client_id = spotify::data::load_client_id();
     if (!client_id) {
-        spotify_oauth_log.log_print(
+        spotify_oauth_log.log_alert(
             "Spotify authorization failed. The client ID is not configured."
         );
         return 1;
@@ -40,26 +40,26 @@ int run_authorize() {
         return 2;
     }
 
-    spotify_oauth_log.log_main("Spotify authorization started");
+    spotify_oauth_log.log_info("Spotify authorization started");
     SpotifyOAuth oauth(std::move(config));
     const auto result = oauth.authorize();
 
     if (!result.succeeded()) {
-        spotify_oauth_log.log_print(
+        spotify_oauth_log.log_alert(
             "Spotify authorization failed:\n{}",
             result.message
         );
         return 1;
     }
 
-    spotify_oauth_log.log_print("{}", result.message);
+    spotify_oauth_log.log_alert("{}", result.message);
     return 0;
 }
 
 int main() {
     ac::shell::set_process_app_user_model_id();
     ::SetConsoleCtrlHandler(oauth_console_control, TRUE);
-    spotify_oauth_log.log_main("spotify_oauth.exe started");
+    spotify_oauth_log.log_info("spotify_oauth.exe started");
 
     while (true) {
         std::cout
@@ -79,6 +79,6 @@ int main() {
         if (option == "2") {
             return 2;
         }
-        spotify_oauth_log.log_print("Unknown option.");
+        spotify_oauth_log.log_alert("Unknown option.");
     }
 }

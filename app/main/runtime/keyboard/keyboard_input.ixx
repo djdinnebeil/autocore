@@ -22,8 +22,8 @@ export namespace keyboard_input {
     );
 
     /**
-     * Dispatches a posted key event on the main thread. Reads
-     * `taskbar.switch_set` for interactive cycling (see devs/TODO.md).
+     * Dispatches a posted key event on the main thread. While
+     * `taskbar.cycle_active()`, posted keys go to `switch_windows`.
      */
     bool process_key_event(const MSG& message);
 }

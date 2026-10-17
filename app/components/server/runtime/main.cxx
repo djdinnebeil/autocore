@@ -105,7 +105,7 @@ namespace {
             ? server::data::parse_port(port_text.text)
             : std::nullopt;
         if (!port) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Server port.id is missing or invalid. Run server_editor.exe to configure Server."
             );
             return std::nullopt;
@@ -116,7 +116,7 @@ namespace {
             ? server::data::parse_document_root(root_text.text)
             : std::nullopt;
         if (!stored) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
             );
             return std::nullopt;
@@ -130,7 +130,7 @@ namespace {
         std::error_code exists_error;
         const bool exists = std::filesystem::exists(document_root, exists_error);
         if (exists_error) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Failed to inspect {}: {}",
                 document_root.string(),
                 exists_error.message()
@@ -143,13 +143,13 @@ namespace {
             break;
         case server::data::DocumentRootStartup::fail:
             if (absolute) {
-                server_component.log_print(
+                server_component.log_alert(
                     "Server document root is missing: {}",
                     document_root.string()
                 );
             }
             else {
-                server_component.log_print(
+                server_component.log_alert(
                     "Server document root is missing: {}. Run server_builder.exe --seed to create starter files.",
                     document_root.string()
                 );
@@ -178,7 +178,7 @@ namespace {
         try {
             CivetServer server(options);
 
-            server_component.log_main(
+            server_component.log_info(
                 "Server started at http://127.0.0.1:{}/ serving {}",
                 port_number,
                 launch.document_root
@@ -193,14 +193,14 @@ namespace {
             }
         }
         catch (const std::exception& exception) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Failed to bind http://127.0.0.1:{}/: {}",
                 port_number,
                 exception.what()
             );
         }
         catch (...) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Failed to bind http://127.0.0.1:{}/",
                 port_number
             );
@@ -215,7 +215,7 @@ namespace {
             ac::protocol::component::pipe_name("server")
         );
         if (!connection) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Failed to connect to the server control pipe. Error: {}",
                 connection.error().system_error
             );
@@ -229,7 +229,7 @@ namespace {
                 ac::protocol::component::Request::shutdown
             ),
             [&dispatcher, &stop_requested] {
-                server_component.log_main(
+                server_component.log_info(
                     "shutdown signal received - force termination allowed"
                 );
                 stop_requested.store(true);
@@ -246,7 +246,7 @@ namespace {
                     dispatcher.request_stop();
                     return;
                 }
-                server_component.log_print(
+                server_component.log_alert(
                     "Unknown server command: {}",
                     *expression
                 );
@@ -260,7 +260,7 @@ namespace {
                     ac::protocol::component::TerminationPolicy::force_allowed
                 )
             ); !hello) {
-            server_component.log_print(
+            server_component.log_alert(
                 "Failed to send server hello. Error: {}",
                 hello.error().system_error
             );
@@ -295,6 +295,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    server_component.log_main("program terminated");
+    server_component.log_info("program terminated");
     return 0;
 }

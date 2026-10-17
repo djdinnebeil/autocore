@@ -81,7 +81,7 @@ bool write_settings(const catalog::Settings& settings) {
         components_policy_config.print("Failed to write {}.", ini_path().string());
         return false;
     }
-    components_policy_config.log("Wrote {}", ini_path().string());
+    components_policy_config.log_debug("Wrote {}", ini_path().string());
     return true;
 }
 
@@ -182,7 +182,7 @@ int offer_sync() {
     if (!*run_sync) {
         return 0;
     }
-    components_policy_config.log("Running components_editor.exe...");
+    components_policy_config.log_debug("Running components_editor.exe...");
     if (cfg::run_config_exe("components_editor.exe") != 0) {
         components_policy_config.print(
             "components_editor.exe did not complete successfully."
@@ -212,7 +212,7 @@ int initialize_missing() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    components_policy_config.log_main("components_policy_config.exe started");
+    components_policy_config.log_info("components_policy_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

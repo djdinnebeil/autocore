@@ -14,23 +14,18 @@ import auto_core.core.formatting;
 import auto_core.core.logging.config;
 
 export namespace ac {
-    /** \brief Selects the destinations for a component message. */
-    enum class OutputRoute {
-        /** Write only to the comprehensive component log. */
-        component,
-        /** Write to the comprehensive log and the component main-log subset. */
-        component_and_main,
-        /**
-         * \brief `log_print`. Classified by `log_print_mode` before routing.
-         */
-        component_main_and_console,
-        /**
-         * \brief User-facing console output.
-         *
-         * Console remains available when logging is disabled. File and
-         * main-log output stay when the file sink is active.
-         */
-        user_facing
+    /**
+     * \brief Classifies one component message before policy filtering.
+     *
+     * `trace`, `debug`, `info`, and `alert` are diagnostic severities.
+     * `print` is ordinary console output and is not a diagnostic severity.
+     */
+    enum class MessageClass : unsigned char {
+        trace = 0,
+        debug = 1,
+        info = 2,
+        alert = 3,
+        print = 4
     };
 
     /**
@@ -73,7 +68,7 @@ export namespace ac {
         /**
          * \brief Reports a missing or malformed `config/<name>.ini`.
          *
-         * Uses `log_print`. Directs the user to `<name>_config.exe`.
+         * Uses `log_alert`. Directs the user to `<name>_config.exe`.
          * States that built-in defaults are in use and the file will not be
          * created. Does not write the INI.
          *
@@ -98,52 +93,64 @@ export namespace ac {
         /**
          * \brief Writes UTF-8 text to the selected destinations.
          * \param message The message bytes.
-         * \param route The destinations that receive the message.
+         * \param message_class The diagnostic or print classification.
          * \param newline Whether to append a newline at each destination.
          */
-        AC_API void write(std::string_view message, OutputRoute route,
+        AC_API void write(std::string_view message, MessageClass message_class,
             bool newline = true);
         /** \brief Converts Unicode text to UTF-8 and routes it as `write()`. */
-        AC_API void write(std::wstring_view message, OutputRoute route,
+        AC_API void write(std::wstring_view message, MessageClass message_class,
             bool newline = true);
 
         /**
          * \name Output convenience methods
          *
-         * `log` writes to the comprehensive component log. `log_main` also
-         * writes the main-log subset. `log_print` is classified by
-         * `log_print_mode`. `print` is user-facing: console stays available,
-         * and file output follows the file sink.
-         * Names containing `nl` suppress the trailing newline.
-         * Narrow, wide, single-character, and formatted UTF-8 overloads are
-         * provided. Formatting failures are reported to every destination.
+         * `log_debug`, `log_trace`, `log_info`, and `log_alert` are
+         * diagnostics. `trace` is the most detailed severity. `print` stays
+         * on the console. Its file copy requires
+         * `log_console_output` and the `write_logs_to_files` file gate.
+         * Names containing `nl` suppress the
+         * trailing newline. Narrow, wide, single-character, and formatted
+         * UTF-8 overloads are provided. Formatting failures use `print`.
          * \{
          */
-        void log(std::string_view message) { write(message, OutputRoute::component); }
-        void lognl(std::string_view message) { write(message, OutputRoute::component, false); }
-        void log_main(std::string_view message) { write(message, OutputRoute::component_and_main); }
-        void lognl_main(std::string_view message) { write(message, OutputRoute::component_and_main, false); }
-        void log_print(std::string_view message) { write(message, OutputRoute::component_main_and_console); }
-        void lognl_print(std::string_view message) { write(message, OutputRoute::component_main_and_console, false); }
-        void print(std::string_view message) { write(message, OutputRoute::user_facing); }
-        void printnl(std::string_view message) { write(message, OutputRoute::user_facing, false); }
+        void log_debug(std::string_view message) { write(message, MessageClass::debug); }
+        void lognl_debug(std::string_view message) { write(message, MessageClass::debug, false); }
+        void log_trace(std::string_view message) { write(message, MessageClass::trace); }
+        void lognl_trace(std::string_view message) { write(message, MessageClass::trace, false); }
+        void log_info(std::string_view message) { write(message, MessageClass::info); }
+        void lognl_info(std::string_view message) { write(message, MessageClass::info, false); }
+        void log_alert(std::string_view message) { write(message, MessageClass::alert); }
+        void lognl_alert(std::string_view message) { write(message, MessageClass::alert, false); }
+        void print(std::string_view message) { write(message, MessageClass::print); }
+        void printnl(std::string_view message) { write(message, MessageClass::print, false); }
 
-        void log(std::wstring_view message) { write(message, OutputRoute::component); }
-        void lognl(std::wstring_view message) { write(message, OutputRoute::component, false); }
-        void log_main(std::wstring_view message) { write(message, OutputRoute::component_and_main); }
-        void lognl_main(std::wstring_view message) { write(message, OutputRoute::component_and_main, false); }
-        void log_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console); }
-        void lognl_print(std::wstring_view message) { write(message, OutputRoute::component_main_and_console, false); }
-        void print(std::wstring_view message) { write(message, OutputRoute::user_facing); }
-        void printnl(std::wstring_view message) { write(message, OutputRoute::user_facing, false); }
+        void log_debug(std::wstring_view message) { write(message, MessageClass::debug); }
+        void lognl_debug(std::wstring_view message) { write(message, MessageClass::debug, false); }
+        void log_trace(std::wstring_view message) { write(message, MessageClass::trace); }
+        void lognl_trace(std::wstring_view message) { write(message, MessageClass::trace, false); }
+        void log_info(std::wstring_view message) { write(message, MessageClass::info); }
+        void lognl_info(std::wstring_view message) { write(message, MessageClass::info, false); }
+        void log_alert(std::wstring_view message) { write(message, MessageClass::alert); }
+        void lognl_alert(std::wstring_view message) { write(message, MessageClass::alert, false); }
+        void print(std::wstring_view message) { write(message, MessageClass::print); }
+        void printnl(std::wstring_view message) { write(message, MessageClass::print, false); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void log(Character message) { log(std::basic_string_view<Character> {&message, 1}); }
+        void log_debug(Character message) { log_debug(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void lognl(Character message) { lognl(std::basic_string_view<Character> {&message, 1}); }
+        void lognl_debug(Character message) { lognl_debug(std::basic_string_view<Character> {&message, 1}); }
+
+        template<typename Character>
+            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
+        void log_trace(Character message) { log_trace(std::basic_string_view<Character> {&message, 1}); }
+
+        template<typename Character>
+            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
+        void lognl_trace(Character message) { lognl_trace(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
@@ -154,43 +161,53 @@ export namespace ac {
         void printnl(Character message) { printnl(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename... Args>
-        void log(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component, true, format_string, std::forward<Args>(args)...);
+        void log_debug(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::debug, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void lognl(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component, false, format_string, std::forward<Args>(args)...);
+        void lognl_debug(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::debug, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void log_main(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_and_main, true, format_string, std::forward<Args>(args)...);
+        void log_trace(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::trace, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void lognl_main(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_and_main, false, format_string, std::forward<Args>(args)...);
+        void lognl_trace(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::trace, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void log_print(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_main_and_console, true, format_string, std::forward<Args>(args)...);
+        void log_info(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::info, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
-        void lognl_print(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::component_main_and_console, false, format_string, std::forward<Args>(args)...);
+        void lognl_info(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::info, false, format_string, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        void log_alert(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::alert, true, format_string, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        void lognl_alert(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::alert, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         void print(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::user_facing, true, format_string, std::forward<Args>(args)...);
+            write_formatted(MessageClass::print, true, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         void printnl(const char* format_string, Args&&... args) {
-            write_formatted(OutputRoute::user_facing, false, format_string, std::forward<Args>(args)...);
+            write_formatted(MessageClass::print, false, format_string, std::forward<Args>(args)...);
         }
         /** \} */
 
@@ -312,16 +329,16 @@ export namespace ac {
             }
             catch (const std::exception& exception) {
                 write(std::string("Component format error: ") + exception.what(),
-                    OutputRoute::user_facing);
+                    MessageClass::print);
                 return std::nullopt;
             }
         }
 
         template<typename... Args>
-        void write_formatted(OutputRoute route, bool newline,
+        void write_formatted(MessageClass message_class, bool newline,
             const char* format_string, Args&&... args) {
             if (auto message = format_message(format_string, std::forward<Args>(args)...)) {
-                write(*message, route, newline);
+                write(*message, message_class, newline);
             }
         }
 

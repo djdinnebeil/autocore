@@ -111,7 +111,7 @@ bool write_if_missing(
         return false;
     }
     if (present) {
-        server_builder.log("Left existing {} unchanged.", path.string());
+        server_builder.log_debug("Left existing {} unchanged.", path.string());
         return true;
     }
 
@@ -126,7 +126,7 @@ bool write_if_missing(
         server_builder.print("Failed to write {}", path.string());
         return false;
     }
-    server_builder.log("Created {}", path.string());
+    server_builder.log_debug("Created {}", path.string());
     return true;
 }
 
@@ -206,7 +206,7 @@ int seed_site() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    server_builder.log_main("server_builder.exe started");
+    server_builder.log_info("server_builder.exe started");
     if (argc != 2 || std::string_view {argv[1]} != "--seed") {
         std::cerr << "Usage: server_builder.exe --seed\n";
         return 1;

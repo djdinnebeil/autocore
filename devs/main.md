@@ -55,8 +55,11 @@ process only.
 3. If `auto_core.ini` already exists, resolve the shared logging policy
    before any other startup log. A missing `logging_policy.ini` uses built-in
    defaults (`disable_all = off`, `directory = logs`,
-   `write_logs_to_files = on`, `write_logs_to_console = off`,
-   `log_print_mode = print`, `component_logging_default = on`), prints
+   `max_directory_mb = 100`, `retention_days = 30`, `level = debug`,
+   `log_console_output = on`,
+   `write_logs_to_files = on`,
+   `write_logs_to_console = off`, `write_alerts_to_console = on`,
+   `component_logging_default = on`, `experimental = on`), prints
    `config/logging_policy.ini is missing; using built-in logging defaults.`,
    and does not create the file.
 4. Load `[warnings] missing_winkey_mapping` and `unmapped_key` from
@@ -102,10 +105,8 @@ selects the primary action; `activate_function_key` clears it so the next
 binding uses `secondary`. After a secondary action, `primary` is restored
 except when the key is numpad 0.
 
-While an interactive taskbar cycle is active (`taskbar.switch_set`), posted
-keys go to `MainTaskbarState::switch_windows` instead of the keymap. That
-field is public because the hook reads it; encapsulation is tracked in
-[TODO.md](TODO.md).
+While an interactive taskbar cycle is active (`taskbar.cycle_active()`), posted
+keys go to `MainTaskbarState::switch_windows` instead of the keymap.
 
 Numpad Enter is normalized to `key_codes::numpad_enter` (`0x100`) using
 `LLKHF_EXTENDED`. `keymap.map` names are resolved by `key_codes::resolve`;
@@ -204,10 +205,9 @@ runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
 written, the handler does not restart. See
 [configuration.md](configuration.md) for `crash_recovery.ini`.
 
-`send_crash_command` is a diagnostic keymap name that forces this path.
 `encoding_test` round-trips UTF-16 through core encoding and prints PASS/FAIL.
-Neither is intended for production maps; both are still registered so
-`keymap.map` can bind them.
+It is not intended for production maps but remains registered so `keymap.map`
+can bind it.
 
 ## Shutdown
 

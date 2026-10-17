@@ -47,23 +47,5 @@ command_registry::Registry create_writer_command_registry() {
         },
         writer_actions::add_brackets_around_clipboard
     );
-    registry.add(
-        std::string {
-            ac::protocol::writer::print_and_insert_special_utf8.name
-        },
-        writer_actions::print_and_insert_special_utf8
-    );
-    registry.add(
-        std::string {
-            ac::protocol::writer::print_and_insert_special_utf16.name
-        },
-        writer_actions::print_and_insert_special_utf16
-    );
-    registry.add(
-        std::string {
-            ac::protocol::writer::print_and_insert_testing.name
-        },
-        writer_actions::print_and_insert_testing
-    );
     return registry;
 }

@@ -238,7 +238,7 @@ bool write_settings(const JournalSettings& settings, const bool announce) {
         return false;
     }
     if (announce) {
-        journal_config.log("Wrote {}", path.string());
+        journal_config.log_debug("Wrote {}", path.string());
     }
     return true;
 }
@@ -325,7 +325,7 @@ void activate_own_console() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_config.log_main("journal_config.exe started");
+    journal_config.log_info("journal_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -350,7 +350,7 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(journal_config);
             if (!write_settings({}, false)) {
-                journal_config.log(
+                journal_config.log_debug(
                     "Journal configuration was not initialized."
                 );
                 return 1;
@@ -371,13 +371,13 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(journal_config);
             if (!write_settings({}, false)) {
-                journal_config.log(
+                journal_config.log_debug(
                     "Journal configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                journal_config.log(
+                journal_config.log_debug(
                     "Journal configuration was not initialized."
                 );
                 return 1;
@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
 
     if (!present) {
         if (!write_settings({}, false)) {
-            journal_config.log(
+            journal_config.log_debug(
                 "Journal configuration was not initialized."
             );
             return 1;

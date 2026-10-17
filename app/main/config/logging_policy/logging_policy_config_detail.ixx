@@ -29,12 +29,19 @@ export namespace ac::main::logging {
     struct Values {
         bool disable_all {defaults::logging_disable_all};
         std::string directory {defaults::logging_directory};
+        std::int64_t max_directory_mb {defaults::logging_max_directory_mb};
+        std::int64_t retention_days {defaults::logging_retention_days};
+        std::string level {defaults::logging_level};
+        bool log_console_output {defaults::logging_log_console_output};
         bool write_logs_to_files {defaults::logging_write_logs_to_files};
         bool write_logs_to_console {defaults::logging_write_logs_to_console};
-        std::string log_print_mode {defaults::logging_log_print_mode};
+        bool write_alerts_to_console {
+            defaults::logging_write_alerts_to_console
+        };
         bool component_logging_default {
             defaults::logging_component_logging_default
         };
+        bool experimental {defaults::logging_experimental};
     };
 
     struct CommitResult {
@@ -43,15 +50,15 @@ export namespace ac::main::logging {
     };
 
     inline constexpr std::string_view on_off[] {"on", "off"};
-    inline constexpr std::string_view log_or_print[] {"log", "print"};
+    inline constexpr std::string_view levels[] {"debug", "info", "alert"};
 
     inline const ac::config_menu::Setting menu_settings[] {
         {
             .key = "disable_all",
             .display_name = "Disable all logging",
             .summary =
-                "Stops logging-controlled file and console output. Menus and "
-                "user-facing messages stay on the console.",
+                "Suppresses diagnostic file and console output. print() "
+                "stays on the console.",
             .default_value = "off",
             .choices = on_off,
         },
@@ -66,33 +73,85 @@ export namespace ac::main::logging {
             .directory_path = true,
         },
         {
+            .key = "max_directory_mb",
+            .display_name = "Maximum directory size",
+            .summary =
+                "Megabytes of .log files to keep. 0 purges historical logs "
+                "and keeps logs from the current local date.",
+            .default_value = "100",
+            .constraint =
+                "Enter a non-negative integer. 0 purges historical logs "
+                "and keeps today's logs.",
+            .numeric_prompt = "Enter an integer",
+        },
+        {
+            .key = "retention_days",
+            .display_name = "Retention days",
+            .summary =
+                "Days of .log files to keep. 0 purges historical logs and "
+                "keeps logs from the current local date.",
+            .default_value = "30",
+            .constraint =
+                "Enter a non-negative integer. 0 purges historical logs "
+                "and keeps today's logs.",
+            .numeric_prompt = "Enter an integer",
+        },
+        {
+            .key = "level",
+            .display_name = "Level",
+            .summary =
+                "Minimum diagnostic severity. debug includes info and "
+                "alert. info includes alert.",
+            .default_value = defaults::logging_level,
+            .choices = levels,
+        },
+        {
+            .key = "log_console_output",
+            .display_name = "Log console output",
+            .summary =
+                "Allow print() and printnl() to participate in the "
+                "component file sink. Does not control the console write.",
+            .default_value = "on",
+            .choices = on_off,
+        },
+        {
             .key = "write_logs_to_files",
             .display_name = "Write logs to files",
-            .summary = "Write log records to files when logging is enabled.",
+            .summary =
+                "Master file-output gate for component logging, including "
+                "eligible print() and printnl() copies.",
             .default_value = "on",
             .choices = on_off,
         },
         {
             .key = "write_logs_to_console",
             .display_name = "Write logs to console",
-            .summary = "Also send ordinary log records to the console.",
+            .summary = "Mirror enabled diagnostic logs to the console.",
             .default_value = "off",
             .choices = on_off,
         },
         {
-            .key = "log_print_mode",
-            .display_name = "Log print mode",
+            .key = "write_alerts_to_console",
+            .display_name = "Write alerts to console",
             .summary =
-                "print keeps log_print on the console. log treats it as a "
-                "logging record.",
-            .default_value = defaults::logging_log_print_mode,
-            .choices = log_or_print,
+                "Show enabled alerts on the console. An alert already "
+                "mirrored to the console is written once.",
+            .default_value = "on",
+            .choices = on_off,
         },
         {
             .key = "component_logging_default",
             .display_name = "Component logging default",
             .summary =
                 "Fallback when a component logging key is missing or invalid.",
+            .default_value = "on",
+            .choices = on_off,
+        },
+        {
+            .key = "experimental",
+            .display_name = "Experimental",
+            .summary =
+                "Controls the temporary logging-cleanup startup report.",
             .default_value = "on",
             .choices = on_off,
         },
@@ -133,19 +192,28 @@ export namespace ac::main::logging {
             menu_settings,
             defaults::ini_for_logging(
                 values.disable_all,
-                values.write_logs_to_files,
                 values.directory,
+                values.max_directory_mb,
+                values.retention_days,
+                values.level,
+                values.log_console_output,
+                values.write_logs_to_files,
                 values.write_logs_to_console,
-                values.log_print_mode,
-                values.component_logging_default
+                values.write_alerts_to_console,
+                values.component_logging_default,
+                values.experimental
             )
         );
         constexpr std::string_view disable_all =
             "# disable_all = on | off\n";
-        constexpr std::string_view directory =
-            "# directory = relative or absolute path\n";
+        constexpr std::string_view directory_notes =
+            "# directory = relative or absolute path\n"
+            "# max_directory_mb = a non-negative integer in megabytes. "
+            "0 purges historical logs and keeps today's.\n"
+            "# retention_days = a non-negative integer. "
+            "0 purges historical logs and keeps today's.\n";
         if (text.starts_with(disable_all)) {
-            text.insert(disable_all.size(), directory);
+            text.insert(disable_all.size(), directory_notes);
         }
         return text;
     }

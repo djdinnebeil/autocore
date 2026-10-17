@@ -100,7 +100,7 @@ static bool replace_text_file(
     std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
 
     if (!output) {
-        auto_core.log_main("{}", failed_create);
+        auto_core.log_info("{}", failed_create);
         return false;
     }
 
@@ -111,7 +111,7 @@ static bool replace_text_file(
     output.close();
 
     if (!output) {
-        auto_core.log_main("{}", failed_write);
+        auto_core.log_info("{}", failed_write);
         std::error_code ignored;
         std::filesystem::remove(temporary, ignored);
         return false;
@@ -123,7 +123,7 @@ static bool replace_text_file(
         MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
     )) {
         const DWORD error = GetLastError();
-        auto_core.log_main("{}: {}", failed_replace, error);
+        auto_core.log_info("{}: {}", failed_replace, error);
         std::error_code ignored;
         std::filesystem::remove(temporary, ignored);
         return false;
@@ -142,7 +142,7 @@ static bool refresh_keymap_commands(
         directory_error
     );
     if (directory_error) {
-        auto_core.log_main(
+        auto_core.log_info(
             "Failed to use {}: {}",
             destination.parent_path().string(),
             directory_error.message()
@@ -185,7 +185,7 @@ static void report_incorrect_value(
     std::string_view display_name,
     std::string_view expression
 ) {
-    auto_core.log_print(
+    auto_core.log_alert(
         "{} is set to an incorrect value: {}",
         display_name,
         expression
@@ -261,7 +261,7 @@ static bool set_keymap_from_stream(
         std::string_view secondary;
 
         if (!parse_line(line, key_string, primary, secondary)) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Invalid keymap line format: {}",
                 line
             );
@@ -276,7 +276,7 @@ static bool set_keymap_from_stream(
             key_codes::resolve(key_string);
 
         if (!key) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unknown keymap key: {}",
                 key_string
             );
@@ -300,7 +300,7 @@ static bool set_keymap_from_stream(
     }
 
     if (configured_entries == 0) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Runtime keymap contained no usable entries"
         );
         return false;
@@ -309,7 +309,7 @@ static bool set_keymap_from_stream(
     if (settings.unmapped_key) {
         for (const auto& key : key_codes::keys) {
             if (!active_keymap.contains(key.code)) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "{} hasn't been set",
                     display_key_name(key.name)
                 );
@@ -317,7 +317,7 @@ static bool set_keymap_from_stream(
         }
     }
 
-    auto_core.log_main("keymap configured from file");
+    auto_core.log_info("keymap configured from file");
     return true;
 }
 
@@ -328,7 +328,7 @@ static bool set_keymap_from_file(
     std::ifstream config_file(ac::paths::keymap_file());
 
     if (!config_file) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{} is missing. Run keymap_editor.exe to generate it. "
             "Using the emergency keymap; the file will not be created.",
             ac::paths::keymap_file().string()
@@ -368,7 +368,7 @@ void initialize_keymap() {
     refresh_keymap_commands(registry);
 
     if (!set_keymap_from_file(registry, keymap_settings())) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Using the emergency keymap because keymap.map could not be "
             "loaded. Run keymap_editor.exe if keymap.map is missing. "
             "The file will not be created."

@@ -70,7 +70,7 @@ namespace {
             slash_config.print("Failed to write {}", path.string());
             return false;
         }
-        slash_config.log("Wrote {}", path.string());
+        slash_config.log_debug("Wrote {}", path.string());
         return true;
     }
 
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
         "slash_config",
         ac::logging::config::LoggingScope {"slash"}
     };
-    slash_config.log_main("slash_config.exe started");
+    slash_config.log_info("slash_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

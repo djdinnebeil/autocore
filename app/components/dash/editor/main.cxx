@@ -170,7 +170,7 @@ int wmain() {
                 ac::logging::config::LoggingFallback::off
             }
         };
-        dash_editor.log_main("dash_editor.exe started");
+        dash_editor.log_info("dash_editor.exe started");
 
         while (true) {
             std::wcout << L"\ndash - Secret Editor\n\n"

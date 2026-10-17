@@ -153,10 +153,12 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer notes directory.
      *
-     * Reads `[writer] notes_subdirectory` from `config/components/writer.ini`. The
-     * value must be relative: no root-name and no root-directory. A
-     * relative value is resolved against `writer_directory()`. A missing
-     * file, missing key, empty value, or non-relative value keeps
+     * Reads `[writer] notes_subdirectory` from `config/components/writer.ini`. A
+     * relative value, with no root-name and no root-directory, is resolved
+     * against `writer_directory()`. An absolute path, including a UNC path,
+     * is used directly and is not appended to `writer_directory()`. A missing
+     * file, missing key, empty value, unsupported rooted-but-not-absolute
+     * value, unresolvable value, or exception keeps
      * `<writer directory>/notes`. The live file is not rewritten.
      * Cached for the process lifetime. The directory is not created or
      * validated.

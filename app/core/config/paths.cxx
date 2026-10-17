@@ -250,8 +250,13 @@ namespace ac::paths {
                 const std::filesystem::path configured {
                     ac::encoding::to_utf16(std::string {*value})
                 };
-                if (configured.empty() ||
-                    configured.has_root_name() ||
+                if (configured.empty()) {
+                    return fallback;
+                }
+                if (configured.is_absolute()) {
+                    return configured.lexically_normal();
+                }
+                if (configured.has_root_name() ||
                     configured.has_root_directory()) {
                     return fallback;
                 }

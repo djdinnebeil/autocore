@@ -47,7 +47,7 @@ std::string mappings_seed() {
 
 int main() {
     ac::shell::set_process_app_user_model_id();
-    keymap_editor.log_main("keymap_editor.exe started");
+    keymap_editor.log_info("keymap_editor.exe started");
 
     const auto path = ac::paths::keymap_file();
     std::error_code error;
@@ -62,6 +62,6 @@ int main() {
         keymap_editor.print("Failed to write {}.", path.string());
         return 1;
     }
-    keymap_editor.log("Wrote {}", path.string());
+    keymap_editor.log_debug("Wrote {}", path.string());
     return 0;
 }

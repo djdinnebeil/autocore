@@ -10,22 +10,21 @@ import auto_core.core.clock;
 namespace ac::component_detail {
 
     /**
-     * \brief Owns synchronized comprehensive and main-subset daily logs.
+     * \brief Owns the synchronized daily log for one component.
      *
-     * Files are named `<date>_<component>.log` and
-     * `<date>_<component>.main.log` under the supplied directory
-     * (`components/<name>/` from `ac::Component`). Construction opens
-     * the files and appends a session header to the comprehensive log.
-     * Each `write` checks the supplied event date and may roll the open
-     * files. File failures are reported through `auto_core.core.error`;
-     * later writes no-op until a roll retries the open.
+     * The file is named `<date>_<component>.log` under the supplied
+     * directory (`components/<name>/` from `ac::Component`). Construction
+     * opens the file and appends a session header. Each `write` checks the
+     * supplied event date and may roll the open file. File failures are
+     * reported through `auto_core.core.error`; later writes no-op until a
+     * roll retries the open.
      */
     class ComponentLogger {
     public:
         /**
          * \brief Opens the component's session log.
          * \param component_name The name used in records and the filename.
-         * \param directory The directory that owns the log files.
+         * \param directory The directory that owns the log file.
          * \param session_start The stable start time for this session.
          */
         ComponentLogger(
@@ -44,13 +43,15 @@ namespace ac::component_detail {
          * \brief Appends a message, rolling to today's file when needed.
          *
          * Compares the local calendar date with the open file and rolls when
-         * they differ. Records ending in a newline are flushed immediately.
+         * they differ. `event_type` is written after the timestamp whenever
+         * the message opens a persisted line. Records ending in a newline are
+         * flushed immediately.
          */
         void write(
             std::string_view timestamp,
             std::string_view date_iso,
+            std::string_view event_type,
             std::string_view message,
-            bool main_worthy,
             bool newline = true
         );
         /** \brief Rolls the log file when the local calendar date changed. */

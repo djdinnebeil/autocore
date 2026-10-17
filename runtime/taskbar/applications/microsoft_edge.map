@@ -1,0 +1,20 @@
+[application]
+key = microsoft_edge
+
+[taskbar]
+application_id = MSEdge.UserData.Profile7
+
+[window]
+process_name = msedge.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = cycle
+
+[fallback]
+executable_path = C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+
+[commands]
+activate = activate_microsoft_edge

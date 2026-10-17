@@ -132,14 +132,14 @@ namespace {
             if (!ac::logging::config::disable_all() &&
                 ac::logging::config::component_logging_default() &&
                 ac::logging::config::write_logs_to_files()) {
-                auto_core.log("Logging initialized");
+                auto_core.log_debug("Logging initialized");
             }
-            auto_core.log("Auto Core initialization started");
+            auto_core.log_debug("Auto Core initialization started");
             return true;
         }
 
         if (ac::logging::config::logging_ini_missing()) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "config/logging_policy.ini is missing; using built-in logging defaults."
             );
         }
@@ -208,7 +208,7 @@ int main() {
 
     ac::config::initialize_core_settings();
     if (!ac::config::core_settings_report().empty()) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{}",
             ac::config::core_settings_report()
         );
@@ -228,7 +228,15 @@ int main() {
 
     initialize_keymap();
     announce_program_ready();
+
+    std::jthread logging_cleanup_thread {[] {
+        const auto helper =
+            ac::paths::bin_directory() / "auto_core_logging_cleanup.exe";
+        (void)run_and_wait(helper);
+    }};
+
     run_message_loop();
+    logging_cleanup_thread.join();
     shutdown_logging();
 
     return 0;

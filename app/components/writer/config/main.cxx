@@ -35,9 +35,9 @@ const menu::Setting menu_settings[] {
     {
         .key = "notes_subdirectory",
         .display_name = "Notes subdirectory",
-        .summary = "Relative notes folder inside the Writer directory.",
+        .summary = "Relative notes folder inside the Writer directory, or an absolute path used directly.",
         .default_value = writer::defaults::notes_subdirectory,
-        .constraint = "Enter a relative notes subdirectory.",
+        .constraint = "Enter a relative or absolute notes path.",
         .directory_path = true,
     },
     {
@@ -49,7 +49,7 @@ const menu::Setting menu_settings[] {
     },
 };
 
-bool is_relative_subdirectory(std::string_view value) {
+bool is_accepted_notes_subdirectory(std::string_view value) {
     if (value.empty()) {
         return false;
     }
@@ -57,9 +57,13 @@ bool is_relative_subdirectory(std::string_view value) {
         const std::filesystem::path path {
             ac::encoding::to_utf16(std::string {value})
         };
-        return !path.empty() &&
-            !path.has_root_name() &&
-            !path.has_root_directory();
+        if (path.empty()) {
+            return false;
+        }
+        if (path.is_absolute()) {
+            return true;
+        }
+        return !path.has_root_name() && !path.has_root_directory();
     }
     catch (...) {
         return false;
@@ -253,9 +257,9 @@ menu::ApplyResult apply_setting(
         settings.directory = std::string {value};
     }
     else if (setting.key == "notes_subdirectory") {
-        if (!is_relative_subdirectory(value)) {
-            writer_config.log(
-                "notes_subdirectory must be a relative path."
+        if (!is_accepted_notes_subdirectory(value)) {
+            writer_config.log_debug(
+                "notes_subdirectory must be a relative or absolute path."
             );
             return menu::ApplyResult::invalid;
         }
@@ -311,7 +315,7 @@ void activate_own_console() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    writer_config.log_main("writer_config.exe started");
+    writer_config.log_info("writer_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -336,7 +340,7 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(writer_config);
             if (!write_writer_ini({})) {
-                writer_config.log(
+                writer_config.log_debug(
                     "Writer configuration was not initialized."
                 );
                 return 1;
@@ -357,13 +361,13 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(writer_config);
             if (!write_writer_ini({})) {
-                writer_config.log(
+                writer_config.log_debug(
                     "Writer configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                writer_config.log(
+                writer_config.log_debug(
                     "Writer configuration was not initialized."
                 );
                 return 1;
@@ -379,7 +383,7 @@ int main(int argc, char* argv[]) {
 
     if (!present) {
         if (!write_writer_ini({})) {
-            writer_config.log(
+            writer_config.log_debug(
                 "Writer configuration was not initialized."
             );
             return 1;

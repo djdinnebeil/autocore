@@ -80,7 +80,7 @@ std::expected<void, std::string> start_service() {
     );
     if (!process) {
         const std::string message = "Unable to start journal_cloud.exe.";
-        journal_component().log("{}", message);
+        journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
     state.process = static_cast<HANDLE>(*process);
@@ -97,7 +97,7 @@ std::expected<void, std::string> start_service() {
             TerminateProcess(state.process, 1);
         }
         close_process(state);
-        journal_component().log("{}", message);
+        journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
     state.pipe = std::move(*pipe);
@@ -108,7 +108,7 @@ std::expected<void, std::string> start_service() {
         }
         state.pipe.reset();
         close_process(state);
-        journal_component().log("{}", message);
+        journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
     auto status = ac::pipes::read_string(state.pipe);
@@ -122,7 +122,7 @@ std::expected<void, std::string> start_service() {
             TerminateProcess(state.process, 1);
         }
         close_process(state);
-        journal_component().log("{}", message);
+        journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
     if (process_exited(state.process)) {
@@ -131,7 +131,7 @@ std::expected<void, std::string> start_service() {
         state.owns_process = false;
         state.ready = false;
         const std::string message = "journal_cloud.exe exited during startup.";
-        journal_component().log("{}", message);
+        journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
     state.owns_process = true;

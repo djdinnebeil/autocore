@@ -148,7 +148,7 @@ void Spotify::check_refresh_token_expiration() {
     if (refresh_token_expiration <= 0) {
         reauthorization_required = true;
 
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Spotify refresh-token expiration is missing or invalid."
         );
 
@@ -160,7 +160,7 @@ void Spotify::check_refresh_token_expiration() {
     if (current_time >= refresh_token_expiration) {
         reauthorization_required = true;
 
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Spotify refresh token has expired."
         );
 
@@ -186,7 +186,7 @@ void Spotify::check_refresh_token_expiration() {
             (seconds_remaining + seconds_per_day - 1) /
             seconds_per_day;
 
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Spotify refresh token will expire in "
             + std::to_string(days_remaining)
             + (days_remaining == 1 ? " day." : " days.")
@@ -203,7 +203,7 @@ bool Spotify::check_timerate() {
 
     // Handle case where system time went backward
     if (current_time < start_timestamp) {
-        spotify_component.log("Warning: System time appears to have gone backward. Forcing token refresh.");
+        spotify_component.log_debug("Warning: System time appears to have gone backward. Forcing token refresh.");
         return true;
     }
 
@@ -229,7 +229,7 @@ void Spotify::launch_spotify_oauth() {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Missing {}.",
             executable_path.string()
         );
@@ -252,7 +252,7 @@ void Spotify::launch_spotify_oauth() {
             &startup_info,
             &process_info
         )) {
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Unable to start {}.",
             executable_path.string()
         );
@@ -264,7 +264,7 @@ void Spotify::launch_spotify_oauth() {
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Unable to read the exit code from spotify_oauth.exe."
         );
         return;
@@ -272,7 +272,7 @@ void Spotify::launch_spotify_oauth() {
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        spotify_component.log_print("spotify_oauth.exe exited {}.", code);
+        spotify_component.log_alert("spotify_oauth.exe exited {}.", code);
     }
 }
 
@@ -281,7 +281,7 @@ void Spotify::report_authorization_required() {
         return;
     }
     authorization_required_logged = true;
-    spotify_component.log_print("Spotify authorization required.");
+    spotify_component.log_alert("Spotify authorization required.");
 }
 
 /**
@@ -306,7 +306,7 @@ Spotify::TokenRefreshAttempt Spotify::attempt_token_refresh() {
 
     spotify::tokens::TokenSession file_lock;
     if (!file_lock) {
-        spotify_component.log_print("Unable to coordinate Spotify token state.");
+        spotify_component.log_alert("Unable to coordinate Spotify token state.");
         return TokenRefreshAttempt::transient_failure;
     }
 
@@ -356,13 +356,13 @@ Spotify::TokenRefreshAttempt Spotify::attempt_token_refresh() {
             state.authorized_at = start_timestamp;
             state.refresh_expires_at = refresh_token_expiration;
             if (!file_lock.store(state)) {
-                spotify_component.log_print("Unable to write tokens.map.");
+                spotify_component.log_alert("Unable to write tokens.map.");
                 return TokenRefreshAttempt::transient_failure;
             }
         }
         authorization_header = "Bearer " + access_token;
         authorization_required_logged = false;
-        spotify_component.log_main("refresh_tokens() - tokens refreshed");
+        spotify_component.log_info("refresh_tokens() - tokens refreshed");
         return TokenRefreshAttempt::ready;
     }
     else if (response.status_code == 400) {
@@ -379,13 +379,13 @@ Spotify::TokenRefreshAttempt Spotify::attempt_token_refresh() {
             }
         }
         catch (const json::exception& e) {
-            spotify_component.log_print(
+            spotify_component.log_alert(
                 "Failed to parse Spotify token error response: {}",
                 e.what()
             );
         }
 
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Spotify token request failed: Status Code {} - {}",
             response.status_code,
             response.text
@@ -394,11 +394,11 @@ Spotify::TokenRefreshAttempt Spotify::attempt_token_refresh() {
         return TokenRefreshAttempt::transient_failure;
     }
     else if (response.status_code == 429) {
-        spotify_component.log_print("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
+        spotify_component.log_alert("Error: Rate Limit Reached\nStatus Code {} - {}", response.status_code, response.text);
         return TokenRefreshAttempt::transient_failure;
     }
     else {
-        spotify_component.log_print("Error: \nStatus Code {} - {}", response.status_code, response.text);
+        spotify_component.log_alert("Error: \nStatus Code {} - {}", response.status_code, response.text);
         return TokenRefreshAttempt::transient_failure;
     }
 }

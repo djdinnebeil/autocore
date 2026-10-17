@@ -57,7 +57,7 @@ int launch_config_init() {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        itunes_formatter.log_print("Missing {}.", executable_path.string());
+        itunes_formatter.log_alert("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -78,7 +78,7 @@ int launch_config_init() {
             &startup_info,
             &process_info
         )) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Unable to start {}.",
             executable_path.string()
         );
@@ -90,7 +90,7 @@ int launch_config_init() {
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Unable to read the exit code from itunes_config.exe."
         );
         return 1;
@@ -98,7 +98,7 @@ int launch_config_init() {
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        itunes_formatter.log_print("itunes_config.exe exited {}.", code);
+        itunes_formatter.log_alert("itunes_config.exe exited {}.", code);
     }
     return code;
 }
@@ -111,7 +111,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -120,7 +120,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     }
     if (present) {
         if (!ini_readable(path)) {
-            itunes_formatter.log_print(
+            itunes_formatter.log_alert(
                 "Failed to read {}. Song format was not edited.",
                 path.string()
             );
@@ -129,11 +129,11 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
         return 0;
     }
 
-    itunes_formatter.log_print(
+    itunes_formatter.log_alert(
         "config/components/itunes.ini is missing. Running itunes_config.exe --init."
     );
     if (launch_config_init() != 0) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "itunes.ini was not initialized. Song format was not edited."
         );
         return 1;
@@ -142,7 +142,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     error.clear();
     const bool created = std::filesystem::exists(path, error);
     if (error || !created || !ini_readable(path)) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "config/components/itunes.ini is still unavailable. Song format was not edited."
         );
         return 1;
@@ -226,7 +226,7 @@ bool replace_format_file(
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Failed to create {}: {}",
             path.parent_path().string(),
             error.message()
@@ -238,7 +238,7 @@ bool replace_format_file(
     {
         std::ofstream output(temporary_path, std::ios::binary | std::ios::trunc);
         if (!output) {
-            itunes_formatter.log_print("Failed to create {}", path.string());
+            itunes_formatter.log_alert("Failed to create {}", path.string());
             return false;
         }
         output.write(
@@ -249,7 +249,7 @@ bool replace_format_file(
         if (!output) {
             output.close();
             ::DeleteFileW(temporary_path.c_str());
-            itunes_formatter.log_print("Failed to write {}", path.string());
+            itunes_formatter.log_alert("Failed to write {}", path.string());
             return false;
         }
     }
@@ -260,10 +260,10 @@ bool replace_format_file(
             MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
         )) {
         ::DeleteFileW(temporary_path.c_str());
-        itunes_formatter.log_print("Failed to replace {}", path.string());
+        itunes_formatter.log_alert("Failed to replace {}", path.string());
         return false;
     }
-    itunes_formatter.log("Wrote {}", path.string());
+    itunes_formatter.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -272,7 +272,7 @@ int format_song(const std::filesystem::path& directory) {
     std::error_code error;
     const bool existed = std::filesystem::exists(format_path, error);
     if (error) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Failed to inspect {}: {}",
             format_path.string(),
             error.message()
@@ -286,7 +286,7 @@ int format_song(const std::filesystem::path& directory) {
         std::string read_error;
         const auto bytes = read_bytes(format_path, read_error);
         if (!bytes) {
-            itunes_formatter.log_print("{}", read_error);
+            itunes_formatter.log_alert("{}", read_error);
         }
         else if (const auto accepted = itunes::song::detail::accepted_song_format(*bytes)) {
             current = *accepted;
@@ -294,7 +294,7 @@ int format_song(const std::filesystem::path& directory) {
         }
         else {
             const auto compiled = itunes::song::detail::compile_utf8(*bytes);
-            itunes_formatter.log_print(
+            itunes_formatter.log_alert(
                 "{}",
                 compiled.error.empty()
                     ? "song.format is invalid."
@@ -332,12 +332,12 @@ int format_song(const std::filesystem::path& directory) {
         std::cout << "Format [" << current << "]: ";
         std::string line;
         if (!std::getline(std::cin, line)) {
-            itunes_formatter.log("Input ended.");
+            itunes_formatter.log_debug("Input ended.");
             return 0;
         }
         const auto value = trim(line);
         if (value == "cancel") {
-            itunes_formatter.log("Song format edit cancelled.");
+            itunes_formatter.log_debug("Song format edit cancelled.");
             return 0;
         }
 
@@ -355,7 +355,7 @@ int format_song(const std::filesystem::path& directory) {
             continue;
         }
         if (current_matches_file && *accepted == current) {
-            itunes_formatter.log(
+            itunes_formatter.log_debug(
                 "Left existing {} unchanged.",
                 format_path.string()
             );
@@ -373,13 +373,13 @@ int configure_library_columns(const std::filesystem::path& directory) {
     const auto loaded =
         itunes::library_format::detail::load_library_format(format_path);
     if (loaded.error) {
-        itunes_formatter.log_print("{}", *loaded.error);
+        itunes_formatter.log_alert("{}", *loaded.error);
     }
 
     std::error_code error;
     const bool present = std::filesystem::exists(format_path, error);
     if (error) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Failed to inspect {}: {}",
             format_path.string(),
             error.message()
@@ -394,12 +394,12 @@ int configure_library_columns(const std::filesystem::path& directory) {
         std::cout << "Format [" << shown.format_text << "]: ";
         std::string line;
         if (!std::getline(std::cin, line)) {
-            itunes_formatter.log("Input ended.");
+            itunes_formatter.log_debug("Input ended.");
             return 0;
         }
         const auto value = trim(line);
         if (value == "cancel") {
-            itunes_formatter.log("Library column edit cancelled.");
+            itunes_formatter.log_debug("Library column edit cancelled.");
             return 0;
         }
 
@@ -423,12 +423,12 @@ int configure_library_columns(const std::filesystem::path& directory) {
         std::cout << "Column count [" << shown.column_count << "]: ";
         std::string line;
         if (!std::getline(std::cin, line)) {
-            itunes_formatter.log("Input ended.");
+            itunes_formatter.log_debug("Input ended.");
             return 0;
         }
         const auto value = trim(line);
         if (value == "cancel") {
-            itunes_formatter.log("Library column edit cancelled.");
+            itunes_formatter.log_debug("Library column edit cancelled.");
             return 0;
         }
         if (value.empty()) {
@@ -448,7 +448,7 @@ int configure_library_columns(const std::filesystem::path& directory) {
         !loaded.error &&
         chosen_text == shown.format_text &&
         chosen_count == shown.column_count) {
-        itunes_formatter.log(
+        itunes_formatter.log_debug(
             "Left existing {} unchanged.",
             format_path.string()
         );
@@ -472,7 +472,7 @@ std::optional<bool> file_present(const std::filesystem::path& path) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -487,7 +487,7 @@ bool itunes_ini_readable() {
     if (ac::ini::read(path)) {
         return true;
     }
-    itunes_formatter.log_print(
+    itunes_formatter.log_alert(
         "config/components/itunes.ini is missing or unreadable. itunes_config.exe owns it."
     );
     return false;
@@ -500,12 +500,12 @@ std::optional<std::string> read_init_line(
     std::cout << label << " [" << shown << "]: ";
     std::string line;
     if (!std::getline(std::cin, line)) {
-        itunes_formatter.log("Input ended.");
+        itunes_formatter.log_debug("Input ended.");
         return std::nullopt;
     }
     const auto value = trim(line);
     if (value == "cancel") {
-        itunes_formatter.log("Initialization cancelled.");
+        itunes_formatter.log_debug("Initialization cancelled.");
         return std::nullopt;
     }
     if (value.empty()) {
@@ -521,7 +521,7 @@ int seed_formats(const std::filesystem::path& directory) {
         return 1;
     }
     if (*library_present) {
-        itunes_formatter.log("Seed skipped; library.format already exists");
+        itunes_formatter.log_debug("Seed skipped; library.format already exists");
     }
     else {
         const itunes::library_format::detail::LibraryFormat format;
@@ -539,14 +539,14 @@ int seed_formats(const std::filesystem::path& directory) {
         return 1;
     }
     if (*song_present) {
-        itunes_formatter.log("Seed skipped; song.format already exists");
+        itunes_formatter.log_debug("Seed skipped; song.format already exists");
         return 0;
     }
     const auto accepted = itunes::song::detail::accepted_song_format(
         itunes::song::detail::default_template
     );
     if (!accepted) {
-        itunes_formatter.log_print("The default song format is invalid.");
+        itunes_formatter.log_alert("The default song format is invalid.");
         return 1;
     }
     if (!replace_format_file(song_path, *accepted)) {
@@ -562,7 +562,7 @@ int init_library(const std::filesystem::path& directory) {
         return 1;
     }
     if (*present) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Initialization skipped; library.format already exists"
         );
         return 0;
@@ -629,7 +629,7 @@ int init_song(const std::filesystem::path& directory) {
         return 1;
     }
     if (*present) {
-        itunes_formatter.log_print(
+        itunes_formatter.log_alert(
             "Initialization skipped; song.format already exists"
         );
         return 0;
@@ -677,7 +677,7 @@ int run_initialization(const bool seed) {
 } // namespace
 
 export int run_itunes_formatter(int argc, char* argv[]) {
-    itunes_formatter.log_main("itunes_formatter.exe started");
+    itunes_formatter.log_info("itunes_formatter.exe started");
 
     const bool seed = argc == 2 && std::string_view {argv[1]} == "--seed";
     const bool init = argc == 2 && std::string_view {argv[1]} == "--init";

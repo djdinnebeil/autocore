@@ -91,7 +91,7 @@ std::expected<void, std::string> start_service() {
     );
     if (!process) {
         state.startup_error = "Unable to start itunes_db.exe.";
-        itunes_component.log("{}", state.startup_error);
+        itunes_component.log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
     state.process = static_cast<HANDLE>(*process);
@@ -109,7 +109,7 @@ std::expected<void, std::string> start_service() {
             TerminateProcess(state.process, 1);
         }
         close_process(state);
-        itunes_component.log("{}", state.startup_error);
+        itunes_component.log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
     state.pipe = std::move(*pipe);
@@ -124,7 +124,7 @@ std::expected<void, std::string> start_service() {
         }
         state.pipe.reset();
         close_process(state);
-        itunes_component.log("{}", state.startup_error);
+        itunes_component.log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
 
@@ -136,7 +136,7 @@ std::expected<void, std::string> start_service() {
             TerminateProcess(state.process, 1);
         }
         close_process(state);
-        itunes_component.log("{}", state.startup_error);
+        itunes_component.log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
 

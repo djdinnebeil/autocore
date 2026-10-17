@@ -39,7 +39,7 @@ bool require_initialization() {
     if (writer_initialized()) {
         return true;
     }
-    writer_editor.log_print(
+    writer_editor.log_alert(
         "Writer must be initialized first. Run writer_config.exe --init."
     );
     return false;
@@ -49,7 +49,7 @@ bool append_line(const std::filesystem::path& file, std::string_view line) {
     std::error_code error;
     std::filesystem::create_directories(file.parent_path(), error);
     if (error) {
-        writer_editor.log_print(
+        writer_editor.log_alert(
             "Failed to create {}: {}",
             file.parent_path().string(),
             error.message()
@@ -59,14 +59,14 @@ bool append_line(const std::filesystem::path& file, std::string_view line) {
 
     std::ofstream output(file, std::ios::binary | std::ios::app);
     if (!output) {
-        writer_editor.log_print("Failed to append {}", file.string());
+        writer_editor.log_alert("Failed to append {}", file.string());
         return false;
     }
     output.write(line.data(), static_cast<std::streamsize>(line.size()));
     output.put('\n');
     output.close();
     if (!output) {
-        writer_editor.log_print("Failed to append {}", file.string());
+        writer_editor.log_alert("Failed to append {}", file.string());
         return false;
     }
     return true;
@@ -82,7 +82,7 @@ StoreState inspect_store(const std::filesystem::path& path) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        writer_editor.log_print(
+        writer_editor.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -101,14 +101,14 @@ bool write_missing_file(
         return false;
     }
     if (state == StoreState::present) {
-        writer_editor.log("Left existing {} unchanged.", file.string());
+        writer_editor.log_debug("Left existing {} unchanged.", file.string());
         return true;
     }
 
     std::error_code error;
     std::filesystem::create_directories(file.parent_path(), error);
     if (error) {
-        writer_editor.log_print(
+        writer_editor.log_alert(
             "Failed to create {}: {}",
             file.parent_path().string(),
             error.message()
@@ -118,16 +118,16 @@ bool write_missing_file(
 
     std::ofstream output(file, std::ios::binary | std::ios::trunc);
     if (!output) {
-        writer_editor.log_print("Failed to create {}", file.string());
+        writer_editor.log_alert("Failed to create {}", file.string());
         return false;
     }
     output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
     output.close();
     if (!output) {
-        writer_editor.log_print("Failed to write {}", file.string());
+        writer_editor.log_alert("Failed to write {}", file.string());
         return false;
     }
-    writer_editor.log_print("Created {}", file.string());
+    writer_editor.log_alert("Created {}", file.string());
     return true;
 }
 
@@ -135,13 +135,14 @@ bool create_notes_directory(const std::filesystem::path& notes) {
     std::error_code error;
     std::filesystem::create_directories(notes, error);
     if (error) {
-        writer_editor.log_print(
-            "Failed to create notes directory: {}",
+        writer_editor.log_alert(
+            "Failed to create notes directory {}: {}",
+            notes.string(),
             error.message()
         );
         return false;
     }
-    writer_editor.log_print("Created {}", notes.string());
+    writer_editor.log_alert("Created {}", notes.string());
     return true;
 }
 
@@ -180,7 +181,7 @@ bool cancelled(const std::string_view value) {
     if (value != "cancel") {
         return false;
     }
-    writer_editor.log_print("Cancelled.");
+    writer_editor.log_alert("Cancelled.");
     return true;
 }
 
@@ -253,7 +254,7 @@ std::optional<std::filesystem::path> path_from_setting(std::string_view text) {
         };
     }
     catch (...) {
-        writer_editor.log_print(
+        writer_editor.log_alert(
             "Failed to read config/components/writer.ini. Writer data files were not written."
         );
         return std::nullopt;
@@ -265,7 +266,7 @@ std::optional<writer::data::Layout> load_layout() {
     std::error_code error;
     const bool present = std::filesystem::exists(ini_path, error);
     if (error) {
-        writer_editor.log_print(
+        writer_editor.log_alert(
             "Failed to inspect {}: {}",
             ini_path.string(),
             error.message()
@@ -279,7 +280,7 @@ std::optional<writer::data::Layout> load_layout() {
     if (present) {
         const auto document = ac::ini::read(ini_path);
         if (!document) {
-            writer_editor.log_print(
+            writer_editor.log_alert(
                 "Failed to read {}. Writer data files were not written.",
                 ini_path.string()
             );
@@ -297,13 +298,25 @@ std::optional<writer::data::Layout> load_layout() {
         if (const auto value = document->find("writer", "notes_subdirectory")) {
             const auto text = trim(*value);
             if (!text.empty()) {
-                notes = path_from_setting(text);
-                if (!notes) {
-                    return std::nullopt;
+                try {
+                    notes = std::filesystem::path {
+                        ac::encoding::to_utf16(std::string {text})
+                    };
+                    notes_label = std::string {text};
+                    const bool relative =
+                        writer::data::is_relative_subdirectory(*notes);
+                    if (!relative && !notes->is_absolute()) {
+                        writer_editor.log_alert(
+                            "config/components/writer.ini has an invalid notes_subdirectory. "
+                            "Using the notes folder under the Writer directory. "
+                            "The file will not be rewritten."
+                        );
+                    }
                 }
-                notes_label = std::string {text};
-                if (!writer::data::is_relative_subdirectory(*notes)) {
-                    writer_editor.log_print(
+                catch (...) {
+                    notes.reset();
+                    notes_label.clear();
+                    writer_editor.log_alert(
                         "config/components/writer.ini has an invalid notes_subdirectory. "
                         "Using the notes folder under the Writer directory. "
                         "The file will not be rewritten."
@@ -341,7 +354,7 @@ int seed_notes(const writer::data::Layout& layout) {
         return 1;
     }
     if (state == StoreState::present) {
-        writer_editor.log(
+        writer_editor.log_debug(
             "Left existing {} unchanged.",
             layout.notes.string()
         );
@@ -427,7 +440,7 @@ int init_notes(const writer::data::Layout& layout) {
     case NotesChoice::yes:
         return create_notes_directory(layout.notes) ? 0 : 1;
     case NotesChoice::no:
-        writer_editor.log_print("Notes directory was not requested.");
+        writer_editor.log_alert("Notes directory was not requested.");
         return 0;
     case NotesChoice::cancelled:
         return 1;
@@ -558,7 +571,7 @@ int run_action(Action action) {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    writer_editor.log_main("writer_editor.exe started");
+    writer_editor.log_info("writer_editor.exe started");
 
     if (const auto launch = initialization_launch(argc, argv)) {
         const auto layout = load_layout();
@@ -575,7 +588,7 @@ int main(int argc, char* argv[]) {
 
     const auto action = parse_action(argc, argv);
     if (!action) {
-        writer_editor.log_print("Unknown writer_editor argument.");
+        writer_editor.log_alert("Unknown writer_editor argument.");
         return 1;
     }
     if (requires_initialization(*action) && !require_initialization()) {

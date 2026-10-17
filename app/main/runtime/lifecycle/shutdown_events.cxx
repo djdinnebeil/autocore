@@ -38,13 +38,13 @@ LRESULT CALLBACK shutdown_window_procedure(
 ) {
     switch (message) {
     case WM_QUERYENDSESSION:
-        auto_core.log_main(
+        auto_core.log_info(
             "shutdown_window_procedure() - WM_QUERYENDSESSION"
         );
         return TRUE;
     case WM_ENDSESSION:
         if (w_param == TRUE) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "shutdown_window_procedure() - WM_ENDSESSION"
             );
             request_shutdown(false);
@@ -100,25 +100,25 @@ BOOL WINAPI console_control_handler(DWORD control_type) {
     if (!ac::main::program_closing) {
         switch (control_type) {
         case CTRL_CLOSE_EVENT:
-            auto_core.log_main(
+            auto_core.log_info(
                 "console_control_handler() - CTRL_CLOSE_EVENT"
             );
             request_shutdown(false);
             return TRUE;
         case CTRL_BREAK_EVENT:
-            auto_core.log_main(
+            auto_core.log_info(
                 "console_control_handler() - CTRL_BREAK_EVENT"
             );
             request_shutdown(true);
             return TRUE;
         case CTRL_C_EVENT:
-            auto_core.log_main(
+            auto_core.log_info(
                 "console_control_handler() - CTRL_C_EVENT"
             );
             request_shutdown(true);
             return TRUE;
         default:
-            auto_core.log_main(
+            auto_core.log_info(
                 "console_control_handler() - default"
             );
             break;

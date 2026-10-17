@@ -100,7 +100,7 @@ bool save_aliases(
         journal_builder.print("Failed to write {}", path.string());
         return false;
     }
-    journal_builder.log("Wrote {}", path.string());
+    journal_builder.log_debug("Wrote {}", path.string());
     std::cout << "Wrote " << path.string() << ".\n";
     std::cout << "Restart Journal before the catalog changes.\n";
     return true;
@@ -476,7 +476,7 @@ int run_seed() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_builder.log_main("journal_builder.exe started");
+    journal_builder.log_info("journal_builder.exe started");
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {

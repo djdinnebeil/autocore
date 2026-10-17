@@ -40,7 +40,7 @@ int run_writer_editor(std::string_view argument) {
             &startup,
             &process
         )) {
-        writer_component().log_print("Unable to start writer_editor.exe.");
+        writer_component().log_alert("Unable to start writer_editor.exe.");
         return 1;
     }
 
@@ -49,7 +49,7 @@ int run_writer_editor(std::string_view argument) {
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        writer_component().log_print(
+        writer_component().log_alert(
             "Unable to read the exit code from writer_editor.exe."
         );
         return 1;
@@ -57,7 +57,7 @@ int run_writer_editor(std::string_view argument) {
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        writer_component().log_print(
+        writer_component().log_alert(
             "writer_editor.exe --daily-note exited {}.",
             code
         );

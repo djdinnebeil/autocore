@@ -50,7 +50,7 @@ void fetch_bstr(
             value = V_BSTR(&result_value);
         }
         else {
-            itunes_component.log_main("iTunes error with V_BSTR in get_track_info");
+            itunes_component.log_info("iTunes error with V_BSTR in get_track_info");
             value = L"";
         }
     }
@@ -144,7 +144,7 @@ TrackInfo itunes_client::get_track_info_on_com_thread() {
     info.has_database_id = found_database_id;
     info.database_id = database_id;
     if (!found_database_id) {
-        itunes_component.log(
+        itunes_component.log_debug(
             "iTunes track has no TrackDatabaseID; listening history was not updated."
         );
     }
@@ -164,7 +164,7 @@ std::wstring itunes_client::get_current_track() {
     }
     catch (const std::exception& exception) {
         remaining_song_duration = -1;
-        itunes_component.log_print(
+        itunes_component.log_alert(
             "Failed to dispatch iTunes track query: {}",
             exception.what()
         );
@@ -187,7 +187,7 @@ itunes_client::ListeningSample itunes_client::capture_listening_sample() {
     }
     catch (const std::exception& exception) {
         remaining_song_duration = -1;
-        itunes_component.log_print(
+        itunes_component.log_alert(
             "Failed to dispatch iTunes track query: {}",
             exception.what()
         );
@@ -256,8 +256,8 @@ std::wstring itunes_client::get_current_track_on_com_thread(ListeningSample* sam
                 last_retrieved_song,
                 current_song
             )) {
-            itunes_component.lognl_main("current song: ");
-            itunes_component.log_print(current_song);
+            itunes_component.lognl_info("current song: ");
+            itunes_component.log_alert(current_song);
         }
     }
     return current_song;

@@ -74,7 +74,7 @@ std::string episode_title() {
         episode = journal::db::allocate_episode("");
     }
     if (!episode) {
-        journal_component().log_print("{}", episode.error());
+        journal_component().log_alert("{}", episode.error());
         return {};
     }
 
@@ -89,7 +89,7 @@ std::string episode_title() {
                 episode->next_episode
             );
             !pushed) {
-            journal_component().log_print("{}", pushed.error());
+            journal_component().log_alert("{}", pushed.error());
         }
     }
 
@@ -107,7 +107,7 @@ void journal_title::print_episode_title() {
     const std::string text = episode_title();
     if (text.empty()) {
         if (!ac::keyboard::send_linebreak()) {
-            journal_component().log_print(
+            journal_component().log_alert(
                 "Unable to send a linebreak."
             );
         }

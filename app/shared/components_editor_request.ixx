@@ -47,15 +47,15 @@ export namespace ac::config::components_request {
         const ConfigLaunch& launch
     ) {
         if (launch.init && launch.seed) {
-            logger.log("Initialization requested with seed mode");
+            logger.log_debug("Initialization requested with seed mode");
             return;
         }
         if (launch.seed) {
-            logger.log("Seed requested");
+            logger.log_debug("Seed requested");
             return;
         }
         if (launch.init) {
-            logger.log("Initialization requested");
+            logger.log_debug("Initialization requested");
         }
     }
 
@@ -64,7 +64,7 @@ export namespace ac::config::components_request {
         Logger& logger,
         const std::string_view file
     ) {
-        logger.log("Seed skipped; {} already exists", file);
+        logger.log_debug("Seed skipped; {} already exists", file);
     }
 
     template <typename Logger>
@@ -72,22 +72,22 @@ export namespace ac::config::components_request {
         Logger& logger,
         const std::string_view file
     ) {
-        logger.log("Initialization skipped; {} already exists", file);
+        logger.log_debug("Initialization skipped; {} already exists", file);
     }
 
     template <typename Logger>
     inline void log_writing_defaults(Logger& logger) {
-        logger.log("Writing default configuration");
+        logger.log_debug("Writing default configuration");
     }
 
     template <typename Logger>
     inline void log_configuration_initialized(Logger& logger) {
-        logger.log("Configuration initialized successfully");
+        logger.log_debug("Configuration initialized successfully");
     }
 
     template <typename Logger>
     inline void log_configuration_missing(Logger& logger) {
-        logger.log("Configuration file missing; starting initialization");
+        logger.log_debug("Configuration file missing; starting initialization");
     }
 
     template <typename Logger>

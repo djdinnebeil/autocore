@@ -45,7 +45,7 @@ std::string local_timestamp() {
 }
 
 void print_error(const std::string& message) {
-    itunes_db.log_print("{}", message);
+    itunes_db.log_alert("{}", message);
 }
 
 bool database_exists() {
@@ -59,13 +59,13 @@ void create_database() {
         print_error(store.error());
         return;
     }
-    itunes_db.log_print("Created a listening database.");
+    itunes_db.log_alert("Created a listening database.");
 }
 
 int run_seed() {
     const auto ini_path = ac::paths::component_config_file("itunes");
     if (!ac::ini::read(ini_path)) {
-        itunes_db.log_print(
+        itunes_db.log_alert(
             "config/components/itunes.ini is missing or unreadable. itunes_config.exe owns it."
         );
         return 1;
@@ -75,7 +75,7 @@ int run_seed() {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        itunes_db.log_print(
+        itunes_db.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -83,7 +83,7 @@ int run_seed() {
         return 1;
     }
     if (exists) {
-        itunes_db.log("Seed skipped; history.db already exists");
+        itunes_db.log_debug("Seed skipped; history.db already exists");
         return 0;
     }
 
@@ -92,7 +92,7 @@ int run_seed() {
         print_error(store.error());
         return 1;
     }
-    itunes_db.log_print("Created a listening database.");
+    itunes_db.log_alert("Created a listening database.");
     return 0;
 }
 
@@ -198,12 +198,12 @@ std::expected<std::int64_t, std::string> parse_int64(std::string_view text) {
 int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
-        itunes_db.log_print("Unable to create the iTunes database service mutex.");
+        itunes_db.log_alert("Unable to create the iTunes database service mutex.");
         return 1;
     }
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         CloseHandle(mutex);
-        itunes_db.log_print("iTunes database service is already running.");
+        itunes_db.log_alert("iTunes database service is already running.");
         return 1;
     }
     struct MutexGuard {
@@ -216,7 +216,7 @@ int run_serve(void* const owner) {
 
     auto store = itunes::sqlite::open();
     if (!store) {
-        itunes_db.log_print("{}", store.error());
+        itunes_db.log_alert("{}", store.error());
         return 1;
     }
     struct CloseGuard {
@@ -226,14 +226,14 @@ int run_serve(void* const owner) {
                 return;
             }
             if (const auto closed = database->close_current(local_timestamp()); !closed) {
-                itunes_db.log_print("{}", closed.error());
+                itunes_db.log_alert("{}", closed.error());
             }
         }
     } close_guard {&(*store)};
 
     auto server = ac::pipes::create_pipe_server(std::wstring {itunes::db::pipe_name});
     if (!server) {
-        itunes_db.log_print(
+        itunes_db.log_alert(
             "Unable to open the iTunes database pipe. Error: {}",
             server.error().system_error
         );
@@ -247,7 +247,7 @@ int run_serve(void* const owner) {
             dispatcher.request_stop();
         });
         if (!owner_watch.active()) {
-            itunes_db.log_print("Unable to watch the iTunes database owner process.");
+            itunes_db.log_alert("Unable to watch the iTunes database owner process.");
             return 1;
         }
     }
@@ -256,7 +256,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        itunes_db.log_print(
+        itunes_db.log_alert(
             "Unable to accept an iTunes database client. Error: {}",
             GetLastError()
         );
@@ -266,11 +266,11 @@ int run_serve(void* const owner) {
     const auto hello = ac::pipes::read_string(pipe);
     if (!hello || *hello != itunes::db::protocol_id) {
         (void)send_status(pipe, "protocol", "Unsupported iTunes database protocol.");
-        itunes_db.log_print("Rejected an iTunes database client using an unexpected protocol.");
+        itunes_db.log_alert("Rejected an iTunes database client using an unexpected protocol.");
         return 1;
     }
     if (!send_status(pipe, "ok", {})) {
-        itunes_db.log_print("Unable to accept the iTunes database client.");
+        itunes_db.log_alert("Unable to accept the iTunes database client.");
         return 1;
     }
 
@@ -281,7 +281,7 @@ int run_serve(void* const owner) {
             for (std::string& field : fields) {
                 auto value = ac::pipes::read_string(pipe);
                 if (!value) {
-                    itunes_db.log_print("Failed to read an iTunes listening observation.");
+                    itunes_db.log_alert("Failed to read an iTunes listening observation.");
                     dispatcher.request_stop();
                     return;
                 }
@@ -318,7 +318,7 @@ int run_serve(void* const owner) {
     dispatcher.set_command(
         itunes::db::to_wire(itunes::db::Request::shutdown),
         [&dispatcher] {
-            itunes_db.log_main("shutdown signal received");
+            itunes_db.log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -330,7 +330,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        itunes_db.log_print(
+        itunes_db.log_alert(
             "iTunes database pipe failed. Error: {}",
             result.error().system_error
         );
@@ -343,7 +343,7 @@ int run_serve(void* const owner) {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    itunes_db.log_main("itunes_db.exe started");
+    itunes_db.log_info("itunes_db.exe started");
     bool serve = false;
     bool seed = false;
     void* owner = nullptr;

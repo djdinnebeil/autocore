@@ -39,7 +39,7 @@ namespace {
                 &startup_info,
                 &process_info
             )) {
-            settings_app.log_print(
+            settings_app.log_alert(
                 "Unable to start {}.",
                 executable_path.string()
             );
@@ -51,7 +51,7 @@ namespace {
         DWORD exit_code = 1;
         if (!GetExitCodeProcess(process_info.hProcess, &exit_code)) {
             CloseHandle(process_info.hProcess);
-            settings_app.log_print(
+            settings_app.log_alert(
                 "Unable to read the exit code from {}.",
                 executable_path.string()
             );
@@ -72,12 +72,12 @@ namespace {
     }
 
     void show_menu(const std::vector<ac::main::settings::MenuRow>& rows) {
-        settings_app.log_print("Auto Core Settings\n");
+        settings_app.log_alert("Auto Core Settings\n");
         for (std::size_t index = 0; index < rows.size(); ++index) {
-            settings_app.log_print("{}. {}", index + 1, rows[index].label);
+            settings_app.log_alert("{}. {}", index + 1, rows[index].label);
         }
-        settings_app.log_print("0. Exit");
-        settings_app.lognl_print("Choice: ");
+        settings_app.log_alert("0. Exit");
+        settings_app.lognl_alert("Choice: ");
     }
 
 } // namespace
@@ -95,10 +95,10 @@ export int run_settings_application() {
 
         std::string line;
         if (!std::getline(std::cin, line)) {
-            settings_app.log("Input ended.");
+            settings_app.log_debug("Input ended.");
             return 1;
         }
-        settings_app.log(std::string_view {line});
+        settings_app.log_debug(std::string_view {line});
 
         const auto choice = trim_line(line);
         if (choice == "0") {
@@ -113,7 +113,7 @@ export int run_settings_application() {
             parsed.ptr != end ||
             value == 0 ||
             static_cast<std::size_t>(value) > rows.size()) {
-            settings_app.log_print(
+            settings_app.log_alert(
                 "Enter a number from 0 to {}.",
                 rows.size()
             );

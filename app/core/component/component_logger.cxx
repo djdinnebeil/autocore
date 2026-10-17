@@ -1,3 +1,7 @@
+module;
+
+#include "component_log_format_detail.hpp"
+
 module auto_core.core.component;
 
 import :logger;
@@ -6,54 +10,6 @@ import auto_core.core.clock;
 import auto_core.core.error;
 
 namespace {
-
-    bool write_record(
-        std::ostream& stream,
-        bool& line_open,
-        const std::string_view timestamp,
-        const std::string_view message,
-        const bool newline
-    ) {
-        if (!stream.good()) {
-            return false;
-        }
-
-        std::size_t offset = 0;
-        while (offset < message.size()) {
-            if (!line_open) {
-                stream << '[' << timestamp << "] ";
-                line_open = true;
-            }
-
-            const std::size_t end = message.find('\n', offset);
-            if (end == std::string_view::npos) {
-                stream << message.substr(offset);
-                offset = message.size();
-            }
-            else {
-                stream << message.substr(offset, end - offset) << '\n';
-                line_open = false;
-                offset = end + 1;
-            }
-        }
-
-        if (message.empty() && !line_open) {
-            stream << '[' << timestamp << "] ";
-            line_open = true;
-        }
-
-        if (newline && line_open) {
-            stream << '\n';
-            line_open = false;
-        }
-
-        if (newline) {
-            stream.flush();
-        }
-
-        return stream.good();
-    }
-
     void close_open_line(std::ofstream& stream, bool& line_open) {
         if (stream.is_open() && line_open) {
             stream << '\n';
@@ -82,20 +38,11 @@ namespace ac::component_detail {
         std::filesystem::path directory;
         std::string logger_date;
         std::ofstream log_stream;
-        std::ofstream main_log_stream;
         bool line_open = false;
-        bool main_line_open = false;
         std::mutex mutex;
 
         std::filesystem::path log_path(const std::string_view date) const {
             return directory / (std::string {date} + "_" + name + ".log");
-        }
-
-        std::filesystem::path main_log_path(
-            const std::string_view date
-        ) const {
-            return directory /
-                (std::string {date} + "_" + name + ".main.log");
         }
 
         void write_session_marker(
@@ -105,10 +52,11 @@ namespace ac::component_detail {
             if (!log_stream.is_open()) {
                 return;
             }
-            (void)write_record(
+            (void)ac::component_detail::write_log_record(
                 log_stream,
                 line_open,
                 timestamp,
+                {},
                 marker,
                 true
             );
@@ -126,22 +74,12 @@ namespace ac::component_detail {
                 return;
             }
 
-            const auto comprehensive_path = log_path(date);
-            log_stream.open(comprehensive_path, std::ios::app);
+            const auto path = log_path(date);
+            log_stream.open(path, std::ios::app);
             if (!log_stream.is_open()) {
                 ac::error::log(
                     "Failed to open component log file: {}",
-                    comprehensive_path
-                );
-                return;
-            }
-
-            const auto central_subset_path = main_log_path(date);
-            main_log_stream.open(central_subset_path, std::ios::app);
-            if (!main_log_stream.is_open()) {
-                ac::error::log(
-                    "Failed to open component main log file: {}",
-                    central_subset_path
+                    path
                 );
             }
         }
@@ -175,8 +113,6 @@ namespace ac::component_detail {
         void close_files() {
             close_open_line(log_stream, line_open);
             log_stream.close();
-            close_open_line(main_log_stream, main_line_open);
-            main_log_stream.close();
         }
 
         void update_files_unlocked(
@@ -189,10 +125,11 @@ namespace ac::component_detail {
 
             if (log_stream.is_open()) {
                 close_open_line(log_stream, line_open);
-                (void)write_record(
+                (void)ac::component_detail::write_log_record(
                     log_stream,
                     line_open,
                     timestamp,
+                    {},
                     "--- Session continues in next log file ---",
                     true
                 );
@@ -209,23 +146,17 @@ namespace ac::component_detail {
 
             if (log_stream.is_open()) {
                 close_open_line(log_stream, line_open);
-                (void)write_record(
+                (void)ac::component_detail::write_log_record(
                     log_stream,
                     line_open,
                     timestamp,
+                    {},
                     std::format(
                         "Session ended for {} {} at {}",
                         name,
                         end.date_iso,
                         end.timestamp_with_seconds
                     ),
-                    true
-                );
-                (void)write_record(
-                    log_stream,
-                    line_open,
-                    timestamp,
-                    "***",
                     true
                 );
             }
@@ -273,8 +204,8 @@ namespace ac::component_detail {
     void ComponentLogger::write(
         const std::string_view timestamp,
         const std::string_view date_iso,
+        const std::string_view event_type,
         const std::string_view message,
-        const bool main_worthy,
         const bool newline
     ) {
         std::scoped_lock lock(impl_->mutex);
@@ -284,26 +215,14 @@ namespace ac::component_detail {
             return;
         }
 
-        const bool comprehensive_written = write_record(
+        (void)write_log_record(
             impl_->log_stream,
             impl_->line_open,
             timestamp,
+            event_type,
             message,
             newline
         );
-
-        if (
-            main_worthy && comprehensive_written &&
-            impl_->main_log_stream.is_open()
-        ) {
-            (void)write_record(
-                impl_->main_log_stream,
-                impl_->main_line_open,
-                timestamp,
-                message,
-                newline
-            );
-        }
     }
 
     void ComponentLogger::update_file() {
@@ -320,9 +239,6 @@ namespace ac::component_detail {
 
         if (impl_->log_stream.is_open()) {
             impl_->log_stream.flush();
-        }
-        if (impl_->main_log_stream.is_open()) {
-            impl_->main_log_stream.flush();
         }
     }
 

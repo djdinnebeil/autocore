@@ -77,7 +77,7 @@ The main application, core DLL, shared protocols, and component projects are sep
 | --- | --- | --- | --- |
 | `dash` | Local secret insertion | `dash_ac.exe` | Current-user DPAPI with a Windows Hello access check; see [Dash](docs/manual/components/dash.md) |
 | `journal` | Journaling titles and file workflow | `journal_ac.exe` | Pipe child of Auto Core; episode counters in `series.db` under `[journal] directory` |
-| `logger` | Merged main log | `logger_ac.exe` | Reads local `.main.log` files into `YYYY-MM-DD_main.log`. See [Logger](docs/manual/components/logger.md) |
+| `logger` | Merged main log | `logger_ac.exe` | Reads component logs into `YYYY-MM-DD_main.log`. See [Logger](docs/manual/components/logger.md) |
 | `journal_config` | Journal configuration | `journal_config.exe` | Writes only `config/components/journal.ini`. `--init` and `--seed` launch the owners of the other Journal stores |
 | `journal_builder` | Journal alias files | `journal_builder.exe` | Owns `<factory_name>.list` under the journal data directory. Interactive add/edit/delete; `--seed` creates missing starter files; `--init` prompts for each missing file |
 | `journal_clock` | Journal extended hours | `journal_clock.exe` | Owns `extended_hour.clock` in the journal data directory (`components\journal` by default). Interactive token edit; `--seed` writes `extended_hours = +0` when the file is missing |
@@ -156,10 +156,7 @@ See [Dash secret storage](docs/manual/components/dash.md) for the contract, thre
 
 The iTunes component controls playback through the iTunes COM automation interface and runs as `itunes_ac.exe`. `itunes_db.exe` owns the listening-history database `history.db`. `itunes_ac.exe` does not open that file.
 
-> [!IMPORTANT]
-> An elevated Auto Core process cannot connect to an iTunes instance that is already running without Administrator privileges. Either start Auto Core before iTunes, or close iTunes and restart it with Administrator privileges before starting Auto Core.
-
-See [iTunes component](docs/manual/components/itunes.md). Follow-up work is in [devs/TODO.md](devs/TODO.md).
+Run Auto Core and the normal iTunes application without Administrator privileges. That combination is supported and recommended. The known privilege combinations are in the [iTunes component](docs/manual/components/itunes.md) manual. Follow-up work is in [devs/TODO.md](devs/TODO.md).
 
 ## Spotify
 

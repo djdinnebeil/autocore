@@ -27,7 +27,7 @@ import <Windows.h>;
  * \brief Ends the Spotify process and performs necessary cleanup.
  */
 void end_spotify() {
-    spotify_component.log_main("shutdown signal received");
+    spotify_component.log_info("shutdown signal received");
     stop_spotify_monitor();
 }
 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     log_init();
 
     if (const auto database = spotify::db::start_service(); !database) {
-        spotify_component.log("{}", database.error());
+        spotify_component.log_debug("{}", database.error());
     }
     struct DatabaseServiceGuard {
         ~DatabaseServiceGuard() { spotify::db::shutdown_service(); }
@@ -95,12 +95,12 @@ int main(int argc, char* argv[]) {
     }
 
     if (!ac_spotify.song_format_error.empty()) {
-        spotify_component.log_print("{}", ac_spotify.song_format_error);
-        spotify_component.log_print("Using the compiled Spotify song format.");
+        spotify_component.log_alert("{}", ac_spotify.song_format_error);
+        spotify_component.log_alert("Using the compiled Spotify song format.");
     }
 
     if (!ac::taskbar::connect()) {
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Unable to receive the native taskbar snapshot from Auto Core."
         );
     }
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
                 .switch_player = &spotify_switch_player,
                 .download_album_cover = &spotify_download_album_cover,
                 .unknown_named = [](const std::string_view name) {
-                    spotify_component.log_print("Unknown Spotify command: {}", name);
+                    spotify_component.log_alert("Unknown Spotify command: {}", name);
                 }
             },
             protocol_failed
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
                     registry.autocomplete_values()
                 )
             ); !hello) {
-            spotify_component.log_print(
+            spotify_component.log_alert(
                 "Failed to send Spotify hello. Error: {}",
                 hello.error().system_error
             );
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
         }
         else if (const auto result = dispatcher.process(ac_spotify_pipe);
             !result) {
-            spotify_component.log_print(
+            spotify_component.log_alert(
                 "Spotify pipe failed. Error: {}",
                 result.error().system_error
             );
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        spotify_component.log_print(
+        spotify_component.log_alert(
             "Failed to connect to Spotify pipe. Error: {}",
             connection.error().system_error
         );
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 
     stop_spotify_monitor();
 
-    spotify_component.log_main("program terminated");
+    spotify_component.log_info("program terminated");
 
     return exit_code;
 }

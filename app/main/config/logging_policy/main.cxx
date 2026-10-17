@@ -40,6 +40,22 @@ bool parse_on_off(const std::string_view text, bool& value) {
 }
 
 [[nodiscard]]
+std::optional<std::int64_t> parse_non_negative(const std::string_view text) {
+    std::int64_t parsed = 0;
+    const auto result = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        parsed
+    );
+    if (result.ec != std::errc {} ||
+        result.ptr != text.data() + text.size() ||
+        parsed < 0) {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
+[[nodiscard]]
 LoggingValues current_values() {
     LoggingValues values;
     const auto document = ac::ini::read(ini_path());
@@ -52,15 +68,38 @@ LoggingValues current_values() {
             values.disable_all = parsed;
         }
     }
+    if (const auto directory = document->find("logging", "directory")) {
+        if (!directory->empty()) {
+            values.directory = std::string {*directory};
+        }
+    }
+    if (const auto cap = document->find("logging", "max_directory_mb")) {
+        if (const auto parsed = parse_non_negative(*cap)) {
+            values.max_directory_mb = *parsed;
+        }
+    }
+    if (const auto retention = document->find("logging", "retention_days")) {
+        if (const auto parsed = parse_non_negative(*retention)) {
+            values.retention_days = *parsed;
+        }
+    }
+    if (const auto level = document->find("logging", "level")) {
+        if (*level == "debug" || *level == "info" || *level == "alert") {
+            values.level = std::string {*level};
+        }
+    }
+    if (const auto console_output = document->find(
+            "logging", "log_console_output"
+        )) {
+        bool parsed = values.log_console_output;
+        if (parse_on_off(*console_output, parsed)) {
+            values.log_console_output = parsed;
+        }
+    }
     if (const auto files = document->find("logging", "write_logs_to_files")) {
         bool parsed = values.write_logs_to_files;
         if (parse_on_off(*files, parsed)) {
             values.write_logs_to_files = parsed;
-        }
-    }
-    if (const auto directory = document->find("logging", "directory")) {
-        if (!directory->empty()) {
-            values.directory = std::string {*directory};
         }
     }
     if (const auto console = document->find(
@@ -71,9 +110,12 @@ LoggingValues current_values() {
             values.write_logs_to_console = parsed;
         }
     }
-    if (const auto mode = document->find("logging", "log_print_mode")) {
-        if (*mode == "log" || *mode == "print") {
-            values.log_print_mode = std::string {*mode};
+    if (const auto alerts = document->find(
+            "logging", "write_alerts_to_console"
+        )) {
+        bool parsed = values.write_alerts_to_console;
+        if (parse_on_off(*alerts, parsed)) {
+            values.write_alerts_to_console = parsed;
         }
     }
     if (const auto family = document->find(
@@ -82,6 +124,12 @@ LoggingValues current_values() {
         bool parsed = values.component_logging_default;
         if (parse_on_off(*family, parsed)) {
             values.component_logging_default = parsed;
+        }
+    }
+    if (const auto experimental = document->find("logging", "experimental")) {
+        bool parsed = values.experimental;
+        if (parse_on_off(*experimental, parsed)) {
+            values.experimental = parsed;
         }
     }
     return values;
@@ -106,16 +154,31 @@ std::string current_text(const menu::Setting& setting) {
     if (setting.key == "directory") {
         return values.directory;
     }
+    if (setting.key == "max_directory_mb") {
+        return std::to_string(values.max_directory_mb);
+    }
+    if (setting.key == "retention_days") {
+        return std::to_string(values.retention_days);
+    }
+    if (setting.key == "level") {
+        return values.level;
+    }
+    if (setting.key == "log_console_output") {
+        return on_off(values.log_console_output);
+    }
     if (setting.key == "write_logs_to_files") {
         return on_off(values.write_logs_to_files);
     }
     if (setting.key == "write_logs_to_console") {
         return on_off(values.write_logs_to_console);
     }
-    if (setting.key == "log_print_mode") {
-        return values.log_print_mode;
+    if (setting.key == "write_alerts_to_console") {
+        return on_off(values.write_alerts_to_console);
     }
-    return on_off(values.component_logging_default);
+    if (setting.key == "component_logging_default") {
+        return on_off(values.component_logging_default);
+    }
+    return on_off(values.experimental);
 }
 
 [[nodiscard]]
@@ -132,23 +195,46 @@ menu::ApplyResult apply_setting(
             ? std::string {ac::main::defaults::logging_directory}
             : std::string {value};
     }
+    else if (setting.key == "max_directory_mb") {
+        const auto parsed = parse_non_negative(value);
+        if (!parsed) {
+            return menu::ApplyResult::invalid;
+        }
+        values.max_directory_mb = *parsed;
+    }
+    else if (setting.key == "retention_days") {
+        const auto parsed = parse_non_negative(value);
+        if (!parsed) {
+            return menu::ApplyResult::invalid;
+        }
+        values.retention_days = *parsed;
+    }
+    else if (setting.key == "level") {
+        values.level = std::string {value};
+    }
+    else if (setting.key == "log_console_output") {
+        values.log_console_output = value == "on";
+    }
     else if (setting.key == "write_logs_to_files") {
         values.write_logs_to_files = value == "on";
     }
     else if (setting.key == "write_logs_to_console") {
         values.write_logs_to_console = value == "on";
     }
-    else if (setting.key == "log_print_mode") {
-        values.log_print_mode = std::string {value};
+    else if (setting.key == "write_alerts_to_console") {
+        values.write_alerts_to_console = value == "on";
+    }
+    else if (setting.key == "component_logging_default") {
+        values.component_logging_default = value == "on";
     }
     else {
-        values.component_logging_default = value == "on";
+        values.experimental = value == "on";
     }
     if (!write_values(values)) {
         logging_policy_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    logging_policy_config.log("Wrote {}", ini_path().string());
+    logging_policy_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -171,10 +257,10 @@ int initialize_missing() {
         std::cerr << "Failed to write " << ini_path().string() << ".\n";
         return 1;
     }
-    logging_policy_config.log_main("logging_policy_config.exe started");
+    logging_policy_config.log_info("logging_policy_config.exe started");
     ac::config::components_request::log_configuration_missing(logging_policy_config);
     ac::config::components_request::log_writing_defaults(logging_policy_config);
-    logging_policy_config.log("Wrote {}", ini_path().string());
+    logging_policy_config.log_debug("Wrote {}", ini_path().string());
     const auto result = menu::prompt_settings(
         logging::menu_settings,
         current_text,
@@ -229,7 +315,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_main("logging_policy_config.exe started");
+        logging_policy_config.log_info("logging_policy_config.exe started");
         req::log_configuration_initialized(logging_policy_config);
         return 0;
     }
@@ -238,7 +324,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_main("logging_policy_config.exe started");
+        logging_policy_config.log_info("logging_policy_config.exe started");
         req::log_writing_defaults(logging_policy_config);
         req::log_configuration_initialized(logging_policy_config);
         return 0;
@@ -255,21 +341,21 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_main("logging_policy_config.exe started");
+        logging_policy_config.log_info("logging_policy_config.exe started");
         req::log_configuration_missing(logging_policy_config);
         req::log_writing_defaults(logging_policy_config);
-        logging_policy_config.log("Wrote {}", ini_path().string());
+        logging_policy_config.log_debug("Wrote {}", ini_path().string());
         return run_configuration_menu();
     }
 
-    logging_policy_config.log_main("logging_policy_config.exe started");
+    logging_policy_config.log_info("logging_policy_config.exe started");
     req::log_config_request(logging_policy_config, *launch);
     if (launch->seed) {
         req::log_seed_skipped(logging_policy_config, "config/logging_policy.ini");
         return 0;
     }
     if (disable_requested) {
-        logging_policy_config.log(
+        logging_policy_config.log_debug(
             "Disable skipped; config/logging_policy.ini already exists"
         );
         return 0;

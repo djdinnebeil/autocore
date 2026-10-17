@@ -25,7 +25,7 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
     std::error_code error;
     std::filesystem::create_directories(destination.parent_path(), error);
     if (error) {
-        spotify_editor.log_print(
+        spotify_editor.log_alert(
             "Failed to create {}: {}",
             destination.parent_path().string(),
             error.message()
@@ -36,7 +36,7 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
     {
         std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
         if (!output) {
-            spotify_editor.log_print("Failed to create {}.", destination.string());
+            spotify_editor.log_alert("Failed to create {}.", destination.string());
             return false;
         }
         output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
@@ -44,7 +44,7 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
         output.close();
         if (!output) {
             std::filesystem::remove(temporary, error);
-            spotify_editor.log_print("Failed to write {}.", destination.string());
+            spotify_editor.log_alert("Failed to write {}.", destination.string());
             return false;
         }
     }
@@ -54,7 +54,7 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
             MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
         )) {
         std::filesystem::remove(temporary, error);
-        spotify_editor.log_print("Failed to replace {}.", destination.string());
+        spotify_editor.log_alert("Failed to replace {}.", destination.string());
         return false;
     }
     return true;
@@ -63,7 +63,7 @@ bool replace_file(const std::filesystem::path& destination, std::string_view con
 int require_readable_ini() {
     const auto path = ac::paths::component_config_file("spotify");
     if (!ac::ini::read(path)) {
-        spotify_editor.log_print(
+        spotify_editor.log_alert(
             "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
@@ -75,17 +75,17 @@ int set_client_id(const bool allow_blank) {
     std::cout << "Enter Spotify client ID: ";
     std::string input;
     if (!std::getline(std::cin, input)) {
-        spotify_editor.log_print("Failed to read the Spotify client ID.");
+        spotify_editor.log_alert("Failed to read the Spotify client ID.");
         return 1;
     }
     const auto chosen = trim(input);
     if (chosen.empty()) {
         if (!allow_blank) {
-            spotify_editor.log_print("The Spotify client ID cannot be empty.");
+            spotify_editor.log_alert("The Spotify client ID cannot be empty.");
             return 1;
         }
         if (spotify::data::load_client_id()) {
-            spotify_editor.log(
+            spotify_editor.log_debug(
                 "Left existing {} unchanged.",
                 spotify::data::client_id_path().string()
             );
@@ -94,13 +94,13 @@ int set_client_id(const bool allow_blank) {
         if (!replace_file(spotify::data::client_id_path(), {})) {
             return 1;
         }
-        spotify_editor.log_print("Spotify client ID left blank.");
+        spotify_editor.log_alert("Spotify client ID left blank.");
         return 0;
     }
     if (!replace_file(spotify::data::client_id_path(), std::string {chosen})) {
         return 1;
     }
-    spotify_editor.log("Wrote {}.", spotify::data::client_id_path().string());
+    spotify_editor.log_debug("Wrote {}.", spotify::data::client_id_path().string());
     return 0;
 }
 
@@ -112,7 +112,7 @@ int seed_client_id() {
     std::error_code error;
     const bool exists = std::filesystem::exists(path, error);
     if (error) {
-        spotify_editor.log_print(
+        spotify_editor.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -120,13 +120,13 @@ int seed_client_id() {
         return 1;
     }
     if (exists) {
-        spotify_editor.log("Seed skipped; client.id already exists");
+        spotify_editor.log_debug("Seed skipped; client.id already exists");
         return 0;
     }
     if (!replace_file(path, {})) {
         return 1;
     }
-    spotify_editor.log_print("Created a blank client.id.");
+    spotify_editor.log_alert("Created a blank client.id.");
     return 0;
 }
 
@@ -135,16 +135,16 @@ int retrieve_devices() {
         std::wstring {spotify::devices::pipe_name}
     );
     if (!pipe) {
-        spotify_editor.log_print("The Spotify component is not running.");
+        spotify_editor.log_alert("The Spotify component is not running.");
         return 1;
     }
     if (const auto sent = ac::pipes::send_string(*pipe, spotify::devices::protocol_id); !sent) {
-        spotify_editor.log_print("The Spotify component is not running.");
+        spotify_editor.log_alert("The Spotify component is not running.");
         return 1;
     }
     auto hello = ac::pipes::read_string(*pipe);
     if (!hello || *hello != "ok") {
-        spotify_editor.log_print("Spotify device discovery is unavailable.");
+        spotify_editor.log_alert("Spotify device discovery is unavailable.");
         return 1;
     }
     if (const auto sent = ac::pipes::send_pipe_command(
@@ -152,21 +152,21 @@ int retrieve_devices() {
             spotify::devices::to_wire(spotify::devices::Request::list_devices)
         );
         !sent) {
-        spotify_editor.log_print("Spotify device discovery is unavailable.");
+        spotify_editor.log_alert("Spotify device discovery is unavailable.");
         return 1;
     }
     auto status = ac::pipes::read_string(*pipe);
     if (!status) {
-        spotify_editor.log_print("Spotify device discovery is unavailable.");
+        spotify_editor.log_alert("Spotify device discovery is unavailable.");
         return 1;
     }
     auto body = ac::pipes::read_string(*pipe);
     if (!body) {
-        spotify_editor.log_print("Spotify device discovery is unavailable.");
+        spotify_editor.log_alert("Spotify device discovery is unavailable.");
         return 1;
     }
     if (*status != "ok") {
-        spotify_editor.log_print("{}", *body);
+        spotify_editor.log_alert("{}", *body);
         return 1;
     }
     const auto devices = spotify::data::parse_devices(*body);
@@ -176,7 +176,7 @@ int retrieve_devices() {
         )) {
         return 1;
     }
-    spotify_editor.log("Wrote {}.", spotify::data::devices_list_path().string());
+    spotify_editor.log_debug("Wrote {}.", spotify::data::devices_list_path().string());
     return 0;
 }
 
@@ -184,7 +184,7 @@ int retrieve_devices() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_editor.log_main("spotify_editor.exe started");
+    spotify_editor.log_info("spotify_editor.exe started");
     if (argc == 2 && std::string_view {argv[1]} == "--client-id") {
         return set_client_id(true);
     }
@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else {
-            spotify_editor.log_print("Unknown option.");
+            spotify_editor.log_alert("Unknown option.");
         }
     }
 }

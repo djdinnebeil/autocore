@@ -268,7 +268,7 @@ menu::ApplyResult apply_setting(
     if (!write_settings(*settings)) {
         return menu::ApplyResult::failed;
     }
-    spotify_config.log("Wrote {}.", ini_path().string());
+    spotify_config.log_debug("Wrote {}.", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -310,7 +310,7 @@ std::optional<bool> file_present(const std::filesystem::path& path) {
 }
 
 void report_complete() {
-    spotify_config.log("Spotify initialization complete.");
+    spotify_config.log_debug("Spotify initialization complete.");
 }
 
 void report_incomplete() {
@@ -424,7 +424,7 @@ int report_seeded_authorization() {
         return 1;
     }
     if (!spotify::data::load_client_id() || !*tokens) {
-        spotify_config.log("Spotify files have been seeded.");
+        spotify_config.log_debug("Spotify files have been seeded.");
         report_incomplete();
     }
     return 0;
@@ -434,7 +434,7 @@ int report_seeded_authorization() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_config.log_main("spotify_config.exe started");
+    spotify_config.log_info("spotify_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -458,7 +458,7 @@ int main(int argc, char* argv[]) {
             if (!write_settings({})) {
                 return 1;
             }
-            spotify_config.log("Wrote {}.", path.string());
+            spotify_config.log_debug("Wrote {}.", path.string());
         }
         else if (!load_settings(true)) {
             return 1;
@@ -489,7 +489,7 @@ int main(int argc, char* argv[]) {
         if (!write_settings({})) {
             return 1;
         }
-        spotify_config.log("Wrote {}.", path.string());
+        spotify_config.log_debug("Wrote {}.", path.string());
         if (offer_configuration() != 0) {
             return 1;
         }

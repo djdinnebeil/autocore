@@ -50,7 +50,7 @@ bool write_list(const catalog::Document& document) {
         components_editor.print("Failed to write {}.", list_path().string());
         return false;
     }
-    components_editor.log("Wrote {}", list_path().string());
+    components_editor.log_debug("Wrote {}", list_path().string());
     return true;
 }
 
@@ -246,7 +246,7 @@ int set_explicit_state(const std::string_view name, const bool enabled) {
         components_editor.print("Failed to write {}.", list_path().string());
         return 1;
     }
-    components_editor.log("Wrote {}", list_path().string());
+    components_editor.log_debug("Wrote {}", list_path().string());
     return 0;
 }
 
@@ -356,7 +356,7 @@ std::optional<EditorArguments> parse_arguments(const int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    components_editor.log_main("components_editor.exe started");
+    components_editor.log_info("components_editor.exe started");
 
     const auto arguments = parse_arguments(argc, argv);
     if (!arguments) {
@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         if (list_present) {
-            components_editor.log("components.list already exists.");
+            components_editor.log_debug("components.list already exists.");
             return 0;
         }
         return full_synchronize();

@@ -1,8 +1,10 @@
 # Logger
 
-Logger combines each component's main log into one daily file. Components still write their own logs. Logger only appends the new main-log records.
+Logger combines each component log into one daily file. Components still write their own logs. Logger only appends the new records.
 
 The daily file and `merge.state` are stored in the shared log folder from `config\logging_policy.ini`. The default folder is `logs`, relative to the installation root. `logger.ini` does not choose that folder.
+
+`auto_core_logging_cleanup.exe` reads and reports the shared `retention_days` and `max_directory_mb` values once after Auto Core reaches ready state. At this stage it does not scan, measure, or delete files.
 
 ## Configuration
 
@@ -23,14 +25,14 @@ A positive interval merges once when Logger starts, then again on each interval.
 | File | What it is for |
 | --- | --- |
 | `YYYY-MM-DD_main.log` | The merged daily log in the shared log folder. |
-| `merge.state` | How far each source main log has been read. Logger writes this file. |
+| `merge.state` | How far each component log has been read. Logger writes this file. |
 
-Source `{date}_<name>.main.log` files stay in each component's own log folder. Logger reads them and does not replace them.
+Source `{date}_<name>.log` files stay in each component's own log folder. Logger reads them and does not replace them.
 
 ## Component tools
 
 | Tool | What it is for |
 | --- | --- |
-| `logger_ac.exe` | Merges main logs while it is running. `--once` merges one time and exits. |
+| `logger_ac.exe` | Merges component logs while it is running. `--once` merges one time and exits. |
 | `logger_config.exe` | Edits `logger.ini`. |
 | `logger_settings.exe` | Opens Logger configuration. |

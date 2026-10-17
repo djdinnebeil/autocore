@@ -18,7 +18,7 @@ void load_song_format(itunes_client& client) {
         client.data_directory / "song.format"
     );
     if (loaded.invalid) {
-        itunes_component.log_print("{}", loaded.error);
+        itunes_component.log_alert("{}", loaded.error);
     }
     client.song_format = loaded.compiled;
 }
@@ -28,7 +28,7 @@ void load_library_format(itunes_client& client) {
         client.data_directory / "library.format"
     );
     if (loaded.error) {
-        itunes_component.log_print("{}", *loaded.error);
+        itunes_component.log_alert("{}", *loaded.error);
     }
     client.library_format = loaded.format;
 }
@@ -62,7 +62,7 @@ void itunes_client::set_config() {
         auto_start = settings.auto_start;
         stored_directory = document->find("itunes", "directory");
 
-        itunes_component.log_main(
+        itunes_component.log_info(
             "itunes.ini {}: auto_start raw={} resolved={}",
             itunes_config_path,
             raw_auto_start.value_or("absent"),

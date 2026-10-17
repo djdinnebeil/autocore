@@ -1,0 +1,20 @@
+[application]
+key = cursor
+
+[taskbar]
+application_id = Anysphere.Cursor
+
+[window]
+process_name = Cursor.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = cycle
+
+[fallback]
+executable_path = C:\DJ\Software\cursor\Cursor.exe
+
+[commands]
+activate = activate_cursor

@@ -49,7 +49,7 @@ bool file_present(bool& present) {
     std::error_code error;
     present = std::filesystem::exists(path, error);
     if (error) {
-        journal_cloud.log_print(
+        journal_cloud.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -73,10 +73,10 @@ int run_seed() {
     req::log_writing_defaults(journal_cloud);
     const auto written = journal::firebase::write_blank(path);
     if (!written) {
-        journal_cloud.log_print("{}", written.error());
+        journal_cloud.log_alert("{}", written.error());
         return 1;
     }
-    journal_cloud.log("Wrote {}", path.string());
+    journal_cloud.log_debug("Wrote {}", path.string());
     req::log_configuration_initialized(journal_cloud);
     return 0;
 }
@@ -97,30 +97,30 @@ int run_init() {
         std::cout << "Firebase ID []: ";
         std::string input;
         if (!std::getline(std::cin, input)) {
-            journal_cloud.log_print("Journal Firebase was not initialized.");
+            journal_cloud.log_alert("Journal Firebase was not initialized.");
             return 1;
         }
         const auto value = trim(input);
         if (value == "cancel") {
-            journal_cloud.log_print("Cancelled.");
+            journal_cloud.log_alert("Cancelled.");
             return 1;
         }
         if (value.empty()) {
             const auto written = journal::firebase::write_blank(path);
             if (!written) {
-                journal_cloud.log_print("{}", written.error());
+                journal_cloud.log_alert("{}", written.error());
                 return 1;
             }
-            journal_cloud.log("Wrote {}", path.string());
+            journal_cloud.log_debug("Wrote {}", path.string());
             return 0;
         }
         const auto written = journal::firebase::write_url(path, value);
         if (!written) {
-            journal_cloud.log_print("{}", written.error());
+            journal_cloud.log_alert("{}", written.error());
             std::cout << written.error() << '\n';
             continue;
         }
-        journal_cloud.log("Wrote {}", path.string());
+        journal_cloud.log_debug("Wrote {}", path.string());
         return 0;
     }
 }
@@ -152,11 +152,11 @@ int run_menu() {
                 input
             );
             if (!written) {
-                journal_cloud.log_print("{}", written.error());
+                journal_cloud.log_alert("{}", written.error());
                 std::cout << written.error() << '\n';
                 continue;
             }
-            journal_cloud.log("Wrote {}", journal::firebase::file_path().string());
+            journal_cloud.log_debug("Wrote {}", journal::firebase::file_path().string());
         }
         else if (choice == "2" || choice == "q" || choice == "Q") {
             return 0;
@@ -170,12 +170,12 @@ int run_menu() {
 int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
-        journal_cloud.log_print("Unable to create the journal cloud service mutex.");
+        journal_cloud.log_alert("Unable to create the journal cloud service mutex.");
         return 1;
     }
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         CloseHandle(mutex);
-        journal_cloud.log_print("Journal cloud service is already running.");
+        journal_cloud.log_alert("Journal cloud service is already running.");
         return 1;
     }
     struct MutexGuard {
@@ -190,7 +190,7 @@ int run_serve(void* const owner) {
         std::wstring {journal::cloud::pipe_name}
     );
     if (!server) {
-        journal_cloud.log_print(
+        journal_cloud.log_alert(
             "Unable to open the journal cloud pipe. Error: {}",
             server.error().system_error
         );
@@ -204,7 +204,7 @@ int run_serve(void* const owner) {
             dispatcher.request_stop();
         });
         if (!owner_watch.active()) {
-            journal_cloud.log_print("Unable to watch the journal cloud owner process.");
+            journal_cloud.log_alert("Unable to watch the journal cloud owner process.");
             return 1;
         }
     }
@@ -213,7 +213,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        journal_cloud.log_print(
+        journal_cloud.log_alert(
             "Unable to accept a journal cloud client. Error: {}",
             GetLastError()
         );
@@ -222,11 +222,11 @@ int run_serve(void* const owner) {
     const auto hello = ac::pipes::read_string(pipe);
     if (!hello || *hello != journal::cloud::protocol_id) {
         (void)send_status(pipe, "protocol", "Unsupported journal cloud protocol.");
-        journal_cloud.log_print("Rejected a journal cloud client using an unexpected protocol.");
+        journal_cloud.log_alert("Rejected a journal cloud client using an unexpected protocol.");
         return 1;
     }
     if (!send_status(pipe, "ok", {})) {
-        journal_cloud.log_print("Unable to accept the journal cloud client.");
+        journal_cloud.log_alert("Unable to accept the journal cloud client.");
         return 1;
     }
 
@@ -236,7 +236,7 @@ int run_serve(void* const owner) {
             const auto name = ac::pipes::read_string(pipe);
             const auto count_text = ac::pipes::read_string(pipe);
             if (!name || !count_text) {
-                journal_cloud.log_print("Failed to read a cloud push.");
+                journal_cloud.log_alert("Failed to read a cloud push.");
                 dispatcher.request_stop();
                 return;
             }
@@ -255,7 +255,7 @@ int run_serve(void* const owner) {
             }
             const auto url = journal::firebase::read_url(journal::firebase::file_path());
             if (!url) {
-                journal_cloud.log_print("No Firebase URL.");
+                journal_cloud.log_alert("No Firebase URL.");
                 if (!send_status(pipe, "error", "No Firebase URL.")) {
                     dispatcher.request_stop();
                 }
@@ -263,13 +263,13 @@ int run_serve(void* const owner) {
             }
             const auto pushed = journal::cloud::http::push(*url, *name, count);
             if (!pushed) {
-                journal_cloud.log_print("{}", pushed.error());
+                journal_cloud.log_alert("{}", pushed.error());
                 if (!send_status(pipe, "error", pushed.error())) {
                     dispatcher.request_stop();
                 }
                 return;
             }
-            journal_cloud.log_main("Updated data: {} {}", *name, count);
+            journal_cloud.log_info("Updated data: {} {}", *name, count);
             if (!send_status(pipe, "ok", {})) {
                 dispatcher.request_stop();
             }
@@ -278,7 +278,7 @@ int run_serve(void* const owner) {
     dispatcher.set_command(
         journal::cloud::to_wire(journal::cloud::Request::shutdown),
         [&dispatcher] {
-            journal_cloud.log_main("shutdown signal received");
+            journal_cloud.log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -289,7 +289,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        journal_cloud.log_print(
+        journal_cloud.log_alert(
             "Journal cloud pipe failed. Error: {}",
             result.error().system_error
         );
@@ -303,7 +303,7 @@ int run_serve(void* const owner) {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_cloud.log_main("journal_cloud.exe started");
+    journal_cloud.log_info("journal_cloud.exe started");
     if (argc >= 2 && std::string_view {argv[1]} == "--serve") {
         void* owner = nullptr;
         if (argc == 4 && std::string_view {argv[2]} == "--owner-handle") {

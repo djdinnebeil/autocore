@@ -44,17 +44,25 @@ These files live in the iTunes directory.
 
 Listening history is approximate. Playback is sampled about every five seconds. A playback change, including skip, is observed sooner.
 
-## Compatibility issue
+## Compatibility
 
-Auto Core should normally be run without Administrator privileges.
+Auto Core should normally be run without Administrator privileges. There is
+generally no reason to run the normal iTunes application elevated. Installation,
+updates, drivers, or unusual permission troubleshooting may involve
+administrator privileges, but that does not make elevated iTunes the
+recommended runtime configuration.
 
-Auto Core and iTunes must run at the same privilege level. If iTunes is
-configured to run as an administrator, Auto Core must also be run as an
-administrator. Mixing privilege levels can cause communication issues,
-including output not appearing correctly in the Auto Core console window.
+The known privilege combinations are:
 
-For the standard configuration, run both Auto Core and iTunes normally without
-Administrator privileges.
+| Auto Core | iTunes | Result |
+| --- | --- | --- |
+| Non-administrator | Non-administrator | Supported and recommended. |
+| Administrator | Administrator | Known working. This is not the recommended runtime. |
+| Non-administrator | Administrator | Compatibility issues may occur. |
+| Administrator | Non-administrator | Compatibility issues may occur. |
+
+The two matching privilege combinations are known to work. Mixed privilege
+combinations are the compatibility concern.
 
 ## Component tools
 

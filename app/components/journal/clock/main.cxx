@@ -41,7 +41,7 @@ bool journal_ini_present(bool& present) {
     std::error_code error;
     present = std::filesystem::exists(path, error);
     if (error) {
-        journal_clock.log_print(
+        journal_clock.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -78,7 +78,7 @@ int run_journal_config(
             &startup,
             &process
         )) {
-        journal_clock.log_print("Unable to start journal_config.exe.");
+        journal_clock.log_alert("Unable to start journal_config.exe.");
         return 1;
     }
 
@@ -87,7 +87,7 @@ int run_journal_config(
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
-        journal_clock.log_print(
+        journal_clock.log_alert(
             "Unable to read the exit code from journal_config.exe."
         );
         return 1;
@@ -95,7 +95,7 @@ int run_journal_config(
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        journal_clock.log_print("journal_config.exe exited {}.", code);
+        journal_clock.log_alert("journal_config.exe exited {}.", code);
     }
     return code;
 }
@@ -105,7 +105,7 @@ bool file_present(bool& present) {
     std::error_code error;
     present = std::filesystem::exists(path, error);
     if (error) {
-        journal_clock.log_print(
+        journal_clock.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -120,7 +120,7 @@ bool write_clock_file(const journal::extended_hours::ExtendedHours& hours) {
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
     if (error) {
-        journal_clock.log_print(
+        journal_clock.log_alert(
             "Failed to create {}: {}",
             path.parent_path().string(),
             error.message()
@@ -131,7 +131,7 @@ bool write_clock_file(const journal::extended_hours::ExtendedHours& hours) {
     const auto contents = journal::extended_hours::file_text(hours);
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
-        journal_clock.log_print("Failed to write {}", path.string());
+        journal_clock.log_alert("Failed to write {}", path.string());
         return false;
     }
     output.write(
@@ -140,10 +140,10 @@ bool write_clock_file(const journal::extended_hours::ExtendedHours& hours) {
     );
     output.close();
     if (!output) {
-        journal_clock.log_print("Failed to write {}", path.string());
+        journal_clock.log_alert("Failed to write {}", path.string());
         return false;
     }
-    journal_clock.log("Wrote {}", path.string());
+    journal_clock.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -168,7 +168,7 @@ std::optional<journal::extended_hours::ExtendedHours> prompt_token(
         }
         const auto value = trim(input);
         if (value == "cancel") {
-            journal_clock.log_print("Cancelled.");
+            journal_clock.log_alert("Cancelled.");
             return std::nullopt;
         }
         if (value.empty()) {
@@ -206,7 +206,7 @@ void print_menu() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_clock.log_main("journal_clock.exe started");
+    journal_clock.log_info("journal_clock.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
         }
         req::log_writing_defaults(journal_clock);
         if (!write_clock_file(recommended_hours)) {
-            journal_clock.log_print(
+            journal_clock.log_alert(
                 "Journal clock configuration was not initialized."
             );
             return 1;
@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
         }
         req::log_configuration_missing(journal_clock);
         if (!prompt_and_write(std::nullopt)) {
-            journal_clock.log_print(
+            journal_clock.log_alert(
                 "Journal clock configuration was not initialized."
             );
             return 1;
@@ -265,7 +265,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!present && !prompt_and_write(std::nullopt)) {
-        journal_clock.log_print(
+        journal_clock.log_alert(
             "Journal clock configuration was not initialized."
         );
         return 1;

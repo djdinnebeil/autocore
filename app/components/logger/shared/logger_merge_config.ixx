@@ -20,7 +20,7 @@ namespace {
         std::uint64_t merge_interval_seconds = 60;
         bool merge_logs_on_shutdown = true;
         bool ini_missing = false;
-        std::string report = "Logger configuration:\n";
+        std::string report;
 
         Cache() {
             const auto ini_path =
@@ -34,8 +34,6 @@ namespace {
                 report += ini_missing
                     ? "logger.ini unavailable; using defaults\n"
                     : "logger.ini unreadable; using defaults\n";
-                report += "merge_interval_seconds = 60\n";
-                report += "merge_logs_on_shutdown = on\n";
                 return;
             }
 

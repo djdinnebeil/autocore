@@ -65,7 +65,7 @@ std::string_view trim(const std::string_view value) {
 }
 
 void print_error(const std::string& message) {
-    journal_series.log_print("{}", message);
+    journal_series.log_alert("{}", message);
     std::cout << message << '\n';
 }
 
@@ -216,7 +216,7 @@ void select_active() {
     if (!refresh_map(found->name)) {
         return;
     }
-    journal_series.log_print("Active series is {}.", found->name);
+    journal_series.log_alert("Active series is {}.", found->name);
 }
 
 void add_series() {
@@ -234,7 +234,7 @@ void add_series() {
         print_error(added.error());
         return;
     }
-    journal_series.log_print("Created the series.");
+    journal_series.log_alert("Created the series.");
     const auto created = journal::db::session::find_series(trim(name));
     if (!created) {
         print_error(created.error());
@@ -279,7 +279,7 @@ void update_counter() {
         print_error(updated.error());
         return;
     }
-    journal_series.log_print(
+    journal_series.log_alert(
         "{} count is now {}.",
         updated->name,
         updated->next_episode
@@ -311,7 +311,7 @@ void update_padding() {
         print_error(updated.error());
         return;
     }
-    journal_series.log_print(
+    journal_series.log_alert(
         "{} padding is now {}.",
         updated->name,
         updated->padding
@@ -431,7 +431,7 @@ int generate_missing_map() {
     if (!refresh_map(std::nullopt)) {
         return 1;
     }
-    journal_series.log("Wrote {}", map_path.string());
+    journal_series.log_debug("Wrote {}", map_path.string());
     return 0;
 }
 
@@ -453,7 +453,7 @@ void stop_database(OwnedService& service) {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    journal_series.log_main("journal_series.exe started");
+    journal_series.log_info("journal_series.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

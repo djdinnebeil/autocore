@@ -100,28 +100,27 @@ namespace ac {
         void write_message(
             const std::string_view message,
             const bool newline,
-            const OutputRoute route
+            const MessageClass message_class
         ) {
             emit_disabled_notice_if_needed();
-
-            const bool log_print =
-                route == OutputRoute::component_main_and_console;
-            const bool user_facing =
-                route == OutputRoute::user_facing ||
-                (log_print &&
-                    ac::logging::config::log_print_mode() ==
-                        ac::logging::config::LogPrintMode::print);
-            const bool main_subset =
-                route != OutputRoute::component;
 
             const auto decision = ac::component_detail::decide_sinks({
                 .disable_all = ac::logging::config::disable_all(),
                 .component_logging = component_logging_on(),
-                .write_logs_to_files = ac::logging::config::write_logs_to_files(),
+                .level = static_cast<ac::component_detail::LogLevel>(
+                    ac::logging::config::level()
+                ),
+                .log_console_output =
+                    ac::logging::config::log_console_output(),
+                .write_logs_to_files =
+                    ac::logging::config::write_logs_to_files(),
                 .write_logs_to_console =
                     ac::logging::config::write_logs_to_console(),
-                .user_facing = user_facing,
-                .main_subset = main_subset,
+                .write_alerts_to_console =
+                    ac::logging::config::write_alerts_to_console(),
+                .message = static_cast<ac::component_detail::MessageClass>(
+                    message_class
+                ),
                 .notice_already_emitted = true
             });
 
@@ -135,8 +134,12 @@ namespace ac {
                 component_logger->write(
                     timestamp,
                     event_time.date_iso,
+                    ac::component_detail::message_class_name(
+                        static_cast<ac::component_detail::MessageClass>(
+                            message_class
+                        )
+                    ),
                     message,
-                    decision.write_main,
                     newline
                 );
             }
@@ -173,7 +176,7 @@ namespace ac {
             std::string {"config/components/"} + component_name + ".ini";
         const auto exe = component_name + "_config.exe";
         if (malformed) {
-            log_print(
+            log_alert(
                 "{} is malformed. Run {} to generate a valid file. "
                 "Using built-in defaults; the file will not be created.",
                 file,
@@ -181,7 +184,7 @@ namespace ac {
             );
             return;
         }
-        log_print(
+        log_alert(
             "{} is missing. Run {} to generate it. "
             "Using built-in defaults; the file will not be created.",
             file,
@@ -191,18 +194,18 @@ namespace ac {
 
     void Component::write(
         const std::string_view message,
-        const OutputRoute route,
+        const MessageClass message_class,
         const bool newline
     ) {
-        impl_->write_message(message, newline, route);
+        impl_->write_message(message, newline, message_class);
     }
 
     void Component::write(
         const std::wstring_view message,
-        const OutputRoute route,
+        const MessageClass message_class,
         const bool newline
     ) {
-        write(ac::encoding::to_utf8(message), route, newline);
+        write(ac::encoding::to_utf8(message), message_class, newline);
     }
 
     void Component::print_and_insert(const std::string_view message) {
@@ -247,7 +250,7 @@ namespace ac {
     }
 
     void Component::report_error(const std::string_view message) {
-        write(message, OutputRoute::user_facing);
+        write(message, MessageClass::print);
     }
 
     void Component::insert_text_replacing_clipboard(

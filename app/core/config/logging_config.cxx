@@ -16,12 +16,20 @@ import auto_core.core.paths;
 namespace ac::logging::config {
 
     namespace {
-        ac::logging::config::LogPrintMode to_public_mode(
-            const detail::LogPrintMode mode
+        ac::logging::config::LogLevel to_public_level(
+            const detail::LogLevel level
         ) noexcept {
-            return mode == detail::LogPrintMode::log
-                ? LogPrintMode::log
-                : LogPrintMode::print;
+            switch (level) {
+            case detail::LogLevel::trace:
+                return LogLevel::trace;
+            case detail::LogLevel::debug:
+                return LogLevel::debug;
+            case detail::LogLevel::info:
+                return LogLevel::info;
+            case detail::LogLevel::alert:
+                return LogLevel::alert;
+            }
+            return LogLevel::debug;
         }
 
         detail::LoggingFallback to_detail_fallback(
@@ -34,15 +42,20 @@ namespace ac::logging::config {
 
         struct SharedData {
             bool disable_all = false;
+            LogLevel level = LogLevel::debug;
+            bool log_console_output = true;
             bool write_logs_to_files = true;
             bool write_logs_to_console = false;
-            LogPrintMode log_print_mode = LogPrintMode::print;
+            bool write_alerts_to_console = true;
             bool component_logging_default = true;
+            std::int64_t max_directory_mb = 100;
+            std::int64_t retention_days = 30;
             std::filesystem::path directory = ac::paths::log_directory();
             std::filesystem::path components_directory =
                 directory / "components";
             bool ini_missing = false;
-            std::string report = "Logging configuration:\n";
+            std::string report;
+            bool experimental = true;
 
             SharedData() {
                 const auto list_path = ac::paths::components_list_file();
@@ -72,20 +85,22 @@ namespace ac::logging::config {
                         ac::paths::installation_root()
                     );
                     disable_all = resolved.disable_all;
+                    level = to_public_level(resolved.level);
+                    log_console_output = resolved.log_console_output;
                     write_logs_to_files = resolved.write_logs_to_files;
                     write_logs_to_console = resolved.write_logs_to_console;
-                    log_print_mode = to_public_mode(resolved.log_print_mode);
+                    write_alerts_to_console = resolved.write_alerts_to_console;
                     component_logging_default = resolved.component_logging_default;
+                    max_directory_mb = resolved.max_directory_mb;
+                    retention_days = resolved.retention_days;
                     directory = resolved.directory;
                     components_directory = resolved.components_directory;
                     report = ini_missing
-                        ? "Logging configuration:\nlogging_policy.ini unavailable; using defaults\n"
-                        : "Logging configuration:\nlogging_policy.ini unreadable; using defaults\n";
-                    const auto body = resolved.report.find('\n');
-                    if (body != std::string::npos) {
-                        report += resolved.report.substr(body + 1);
-                    }
+                        ? "logging_policy.ini unavailable; using defaults\n"
+                        : "logging_policy.ini unreadable; using defaults\n";
+                    report += resolved.report;
                     report += catalog_note;
+                    experimental = resolved.experimental;
                     return;
                 }
 
@@ -94,36 +109,55 @@ namespace ac::logging::config {
                 const detail::LoggingSettings resolved = detail::resolve_logging(
                     {
                         .disable_all = document->find("logging", "disable_all"),
+                        .level = document->find("logging", "level"),
+
+                        .log_console_output = document->find(
+                            "logging", "log_console_output"
+                        ),
                         .write_logs_to_files = document->find(
                             "logging", "write_logs_to_files"
                         ),
                         .write_logs_to_console = document->find(
                             "logging", "write_logs_to_console"
                         ),
-                        .log_print_mode = document->find(
-                            "logging", "log_print_mode"
+                        .write_alerts_to_console = document->find(
+                            "logging", "write_alerts_to_console"
                         ),
                         .component_logging_default = document->find(
                             "logging", "component_logging_default"
+                        ),
+                        .max_directory_mb = document->find(
+                            "logging", "max_directory_mb"
+                        ),
+                        .retention_days = document->find(
+                            "logging", "retention_days"
                         ),
                         .directory = directory_value
                             ? std::optional<std::filesystem::path> {
                                 ac::encoding::to_utf16(*directory_value)
                             }
-                            : std::nullopt
+                            : std::nullopt,
+                        .experimental = document->find(
+                            "logging", "experimental"
+                        )
                     },
                     ac::paths::log_directory(),
                     ac::paths::installation_root()
                 );
                 disable_all = resolved.disable_all;
+                level = to_public_level(resolved.level);
+                log_console_output = resolved.log_console_output;
                 write_logs_to_files = resolved.write_logs_to_files;
                 write_logs_to_console = resolved.write_logs_to_console;
-                log_print_mode = to_public_mode(resolved.log_print_mode);
+                write_alerts_to_console = resolved.write_alerts_to_console;
                 component_logging_default = resolved.component_logging_default;
+                max_directory_mb = resolved.max_directory_mb;
+                retention_days = resolved.retention_days;
                 directory = resolved.directory;
                 components_directory = resolved.components_directory;
                 report = resolved.report;
                 report += catalog_note;
+                experimental = resolved.experimental;
             }
         };
 
@@ -180,6 +214,14 @@ namespace ac::logging::config {
         return shared_data().disable_all;
     }
 
+    bool experimental() {
+        return shared_data().experimental;
+    }
+
+    bool log_console_output() {
+        return shared_data().log_console_output;
+    }
+
     bool write_logs_to_files() {
         return shared_data().write_logs_to_files;
     }
@@ -188,8 +230,12 @@ namespace ac::logging::config {
         return shared_data().write_logs_to_console;
     }
 
-    LogPrintMode log_print_mode() {
-        return shared_data().log_print_mode;
+    LogLevel level() {
+        return shared_data().level;
+    }
+
+    bool write_alerts_to_console() {
+        return shared_data().write_alerts_to_console;
     }
 
     bool component_logging_default() {
@@ -216,6 +262,14 @@ namespace ac::logging::config {
 
     const std::filesystem::path& directory() {
         return shared_data().directory;
+    }
+
+    std::int64_t max_directory_mb() {
+        return shared_data().max_directory_mb;
+    }
+
+    std::int64_t retention_days() {
+        return shared_data().retention_days;
     }
 
     const std::filesystem::path& components_directory() {

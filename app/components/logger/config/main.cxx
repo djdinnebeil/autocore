@@ -170,7 +170,7 @@ menu::ApplyResult apply_setting(
         logger_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    logger_config.log("Wrote {}", ini_path().string());
+    logger_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -193,7 +193,7 @@ int write_missing_defaults() {
         logger_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    logger_config.log("Wrote {}", ini_path().string());
+    logger_config.log_debug("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -216,7 +216,7 @@ int initialize_missing() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    logger_config.log_main("logger_config.exe started");
+    logger_config.log_info("logger_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

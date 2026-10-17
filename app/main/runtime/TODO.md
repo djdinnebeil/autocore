@@ -5,10 +5,6 @@ block the current Main version. Product-level follow-ups are tracked in
 [devs/TODO.md](../../../devs/TODO.md). DLL-specific items stay in
 [app/core/TODO.md](../../core/TODO.md).
 
-Interactive taskbar cycling encapsulation (`switch_set` read by
-`keyboard_input::process_key_event`) is tracked in [devs/TODO.md](../../../devs/TODO.md). Do not
-change that control flow here.
-
 ## Do not block the message loop on Slash
 
 **Status:** Deferred responsiveness

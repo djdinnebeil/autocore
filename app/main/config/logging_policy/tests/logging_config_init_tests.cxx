@@ -16,23 +16,48 @@ namespace boot = ac::main::logging_bootstrap;
 
 namespace {
 
+constexpr std::string_view expected_header =
+    "# disable_all = on | off\n"
+    "# directory = relative or absolute path\n"
+    "# max_directory_mb = a non-negative integer in megabytes. "
+    "0 purges historical logs and keeps today's.\n"
+    "# retention_days = a non-negative integer. "
+    "0 purges historical logs and keeps today's.\n"
+    "# level = debug | info | alert\n"
+    "# log_console_output = on | off\n"
+    "# write_logs_to_files = on | off\n"
+    "# write_logs_to_console = on | off\n"
+    "# write_alerts_to_console = on | off\n"
+    "# component_logging_default = on | off\n"
+    "# experimental = on | off\n\n";
+
 constexpr std::string_view default_ini =
     "[logging]\n"
     "disable_all = off\n"
     "directory = logs\n"
+    "max_directory_mb = 100\n"
+    "retention_days = 30\n"
+    "level = debug\n"
+    "log_console_output = on\n"
     "write_logs_to_files = on\n"
     "write_logs_to_console = off\n"
-    "log_print_mode = print\n"
-    "component_logging_default = on\n";
+    "write_alerts_to_console = on\n"
+    "component_logging_default = on\n"
+    "experimental = on\n";
 
 constexpr std::string_view disabled_ini =
     "[logging]\n"
     "disable_all = on\n"
     "directory = logs\n"
+    "max_directory_mb = 100\n"
+    "retention_days = 30\n"
+    "level = debug\n"
+    "log_console_output = on\n"
     "write_logs_to_files = on\n"
     "write_logs_to_console = off\n"
-    "log_print_mode = print\n"
-    "component_logging_default = on\n";
+    "write_alerts_to_console = on\n"
+    "component_logging_default = on\n"
+    "experimental = on\n";
 
 [[nodiscard]] bool before(
     const std::string& text,
@@ -61,12 +86,19 @@ TEST_CASE("Fresh seed writes the exact default file", "[logging][init]") {
     CHECK(result.code == 0);
     CHECK(result.reported_success);
     CHECK(written == logging::ini_text(logging::compiled_defaults()));
+    CHECK(written.starts_with(expected_header));
     CHECK(written.find("# disable_all = on | off\n") == 0);
     CHECK(before(
         written,
         "# disable_all = on | off\n",
         "# directory = relative or absolute path\n"
     ));
+    CHECK(before(
+        written,
+        "# component_logging_default = on | off\n",
+        "# experimental = on | off\n"
+    ));
+    CHECK(before(written, "# experimental = on | off\n", "[logging]\n"));
     CHECK(written.find(default_ini) != std::string::npos);
 }
 
@@ -87,28 +119,79 @@ TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[loggi
     logging::Values values;
     values.disable_all = true;
     values.directory = "archive";
+    values.max_directory_mb = 0;
+    values.retention_days = 7;
+    values.level = "info";
+    values.log_console_output = false;
     values.write_logs_to_files = false;
     values.write_logs_to_console = true;
-    values.log_print_mode = "log";
+    values.write_alerts_to_console = false;
     values.component_logging_default = false;
+    values.experimental = false;
 
     const auto text = logging::ini_text(values);
+    CHECK(text.starts_with(expected_header));
     CHECK(text.find("# disable_all = on | off\n") != std::string::npos);
-    CHECK(text.find("# log_print_mode = log | print\n") != std::string::npos);
+    CHECK(text.find("# experimental = on | off\n") != std::string::npos);
+    CHECK(text.find("# level = debug | info | alert\n") != std::string::npos);
+    CHECK(text.find("# log_console_output = on | off\n") != std::string::npos);
+    CHECK(text.find("# write_alerts_to_console = on | off\n") != std::string::npos);
     CHECK(before(
         text,
         "# disable_all = on | off\n",
         "# directory = relative or absolute path\n"
     ));
-    CHECK(before(text, "# component_logging_default = on | off\n", "[logging]\n"));
+    CHECK(before(
+        text,
+        "# directory = relative or absolute path\n",
+        "# max_directory_mb = a non-negative integer in megabytes. "
+        "0 purges historical logs and keeps today's.\n"
+    ));
+    CHECK(before(
+        text,
+        "# max_directory_mb = a non-negative integer in megabytes. "
+        "0 purges historical logs and keeps today's.\n",
+        "# retention_days = a non-negative integer. "
+        "0 purges historical logs and keeps today's.\n"
+    ));
+    CHECK(before(
+        text,
+        "# retention_days = a non-negative integer. "
+        "0 purges historical logs and keeps today's.\n",
+        "# level = debug | info | alert\n"
+    ));
+    CHECK(before(
+        text,
+        "# level = debug | info | alert\n",
+    ));
+    CHECK(before(
+        text,
+        "# log_console_output = on | off\n"
+    ));
+    CHECK(before(
+        text,
+        "# log_console_output = on | off\n",
+        "# write_logs_to_files = on | off\n"
+    ));
+    CHECK(before(
+        text,
+        "# component_logging_default = on | off\n",
+        "# experimental = on | off\n"
+    ));
+    CHECK(before(text, "# experimental = on | off\n", "[logging]\n"));
     CHECK(text.find(
         "[logging]\n"
         "disable_all = on\n"
         "directory = archive\n"
+        "max_directory_mb = 0\n"
+        "retention_days = 7\n"
+        "level = info\n"
+        "log_console_output = off\n"
         "write_logs_to_files = off\n"
         "write_logs_to_console = on\n"
-        "log_print_mode = log\n"
+        "write_alerts_to_console = off\n"
         "component_logging_default = off\n"
+        "experimental = off\n"
     ) != std::string::npos);
 }
 

@@ -94,7 +94,7 @@ namespace {
                 const bool present =
                     std::filesystem::exists(list_path, exists_error);
                 if (present && !exists_error) {
-                    auto_core.log_print(
+                    auto_core.log_alert(
                         "components.list is unreadable. Run "
                         "components_editor.exe to generate a valid file. "
                         "Discovering *_ac.exe in the binary directory; the "
@@ -102,7 +102,7 @@ namespace {
                     );
                 }
                 else {
-                    auto_core.log_print(
+                    auto_core.log_alert(
                         "components.list is missing. Run "
                         "components_editor.exe to generate it. Discovering "
                         "*_ac.exe in the binary directory; the file will not "
@@ -175,7 +175,7 @@ namespace {
                 ? CREATE_NEW_CONSOLE
                 : 0;
 
-        auto_core.log_main(
+        auto_core.log_info(
             "Starting {} command: {}",
             executable.filename().string(),
             command
@@ -246,7 +246,7 @@ namespace {
                 continue;
             }
             if (!descriptor->ok) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "Ignoring launch descriptor for {}: {}",
                     name,
                     descriptor->error
@@ -256,7 +256,7 @@ namespace {
 
             for (const auto& command : descriptor->descriptor.commands) {
                 if (registry.contains(command)) {
-                    auto_core.log_print(
+                    auto_core.log_alert(
                         "Skipping {} command '{}' because that name is already "
                         "registered.",
                         name,
@@ -287,14 +287,14 @@ namespace {
             std::error_code exists_error;
             const bool present = std::filesystem::exists(path, exists_error);
             if (present && !exists_error) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "config/shutdown.ini is malformed. Run shutdown_config.exe "
                     "to generate a valid file. Using built-in defaults; the "
                     "file will not be created."
                 );
             }
             else {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "config/shutdown.ini is missing. Run shutdown_config.exe "
                     "to generate it. Using built-in defaults; the file will "
                     "not be created."
@@ -310,7 +310,7 @@ namespace {
             "shutdown", "shutdown_timeout_ms"
         );
         if (!prompt || !timeout) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "config/shutdown.ini is missing an expected [shutdown] key. "
                 "Run shutdown_config.exe to repair it. Using built-in "
                 "defaults for missing keys; the file will not be rewritten."
@@ -321,7 +321,7 @@ namespace {
             settings.prompt = DelayedShutdownPrompt::console;
         }
         else if (prompt && *prompt != "popup") {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "config/shutdown.ini [shutdown] delayed_shutdown_prompt is "
                 "invalid. Run shutdown_config.exe to repair it. Using popup; "
                 "the file will not be rewritten."
@@ -341,7 +341,7 @@ namespace {
                 settings.timeout = std::chrono::milliseconds {milliseconds};
             }
             else {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "config/shutdown.ini [shutdown] shutdown_timeout_ms is "
                     "invalid. Run shutdown_config.exe to repair it. Using "
                     "2000; the file will not be rewritten."
@@ -383,7 +383,7 @@ namespace {
     void terminate_and_close(HANDLE& process, HANDLE& job) noexcept {
         if (job != nullptr && job != INVALID_HANDLE_VALUE) {
             if (!ac::process::terminate_job(job, 1)) {
-                auto_core.log_main(
+                auto_core.log_info(
                     "TerminateJobObject failed. GetLastError = {}",
                     GetLastError()
                 );
@@ -450,7 +450,7 @@ namespace {
 
         auto job = ac::process::create_component_job(process_info.dwProcessId);
         if (!job) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to create a component job for {}. GetLastError = {}. "
                 "The component was not started.",
                 executable_path.filename(),
@@ -468,7 +468,7 @@ namespace {
                 process_info.hProcess,
                 thread
             ); !resumed) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to place {} in its component job. GetLastError = {}. "
                 "The component was not started.",
                 executable_path.filename(),
@@ -526,7 +526,7 @@ namespace {
 
         auto pipe_result = ac::pipes::create_pipe_server(protocol::pipe_name(name));
         if (!pipe_result) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Failed to create the {} control pipe. Error: {}",
                 name,
                 pipe_result.error().system_error
@@ -538,7 +538,7 @@ namespace {
             ac::paths::bin_directory() / protocol::executable_name(name);
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "{} is missing; {} is unavailable for this session.",
                 executable.filename(),
                 name
@@ -549,7 +549,7 @@ namespace {
 
         auto process = start_owned_process(executable);
         if (!process) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to start {}; {} is unavailable for this session.",
                 executable.filename(),
                 name
@@ -714,7 +714,7 @@ namespace {
         const auto& name = launch.name;
 
         if (!hello_bytes) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "{} did not complete hello. Error: {}",
                 name,
                 hello_bytes.error().system_error
@@ -726,14 +726,14 @@ namespace {
         const auto hello = protocol::parse_hello(*hello_bytes);
         if (!hello) {
             if (hello.error() == protocol::HelloError::version_mismatch) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "{} hello is not {}: that component is unavailable.",
                     name,
                     protocol::protocol_id
                 );
             }
             else {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "{} sent an empty hello; that component is unavailable.",
                     name
                 );
@@ -743,7 +743,7 @@ namespace {
         }
 
         for (const auto& line : hello->skipped_lines) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "{} skipped malformed catalog entry: {}",
                 name,
                 line
@@ -759,7 +759,7 @@ namespace {
         launch.process = nullptr;
         launch.job = nullptr;
 
-        auto_core.log_main(
+        auto_core.log_info(
             "Component contract accepted: name={}, pid={}, "
             "termination_policy={}",
             child->name,
@@ -770,7 +770,7 @@ namespace {
         std::unordered_set<std::string> seen;
         for (auto& entry : hello->commands) {
             if (!seen.insert(entry.name).second) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "{} skipped duplicate catalog name '{}'.",
                     name,
                     entry.name
@@ -790,7 +790,7 @@ namespace {
 
     void attach_taskbar_snapshot(StartedChild& child) {
         if (!ac::taskbar::connect()) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "taskbar_ac.exe did not publish a snapshot; native "
                 "taskbar activation is unavailable for this session."
             );
@@ -799,7 +799,7 @@ namespace {
 
         child.snapshot_attached = true;
         const auto snapshot = ac::taskbar::snapshot_info();
-        auto_core.log_main(
+        auto_core.log_info(
             "Main installed taskbar snapshot generation {} with {} "
             "slots and {} application routes.",
             snapshot.generation,
@@ -861,7 +861,7 @@ namespace {
                         ac::protocol::component::Request::shutdown
                     )
                 ); !result) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "Failed to stop {}. Error: {}",
                     child.name,
                     result.error().system_error
@@ -917,7 +917,7 @@ namespace {
             handoff.status == ac::process::Handoff::already_empty) {
             return;
         }
-        auto_core.log_print(
+        auto_core.log_alert(
             "Graceful job handoff failed for {}. GetLastError = {}. "
             "The component job handle will stay open so shutdown does not "
             "force-terminate it.",
@@ -925,7 +925,7 @@ namespace {
             handoff.system_error
         );
         if (!ac::process::try_clear_kill_on_job_close(child.job)) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to clear kill-on-job-close for {}. GetLastError = {}. "
                 "If this process exits while it still holds the last job "
                 "handle, Windows may terminate the remaining processes.",
@@ -1005,7 +1005,7 @@ namespace {
                 return;
             }
             if (result == WAIT_FAILED) {
-                auto_core.log_main(
+                auto_core.log_info(
                     "Unable to wait for component processes. GetLastError = {}",
                     GetLastError()
                 );
@@ -1068,7 +1068,7 @@ namespace {
         const std::chrono::steady_clock::time_point shutdown_started
     ) {
         for (const auto* child : lingering) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Component shutdown deadline expired: name={}, pid={}, "
                 "termination_policy={}, elapsed_ms={}",
                 child->name,
@@ -1156,7 +1156,7 @@ namespace {
             nullptr
         );
         if (FAILED(result)) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Component shutdown recovery dialog failed: HRESULT={:#x}",
                 static_cast<unsigned long>(result)
             );
@@ -1177,7 +1177,7 @@ namespace {
     ) {
         const DWORD state = WaitForSingleObject(child.process, 0);
         if (state == WAIT_OBJECT_0) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Component exited during shutdown recovery: name={}, pid={}, "
                 "termination_policy={}, elapsed_ms={}",
                 child.name,
@@ -1188,7 +1188,7 @@ namespace {
             return;
         }
         if (state == WAIT_FAILED) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Could not verify component process state: name={}, pid={}, "
                 "termination_policy={}, elapsed_ms={}, error={}",
                 child.name,
@@ -1198,7 +1198,7 @@ namespace {
                 GetLastError()
             );
         }
-        auto_core.log_main(
+        auto_core.log_info(
             "Component left running: name={}, pid={}, termination_policy={}, "
             "elapsed_ms={}, reason={}",
             child.name,
@@ -1207,7 +1207,7 @@ namespace {
             elapsed_shutdown_ms(shutdown_started),
             reason
         );
-        auto_core.log_main(
+        auto_core.log_info(
             "ac_{}_pipe may remain occupied until the orphan process exits.",
             child.name
         );
@@ -1220,7 +1220,7 @@ namespace {
     ) noexcept {
         const bool eligible = child.termination_policy ==
             ac::protocol::component::TerminationPolicy::force_allowed;
-        auto_core.log_main(
+        auto_core.log_info(
             "Force termination eligibility: name={}, pid={}, "
             "termination_policy={}, eligible={}, elapsed_ms={}",
             child.name,
@@ -1236,7 +1236,7 @@ namespace {
 
         const DWORD state = WaitForSingleObject(child.process, 0);
         if (state == WAIT_OBJECT_0 && !job_still_active(child)) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Force termination skipped because component exited: name={}, "
                 "pid={}, termination_policy={}, elapsed_ms={}",
                 child.name,
@@ -1247,7 +1247,7 @@ namespace {
             return true;
         }
         if (state == WAIT_OBJECT_0) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Force termination continuing because the component job still "
                 "contains processes: name={}, pid={}, termination_policy={}, "
                 "elapsed_ms={}",
@@ -1258,7 +1258,7 @@ namespace {
             );
         }
         else if (state != WAIT_TIMEOUT) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Force termination skipped because process state could not be "
                 "verified: name={}, pid={}, termination_policy={}, "
                 "elapsed_ms={}, error={}",
@@ -1271,7 +1271,7 @@ namespace {
             return false;
         }
 
-        auto_core.log_main(
+        auto_core.log_info(
             "Force termination attempt: name={}, pid={}, "
             "termination_policy={}, elapsed_ms={}",
             child.name,
@@ -1289,7 +1289,7 @@ namespace {
                 job_still_active(child)) {
                 Sleep(50);
             }
-            auto_core.log_main(
+            auto_core.log_info(
                 "TerminateJobObject succeeded: name={}, pid={}, "
                 "termination_policy={}, elapsed_ms={}",
                 child.name,
@@ -1299,7 +1299,7 @@ namespace {
             );
             return true;
         }
-        auto_core.log_main(
+        auto_core.log_info(
             "TerminateJobObject failed: name={}, pid={}, "
             "termination_policy={}, elapsed_ms={}, error={}",
             child.name,
@@ -1326,7 +1326,7 @@ namespace {
             }
 
             if (force_terminate(*child, shutdown_started)) {
-                auto_core.log_main(
+                auto_core.log_info(
                     "Component removed from unresolved shutdown set: "
                     "name={}, pid={}, termination_policy={}, elapsed_ms={}",
                     child->name,
@@ -1337,7 +1337,7 @@ namespace {
                 continue;
             }
 
-            auto_core.log_main(
+            auto_core.log_info(
                 "Component remains unresolved after force termination: "
                 "name={}, pid={}, termination_policy={}, elapsed_ms={}",
                 child->name,
@@ -1375,7 +1375,7 @@ namespace {
     ) {
         const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
         if (input == nullptr || input == INVALID_HANDLE_VALUE) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Console shutdown recovery has no valid input handle."
             );
             return RecoveryChoice::continue_waiting;
@@ -1417,7 +1417,7 @@ namespace {
                 INFINITE
             );
             if (wait_result == WAIT_FAILED) {
-                auto_core.log_main(
+                auto_core.log_info(
                     "Console shutdown recovery wait failed. Error: {}",
                     GetLastError()
                 );
@@ -1430,7 +1430,7 @@ namespace {
             INPUT_RECORD record {};
             DWORD read = 0;
             if (!ReadConsoleInputW(input, &record, 1, &read)) {
-                auto_core.log_main(
+                auto_core.log_info(
                     "Console shutdown recovery input failed. Error: {}",
                     GetLastError()
                 );
@@ -1600,20 +1600,20 @@ void ac::main::components::shutdown(const bool allow_recovery_prompt) {
             ac::protocol::component::executable_name("logger");
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "{} is missing; the shutdown merge was not started.",
                 executable.filename()
             );
         }
         else if (!launch_detached_logger_once(executable)) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to start {} --once. GetLastError = {}",
                 executable.filename(),
                 GetLastError()
             );
         }
         else {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Started logger_ac.exe --once for the shutdown merge."
             );
         }
@@ -1643,7 +1643,7 @@ void ac::main::components::invoke(
 ) {
     auto* child = find_child(component_name);
     if (child == nullptr) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{} is unavailable.",
             component_name
         );
@@ -1652,7 +1652,7 @@ void ac::main::components::invoke(
 
     const std::scoped_lock lock {child->pipe_mutex};
     if (!child->pipe.valid()) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{} is unavailable.",
             child->name
         );
@@ -1665,7 +1665,7 @@ void ac::main::components::invoke(
                 ac::protocol::component::Request::invoke
             )
         ); !request) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{} is unavailable.",
             child->name
         );
@@ -1676,7 +1676,7 @@ void ac::main::components::invoke(
     if (const auto payload = ac::pipes::send_string(
             child->pipe, expression
         ); !payload) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{} is unavailable.",
             child->name
         );
@@ -1700,7 +1700,7 @@ void ac::main::components::register_with(
         for (const auto& entry : child->catalog) {
             if (registry.contains(entry.name)) {
                 if (!preexisting.contains(entry.name)) {
-                    auto_core.log_print(
+                    auto_core.log_alert(
                         "Skipping {} command '{}' because that name is already "
                         "registered.",
                         component,
@@ -1746,19 +1746,19 @@ ac::main::components::Session ac::main::components::initialize() {
 
     const auto& parsed = loaded_catalog();
     if (!parsed.ok) {
-        auto_core.log_print("{}", parsed.error);
+        auto_core.log_alert("{}", parsed.error);
         return session;
     }
 
     for (const auto& name : parsed.invalid_names) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Invalid component name in components.list [components] is "
             "ignored: {}",
             name
         );
     }
     for (const auto& entry : parsed.malformed_values) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Malformed component value in components.list [components] "
             "disables {}: {}",
             entry.name,
@@ -1767,15 +1767,16 @@ ac::main::components::Session ac::main::components::initialize() {
     }
 
     if (ac::logger::config::ini_missing()) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "config/components/logger.ini is missing. Run logger_config.exe to "
             "generate it. Using built-in defaults; the file will not be "
             "created."
         );
     }
-    auto_core.lognl_main(
-        std::string {ac::logger::config::configuration_report()}
-    );
+    if (const auto report = ac::logger::config::configuration_report();
+        !report.empty()) {
+        auto_core.lognl_info(std::string {report});
+    }
 
     std::vector<std::string> remaining;
     remaining.reserve(parsed.enabled.size());
@@ -1783,7 +1784,7 @@ ac::main::components::Session ac::main::components::initialize() {
     for (const auto& name : parsed.enabled) {
         if (const auto descriptor = read_launch_descriptor(name)) {
             if (!descriptor->ok) {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "Ignoring launch descriptor for {}: {}",
                     name,
                     descriptor->error

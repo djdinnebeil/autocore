@@ -36,7 +36,7 @@ namespace {
     ) {
         const auto activated = ac::console::activate_window(handle);
         if (!activated) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to activate a window for '{}': {}.",
                 name,
                 ac::console::error_message(activated.error())
@@ -94,7 +94,7 @@ namespace {
         }
 
         if (launch->executable == disabled_fallback_executable) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "No fallback executable is configured for '{}'.",
                 name
             );
@@ -109,7 +109,7 @@ namespace {
             return false;
         }
 
-        auto_core.log_main(
+        auto_core.log_info(
             "Launched configured fallback for '{}'.", name
         );
 
@@ -124,12 +124,16 @@ namespace {
             std::this_thread::sleep_for(launch_window_poll);
         }
 
-        auto_core.log_main(
+        auto_core.log_info(
             "Launched '{}' but no matching window appeared in time.",
             name
         );
         return true;
     }
+}
+
+bool MainTaskbarState::cycle_active() const noexcept {
+    return switch_set;
 }
 
 void MainTaskbarState::end_cycle_session() {
@@ -155,11 +159,11 @@ void MainTaskbarState::switch_windows(const int keycode) {
         else {
             (void)ac::taskbar::advance_native_cycle(switch_position);
         }
-        auto_core.log_main("cycle window");
+        auto_core.log_info("cycle window");
     }
     else {
         end_cycle_session();
-        auto_core.log_main("window selected");
+        auto_core.log_info("window selected");
     }
 }
 
@@ -173,14 +177,14 @@ bool MainTaskbarState::try_activate_configured(
         if (!ac::taskbar::activate_native_position(decision->position)) {
             return false;
         }
-        auto_core.log_main(
+        auto_core.log_info(
             "Configured activation for '{}' used the current Winkey mapping.",
             name
         );
         return true;
     }
 
-    auto_core.log_main(
+    auto_core.log_info(
         "Configured multi-window cycle for '{}' found at least {} windows.",
         name,
         decision->matching_window_count
@@ -257,7 +261,7 @@ void MainTaskbarState::advance_emulated_cycle() {
 void MainTaskbarState::emulate_configured(const std::string_view name) {
     const auto windows = ac::taskbar::matching_windows(name);
     if (windows.empty()) {
-        auto_core.log_main(
+        auto_core.log_info(
             "Emulated activation for '{}' launching a new session.",
             name
         );
@@ -268,7 +272,7 @@ void MainTaskbarState::emulate_configured(const std::string_view name) {
     if (windows.size() == 1) {
         const HWND window = as_hwnd(windows.front());
         if (IsIconic(window)) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Emulated activation for '{}' restoring the window.",
                 name
             );
@@ -276,14 +280,14 @@ void MainTaskbarState::emulate_configured(const std::string_view name) {
             return;
         }
         if (is_window_foreground(window)) {
-            auto_core.log_main(
+            auto_core.log_info(
                 "Emulated activation for '{}' minimizing the window.",
                 name
             );
             ShowWindow(window, SW_MINIMIZE);
             return;
         }
-        auto_core.log_main(
+        auto_core.log_info(
             "Emulated activation for '{}' switching into the window.",
             name
         );
@@ -292,7 +296,7 @@ void MainTaskbarState::emulate_configured(const std::string_view name) {
     }
 
     if (ac::taskbar::configured_multi_window_cycle(name)) {
-        auto_core.log_main(
+        auto_core.log_info(
             "Emulated multi-window cycle for '{}' found {} windows.",
             name,
             windows.size()
@@ -301,7 +305,7 @@ void MainTaskbarState::emulate_configured(const std::string_view name) {
         return;
     }
 
-    auto_core.log_main(
+    auto_core.log_info(
         "Emulated activation for '{}' focusing the top matching window.",
         name
     );
@@ -314,7 +318,7 @@ void MainTaskbarState::activate_configured(
     if (try_activate_configured(name)) return;
     if (const auto path = ac::taskbar::configured_window_executable_path(name);
         path && *path == L"::runtime::") {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Windows Notepad activation requires runtime executable-path "
             "resolution, which has not been implemented yet. If Notepad "
             "functionality is needed, move Notepad to taskbar positions 1 "
@@ -359,7 +363,7 @@ bool is_foreground_window_firefox() {
 
 /** \keymap_command */
 void refresh_firefox() {
-    auto_core.log_main("refresh_firefox()");
+    auto_core.log_info("refresh_firefox()");
     if (is_foreground_window_firefox()) {
         start_reddit_new_tab();
     }
@@ -370,7 +374,7 @@ void refresh_firefox() {
 
 /** \keymap_command */
 void start_reddit_new_tab() {
-    auto_core.log_main("start_reddit_new_tab()");
+    auto_core.log_info("start_reddit_new_tab()");
     std::wstring url = L"https://www.reddit.com";
     std::wstring firefox_path = LR"(C:\Program Files\Mozilla Firefox\firefox.exe)";
     ShellExecuteW(0, 0, firefox_path.c_str(), url.c_str(), 0, SW_SHOW);
@@ -408,7 +412,7 @@ command_registry::Action taskbar_activation_action(
         application = std::string {application},
         command = std::move(log_name)
     ] {
-        auto_core.log_main("{}", command);
+        auto_core.log_info("{}", command);
         taskbar.activate_configured(application);
     };
 }
@@ -499,7 +503,7 @@ void launch_shell_and_focus(
         .nShow = SW_SHOWNORMAL,
     };
     if (!ShellExecuteExW(&execution)) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "Unable to launch {}. ShellExecute error: {}.",
             command,
             GetLastError()
@@ -519,7 +523,7 @@ void launch_shell_and_focus(
         CloseHandle(execution.hProcess);
     }
     if (window == nullptr) {
-        auto_core.log_main(
+        auto_core.log_info(
             "{}() - launched, but no window was found to focus.",
             command
         );
@@ -527,14 +531,14 @@ void launch_shell_and_focus(
     }
     if (const auto activated = ac::console::activate_window(window);
         !activated) {
-        auto_core.log_print(
+        auto_core.log_alert(
             "{}() - launched, but could not confirm focus: {}.",
             command,
             ac::console::error_message(activated.error())
         );
         return;
     }
-    auto_core.log_main("{}() - launched and focused", command);
+    auto_core.log_info("{}() - launched and focused", command);
 }
 
 } // namespace
@@ -571,7 +575,7 @@ void taskbar_runtime_commands::register_reserved_with(
         if (!ac::main::create_process_and_focus(
                 executable, {}, CREATE_NEW_CONSOLE
             )) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "Unable to start taskbar_config.exe."
             );
         }
@@ -597,7 +601,7 @@ void taskbar_runtime_commands::register_configured_with(
          ac::taskbar::configured_activation_commands()) {
         if (registry.contains(command.command)) {
             if (command.command == "activate_auto_core") {
-                auto_core.log_main(
+                auto_core.log_info(
                     "Ignoring configured taskbar command '{}' for key '{}' "
                     "because that command name is already registered.",
                     command.command,
@@ -605,7 +609,7 @@ void taskbar_runtime_commands::register_configured_with(
                 );
             }
             else {
-                auto_core.log_print(
+                auto_core.log_alert(
                     "Ignoring configured taskbar command '{}' for key '{}' "
                     "because that command name is already registered.",
                     command.command,

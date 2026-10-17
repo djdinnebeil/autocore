@@ -32,6 +32,6 @@ Runtime component executables use `<name>_ac.exe`. User-facing settings applicat
 
 ## Documentation
 
-Start with [README.md](readme.md) for the project overview, [docs/](docs/) for using and configuring Auto Core, and [devs/](devs/) for developing it.
+Start with [readme.md](readme.md) for the project overview, [docs/](docs/) for using and configuring Auto Core, and [devs/](devs/) for developing it.
 
-For architecture, packaging, build, or repository-wide design decisions, consult [devs/STRATEGY.md](devs/STRATEGY.md).
+For architecture, packaging, build, or repository-wide design decisions, consult [devs/strategy.md](devs/strategy.md).

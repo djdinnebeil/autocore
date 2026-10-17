@@ -21,12 +21,11 @@ Logs and crash reports are written by whichever process produced them. That is m
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets | Legacy |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `logs/components/<identity>/{date}_{name}.log` | comprehensive log | that executable's component logger | people, `logger_ac.exe` does not merge this file | no file until the first gated write | no | may contain local paths | none |
-| `logs/components/<identity>/{date}_{name}.main.log` | main-log subset | same executable | `logger_ac.exe` merges these | same | no | may contain local paths | none |
-| `logs/{date}_main.log` | merged daily main log | `logger_ac.exe` (hosted interval, or `--once`) | people | rebuilt from sources | no | same as the sources | none |
+| `logs/components/<identity>/{date}_{name}.log` | component log | that executable's component logger | people, `logger_ac.exe` merges these | no file until the first gated write | no | may contain local paths | none |
+| `logs/{date}_main.log` | merged daily main log | `logger_ac.exe` (hosted interval, or `--once`) | people | rebuilt from sources | no | same as the sources | none. Same deletion policy as other `.log` files |
 | `logs/merge.state` | consumed offsets | `logger_ac.exe` only. Hosted mode and `--once` are the same executable | `logger_ac.exe` | merge starts from the beginning | no | no | none |
 | `crash/.crash` | Main recovery marker | Main | next `auto_core.exe` start | no prompt | no | no | none |
-| `crash/<event>/crash.txt` and `crash.dmp` | crash report | the process that crashed, except `auto_core_shell_launcher.exe` | people | directory created on the event | no | dumps can contain process data | none. Not deleted automatically. |
+| `crash/<event>/crash.txt` and `crash.dmp` | crash report | the process that crashed, except `auto_core_shell_launcher.exe` | people | directory created on the event | no | dumps can contain process data | none. Not deleted automatically. Outside the log directory |
 | `errors/errors.log` | best-effort stderr companion | `auto_core.core.error` in whichever process called it | people | created on the first report | no | may contain local detail | none |
 
 Family logging does not gate Wake history. Crash reports are independent of `logging_policy.ini`, including `disable_all = on`.

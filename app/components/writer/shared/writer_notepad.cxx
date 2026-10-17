@@ -20,7 +20,7 @@ std::optional<fs::path> daily_note_path(ac::Component& component) {
     fs::create_directories(notes_directory, error);
 
     if (error) {
-        component.log_print(
+        component.log_alert(
             "Unable to create notes directory '{}': {}",
             notes_directory.string(),
             error.message()
@@ -39,7 +39,7 @@ bool ensure_file_exists(
         return true;
     }
     if (error) {
-        component.log_print(
+        component.log_alert(
             "Unable to inspect text file '{}': {}",
             path.string(), error.message()
         );
@@ -48,7 +48,7 @@ bool ensure_file_exists(
 
     std::ofstream output(path, std::ios::app);
     if (!output) {
-        component.log_print(
+        component.log_alert(
             "Unable to create text file: {}", path.string()
         );
         return false;
@@ -183,7 +183,7 @@ bool open_path_in_notepad(
         path.parent_path().wstring()
     );
     if (!launched) {
-        component.log_print(
+        component.log_alert(
             "Unable to open text file '{}'. Shell launch error: {}.",
             path.string(),
             launched.error().system_error
@@ -193,7 +193,7 @@ bool open_path_in_notepad(
 
     const HWND target = wait_for_notepad_window(path);
     if (target == nullptr) {
-        component.log_print(
+        component.log_alert(
             "Opened text file '{}', but its Notepad window was not found.",
             path.string()
         );
@@ -201,7 +201,7 @@ bool open_path_in_notepad(
     }
     if (const auto activated = ac::console::activate_window(target);
         !activated) {
-        component.log_print(
+        component.log_alert(
             "Opened text file '{}', but could not focus Notepad: {}.",
             path.string(),
             ac::console::error_message(activated.error())

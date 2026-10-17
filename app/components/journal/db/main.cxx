@@ -59,19 +59,19 @@ bool send_series(ac::pipes::Pipe& pipe, const journal::sqlite::Series& series) {
 }
 
 void fail_pipe(ac::pipes::CommandDispatcher& dispatcher, const std::string_view message) {
-    journal_db.log_print("{}", message);
+    journal_db.log_alert("{}", message);
     dispatcher.request_stop();
 }
 
 int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
-        journal_db.log_print("Unable to create the journal database service mutex.");
+        journal_db.log_alert("Unable to create the journal database service mutex.");
         return 1;
     }
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         CloseHandle(mutex);
-        journal_db.log_print("Journal database service is already running.");
+        journal_db.log_alert("Journal database service is already running.");
         return 1;
     }
     struct MutexGuard {
@@ -84,7 +84,7 @@ int run_serve(void* const owner) {
 
     auto store = journal::sqlite::open();
     if (!store) {
-        journal_db.log_print("{}", store.error());
+        journal_db.log_alert("{}", store.error());
         return 1;
     }
 
@@ -100,14 +100,14 @@ int run_serve(void* const owner) {
             }
         });
         if (!owner_watch.active()) {
-            journal_db.log_print("Unable to watch the journal database owner process.");
+            journal_db.log_alert("Unable to watch the journal database owner process.");
             return 1;
         }
     }
     while (!shutdown && !owner_dead.load()) {
         auto server = ac::pipes::create_pipe_server(std::wstring {journal::db::pipe_name});
         if (!server) {
-            journal_db.log_print(
+            journal_db.log_alert(
                 "Unable to open the journal database pipe. Error: {}",
                 server.error().system_error
             );
@@ -119,7 +119,7 @@ int run_serve(void* const owner) {
             if (owner_dead.load()) {
                 break;
             }
-            journal_db.log_print(
+            journal_db.log_alert(
                 "Unable to accept a journal database client. Error: {}",
                 GetLastError()
             );
@@ -128,7 +128,7 @@ int run_serve(void* const owner) {
 
         const auto hello = ac::pipes::read_string(pipe);
         if (!hello) {
-            journal_db.log_print(
+            journal_db.log_alert(
                 "Journal database client did not identify itself. Error: {}",
                 hello.error().system_error
             );
@@ -136,13 +136,13 @@ int run_serve(void* const owner) {
         }
         if (*hello != journal::db::protocol_id) {
             (void)send_status(pipe, "protocol", "Unsupported journal database protocol.");
-            journal_db.log_print(
+            journal_db.log_alert(
                 "Rejected a journal database client using an unexpected protocol."
             );
             continue;
         }
         if (!send_status(pipe, "ok", {})) {
-            journal_db.log_print("Unable to accept the journal database client.");
+            journal_db.log_alert("Unable to accept the journal database client.");
             continue;
         }
 
@@ -345,7 +345,7 @@ int run_serve(void* const owner) {
         dispatcher.set_command(
             journal::db::to_wire(journal::db::Request::shutdown),
             [&dispatcher, &shutdown] {
-                journal_db.log_main("shutdown signal received");
+                journal_db.log_info("shutdown signal received");
                 shutdown = true;
                 dispatcher.request_stop();
             }
@@ -357,7 +357,7 @@ int run_serve(void* const owner) {
         if (const auto result = dispatcher.process(pipe); !result && !shutdown &&
             !owner_dead.load()) {
             if (result.error().system_error != ERROR_BROKEN_PIPE) {
-                journal_db.log_print(
+                journal_db.log_alert(
                     "Journal database client failed. Error: {}",
                     result.error().system_error
                 );
@@ -385,7 +385,7 @@ bool database_present(bool& present) {
     std::error_code error;
     present = std::filesystem::exists(path, error);
     if (error) {
-        journal_db.log_print(
+        journal_db.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -407,7 +407,7 @@ int create_series(const std::string_view name, const int padding) {
     {
         auto opened = journal::sqlite::open_at(temporary);
         if (!opened) {
-            journal_db.log_print("{}", opened.error());
+            journal_db.log_alert("{}", opened.error());
             remove_quiet(temporary);
             return 1;
         }
@@ -415,7 +415,7 @@ int create_series(const std::string_view name, const int padding) {
         const auto added = store->add_series(name, padding);
         store.reset();
         if (!added) {
-            journal_db.log_print("{}", added.error());
+            journal_db.log_alert("{}", added.error());
             remove_quiet(temporary);
             remove_quiet(std::filesystem::path {temporary.wstring() + L"-journal"});
             remove_quiet(std::filesystem::path {temporary.wstring() + L"-wal"});
@@ -428,14 +428,14 @@ int create_series(const std::string_view name, const int padding) {
             path.c_str(),
             MOVEFILE_WRITE_THROUGH
         )) {
-        journal_db.log_print(
+        journal_db.log_alert(
             "Unable to create {}.",
             path.string()
         );
         remove_quiet(temporary);
         return 1;
     }
-    journal_db.log("Wrote {}", path.string());
+    journal_db.log_debug("Wrote {}", path.string());
     return 0;
 }
 
@@ -463,12 +463,12 @@ std::optional<std::string> prompt_series_name() {
         std::cout << "Series name [" << seed_series_name << "]: ";
         std::string input;
         if (!std::getline(std::cin, input)) {
-            journal_db.log_print("Journal database was not initialized.");
+            journal_db.log_alert("Journal database was not initialized.");
             return std::nullopt;
         }
         const auto value = trim(input);
         if (value == "cancel") {
-            journal_db.log_print("Cancelled.");
+            journal_db.log_alert("Cancelled.");
             return std::nullopt;
         }
         const std::string name = value.empty() ? std::string {seed_series_name} : std::string {value};
@@ -485,12 +485,12 @@ std::optional<int> prompt_padding() {
         std::cout << "Padding [" << seed_series_padding << "]: ";
         std::string input;
         if (!std::getline(std::cin, input)) {
-            journal_db.log_print("Journal database was not initialized.");
+            journal_db.log_alert("Journal database was not initialized.");
             return std::nullopt;
         }
         const auto value = trim(input);
         if (value == "cancel") {
-            journal_db.log_print("Cancelled.");
+            journal_db.log_alert("Cancelled.");
             return std::nullopt;
         }
         const std::string text = value.empty()
@@ -542,7 +542,7 @@ int run_init() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_db.log_main("journal_db.exe started");
+    journal_db.log_info("journal_db.exe started");
     if (argc >= 2 && std::string_view {argv[1]} == "--serve") {
         void* owner = nullptr;
         if (argc == 4 && std::string_view {argv[2]} == "--owner-handle") {

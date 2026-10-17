@@ -31,7 +31,7 @@ namespace {
             ac::paths::config_directory() / "crash_recovery.ini"
         );
         if (!configuration) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "config/crash_recovery.ini is missing or unreadable. Run "
                 "crash_recovery_config.exe to generate it. Using default "
                 "response no; the file will not be created."
@@ -43,7 +43,7 @@ namespace {
             "crash_recovery", "default_response"
         );
         if (!response) {
-            auto_core.log_print(
+            auto_core.log_alert(
                 "config/crash_recovery.ini is missing [crash_recovery] "
                 "default_response. Run crash_recovery_config.exe to repair "
                 "it. Using no; the file will not be rewritten."
@@ -57,7 +57,7 @@ namespace {
             return MB_DEFBUTTON1;
         }
 
-        auto_core.log_print(
+        auto_core.log_alert(
             "config/crash_recovery.ini [crash_recovery] default_response must be "
             "'yes' or 'no'. Run crash_recovery_config.exe to repair it. "
             "Using no; the file will not be rewritten."
@@ -162,7 +162,7 @@ bool write_crash_marker(const std::string_view crash_marker) {
 }
 
 void restart_program(const std::string& error_report) {
-    auto_core.log_main(error_report);
+    auto_core.log_info(error_report);
 
     const fs::path executable_path =
         ac::paths::bin_directory() / "auto_core.exe";
@@ -172,14 +172,14 @@ void restart_program(const std::string& error_report) {
         {},
         CREATE_NEW_CONSOLE
     )) {
-        auto_core.log_main(
+        auto_core.log_info(
             "Unable to restart auto_core.exe"
         );
 
         return;
     }
 
-    auto_core.log_main(
+    auto_core.log_info(
         "Restarting auto_core.exe at {}",
         ac::clock::get_timestamp_with_seconds()
     );

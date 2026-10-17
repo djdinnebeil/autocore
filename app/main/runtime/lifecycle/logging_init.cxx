@@ -15,7 +15,7 @@ namespace {
 }
 
 void initialize_logging() {
-    auto_core.log(
+    auto_core.log_debug(
         "Main session started {}",
         ac::clock::format_datetime(auto_core.session_start())
     );
@@ -28,9 +28,10 @@ void initialize_logging() {
         );
     }
 
-    auto_core.lognl_main(
-        std::string {ac::logging::config::configuration_report()}
-    );
+    if (const auto report = ac::logging::config::configuration_report();
+        !report.empty()) {
+        auto_core.lognl_info(std::string {report});
+    }
 }
 
 void shutdown_logging() {
@@ -38,5 +39,5 @@ void shutdown_logging() {
         return;
     }
 
-    auto_core.log_main("Auto Core is shutting down");
+    auto_core.log_info("Auto Core is shutting down");
 }

@@ -53,6 +53,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `components_policy_config.exe` | `app/main/config/components_policy` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components_policy.ini`. |
 | `warnings_config.exe` | `app/main/config/warnings` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `warnings.ini`. |
 | `logging_policy_config.exe` | `app/main/config/logging_policy` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging_policy.ini`. `--disable` is an extra mode. Observed. |
+| `auto_core_logging_cleanup.exe` | `app/utilities/logging_cleanup` | startup utility | one-shot after Main is ready | none | Reads and reports `max_directory_mb` and `retention_days`, then exits. Performs no cleanup yet. |
 | `shutdown_config.exe` | `app/main/config/shutdown` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `shutdown.ini`. |
 | `crash_recovery_config.exe` | `app/main/config/crash_recovery` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `crash_recovery.ini`. |
 | `components_editor.exe` | `app/main/editors/components` | operational editor | one-shot | menu, `--seed`, `--component` with `--on` or `--off` | Finalized sole writer of `components.list`. |

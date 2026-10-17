@@ -226,7 +226,7 @@ namespace ac::component_settings {
             std::error_code error;
             const bool present = std::filesystem::exists(executable_path, error);
             if (error || !present) {
-                logger.log_print("Missing {}.", executable_path.string());
+                logger.log_alert("Missing {}.", executable_path.string());
                 return 1;
             }
 
@@ -251,7 +251,7 @@ namespace ac::component_settings {
                     &startup_info,
                     &process_info
                 )) {
-                logger.log_print("Unable to start {}.", executable_path.string());
+                logger.log_alert("Unable to start {}.", executable_path.string());
                 return 1;
             }
 
@@ -260,7 +260,7 @@ namespace ac::component_settings {
             DWORD exit_code = 1;
             if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
                 ::CloseHandle(process_info.hProcess);
-                logger.log_print(
+                logger.log_alert(
                     "Unable to read the exit code from {}.",
                     executable
                 );
@@ -269,7 +269,7 @@ namespace ac::component_settings {
             ::CloseHandle(process_info.hProcess);
             const int code = static_cast<int>(exit_code);
             if (code != 0) {
-                logger.log_print("{} exited {}.", executable, code);
+                logger.log_alert("{} exited {}.", executable, code);
             }
             return code;
         }
@@ -353,14 +353,14 @@ namespace ac::component_settings {
         while (true) {
             const auto state = get_state(name);
             if (state.enablement == list::ListedEnablement::unavailable) {
-                settings.log_print(std::string_view {state.error});
+                settings.log_alert(std::string_view {state.error});
                 return 1;
             }
 
             std::string inspect_error;
             const auto present = configuration_present(name, inspect_error);
             if (!inspect_error.empty()) {
-                settings.log_print("{}", inspect_error);
+                settings.log_alert("{}", inspect_error);
             }
 
             const bool configuration = present.value_or(true);
@@ -374,18 +374,18 @@ namespace ac::component_settings {
                 .delegated = delegated
             });
 
-            settings.log_print("{}", name);
+            settings.log_alert("{}", name);
             for (std::size_t index = 0; index < entries.size(); ++index) {
-                settings.log_print("{}. {}", index + 1, entries[index].label);
+                settings.log_alert("{}. {}", index + 1, entries[index].label);
             }
-            settings.lognl_print("Choice: ");
+            settings.lognl_alert("Choice: ");
 
             std::string line;
             if (!std::getline(std::cin, line)) {
-                settings.log("Input ended.");
+                settings.log_debug("Input ended.");
                 return 1;
             }
-            settings.log(std::string_view {line});
+            settings.log_debug(std::string_view {line});
 
             std::size_t selected = 0;
             if (!parse_choice(
@@ -393,7 +393,7 @@ namespace ac::component_settings {
                     entries.size(),
                     selected
                 )) {
-                settings.log_print(
+                settings.log_alert(
                     "Enter a number from 1 to {}.",
                     entries.size()
                 );
@@ -430,7 +430,7 @@ namespace ac::component_settings {
                         state.enablement != list::ListedEnablement::enabled
                     );
                     if (exit_code != 0) {
-                        settings.log_print(
+                        settings.log_alert(
                             "Failed to update components.list ({}).",
                             exit_code
                         );

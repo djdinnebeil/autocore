@@ -36,6 +36,12 @@ The following files configure Auto Core itself:
 | `config\logging_policy.ini` | `logging_policy_config.exe` |
 | `config\warnings.ini` | `warnings_config.exe` |
 
+`logging_policy.ini` also defines the temporary `experimental` switch and the
+`retention_days` and `max_directory_mb` cleanup-policy values. `auto_core.exe`
+runs `auto_core_logging_cleanup.exe` after startup is ready. At this stage the
+utility prints the current values when `experimental = on`, records them at
+debug level when it is `off`, and exits without changing any files.
+
 Use Auto Core Settings, or run the corresponding program under `bin\`, to view
 or change these settings.
 

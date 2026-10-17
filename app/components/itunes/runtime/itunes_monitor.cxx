@@ -30,7 +30,7 @@ namespace {
 }
 
 void itunes_next_song() {
-    itunes_component.log_main("itunes_next_song()");
+    itunes_component.log_info("itunes_next_song()");
     itunes::runtime::next_song(ac_itunes, playback_monitor);
 }
 
@@ -72,13 +72,13 @@ void report_listening_sample(
     });
     observation.observed_at = observed_at_now();
     if (const auto recorded = itunes::db::observe(observation); !recorded) {
-        itunes_component.log("{}", recorded.error());
+        itunes_component.log_debug("{}", recorded.error());
     }
 }
 
 void itunes_client::start_itunes_thread() {
     Sleep(25);
-    itunes_component.log_main("itunes_thread started");
+    itunes_component.log_info("itunes_thread started");
     const int sleep_timerate_secs_playing = 5;
     const int sleep_timerate_secs_pause = 5;
     const int extra_time_ms = 100;
@@ -116,7 +116,7 @@ void itunes_client::start_itunes_thread() {
                     Sleep(extra_time_ms);
                 }
             }
-            itunes_component.log("iTunes sleep time {} seconds at {}", sleep_time_secs, ac::clock::get_timestamp_with_seconds());
+            itunes_component.log_trace("iTunes sleep time {} seconds at {}", sleep_time_secs, ac::clock::get_timestamp_with_seconds());
             if (itunes_condition.wait_for(lock, chrono::seconds(sleep_time_secs), [] {
                     return itunes_playback_state_change.load() ||
                            ac_itunes.end_thread.load();
@@ -124,7 +124,7 @@ void itunes_client::start_itunes_thread() {
                 if (ac_itunes.end_thread.load()) {
                     break;
                 }
-                itunes_component.log("itunes_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
+                itunes_component.log_debug("itunes_playback_state_change at {}", ac::clock::get_timestamp_with_seconds());
                 Sleep(processing_delay_ms);
                 pending_wake = itunes::listening::WakeKind::special;
                 pending_sleep_seconds = 0;
@@ -138,10 +138,10 @@ void itunes_client::start_itunes_thread() {
         }
     }
     catch (const std::exception& e) {
-        itunes_component.log_print("itunes_song_thread() has crashed: {}", e.what());
+        itunes_component.log_alert("itunes_song_thread() has crashed: {}", e.what());
     }
     catch (...) {
-        itunes_component.log_print("itunes_song_thread() has crashed due to an unknown exception");
+        itunes_component.log_alert("itunes_song_thread() has crashed due to an unknown exception");
     }
-    itunes_component.log("end of iTunes thread");
+    itunes_component.log_debug("end of iTunes thread");
 }

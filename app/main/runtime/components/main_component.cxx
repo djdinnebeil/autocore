@@ -117,7 +117,7 @@ bool ac::main::create_process_and_focus(
         std::this_thread::sleep_for(poll);
     }
 
-    auto_core.log_main(
+    auto_core.log_info(
         "Started '{}' but could not confirm keyboard focus.",
         executable_path
     );
@@ -135,7 +135,7 @@ bool ac::main::create_process_and_focus(
 namespace {
 
 void close_program_impl(const bool allow_recovery_prompt) {
-    auto_core.log_main("close_program()");
+    auto_core.log_info("close_program()");
     ac::main::program_closing = true;
     taskbar.end_cycle_session();
     if (ac::main::keyboard_hook != NULL) {
@@ -202,10 +202,10 @@ void deactivate_function_key() {
     * and activating the Auto Core window if it is not already in focus.
     */
 void set_focus_auto_core() {
-    auto_core.log_main("set_focus_auto_core()");
+    auto_core.log_info("set_focus_auto_core()");
 
     if (auto result = ac::console::focus_for_prompt(); !result) {
-        auto_core.log_print(
+        auto_core.log_alert(
             ac::console::error_message(result.error())
         );
     }

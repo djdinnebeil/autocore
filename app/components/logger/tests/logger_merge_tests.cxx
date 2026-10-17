@@ -23,7 +23,7 @@ namespace {
         const auto directory = root / "components" / component;
         std::filesystem::create_directories(directory);
         std::ofstream output(
-            directory / ("2026-09-25_" + component + ".main.log"),
+            directory / ("2026-09-25_" + component + ".log"),
             std::ios::binary | std::ios::app
         );
         output << body;
@@ -70,7 +70,7 @@ TEST_CASE("First merge uses the parent directory and appends once", "[logging][m
     CHECK(read_text(root / "2026-09-25_main.log") ==
         merged + "[2026-09-25 11:42:11.000] [alpha] next\n");
     CHECK(read_text(root / "merge.state").find(
-        "components/alpha/2026-09-25_alpha.main.log=") !=
+        "components/alpha/2026-09-25_alpha.log=") !=
         std::string::npos);
 }
 
@@ -79,7 +79,7 @@ TEST_CASE("Component identity comes from the parent directory", "[logging][merge
     const auto directory = root / "components" / "alpha_sample";
     std::filesystem::create_directories(directory);
     std::ofstream output(
-        directory / "2026-09-25_not_the_component.main.log",
+        directory / "2026-09-25_not_the_component.log",
         std::ios::binary
     );
     output << "[2026-09-25 11:42:10.123] started\n";
@@ -120,7 +120,7 @@ TEST_CASE("A truncated source rebuilds that date", "[logging][merge]") {
     REQUIRE(ac::logger::detail::merge_once(root).ok);
 
     const auto source =
-        root / "components" / "alpha" / "2026-09-25_alpha.main.log";
+        root / "components" / "alpha" / "2026-09-25_alpha.log";
     {
         std::ofstream output(source, std::ios::binary | std::ios::trunc);
         output << "[2026-09-25 11:42:12.123] replaced\n";
@@ -145,7 +145,7 @@ TEST_CASE("A missing merged file is rebuilt from sources", "[logging][merge]") {
 }
 
 TEST_CASE("Bytes past the snapshot stay unconsumed", "[logging][merge]") {
-    const auto path = test_root() / "partial.main.log";
+    const auto path = test_root() / "partial.log";
     const std::string body =
         "[2026-09-25 11:42:10.123] complete\n"
         "[2026-09-25 11:42:11.123] partial";
@@ -159,7 +159,7 @@ TEST_CASE("Bytes past the snapshot stay unconsumed", "[logging][merge]") {
     const auto read = ac::logger::detail::read_records(
         path,
         "alpha",
-        "components/alpha/partial.main.log",
+        "components/alpha/partial.log",
         0,
         end_offset
     );
@@ -225,35 +225,37 @@ TEST_CASE("Interval zero does not schedule a periodic merge", "[logging][merge]"
     CHECK_FALSE(ac::logger::detail::is_shutdown_argument(L"--once"));
 }
 
-TEST_CASE("log and log_main reach the console only through the flag", "[logging][console]") {
-    using ac::component_detail::SinkRequest;
+TEST_CASE("log and log_info reach the console only through the flag", "[logging][console]") {
+    using ac::component_detail::MessageClass;
     using ac::component_detail::decide_sinks;
 
     const auto quiet = decide_sinks({
         .component_logging = true,
         .write_logs_to_files = true,
-        .write_logs_to_console = false
+        .write_logs_to_console = false,
+        .message = MessageClass::info
     });
     const auto mirrored = decide_sinks({
         .component_logging = true,
         .write_logs_to_files = true,
-        .write_logs_to_console = true
+        .write_logs_to_console = true,
+        .message = MessageClass::info
     });
-    const auto user_facing = decide_sinks({
+    const auto printed = decide_sinks({
         .component_logging = true,
         .write_logs_to_files = true,
         .write_logs_to_console = false,
-        .user_facing = true
+        .message = MessageClass::print
     });
-    const auto both = decide_sinks({
+    const auto printed_and_mirrored = decide_sinks({
         .component_logging = true,
         .write_logs_to_files = true,
         .write_logs_to_console = true,
-        .user_facing = true
+        .message = MessageClass::print
     });
 
     CHECK_FALSE(quiet.write_console);
     CHECK(mirrored.write_console);
-    CHECK(user_facing.write_console);
-    CHECK(both.write_console);
+    CHECK(printed.write_console);
+    CHECK(printed_and_mirrored.write_console);
 }

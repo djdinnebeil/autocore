@@ -90,7 +90,7 @@ namespace {
                 if (!write_dash_ini(log, path, value == "on")) {
                     return menu::ApplyResult::failed;
                 }
-                log.log("Wrote {}", path.string());
+                log.log_debug("Wrote {}", path.string());
                 return menu::ApplyResult::stored;
             },
             std::cin,
@@ -107,7 +107,7 @@ namespace {
         if (!write_dash_ini(log, path, false)) {
             return 1;
         }
-        log.log(
+        log.log_debug(
             "Wrote default {} (vault path is not configured here).",
             path.string()
         );
@@ -120,7 +120,7 @@ namespace {
                 if (!write_dash_ini(log, path, value == "on")) {
                     return menu::ApplyResult::failed;
                 }
-                log.log("Wrote {}", path.string());
+                log.log_debug("Wrote {}", path.string());
                 return menu::ApplyResult::stored;
             },
             std::cin,
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
             ac::logging::config::LoggingFallback::off
         }
     };
-    dash_config.log_main("dash_config.exe started");
+    dash_config.log_info("dash_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
         if (!write_dash_ini(dash_config, path, false)) {
             return 1;
         }
-        dash_config.log(
+        dash_config.log_debug(
             "Wrote default {} (vault path is not configured here).",
             path.string()
         );
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
         if (!write_dash_ini(dash_config, path, false)) {
             return 1;
         }
-        dash_config.log(
+        dash_config.log_debug(
             "Wrote {} (vault path is not configured here).",
             path.string()
         );

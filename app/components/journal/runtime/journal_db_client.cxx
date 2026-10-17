@@ -80,7 +80,7 @@ std::expected<void, std::string> start_service() {
     );
     if (!process) {
         state.startup_error = "Unable to start journal_db.exe.";
-        journal_component().log("{}", state.startup_error);
+        journal_component().log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
     state.process = static_cast<HANDLE>(*process);
@@ -92,7 +92,7 @@ std::expected<void, std::string> start_service() {
             TerminateProcess(state.process, 1);
         }
         close_process(state);
-        journal_component().log("{}", state.startup_error);
+        journal_component().log_debug("{}", state.startup_error);
         return std::unexpected(state.startup_error);
     }
 

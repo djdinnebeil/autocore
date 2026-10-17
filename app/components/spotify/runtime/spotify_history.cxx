@@ -9,7 +9,7 @@ import spotify_component;
 import spotify_db_client;
 
 void track_spotify_history(const SongMetadata& meta) {
-    spotify_component.log("track_spotify_history() called");
+    spotify_component.log_debug("track_spotify_history() called");
     if (const auto recorded = spotify::db::record_play(
             meta.name,
             meta.artist,
@@ -17,7 +17,7 @@ void track_spotify_history(const SongMetadata& meta) {
             meta.duration_seconds
         );
         !recorded) {
-        spotify_component.log("{}", recorded.error());
+        spotify_component.log_debug("{}", recorded.error());
     }
-    spotify_component.log("track_spotify_history() finished");
+    spotify_component.log_debug("track_spotify_history() finished");
 }

@@ -110,7 +110,7 @@ menu::ApplyResult apply_setting(
         );
         return menu::ApplyResult::failed;
     }
-    crash_recovery_config.log("Wrote {}", ini_path().string());
+    crash_recovery_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -136,7 +136,7 @@ int write_missing_defaults() {
         );
         return 1;
     }
-    crash_recovery_config.log("Wrote {}", ini_path().string());
+    crash_recovery_config.log_debug("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -160,7 +160,7 @@ int initialize_missing() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    crash_recovery_config.log_main("crash_recovery_config.exe started");
+    crash_recovery_config.log_info("crash_recovery_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

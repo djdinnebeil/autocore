@@ -1,0 +1,9 @@
+Wake History Count - 1
+Wake History [0]
+  Wake Source Count - 1
+  Wake Source [0]
+    Type: Device
+    Instance Path: PCI\VEN_8086&DEV_A36D&SUBSYS_12381025&REV_10\3&11583659&0&A0
+    Friendly Name: Intel(R) USB 3.1 eXtensible Host Controller - 1.10 (Microsoft)
+    Description: USB xHCI Compliant Host Controller
+    Manufacturer: Generic USB xHCI Host Controller

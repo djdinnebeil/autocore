@@ -69,7 +69,7 @@ namespace {
     void report_taskbar_mappings(const ac::taskbar::SnapshotInfo& snapshot) {
         if (ac::config::core_settings().missing_winkey_mapping &&
             !ac::taskbar::get_native_taskbar_position("auto_core")) {
-            taskbar_component().log_print(
+            taskbar_component().log_alert(
                 "Performance warning: Auto Core is not mapped to taskbar "
                 "positions 1 through 10. Auto Core will use direct console "
                 "window activation as a fallback, which can occasionally "
@@ -80,7 +80,7 @@ namespace {
         }
 
         if (snapshot.source == ac::taskbar::SnapshotSource::disabled) {
-            taskbar_component().log_print(
+            taskbar_component().log_alert(
                 "Taskbar mapping is disabled; no Winkey mappings were set."
             );
             return;
@@ -97,14 +97,14 @@ namespace {
                 }
             }
             if (cached) {
-                taskbar_component().log_main(
+                taskbar_component().log_info(
                     "Using cached taskbar positions from "
                     "taskbar/winkey_map.cache. Native Win+N mappings were not "
                     "verified against the live taskbar."
                 );
             }
             else {
-                taskbar_component().log_print(
+                taskbar_component().log_alert(
                     "Live taskbar discovery was unavailable; native Win+N "
                     "mappings were not set."
                 );
@@ -121,7 +121,7 @@ namespace {
                 : std::string_view {slot.display_name};
 
             if (slot.applications.empty()) {
-                taskbar_component().log_print(
+                taskbar_component().log_alert(
                     "Taskbar position {} ({}): '{}' with application ID '{}' "
                     "has no matching application configuration; Winkey "
                     "mapping not set.",
@@ -132,7 +132,7 @@ namespace {
                 );
             }
             else {
-                taskbar_component().log_main(
+                taskbar_component().log_info(
                     "Taskbar position {} ({}): '{}' with application ID '{}' "
                     "-> key = {}.",
                     slot.position.value,
@@ -186,7 +186,7 @@ int main(const int argument_count, char* arguments[]) {
     }
     ac::config::initialize_core_settings();
     if (!ac::config::core_settings_report().empty()) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "{}",
             ac::config::core_settings_report()
         );
@@ -204,12 +204,12 @@ int main(const int argument_count, char* arguments[]) {
             );
         }
         if (!ac::taskbar::refresh_winkey_cache()) {
-            taskbar_component().log_print(
+            taskbar_component().log_alert(
                 "Unable to refresh winkey_map.cache."
             );
             return 1;
         }
-        taskbar_component().log_main("Refreshed winkey_map.cache.");
+        taskbar_component().log_info("Refreshed winkey_map.cache.");
         return 0;
     }
     if (argument_count == 3 &&
@@ -268,7 +268,7 @@ int main(const int argument_count, char* arguments[]) {
         return 0;
     }
 
-    taskbar_component().log_main("taskbar_ac.exe started");
+    taskbar_component().log_info("taskbar_ac.exe started");
 
     {
         const auto ini_path = ac::paths::component_config_file("taskbar");
@@ -284,14 +284,14 @@ int main(const int argument_count, char* arguments[]) {
 
     AuthorityMutex authority_mutex;
     if (!authority_mutex.acquire()) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Another taskbar snapshot authority is still active."
         );
         return 1;
     }
 
     if (!ac::taskbar::start_authority()) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Unable to start the native taskbar snapshot authority."
         );
         return 1;
@@ -303,7 +303,7 @@ int main(const int argument_count, char* arguments[]) {
         ac::protocol::component::pipe_name("taskbar")
     );
     if (!connection) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Failed to connect to the taskbar control pipe. Error: {}",
             connection.error().system_error
         );
@@ -312,14 +312,14 @@ int main(const int argument_count, char* arguments[]) {
     ac::pipes::Pipe control_pipe = std::move(*connection);
 
     if (!ac::taskbar::wait_for_initial_snapshot(std::chrono::seconds {5})) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Timed out waiting for the initial native taskbar snapshot."
         );
         return 1;
     }
 
     const auto snapshot = ac::taskbar::snapshot_info();
-    taskbar_component().log_main(
+    taskbar_component().log_info(
         "Published taskbar snapshot generation {} with {} slots, {} "
         "application routes, and {} configured commands.",
         snapshot.generation,
@@ -334,7 +334,7 @@ int main(const int argument_count, char* arguments[]) {
             control_pipe,
             ac::protocol::component::make_hello(registry.autocomplete_values())
         ); !ready) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Failed to signal taskbar readiness. Error: {}",
             ready.error().system_error
         );
@@ -349,7 +349,7 @@ int main(const int argument_count, char* arguments[]) {
         [&control_pipe, &registry, &dispatcher] {
             const auto name = ac::pipes::read_string(control_pipe);
             if (!name) {
-                taskbar_component().log_print(
+                taskbar_component().log_alert(
                     "Failed to read a taskbar command. Error: {}",
                     name.error().system_error
                 );
@@ -358,7 +358,7 @@ int main(const int argument_count, char* arguments[]) {
             }
             auto action = registry.resolve(*name);
             if (!action) {
-                taskbar_component().log_print(
+                taskbar_component().log_alert(
                     "Unknown taskbar command: {}", *name
                 );
                 return;
@@ -371,19 +371,19 @@ int main(const int argument_count, char* arguments[]) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            taskbar_component().log_main("shutdown signal received");
+            taskbar_component().log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
 
     if (const auto result = dispatcher.process(control_pipe); !result) {
-        taskbar_component().log_print(
+        taskbar_component().log_alert(
             "Taskbar control pipe ended. Error: {}",
             result.error().system_error
         );
         return 1;
     }
 
-    taskbar_component().log_main("program terminated");
+    taskbar_component().log_info("program terminated");
     return 0;
 }

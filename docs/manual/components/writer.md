@@ -30,10 +30,6 @@ Writer directory does not affect an absolute `notes_subdirectory`.
 | `print_date_iso_with_timestamp` | Inserts `YYYY-MM-DD - HH:MM`. |
 | `print_date_iso_with_timestamp_w` | Inserts the same date and time with an en dash. |
 | `add_brackets_around_clipboard` | Inserts the clipboard text inside `[` and `]`. |
-| `print_and_insert_special_utf8` | Inserts the test line `Testing std1::string: caf——Auto Core`. |
-| `print_and_insert_special_utf16` | Inserts the test line `Testing std2::wstring: caf——Auto Core`. |
-| `print_and_insert_testing` | Inserts both test lines. |
-
 ## Files and data
 
 | File | What it is for |

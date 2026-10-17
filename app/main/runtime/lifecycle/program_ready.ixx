@@ -5,8 +5,7 @@
 export module auto_core.main.program_ready;
 
 /**
- * Prints ready status and the weekday on a detached thread so the message
- * loop can start immediately.
+ * Prints ready status and the weekday before post-ready background work starts.
  *
  * The task section is an intentional Main ready-banner feature. It reads
  * Writer's `task_list.txt` directly. It is not component dispatch, and

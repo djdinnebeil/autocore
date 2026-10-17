@@ -1,0 +1,5 @@
+spotify_get_queue
+spotify_next_song
+spotify_play_pause
+spotify_print_songs
+spotify_switch_player

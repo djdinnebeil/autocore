@@ -1,0 +1,20 @@
+[application]
+key = visual_studio_code
+
+[taskbar]
+application_id = Microsoft.VisualStudioCode
+
+[window]
+process_name = Code.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = cycle
+
+[fallback]
+executable_path = C:\Users\DJ\AppData\Local\Programs\Microsoft VS Code\Code.exe
+
+[commands]
+activate = activate_visual_studio_code | activate_vs_code

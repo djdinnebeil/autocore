@@ -152,7 +152,7 @@ bool write_prompted(
     if (!write_bytes(log, path, contents)) {
         return false;
     }
-    log.log("Wrote {}", path.string());
+    log.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
         "itunes_config",
         ac::logging::config::LoggingScope {"itunes"}
     };
-    itunes_config.log_main("itunes_config.exe started");
+    itunes_config.log_info("itunes_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

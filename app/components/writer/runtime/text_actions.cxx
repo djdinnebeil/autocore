@@ -41,21 +41,3 @@ void writer_actions::add_brackets_around_clipboard() {
         L"[" + *clipboard_text + L"]"
     );
 }
-
-void writer_actions::print_and_insert_special_utf8() {
-    writer_component().print_and_insert(
-        std::string {"Testing std1::string: caf——Auto Core"}
-    );
-}
-
-void writer_actions::print_and_insert_special_utf16() {
-    writer_component().print_and_insert(
-        std::wstring {L"Testing std2::wstring: caf——Auto Core"}
-    );
-}
-
-void writer_actions::print_and_insert_testing() {
-    print_and_insert_special_utf8();
-    std::this_thread::sleep_for(std::chrono::milliseconds {100});
-    print_and_insert_special_utf16();
-}

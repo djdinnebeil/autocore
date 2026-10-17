@@ -1,0 +1,20 @@
+[application]
+key = auto_core
+
+[taskbar]
+application_id = C:\DJ\My Folder\Auto Core\dist\bin\auto_core.exe
+
+[window]
+process_name = auto_core.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = one-shot
+
+[fallback]
+executable_path = C:\DJ\My Folder\Auto Core\dist\bin\auto_core.exe
+
+[commands]
+activate = activate_auto_core

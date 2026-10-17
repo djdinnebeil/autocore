@@ -133,7 +133,7 @@ menu::ApplyResult apply_setting(
         shutdown_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    shutdown_config.log("Wrote {}", ini_path().string());
+    shutdown_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -156,7 +156,7 @@ int write_missing_defaults() {
         shutdown_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    shutdown_config.log("Wrote {}", ini_path().string());
+    shutdown_config.log_debug("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -180,7 +180,7 @@ int initialize_missing() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    shutdown_config.log_main("shutdown_config.exe started");
+    shutdown_config.log_info("shutdown_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

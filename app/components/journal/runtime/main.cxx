@@ -53,10 +53,10 @@ int main(int argc, char* argv[]) {
 
     auto registry = create_journal_command_registry();
 
-    journal_component().log_main("journal_ac.exe started");
+    journal_component().log_info("journal_ac.exe started");
 
     if (const auto database = journal::db::start_service(); !database) {
-        journal_component().log("{}", database.error());
+        journal_component().log_debug("{}", database.error());
     }
     struct DatabaseServiceGuard {
         ~DatabaseServiceGuard() { journal::db::shutdown_service(); }
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         else if (const auto remote_sync = document->find("journal", "remote_sync");
                  remote_sync && journal::remote_sync::enabled(*remote_sync)) {
             if (const auto cloud = journal::cloud::start_service(); !cloud) {
-                journal_component().log("{}", cloud.error());
+                journal_component().log_debug("{}", cloud.error());
             }
         }
     }
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     } cloud_service_guard;
 
     if (!ac::taskbar::connect()) {
-        journal_component().log_print(
+        journal_component().log_alert(
             "Unable to receive the native taskbar snapshot; interactive "
             "prompts will use direct console activation."
         );
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
         ac::protocol::component::pipe_name("journal")
     );
     if (!connection) {
-        journal_component().log_print(
+        journal_component().log_alert(
             "Failed to connect to journal pipe. Error: {}",
             connection.error().system_error
         );
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                journal_component().log_print(
+                journal_component().log_alert(
                     "Failed to read journal command. Error: {}",
                     expression.error().system_error
                 );
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
 
             auto action = registry.resolve(*expression);
             if (!action) {
-                journal_component().log_print(
+                journal_component().log_alert(
                     "Unknown journal command: {}",
                     *expression
                 );
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            journal_component().log_main("shutdown signal received");
+            journal_component().log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
                 registry.autocomplete_values()
             )
         ); !ready) {
-        journal_component().log_print(
+        journal_component().log_alert(
             "Failed to signal journal readiness. Error: {}",
             ready.error().system_error
         );
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        journal_component().log_print(
+        journal_component().log_alert(
             "Journal pipe failed. Error: {}",
             result.error().system_error
         );
@@ -169,6 +169,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    journal_component().log_main("program terminated");
+    journal_component().log_info("program terminated");
     return 0;
 }

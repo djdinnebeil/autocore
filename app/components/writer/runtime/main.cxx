@@ -26,22 +26,23 @@ void report_invalid_notes_subdirectory() {
         return;
     }
 
-    bool relative = false;
+    bool accepted = false;
     try {
         const std::filesystem::path configured {
             ac::encoding::to_utf16(std::string {*value})
         };
-        relative = !configured.empty() &&
+        const bool relative = !configured.empty() &&
             !configured.has_root_name() &&
             !configured.has_root_directory();
+        accepted = relative || configured.is_absolute();
     }
     catch (...) {
-        relative = false;
+        accepted = false;
     }
-    if (relative) {
+    if (accepted) {
         return;
     }
-    writer_component().log_print(
+    writer_component().log_alert(
         "config/components/writer.ini has an invalid notes_subdirectory. "
         "Using the notes folder under the Writer directory. "
         "The file will not be rewritten."
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
     }
     auto registry = create_writer_command_registry();
 
-    writer_component().log_main("writer_ac.exe started");
+    writer_component().log_info("writer_ac.exe started");
 
     {
         const auto ini_path = ac::paths::component_config_file("writer");
@@ -96,7 +97,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!ac::taskbar::connect()) {
-        writer_component().log_print(
+        writer_component().log_alert(
             "Unable to receive the native taskbar snapshot; notes will "
             "open without taskbar pre-activation."
         );
@@ -109,7 +110,7 @@ int main(int argc, char* argv[]) {
         ac::protocol::component::pipe_name("writer")
     );
     if (!connection) {
-        writer_component().log_print(
+        writer_component().log_alert(
             "Failed to connect to writer pipe. Error: {}",
             connection.error().system_error
         );
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]) {
         [&pipe, &registry, &dispatcher, &protocol_failed] {
             const auto expression = ac::pipes::read_string(pipe);
             if (!expression) {
-                writer_component().log_print(
+                writer_component().log_alert(
                     "Failed to read writer command. Error: {}",
                     expression.error().system_error
                 );
@@ -136,7 +137,7 @@ int main(int argc, char* argv[]) {
             }
             auto action = registry.resolve(*expression);
             if (!action) {
-                writer_component().log_print(
+                writer_component().log_alert(
                     "Unknown writer command: {}", *expression
                 );
                 return;
@@ -149,7 +150,7 @@ int main(int argc, char* argv[]) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher] {
-            writer_component().log_main("shutdown signal received");
+            writer_component().log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -159,7 +160,7 @@ int main(int argc, char* argv[]) {
                 registry.autocomplete_values()
             )
         ); !ready) {
-        writer_component().log_print(
+        writer_component().log_alert(
             "Failed to signal writer readiness. Error: {}",
             ready.error().system_error
         );
@@ -167,7 +168,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (const auto result = dispatcher.process(pipe); !result) {
-        writer_component().log_print(
+        writer_component().log_alert(
             "Writer pipe failed. Error: {}",
             result.error().system_error
         );
@@ -177,6 +178,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    writer_component().log_main("program terminated");
+    writer_component().log_info("program terminated");
     return 0;
 }

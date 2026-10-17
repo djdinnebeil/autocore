@@ -1,0 +1,20 @@
+[application]
+key = adobe_acrobat
+
+[taskbar]
+application_id = AcrobatReader
+
+[window]
+process_name = Acrobat.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = cycle
+
+[fallback]
+executable_path = []
+
+[commands]
+activate = activate_adobe_acrobat

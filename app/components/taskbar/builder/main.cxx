@@ -1090,14 +1090,14 @@ namespace {
         const std::vector<GeneratedConfiguration>& generated,
         const bool prompt_user
     ) {
-        taskbar_builder.log("Applications:");
+        taskbar_builder.log_debug("Applications:");
         if (prompt_user) std::wcout << L"\nApplications:\n\n";
         const std::size_t count = buttons.size() < generated.size()
             ? buttons.size() : generated.size();
         for (std::size_t index = 0; index < count; ++index) {
             const std::wstring name = application_display_name(generated[index]);
             if (name.empty()) continue;
-            taskbar_builder.log(name);
+            taskbar_builder.log_debug(name);
             if (prompt_user) std::wcout << name << L'\n';
         }
     }
@@ -1130,7 +1130,7 @@ namespace {
             const auto name = item.application.path.filename().wstring();
             if (item.created) {
                 ++created;
-                taskbar_builder.log(
+                taskbar_builder.log_debug(
                     L"created " + name + L" " +
                     describe_matcher(item.application.matcher) +
                     L" (" + item.reason + L")"
@@ -1138,13 +1138,13 @@ namespace {
             }
             else {
                 ++existing;
-                taskbar_builder.log(L"already present " + name);
+                taskbar_builder.log_debug(L"already present " + name);
             }
         }
-        taskbar_builder.log("Taskbar builder");
-        taskbar_builder.log("Applications: {}", buttons->size());
-        taskbar_builder.log("Created: {}", created);
-        taskbar_builder.log("Already present: {}", existing);
+        taskbar_builder.log_debug("Taskbar builder");
+        taskbar_builder.log_debug("Applications: {}", buttons->size());
+        taskbar_builder.log_debug("Created: {}", created);
+        taskbar_builder.log_debug("Already present: {}", existing);
         if (prompt_user) {
             std::wcout
                 << L"\nTaskbar builder\n\n"
@@ -1153,7 +1153,7 @@ namespace {
                 << L"Already present: " << existing << L"\n";
         }
         report_application_names(*buttons, generated, prompt_user);
-        taskbar_builder.log_main("taskbar applications generated");
+        taskbar_builder.log_info("taskbar applications generated");
         return 0;
     }
 
@@ -1200,7 +1200,7 @@ namespace {
 
 int wmain(int argc, wchar_t* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_builder.log_main("taskbar_builder.exe started");
+    taskbar_builder.log_info("taskbar_builder.exe started");
     try {
         const ToolConfiguration configuration = default_configuration();
         if (argc > 2) {
@@ -1210,7 +1210,7 @@ int wmain(int argc, wchar_t* argv[]) {
         if (argc == 2) {
             const std::wstring_view argument {argv[1]};
             if (argument == L"--seed") {
-                taskbar_builder.log("Seed requested");
+                taskbar_builder.log_debug("Seed requested");
                 if (generate_maps_with_com(configuration, false) != 0) {
                     return 1;
                 }

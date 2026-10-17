@@ -58,12 +58,21 @@ Writer `logging_policy_config.exe`. Section `[logging]`. This is the shared logg
 
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
-| `disable_all` | bool | `on`, `off` | `off` | uses `off` |
+| `disable_all` | bool | `on`, `off` | `off` | uses `off`. On suppresses diagnostic logging and the `print()` / `printnl()` file copy. Console output stays available. This is the logging-disable control |
 | `directory` | path | relative to the installation root, or absolute | `logs` | empty uses `<installation_root>/logs` |
-| `write_logs_to_files` | bool | `on`, `off` | `on` | uses `on` |
-| `write_logs_to_console` | bool | `on`, `off` | `off` | uses `off` |
-| `log_print_mode` | enum | `log`, `print` | `print` | uses `print` |
+| `max_directory_mb` | integer | non-negative | `100` | uses `100`. `0` is valid and does not disable logging |
+| `retention_days` | integer | non-negative | `30` | uses `30`. `0` is valid and does not disable logging |
+| `level` | enum | `trace`,`debug`, `info`, `alert` | `debug` | uses `debug` |
+| `log_console_output` | bool | `on`, `off` | `on` | uses `on`. Allows `print()` and `printnl()` to participate in the component file sink |
+| `write_logs_to_files` | bool | `on`, `off` | `on` | uses `on`. Master file-output gate for component logging, including eligible `print()` / `printnl()` copies |
+| `write_logs_to_console` | bool | `on`, `off` | `off` | uses `off`. Mirrors enabled diagnostic logs to the console |
+| `write_alerts_to_console` | bool | `on`, `off` | `on` | uses `on`. Shows enabled alerts on the console. Alerts already mirrored to the console are written once |
 | `component_logging_default` | bool | `on`, `off` | `on` | uses `on` |
+| `experimental` | bool | `on`, `off` | `on` | uses `on`. Temporarily selects the cleanup utility's visible startup report (`on`) or debug-log report (`off`) |
+
+`auto_core_logging_cleanup.exe` currently reads and reports `experimental`,
+`max_directory_mb`, and `retention_days` after Main reaches ready state; it
+does not yet perform cleanup.
 
 ### `config/warnings.ini`
 

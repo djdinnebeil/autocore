@@ -22,7 +22,7 @@ It does not join `app/AutoCore.sln`. Extra executables (Spotify `oauth/`, Server
 `builder/` for `server_builder.exe`) are sibling folders. Add each production `.vcxproj`
 to `Example.sln` and `app/AutoCore.sln`. Do not add a solution per executable.
 
-Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_print`), uses those defaults in memory, and does **not** create the file.
+Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_alert`), uses those defaults in memory, and does **not** create the file.
 
 Lived example: [`app/components/server`](../app/components/server) (`runtime` / `config` / `editor` / `builder` / `settings` / `shared/defaults.ixx`).
 
@@ -184,15 +184,16 @@ ac::Component& example_component() {
 
 `example_config.exe` uses the same logging API after
 `ac::Component component {"example_config"}`. That identity is the executable's own log directory,
-`logs/components/example_config/`. `log()`, `log_main()`, and
-`log_print()` keep their usual meaning. Interactive prompts stay on
+`logs/components/example_config/`. `log_debug()`, `log_trace()`,
+`log_info()`, and `log_alert()` are the diagnostic calls. `log_trace()`
+is debug severity and also requires thread logging. Interactive prompts stay on
 `cout`. The config executable still writes `config/example.ini`; it does
 not call `report_ini_unavailable()`.
 
 command_registry::Registry create_example_command_registry() {
     command_registry::Registry registry;
     registry.add("print_example", [] {
-        example_component().log_print(
+        example_component().log_alert(
             "this is print_example() from within example_ac.exe"
         );
     });
@@ -234,7 +235,7 @@ int main() {
             }
             auto action = registry.resolve(*expression);
             if (!action) {
-                component.log_print("Unknown example command: {}", *expression);
+                component.log_alert("Unknown example command: {}", *expression);
                 return;
             }
             action();
@@ -245,7 +246,7 @@ int main() {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher, &component] {
-            component.log_main("shutdown signal received");
+            component.log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -259,7 +260,7 @@ int main() {
     if (!dispatcher.process(pipe)) {
         return 1;
     }
-    component.log_main("program terminated");
+    component.log_info("program terminated");
     return 0;
 }
 ```

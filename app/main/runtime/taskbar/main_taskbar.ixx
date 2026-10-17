@@ -1,9 +1,6 @@
 /**
  * \file main_taskbar.ixx
  * \brief Owns Main's interactive taskbar cycling session and commands.
- *
- * Cycling fields are currently public because `process_key_event` reads
- * `switch_set`. Encapsulation is tracked in devs/TODO.md.
  */
 export module auto_core.main.taskbar;
 
@@ -44,16 +41,11 @@ export {
 
 export class MainTaskbarState {
 public:
-    ac::taskbar::Position switch_position {};
     /** Last dispatched key; compared in `switch_windows` to advance vs end a cycle. */
     int switch_keycode {};
+
     /** `true` while an interactive Win-held cycling session is active. */
-    bool switch_set {false};
-    /** `true` when the cycle is Main-emulated rather than native Win+position. */
-    bool emulated_cycle {false};
-    std::string cycle_application;
-    std::vector<ac::taskbar::WindowHandle> cycle_windows;
-    std::size_t cycle_index {};
+    [[nodiscard]] bool cycle_active() const noexcept;
 
     /** Same key advances the cycle; any other key ends it. */
     void switch_windows(int keycode);
@@ -65,6 +57,14 @@ public:
     void activate_configured(std::string_view name);
 
 private:
+    ac::taskbar::Position switch_position {};
+    bool switch_set {false};
+    /** `true` when the cycle is Main-emulated rather than native Win+position. */
+    bool emulated_cycle {false};
+    std::string cycle_application;
+    std::vector<ac::taskbar::WindowHandle> cycle_windows;
+    std::size_t cycle_index {};
+
     void emulate_configured(std::string_view name);
     void begin_emulated_cycle(
         std::string_view name,

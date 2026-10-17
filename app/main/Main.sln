@@ -3,6 +3,9 @@
 VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core", "runtime\auto_core.vcxproj", "{B34038F4-60EB-49D6-B502-9FE13BB1D102}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405} = {6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_main_tests", "tests\auto_core_main_tests.vcxproj", "{C4F2A91E-6B3D-4E08-9F71-2A5C8D0E1B47}"
 EndProject
@@ -15,6 +18,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "warnings_config", "config\warnings\warnings_config.vcxproj", "{C3A91F58-6E24-4B70-9D15-8A7C2E41B0D6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_policy_config", "config\logging_policy\logging_policy_config.vcxproj", "{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_logging_cleanup", "..\utilities\logging_cleanup\auto_core_logging_cleanup.vcxproj", "{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shutdown_config", "config\shutdown\shutdown_config.vcxproj", "{F1A5E6B8-D5C4-417E-CF90-55E66F770883}"
 EndProject
@@ -66,6 +71,10 @@ Global
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Debug|x64.Build.0 = Debug|x64
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Release|x64.ActiveCfg = Release|x64
 		{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}.Release|x64.Build.0 = Release|x64
+		{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}.Debug|x64.ActiveCfg = Debug|x64
+		{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}.Debug|x64.Build.0 = Debug|x64
+		{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}.Release|x64.ActiveCfg = Release|x64
+		{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}.Release|x64.Build.0 = Release|x64
 		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x64.ActiveCfg = Debug|x64
 		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Debug|x64.Build.0 = Debug|x64
 		{F1A5E6B8-D5C4-417E-CF90-55E66F770883}.Release|x64.ActiveCfg = Release|x64

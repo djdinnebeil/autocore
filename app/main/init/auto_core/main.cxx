@@ -50,7 +50,7 @@ int run_owner(
         return 1;
     }
 
-    auto_core_init.log("Launching {}", command);
+    auto_core_init.log_debug("Launching {}", command);
     const int code = cfg::run_config_exe(
         executable_name,
         std::wstring {arguments}
@@ -63,7 +63,7 @@ int run_owner(
         );
     }
     else {
-        auto_core_init.log(
+        auto_core_init.log_debug(
             "{} exited with code {}",
             executable_name,
             code
@@ -162,7 +162,7 @@ int run_sequence(
     const sequence::InitializationMode mode,
     const bool prompt_for_components
 ) {
-    auto_core_init.log(
+    auto_core_init.log_debug(
         "Initialization mode selected: {}",
         mode_name(mode)
     );
@@ -198,11 +198,11 @@ int run_sequence(
             arguments = sequence::arguments_for(step.kind, mode);
         }
         if (step.executable == "auto_core_config.exe") {
-            auto_core_init.log("Starting auto_core.ini creation");
+            auto_core_init.log_debug("Starting auto_core.ini creation");
         }
         const int code = run_owner(step.executable, arguments);
         if (code != 0) {
-            auto_core_init.log("Required child failed");
+            auto_core_init.log_debug("Required child failed");
             return 1;
         }
     }
@@ -291,14 +291,14 @@ int main(int argc, char* argv[]) {
     if (establish_logging(mode) != 0) {
         return 1;
     }
-    auto_core_init.log_main("auto_core_init.exe started");
+    auto_core_init.log_info("auto_core_init.exe started");
     std::error_code ini_error;
     const bool ini_present = std::filesystem::exists(
         ac::paths::config_directory() / "auto_core.ini",
         ini_error
     );
     if (!ini_error && !ini_present) {
-        auto_core_init.log(
+        auto_core_init.log_debug(
             "config/auto_core.ini is missing. Launching auto_core_init.exe."
         );
     }

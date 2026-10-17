@@ -38,5 +38,5 @@ export void update_spotify_component() {
  * This function updates the main log file and logs the start of the Spotify component.
  */
 export void log_init() {
-	spotify_component.log_main("spotify_ac.exe started");
+	spotify_component.log_info("spotify_ac.exe started");
 }

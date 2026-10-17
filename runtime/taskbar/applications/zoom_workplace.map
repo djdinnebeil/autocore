@@ -1,0 +1,20 @@
+[application]
+key = zoom_workplace
+
+[taskbar]
+application_id = zoom.us.Zoom Video Meetings
+
+[window]
+process_name = Zoom.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = one-shot
+
+[fallback]
+executable_path = C:\Users\DJ\AppData\Roaming\Zoom\bin\Zoom.exe
+
+[commands]
+activate = activate_zoom_workplace | activate_zoom

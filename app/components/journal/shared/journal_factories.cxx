@@ -92,7 +92,7 @@ int random_number(int low, int high) {
 std::optional<int> prompt_for_upper_choice() {
     const auto target_window = ac::console::focus_for_prompt_via_winkey();
     if (!target_window) {
-        journal_component().log_print(
+        journal_component().log_alert(
             ac::console::error_message(target_window.error())
         );
         return std::nullopt;
@@ -116,7 +116,7 @@ std::optional<int> prompt_for_upper_choice() {
     }
 
     upper = (std::max)(upper, 1);
-    journal_component().log_main("{}", upper);
+    journal_component().log_info("{}", upper);
     SetForegroundWindow(static_cast<HWND>(*target_window));
     return upper;
 }
@@ -900,16 +900,16 @@ void load_alias_commands(command_registry::Registry& registry) {
             continue;
         }
         for (const std::string& issue : loaded.file.issues) {
-            journal_component().log_print("{}", issue);
+            journal_component().log_alert("{}", issue);
         }
         for (const AliasDefinition& definition : loaded.file.aliases) {
             if (const auto reason = rejection_reason(definition, accepted)) {
-                journal_component().log_print("{}", *reason);
+                journal_component().log_alert("{}", *reason);
                 continue;
             }
             auto action = materialize(definition);
             if (!action) {
-                journal_component().log_print(
+                journal_component().log_alert(
                     "Journal alias '{}' skipped because it could not be loaded",
                     definition.alias
                 );

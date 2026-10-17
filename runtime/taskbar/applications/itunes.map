@@ -1,0 +1,20 @@
+[application]
+key = itunes
+
+[taskbar]
+application_id = Apple.iTunes
+
+[window]
+process_name = iTunes.exe
+executable_path = 
+class = 
+application_id = 
+
+[activation]
+multi_window = one-shot
+
+[fallback]
+executable_path = C:\DJ\Software\iTunes\iTunes.exe
+
+[commands]
+activate = activate_itunes

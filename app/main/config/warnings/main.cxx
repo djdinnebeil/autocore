@@ -123,7 +123,7 @@ menu::ApplyResult apply_setting(
         warnings_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    warnings_config.log("Wrote {}", ini_path().string());
+    warnings_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -146,7 +146,7 @@ int write_missing_defaults() {
         warnings_config.print("Failed to write {}.", ini_path().string());
         return 1;
     }
-    warnings_config.log("Wrote {}", ini_path().string());
+    warnings_config.log_debug("Wrote {}", ini_path().string());
     return 0;
 }
 
@@ -170,7 +170,7 @@ int initialize_missing() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    warnings_config.log_main("warnings_config.exe started");
+    warnings_config.log_info("warnings_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

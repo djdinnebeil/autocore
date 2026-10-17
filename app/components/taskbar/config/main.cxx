@@ -103,7 +103,7 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
         taskbar_config.print("Failed to write {}", path.string());
         return false;
     }
-    taskbar_config.log("Wrote {}", path.string());
+    taskbar_config.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -334,7 +334,7 @@ int offer_builder() {
         return 1;
     }
     if (!*accepted) {
-        taskbar_config.log("Taskbar builder was not requested.");
+        taskbar_config.log_debug("Taskbar builder was not requested.");
         return 0;
     }
     return launch_taskbar_builder({});
@@ -344,7 +344,7 @@ int offer_builder() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_config.log_main("taskbar_config.exe started");
+    taskbar_config.log_info("taskbar_config.exe started");
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {
@@ -368,7 +368,7 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(taskbar_config);
             if (!write_ini(path, Settings {})) {
-                taskbar_config.log(
+                taskbar_config.log_debug(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
@@ -392,13 +392,13 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(taskbar_config);
             if (!write_ini(path, Settings {})) {
-                taskbar_config.log(
+                taskbar_config.log_debug(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                taskbar_config.log(
+                taskbar_config.log_debug(
                     "Taskbar configuration was not initialized."
                 );
                 return 1;
@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
     if (!present) {
         req::log_configuration_missing(taskbar_config);
         if (!write_ini(path, Settings {})) {
-            taskbar_config.log(
+            taskbar_config.log_debug(
                 "Taskbar configuration was not initialized."
             );
             return 1;

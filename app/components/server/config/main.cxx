@@ -173,7 +173,7 @@ menu::ApplyResult apply_setting(
         return menu::ApplyResult::failed;
     }
     if (setting.key == "directory") {
-        server_config.log("directory stored as {}.", settings.directory);
+        server_config.log_debug("directory stored as {}.", settings.directory);
     }
     return menu::ApplyResult::stored;
 }
@@ -296,7 +296,7 @@ int launch_owned_init() {
     case SiteChoice::yes:
         return launch_owner(L"server_builder.exe", L"--seed");
     case SiteChoice::no:
-        server_config.log("Default site files were not requested.");
+        server_config.log_debug("Default site files were not requested.");
         return 0;
     case SiteChoice::cancelled:
         return 1;
@@ -322,7 +322,7 @@ void activate_own_console() {
 int main(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    server_config.log_main("server_config.exe started");
+    server_config.log_info("server_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
         else {
             req::log_writing_defaults(server_config);
             if (!write_server_ini({})) {
-                server_config.log(
+                server_config.log_debug(
                     "Server configuration was not initialized."
                 );
                 return 1;
@@ -368,13 +368,13 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(server_config);
             if (!write_server_ini({})) {
-                server_config.log(
+                server_config.log_debug(
                     "Server configuration was not initialized."
                 );
                 return 1;
             }
             if (offer_configuration() != 0) {
-                server_config.log(
+                server_config.log_debug(
                     "Server configuration was not initialized."
                 );
                 return 1;
@@ -390,7 +390,7 @@ int main(int argc, char* argv[]) {
 
     if (!present) {
         if (!write_server_ini({})) {
-            server_config.log(
+            server_config.log_debug(
                 "Server configuration was not initialized."
             );
             return 1;

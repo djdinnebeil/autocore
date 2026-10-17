@@ -63,7 +63,7 @@ namespace ac::logger::config::detail {
         MergeSettings settings {
             .merge_interval_seconds = 60,
             .merge_logs_on_shutdown = true,
-            .report = "Logger configuration:\n"
+            .report = {}
         };
 
         if (const auto value = parse_interval(raw.merge_interval_seconds)) {
@@ -73,9 +73,6 @@ namespace ac::logger::config::detail {
             settings.report +=
                 "merge_interval_seconds missing or invalid; using 60\n";
         }
-        settings.report += "merge_interval_seconds = " +
-            std::to_string(settings.merge_interval_seconds) + "\n";
-
         if (const auto value = parse_on_off(raw.merge_logs_on_shutdown)) {
             settings.merge_logs_on_shutdown = *value;
         }
@@ -83,11 +80,6 @@ namespace ac::logger::config::detail {
             settings.report +=
                 "merge_logs_on_shutdown missing or invalid; using on\n";
         }
-        settings.report += settings.merge_logs_on_shutdown
-            ? "merge_logs_on_shutdown = on\n"
-            : "merge_logs_on_shutdown = off\n";
-
-        settings.report += "logger settings loaded\n";
         return settings;
     }
 

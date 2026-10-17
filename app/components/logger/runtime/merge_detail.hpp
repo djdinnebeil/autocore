@@ -1,6 +1,6 @@
 /**
  * \file merge_detail.hpp
- * \brief Incremental merge of component `.main.log` files.
+ * \brief Incremental merge of component `.log` files.
  *
  * Behavior follows `dist/logs/merge_incremental.py`. Callers own scheduling.
  * This header does not read pipes or `logger.ini`.
@@ -93,11 +93,11 @@ namespace ac::logger::detail {
         }
 
         [[nodiscard]]
-        bool is_main_log_name(
+        bool is_component_log_name(
             const std::string& name,
             std::string& date
         ) {
-            constexpr std::string_view suffix = ".main.log";
+            constexpr std::string_view suffix = ".log";
             if (!name.ends_with(suffix) || name.size() < 11 + 1 + suffix.size()) {
                 return false;
             }
@@ -138,7 +138,7 @@ namespace ac::logger::detail {
                     continue;
                 }
                 std::string date;
-                if (!is_main_log_name(entry.path().filename().string(), date)) {
+                if (!is_component_log_name(entry.path().filename().string(), date)) {
                     continue;
                 }
                 SourceLog log;

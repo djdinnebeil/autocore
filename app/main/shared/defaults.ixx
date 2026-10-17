@@ -57,20 +57,30 @@ export namespace ac::main::defaults {
         "shutdown_timeout_ms = 2000\n";
 
     constexpr bool logging_disable_all = false;
-    constexpr bool logging_write_logs_to_files = true;
     constexpr std::string_view logging_directory = "logs";
+    constexpr std::int64_t logging_max_directory_mb = 100;
+    constexpr std::int64_t logging_retention_days = 30;
+    constexpr std::string_view logging_level = "debug";
+    constexpr bool logging_log_console_output = true;
+    constexpr bool logging_write_logs_to_files = true;
     constexpr bool logging_write_logs_to_console = false;
-    constexpr std::string_view logging_log_print_mode = "print";
+    constexpr bool logging_write_alerts_to_console = true;
     constexpr bool logging_component_logging_default = true;
+    constexpr bool logging_experimental = true;
 
     constexpr std::string_view logging_ini =
         "[logging]\n"
         "disable_all = off\n"
         "directory = logs\n"
+        "max_directory_mb = 100\n"
+        "retention_days = 30\n"
+        "level = debug\n"
+        "log_console_output = on\n"
         "write_logs_to_files = on\n"
         "write_logs_to_console = off\n"
-        "log_print_mode = print\n"
-        "component_logging_default = on\n";
+        "write_alerts_to_console = on\n"
+        "component_logging_default = on\n"
+        "experimental = on\n";
 
     constexpr std::uint64_t logger_merge_interval_seconds = 60;
     constexpr bool logger_merge_logs_on_shutdown = true;
@@ -147,22 +157,41 @@ export namespace ac::main::defaults {
     [[nodiscard]]
     inline std::string ini_for_logging(
         const bool disable_all,
-        const bool write_logs_to_files,
         const std::string_view stored_directory,
+        const std::int64_t max_directory_mb,
+        const std::int64_t retention_days,
+        const std::string_view level,
+        const bool log_console_output,
+        const bool write_logs_to_files,
         const bool write_logs_to_console,
-        const std::string_view log_print_mode,
-        const bool component_logging_default
+        const bool write_alerts_to_console,
+        const bool component_logging_default,
+        const bool experimental
     ) {
         const std::string directory = stored_directory.empty()
             ? std::string {logging_directory}
             : std::string {stored_directory};
-        const std::string mode = log_print_mode == "log" ? "log" : "print";
+        const std::string stored_level =
+            level == "debug" || level == "info" || level == "alert"
+                ? std::string {level}
+                : std::string {logging_level};
+        const std::int64_t stored_cap = max_directory_mb < 0
+            ? logging_max_directory_mb
+            : max_directory_mb;
+        const std::int64_t stored_retention = retention_days < 0
+            ? logging_retention_days
+            : retention_days;
         if (disable_all == logging_disable_all &&
-            write_logs_to_files == logging_write_logs_to_files &&
             directory == logging_directory &&
+            stored_cap == logging_max_directory_mb &&
+            stored_retention == logging_retention_days &&
+            stored_level == logging_level &&
+            log_console_output == logging_log_console_output &&
+            write_logs_to_files == logging_write_logs_to_files &&
             write_logs_to_console == logging_write_logs_to_console &&
-            mode == logging_log_print_mode &&
-            component_logging_default == logging_component_logging_default) {
+            write_alerts_to_console == logging_write_alerts_to_console &&
+            component_logging_default == logging_component_logging_default &&
+            experimental == logging_experimental) {
             return std::string {logging_ini};
         }
         return std::string {
@@ -172,16 +201,29 @@ export namespace ac::main::defaults {
             "\n"
             "directory = " + directory +
             "\n"
+            "max_directory_mb = " + std::to_string(stored_cap) +
+            "\n"
+            "retention_days = " + std::to_string(stored_retention) +
+            "\n"
+            "level = " + stored_level +
+            "\n"
+            "log_console_output = " +
+            (log_console_output ? "on" : "off") +
+            "\n"
             "write_logs_to_files = " +
             (write_logs_to_files ? "on" : "off") +
             "\n"
             "write_logs_to_console = " +
             (write_logs_to_console ? "on" : "off") +
             "\n"
-            "log_print_mode = " + mode +
+            "write_alerts_to_console = " +
+            (write_alerts_to_console ? "on" : "off") +
             "\n"
             "component_logging_default = " +
             (component_logging_default ? "on" : "off") +
+            "\n"
+            "experimental = " +
+            (experimental ? "on" : "off") +
             "\n";
     }
 

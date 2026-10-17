@@ -1,6 +1,9 @@
 #include "configured_directory.hpp"
 #include "logging_config_detail.hpp"
 
+#include <charconv>
+#include <cstdint>
+
 namespace ac::logging::config::detail {
 
     namespace {
@@ -16,34 +19,71 @@ namespace ac::logging::config::detail {
             return std::nullopt;
         }
 
-        std::optional<LogPrintMode> parse_log_print_mode(
+        std::optional<LogLevel> parse_level(
             const std::optional<std::string_view> value
         ) noexcept {
-            if (value == "log") {
-                return LogPrintMode::log;
+            if (value == "trace") {
+                return LogLevel::trace;
             }
-            if (value == "print") {
-                return LogPrintMode::print;
+            if (value == "debug") {
+                return LogLevel::debug;
+            }
+            if (value == "info") {
+                return LogLevel::info;
+            }
+            if (value == "alert") {
+                return LogLevel::alert;
             }
             return std::nullopt;
+        }
+
+        std::optional<std::int64_t> parse_non_negative(
+            const std::optional<std::string_view> value
+        ) noexcept {
+            if (!value) {
+                return std::nullopt;
+            }
+            std::int64_t parsed = 0;
+            const auto result = std::from_chars(
+                value->data(),
+                value->data() + value->size(),
+                parsed
+            );
+            if (result.ec != std::errc {} ||
+                result.ptr != value->data() + value->size() ||
+                parsed < 0) {
+                return std::nullopt;
+            }
+            return parsed;
+        }
+
+        void append_integer(
+            std::string& report,
+            const std::string_view key,
+            const bool used_default,
+            const std::int64_t default_value
+        ) {
+            if (!used_default) {
+                return;
+            }
+            report += key;
+            report += " missing or invalid; using ";
+            report += std::to_string(default_value);
+            report += '\n';
         }
 
         void append_bool(
             std::string& report,
             const std::string_view key,
-            const bool value,
             const bool used_default,
             const std::string_view default_word
         ) {
-            if (used_default) {
-                report += key;
-                report += " missing or invalid; using ";
-                report += default_word;
-                report += '\n';
+            if (!used_default) {
+                return;
             }
             report += key;
-            report += " = ";
-            report += value ? "on" : "off";
+            report += " missing or invalid; using ";
+            report += default_word;
             report += '\n';
         }
     }
@@ -55,13 +95,18 @@ namespace ac::logging::config::detail {
     ) {
         LoggingSettings settings {
             .disable_all = false,
+            .level = LogLevel::debug,
+            .log_console_output = true,
             .write_logs_to_files = true,
             .write_logs_to_console = false,
-            .log_print_mode = LogPrintMode::print,
+            .write_alerts_to_console = true,
             .component_logging_default = true,
+            .max_directory_mb = 100,
+            .retention_days = 30,
             .directory = default_directory,
             .components_directory = default_directory / "components",
-            .report = "Logging configuration:\n"
+            .report = {},
+            .experimental = true
         };
 
         const auto disable_all = parse_bool(raw.disable_all);
@@ -69,7 +114,6 @@ namespace ac::logging::config::detail {
         append_bool(
             settings.report,
             "disable_all",
-            settings.disable_all,
             !disable_all,
             "off"
         );
@@ -80,14 +124,44 @@ namespace ac::logging::config::detail {
             installation_root
         );
         settings.components_directory = settings.directory / "components";
-        settings.report += "directory = " + settings.directory.string() + "\n";
+        const auto max_directory_mb = parse_non_negative(raw.max_directory_mb);
+        settings.max_directory_mb = max_directory_mb.value_or(100);
+        append_integer(
+            settings.report,
+            "max_directory_mb",
+            !max_directory_mb,
+            100
+        );
+
+        const auto retention_days = parse_non_negative(raw.retention_days);
+        settings.retention_days = retention_days.value_or(30);
+        append_integer(
+            settings.report,
+            "retention_days",
+            !retention_days,
+            30
+        );
+
+        const auto level = parse_level(raw.level);
+        settings.level = level.value_or(LogLevel::debug);
+        if (!level) {
+            settings.report += "level missing or invalid; using debug\n";
+        }
+
+        const auto log_console_output = parse_bool(raw.log_console_output);
+        settings.log_console_output = log_console_output.value_or(true);
+        append_bool(
+            settings.report,
+            "log_console_output",
+            !log_console_output,
+            "on"
+        );
 
         const auto write_files = parse_bool(raw.write_logs_to_files);
         settings.write_logs_to_files = write_files.value_or(true);
         append_bool(
             settings.report,
             "write_logs_to_files",
-            settings.write_logs_to_files,
             !write_files,
             "on"
         );
@@ -97,32 +171,37 @@ namespace ac::logging::config::detail {
         append_bool(
             settings.report,
             "write_logs_to_console",
-            settings.write_logs_to_console,
             !write_console,
             "off"
         );
 
-        if (const auto mode = parse_log_print_mode(raw.log_print_mode)) {
-            settings.log_print_mode = *mode;
-        }
-        else {
-            settings.report += "log_print_mode missing or invalid; using print\n";
-        }
-        settings.report += settings.log_print_mode == LogPrintMode::log
-            ? "log_print_mode = log\n"
-            : "log_print_mode = print\n";
+        const auto write_alerts = parse_bool(raw.write_alerts_to_console);
+        settings.write_alerts_to_console = write_alerts.value_or(true);
+        append_bool(
+            settings.report,
+            "write_alerts_to_console",
+            !write_alerts,
+            "on"
+        );
 
         const auto family_default = parse_bool(raw.component_logging_default);
         settings.component_logging_default = family_default.value_or(true);
         append_bool(
             settings.report,
             "component_logging_default",
-            settings.component_logging_default,
             !family_default,
             "on"
         );
 
-        settings.report += "logging settings loaded\n";
+        const auto experimental = parse_bool(raw.experimental);
+        settings.experimental = experimental.value_or(true);
+        append_bool(
+            settings.report,
+            "experimental",
+            !experimental,
+            "on"
+        );
+
         return settings;
     }
 

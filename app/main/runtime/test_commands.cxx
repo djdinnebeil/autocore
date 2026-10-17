@@ -44,13 +44,8 @@ void encoding_test() {
     }
 }
 
-void send_crash_command() {
-    *static_cast<volatile int*>(nullptr) = 0;
-}
-
 void test_commands::runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
     registry.add("encoding_test", &::encoding_test);
-    registry.add("send_crash_command", &::send_crash_command);
 }

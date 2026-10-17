@@ -51,14 +51,27 @@ namespace writer::data {
             installation_root
         );
 
-        const bool notes_relative =
-            notes && is_relative_subdirectory(*notes) && !notes_label.empty();
-        const std::string subdirectory = notes_relative
-            ? std::string {notes_label}
-            : std::string {"notes"};
-        const auto notes_directory = notes_relative
-            ? (writer_directory / *notes).lexically_normal()
-            : (writer_directory / "notes").lexically_normal();
+        const auto fallback_notes =
+            (writer_directory / "notes").lexically_normal();
+        std::filesystem::path notes_directory = fallback_notes;
+        std::string subdirectory {"notes"};
+        try {
+            if (notes && !notes->empty() && !notes_label.empty()) {
+                if (notes->is_absolute()) {
+                    notes_directory = notes->lexically_normal();
+                    subdirectory = std::string {notes_label};
+                }
+                else if (is_relative_subdirectory(*notes)) {
+                    notes_directory =
+                        (writer_directory / *notes).lexically_normal();
+                    subdirectory = std::string {notes_label};
+                }
+            }
+        }
+        catch (...) {
+            notes_directory = fallback_notes;
+            subdirectory = "notes";
+        }
 
         return Layout {
             writer_directory,

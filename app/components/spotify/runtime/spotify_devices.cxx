@@ -53,7 +53,7 @@ void device_request_loop() {
             std::wstring {spotify::devices::pipe_name}
         );
         if (!server) {
-            spotify_component.log_print("Unable to open the Spotify device pipe.");
+            spotify_component.log_alert("Unable to open the Spotify device pipe.");
             return;
         }
         ac::pipes::Pipe pipe = std::move(*server);

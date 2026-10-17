@@ -51,7 +51,7 @@ int launch_config_init() {
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
-        spotify_formatter.log_print("Missing {}.", executable_path.string());
+        spotify_formatter.log_alert("Missing {}.", executable_path.string());
         return 1;
     }
 
@@ -72,7 +72,7 @@ int launch_config_init() {
             &startup_info,
             &process_info
         )) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Unable to start {}.",
             executable_path.string()
         );
@@ -84,7 +84,7 @@ int launch_config_init() {
     DWORD exit_code = 1;
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Unable to read the exit code from spotify_config.exe."
         );
         return 1;
@@ -92,7 +92,7 @@ int launch_config_init() {
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        spotify_formatter.log_print("spotify_config.exe exited {}.", code);
+        spotify_formatter.log_alert("spotify_config.exe exited {}.", code);
     }
     return code;
 }
@@ -105,7 +105,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -114,7 +114,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     }
     if (present) {
         if (!ini_readable(path)) {
-            spotify_formatter.log_print(
+            spotify_formatter.log_alert(
                 "Failed to read {}. Song format was not edited.",
                 path.string()
             );
@@ -123,11 +123,11 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
         return 0;
     }
 
-    spotify_formatter.log_print(
+    spotify_formatter.log_alert(
         "config/components/spotify.ini is missing. Running spotify_config.exe --init."
     );
     if (launch_config_init() != 0) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "spotify.ini was not initialized. Song format was not edited."
         );
         return 1;
@@ -136,7 +136,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     error.clear();
     const bool created = std::filesystem::exists(path, error);
     if (error || !created || !ini_readable(path)) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "config/components/spotify.ini is still unavailable. Song format was not edited."
         );
         return 1;
@@ -149,7 +149,7 @@ int require_readable_ini() {
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Failed to inspect {}: {}",
             path.string(),
             error.message()
@@ -157,7 +157,7 @@ int require_readable_ini() {
         return 1;
     }
     if (!present || !ini_readable(path)) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
@@ -208,10 +208,10 @@ bool replace_song_format(
     std::string_view contents
 ) {
     if (!spotify::song::replace_song_format(path, contents)) {
-        spotify_formatter.log_print("Failed to replace {}", path.string());
+        spotify_formatter.log_alert("Failed to replace {}", path.string());
         return false;
     }
-    spotify_formatter.log("Wrote {}", path.string());
+    spotify_formatter.log_debug("Wrote {}", path.string());
     return true;
 }
 
@@ -222,7 +222,7 @@ int edit_song_format() {
     std::error_code error;
     const bool existed = std::filesystem::exists(format_path, error);
     if (error) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Failed to inspect {}: {}",
             format_path.string(),
             error.message()
@@ -236,7 +236,7 @@ int edit_song_format() {
         std::string read_error;
         const auto bytes = read_bytes(format_path, read_error);
         if (!bytes) {
-            spotify_formatter.log_print("{}", read_error);
+            spotify_formatter.log_alert("{}", read_error);
         }
         else if (const auto accepted = spotify::catalog::accepted_song_format(*bytes)) {
             current = *accepted;
@@ -244,7 +244,7 @@ int edit_song_format() {
         }
         else {
             const auto compiled = spotify::catalog::compile_utf8(*bytes);
-            spotify_formatter.log_print(
+            spotify_formatter.log_alert(
                 "{}",
                 compiled.error.empty()
                     ? "song.format is invalid."
@@ -282,12 +282,12 @@ int edit_song_format() {
         std::cout << "Format [" << current << "]: ";
         std::string line;
         if (!std::getline(std::cin, line)) {
-            spotify_formatter.log("Input ended.");
+            spotify_formatter.log_debug("Input ended.");
             return 0;
         }
         const auto value = trim(line);
         if (value == "cancel") {
-            spotify_formatter.log("Song format edit cancelled.");
+            spotify_formatter.log_debug("Song format edit cancelled.");
             return 0;
         }
 
@@ -305,7 +305,7 @@ int edit_song_format() {
             continue;
         }
         if (current_matches_file && *accepted == current) {
-            spotify_formatter.log(
+            spotify_formatter.log_debug(
                 "Left existing {} unchanged.",
                 format_path.string()
             );
@@ -326,7 +326,7 @@ int run_seed() {
     std::error_code error;
     const bool exists = std::filesystem::exists(format_path, error);
     if (error) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Failed to inspect {}: {}",
             format_path.string(),
             error.message()
@@ -334,7 +334,7 @@ int run_seed() {
         return 1;
     }
     if (exists) {
-        spotify_formatter.log("Seed skipped; song.format already exists");
+        spotify_formatter.log_debug("Seed skipped; song.format already exists");
         return 0;
     }
     if (!replace_song_format(format_path, spotify::song::default_template)) {
@@ -351,7 +351,7 @@ int run_init() {
     std::error_code error;
     const bool exists = std::filesystem::exists(format_path, error);
     if (error) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Failed to inspect {}: {}",
             format_path.string(),
             error.message()
@@ -359,7 +359,7 @@ int run_init() {
         return 1;
     }
     if (exists) {
-        spotify_formatter.log_print(
+        spotify_formatter.log_alert(
             "Initialization skipped; song.format already exists"
         );
         return 0;
@@ -369,7 +369,7 @@ int run_init() {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_formatter.log_main("spotify_formatter.exe started");
+    spotify_formatter.log_info("spotify_formatter.exe started");
 
     const bool seed = argc == 2 && std::string_view {argv[1]} == "--seed";
     const bool init = argc == 2 && std::string_view {argv[1]} == "--init";

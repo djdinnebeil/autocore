@@ -31,7 +31,7 @@ std::string_view trim(std::string_view value) {
 }
 
 void print_error(const std::string& message) {
-    spotify_db.log_print("{}", message);
+    spotify_db.log_alert("{}", message);
 }
 
 bool database_exists() {
@@ -42,7 +42,7 @@ bool database_exists() {
 int run_seed() {
     const auto ini_path = ac::paths::component_config_file("spotify");
     if (!ac::ini::read(ini_path)) {
-        spotify_db.log_print(
+        spotify_db.log_alert(
             "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
         );
         return 1;
@@ -51,7 +51,7 @@ int run_seed() {
     std::error_code error;
     const bool exists = std::filesystem::exists(spotify::sqlite::file_path(), error);
     if (error) {
-        spotify_db.log_print(
+        spotify_db.log_alert(
             "Failed to inspect {}: {}",
             spotify::sqlite::file_path().string(),
             error.message()
@@ -59,7 +59,7 @@ int run_seed() {
         return 1;
     }
     if (exists) {
-        spotify_db.log("Seed skipped; history.db already exists");
+        spotify_db.log_debug("Seed skipped; history.db already exists");
         return 0;
     }
 
@@ -68,7 +68,7 @@ int run_seed() {
         print_error(store.error());
         return 1;
     }
-    spotify_db.log_print("Created history.db.");
+    spotify_db.log_alert("Created history.db.");
     return 0;
 }
 
@@ -78,7 +78,7 @@ void create_database() {
         print_error(store.error());
         return;
     }
-    spotify_db.log_print("Created history.db.");
+    spotify_db.log_alert("Created history.db.");
 }
 
 void select_all() {
@@ -161,12 +161,12 @@ bool send_status(ac::pipes::Pipe& pipe, std::string_view status, std::string_vie
 int run_serve(void* const owner) {
     HANDLE mutex = CreateMutexW(nullptr, TRUE, serve_mutex_name.data());
     if (mutex == nullptr) {
-        spotify_db.log_print("Unable to create the Spotify database service mutex.");
+        spotify_db.log_alert("Unable to create the Spotify database service mutex.");
         return 1;
     }
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         CloseHandle(mutex);
-        spotify_db.log_print("Spotify database service is already running.");
+        spotify_db.log_alert("Spotify database service is already running.");
         return 1;
     }
     struct MutexGuard {
@@ -179,13 +179,13 @@ int run_serve(void* const owner) {
 
     auto store = spotify::sqlite::open();
     if (!store) {
-        spotify_db.log_print("{}", store.error());
+        spotify_db.log_alert("{}", store.error());
         return 1;
     }
 
     auto server = ac::pipes::create_pipe_server(std::wstring {spotify::db::pipe_name});
     if (!server) {
-        spotify_db.log_print(
+        spotify_db.log_alert(
             "Unable to open the Spotify database pipe. Error: {}",
             server.error().system_error
         );
@@ -199,7 +199,7 @@ int run_serve(void* const owner) {
             dispatcher.request_stop();
         });
         if (!owner_watch.active()) {
-            spotify_db.log_print("Unable to watch the Spotify database owner process.");
+            spotify_db.log_alert("Unable to watch the Spotify database owner process.");
             return 1;
         }
     }
@@ -208,7 +208,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        spotify_db.log_print(
+        spotify_db.log_alert(
             "Unable to accept a Spotify database client. Error: {}",
             GetLastError()
         );
@@ -218,11 +218,11 @@ int run_serve(void* const owner) {
     const auto hello = ac::pipes::read_string(pipe);
     if (!hello || *hello != spotify::db::protocol_id) {
         (void)send_status(pipe, "protocol", "Unsupported Spotify database protocol.");
-        spotify_db.log_print("Rejected a Spotify database client using an unexpected protocol.");
+        spotify_db.log_alert("Rejected a Spotify database client using an unexpected protocol.");
         return 1;
     }
     if (!send_status(pipe, "ok", {})) {
-        spotify_db.log_print("Unable to accept the Spotify database client.");
+        spotify_db.log_alert("Unable to accept the Spotify database client.");
         return 1;
     }
 
@@ -233,7 +233,7 @@ int run_serve(void* const owner) {
             for (std::string& field : fields) {
                 auto value = ac::pipes::read_string(pipe);
                 if (!value) {
-                    spotify_db.log_print("Failed to read a Spotify history request.");
+                    spotify_db.log_alert("Failed to read a Spotify history request.");
                     dispatcher.request_stop();
                     return;
                 }
@@ -263,7 +263,7 @@ int run_serve(void* const owner) {
     dispatcher.set_command(
         spotify::db::to_wire(spotify::db::Request::shutdown),
         [&dispatcher] {
-            spotify_db.log_main("shutdown signal received");
+            spotify_db.log_info("shutdown signal received");
             dispatcher.request_stop();
         }
     );
@@ -275,7 +275,7 @@ int run_serve(void* const owner) {
         if (dispatcher.stop_requested()) {
             return 0;
         }
-        spotify_db.log_print(
+        spotify_db.log_alert(
             "Spotify database pipe failed. Error: {}",
             result.error().system_error
         );
@@ -288,7 +288,7 @@ int run_serve(void* const owner) {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_db.log_main("spotify_db.exe started");
+    spotify_db.log_info("spotify_db.exe started");
     bool serve = false;
     bool seed = false;
     void* owner = nullptr;

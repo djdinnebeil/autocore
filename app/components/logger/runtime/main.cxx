@@ -27,14 +27,14 @@ ac::Component logger_component {
 void report_merge(const ac::logger::detail::MergeResult& result) {
     if (!result.ok) {
         ac::error::log(result.message);
-        logger_component.log_print("{}", result.message);
+        logger_component.log_alert("{}", result.message);
     }
 }
 
 void log_periodic_merge(const ac::logger::detail::MergeResult& result) {
     report_merge(result);
     if (result.ok) {
-        logger_component.log(
+        logger_component.log_debug(
             "Periodic merge ({}s)",
             ac::logger::config::merge_interval_seconds()
         );
@@ -44,10 +44,10 @@ void log_periodic_merge(const ac::logger::detail::MergeResult& result) {
 [[nodiscard]]
 int run_once(const bool shutdown_launch) {
     if (shutdown_launch) {
-        logger_component.log_main("Shutdown one-shot merge");
+        logger_component.log_info("Shutdown one-shot merge");
     }
     else {
-        logger_component.log("One-shot merge");
+        logger_component.log_debug("One-shot merge");
     }
     const auto result = ac::logger::detail::merge_once(
         ac::logging::config::directory()
@@ -68,7 +68,7 @@ int run_hosted(ac::pipes::Pipe pipe) {
         }
     } shutdown_event {CreateEventW(nullptr, TRUE, FALSE, nullptr)};
     if (shutdown_event.handle == nullptr) {
-        logger_component.log_print(
+        logger_component.log_alert(
             "Failed to create the logger shutdown event. Error: {}",
             GetLastError()
         );
@@ -97,13 +97,13 @@ int run_hosted(ac::pipes::Pipe pipe) {
                 continue;
             }
             if (outcome == ac::logger::detail::WaitOutcome::failed) {
-                logger_component.log_print(
+                logger_component.log_alert(
                     "Logger wait failed. Error: {}",
                     GetLastError()
                 );
             }
             else if (outcome == ac::logger::detail::WaitOutcome::unexpected) {
-                logger_component.log_print(
+                logger_component.log_alert(
                     "Unexpected logger wait result: {}",
                     wake
                 );
@@ -117,7 +117,7 @@ int run_hosted(ac::pipes::Pipe pipe) {
             ac::protocol::component::Request::shutdown
         ),
         [&dispatcher, handle = shutdown_event.handle] {
-            logger_component.log_main("shutdown signal received");
+            logger_component.log_info("shutdown signal received");
             SetEvent(handle);
             dispatcher.request_stop();
         }
@@ -132,7 +132,7 @@ int run_hosted(ac::pipes::Pipe pipe) {
                 dispatcher.request_stop();
                 return;
             }
-            logger_component.log_print(
+            logger_component.log_alert(
                 "Unknown logger command: {}",
                 *expression
             );
@@ -144,7 +144,7 @@ int run_hosted(ac::pipes::Pipe pipe) {
             ac::protocol::component::make_hello({})
         ); !hello) {
         SetEvent(shutdown_event.handle);
-        logger_component.log_print(
+        logger_component.log_alert(
             "Failed to send logger hello. Error: {}",
             hello.error().system_error
         );
@@ -153,14 +153,14 @@ int run_hosted(ac::pipes::Pipe pipe) {
 
     if (const auto result = dispatcher.process(pipe); !result) {
         SetEvent(shutdown_event.handle);
-        logger_component.log_print(
+        logger_component.log_alert(
             "Logger pipe failed. Error: {}",
             result.error().system_error
         );
     }
 
     worker.join();
-    logger_component.log_main("program terminated");
+    logger_component.log_info("program terminated");
     return 0;
 }
 
@@ -219,7 +219,7 @@ int main() {
         return run_once(false);
     }
     if (kind == ac::logger::detail::LaunchKind::failed) {
-        logger_component.log_print(
+        logger_component.log_alert(
             "Failed to connect to the logger pipe. Error: {}",
             open_error
         );

@@ -33,9 +33,11 @@ namespace writer::data {
      *
      * A relative `directory` joins `installation_root`. An absolute path is
      * used as-is. A missing or empty directory uses
-     * `<installation_root>/writer`. `notes` must be a relative subdirectory
-     * of the Writer directory. A missing, empty, or non-relative notes value
-     * uses `notes`. Nothing is created.
+     * `<installation_root>/writer`. A relative `notes` value is a
+     * subdirectory of the Writer directory. An absolute notes path, including
+     * a UNC path, is used directly. A missing, empty, unsupported
+     * rooted-but-not-absolute, unresolvable, or exception-producing notes
+     * value uses `<writer directory>/notes`. Nothing is created.
      */
     [[nodiscard]] Layout resolve_layout(
         const std::optional<std::filesystem::path>& directory,

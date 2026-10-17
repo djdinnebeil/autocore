@@ -83,7 +83,7 @@ menu::ApplyResult apply_setting(
         auto_core_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
-    auto_core_config.log("Wrote {}", ini_path().string());
+    auto_core_config.log_debug("Wrote {}", ini_path().string());
     return menu::ApplyResult::stored;
 }
 
@@ -163,7 +163,7 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
             auto_core_config.print("Failed to write {}.", path.string());
             return 1;
         }
-        auto_core_config.log("Wrote {}", path.string());
+        auto_core_config.log_debug("Wrote {}", path.string());
         return 0;
     }
 
@@ -171,7 +171,7 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
         auto_core_config.print("Failed to write {}.", path.string());
         return 1;
     }
-    auto_core_config.log("Wrote {}", path.string());
+    auto_core_config.log_debug("Wrote {}", path.string());
     if (walk_settings) {
         const auto result = menu::prompt_settings(
             menu_settings,
@@ -203,7 +203,7 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    auto_core_config.log_main("auto_core_config.exe started");
+    auto_core_config.log_info("auto_core_config.exe started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
