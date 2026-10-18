@@ -56,7 +56,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\..\..\msbuild\AutoCore.props" />
+    <Import Project="..\..\..\..\msbuild\AutoCore.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -137,18 +137,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\formatting\clock.ixx" />
-    <ClCompile Include="..\..\core\config\logging_config.ixx" />
-    <ClCompile Include="..\..\core\component\component.ixx" />
-    <ClCompile Include="..\..\core\formatting\encoding.ixx" />
-    <ClCompile Include="..\..\core\formatting\formatting.ixx" />
-    <ClCompile Include="..\..\core\config\paths.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\clock.ixx" />
+    <ClCompile Include="..\..\..\core\config\logging_config.ixx" />
+    <ClCompile Include="..\..\..\core\component\component.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\encoding.ixx" />
+    <ClCompile Include="..\..\..\core\formatting\formatting.ixx" />
+    <ClCompile Include="..\..\..\core\config\paths.ixx" />
     <ClCompile Include="logging_cleanup.ixx" />
     <ClCompile Include="logging_cleanup.cxx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\resources\resource.rc">
+    <ResourceCompile Include="..\..\..\resources\resource.rc">
       <PreprocessorDefinitions>AC_VERSIONINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>

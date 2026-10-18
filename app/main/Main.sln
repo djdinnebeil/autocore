@@ -19,7 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "warnings_config", "config\w
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_policy_config", "config\logging_policy\logging_policy_config.vcxproj", "{A4C8E1B2-7D63-4F19-9A80-6C21D5E8B047}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_logging_cleanup", "..\utilities\logging_cleanup\auto_core_logging_cleanup.vcxproj", "{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_logging_cleanup", "utilities\logging_cleanup\auto_core_logging_cleanup.vcxproj", "{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shutdown_config", "config\shutdown\shutdown_config.vcxproj", "{F1A5E6B8-D5C4-417E-CF90-55E66F770883}"
 EndProject

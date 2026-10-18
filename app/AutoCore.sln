@@ -131,7 +131,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logging_policy_config", "ma
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_logging_cleanup", "utilities\logging_cleanup\auto_core_logging_cleanup.vcxproj", "{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "auto_core_logging_cleanup", "main\utilities\logging_cleanup\auto_core_logging_cleanup.vcxproj", "{6D94F2B7-8A31-4E5C-9F20-1B73D6A8C405}"
 	ProjectSection(ProjectDependencies) = postProject
 		{64B8A747-C87C-4338-B3B9-6D4F5A82D74A} = {64B8A747-C87C-4338-B3B9-6D4F5A82D74A}
 	EndProjectSection

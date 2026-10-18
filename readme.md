@@ -1,15 +1,5 @@
 # Auto Core for Windows 11
 
-## Download
-
-[**Download Auto Core Setup.exe**](https://github.com/djdinnebeil/autocore/releases/download/prerelease/Auto.Core.Setup.exe)
-
-**Platform:** Windows 11 (x64)
-
-Download and run `Auto Core Setup.exe` to install Auto Core.
-
-## Description
-
 Auto Core is a C++23 automation utility for Windows 11. Its core feature is a specialized keyboard manager for numpad and system-level shortcuts, supporting quick taskbar access, automated text insertion, journaling workflows, and custom command execution.
 
 Auto Core also includes component-based automation outside the keyboard layer, including music listening history, local file management, and system event logging.
