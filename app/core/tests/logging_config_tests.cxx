@@ -46,7 +46,7 @@ TEST_CASE("Logging defaults keep debug level and alert console", "[logging-confi
     );
 
     CHECK_FALSE(settings.disable_all);
-    CHECK(settings.experimental);
+    CHECK_FALSE(settings.experimental);
     CHECK(settings.level == detail::LogLevel::debug);
     CHECK(settings.log_console_output);
     CHECK(settings.write_logs_to_files);
@@ -140,7 +140,7 @@ TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     CHECK(truth.report.find("disable_all missing or invalid") !=
         std::string::npos);
     CHECK_FALSE(invalid.disable_all);
-    CHECK(invalid.experimental);
+    CHECK_FALSE(invalid.experimental);
     CHECK(invalid.write_logs_to_files);
     CHECK(invalid.report.find("disable_all missing or invalid") !=
         std::string::npos);

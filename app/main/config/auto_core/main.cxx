@@ -118,6 +118,7 @@ void print_menu() {
         << "3. Component policy\n"
         << "4. Shutdown settings\n"
         << "5. Crash recovery settings\n"
+        << "6. Startup settings\n"
         << "0. Exit\n"
         << "Choice: ";
 }
@@ -146,11 +147,14 @@ int configuration_mode() {
         else if (*line == "5") {
             launch_owner("crash_recovery_config.exe");
         }
+        else if (*line == "6") {
+            launch_owner("startup_config.exe");
+        }
         else if (*line == "0" || line->empty()) {
             return 0;
         }
         else {
-            std::cout << "Enter 0-5.\n";
+            std::cout << "Enter 0-6.\n";
         }
     }
 }

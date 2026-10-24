@@ -12,6 +12,9 @@ export namespace ac::main::defaults {
 
     constexpr bool auto_core_logging = true;
 
+    constexpr bool startup_show_day_of_week = true;
+    constexpr bool startup_show_task_list = true;
+
     constexpr std::string_view auto_core_ini =
         "[auto_core]\n"
         "logging = on\n";
@@ -57,7 +60,10 @@ export namespace ac::main::defaults {
         "shutdown_timeout_ms = 2000\n";
 
     constexpr bool logging_disable_all = false;
-    constexpr std::string_view logging_directory = "logs";
+    inline const std::filesystem::path logging_directory =
+        std::filesystem::path {"data"} / "logs";
+    inline const std::string logging_directory_text =
+        logging_directory.string();
     constexpr std::int64_t logging_max_directory_mb = 100;
     constexpr std::int64_t logging_retention_days = 30;
     constexpr std::string_view logging_level = "debug";
@@ -66,12 +72,12 @@ export namespace ac::main::defaults {
     constexpr bool logging_write_logs_to_console = false;
     constexpr bool logging_write_alerts_to_console = true;
     constexpr bool logging_component_logging_default = true;
-    constexpr bool logging_experimental = true;
+    constexpr bool logging_experimental = false;
 
     constexpr std::string_view logging_ini =
         "[logging]\n"
         "disable_all = off\n"
-        "directory = logs\n"
+        "directory = data\\logs\n"
         "max_directory_mb = 100\n"
         "retention_days = 30\n"
         "level = debug\n"
@@ -80,7 +86,7 @@ export namespace ac::main::defaults {
         "write_logs_to_console = off\n"
         "write_alerts_to_console = on\n"
         "component_logging_default = on\n"
-        "experimental = on\n";
+        "experimental = off\n";
 
     constexpr std::uint64_t logger_merge_interval_seconds = 60;
     constexpr bool logger_merge_logs_on_shutdown = true;
@@ -110,6 +116,19 @@ export namespace ac::main::defaults {
             "[auto_core]\n"
             "logging = "
         } + std::string {logging ? "on" : "off"} +
+            "\n";
+    }
+
+    [[nodiscard]]
+    inline std::string ini_for_startup(
+        const bool show_day_of_week = startup_show_day_of_week,
+        const bool show_task_list = startup_show_task_list
+    ) {
+        return std::string {
+            "show_day_of_week = "
+        } + (show_day_of_week ? "on" : "off") +
+            "\nshow_task_list = " +
+            (show_task_list ? "on" : "off") +
             "\n";
     }
 
@@ -169,7 +188,7 @@ export namespace ac::main::defaults {
         const bool experimental
     ) {
         const std::string directory = stored_directory.empty()
-            ? std::string {logging_directory}
+            ? logging_directory_text
             : std::string {stored_directory};
         const std::string stored_level =
             level == "debug" || level == "info" || level == "alert"
@@ -182,7 +201,7 @@ export namespace ac::main::defaults {
             ? logging_retention_days
             : retention_days;
         if (disable_all == logging_disable_all &&
-            directory == logging_directory &&
+            directory == logging_directory_text &&
             stored_cap == logging_max_directory_mb &&
             stored_retention == logging_retention_days &&
             stored_level == logging_level &&

@@ -168,7 +168,7 @@ export namespace ac::paths {
         writer_notes_directory();
 
     /**
-     * \brief Returns `<installation root>/logs`.
+     * \brief Returns `<installation root>/data/logs`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&

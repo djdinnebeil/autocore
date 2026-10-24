@@ -1,3 +1,4 @@
+
 #Requires -Version 5.1
 
 Set-StrictMode -Version Latest
@@ -8,8 +9,8 @@ $Stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Source = Join-Path $RepoRoot 'bin'
 $Dist = Join-Path $RepoRoot 'dist'
-$Destination = Join-Path $Dist 'bin'
-$Staging = Join-Path $Dist 'bin.new'
+$Destination = Join-Path $Dist 'app'
+$Staging = Join-Path $Dist 'app.new'
 
 function Get-RunningDistProcesses {
     param (
@@ -53,12 +54,9 @@ try {
         throw "Source directory not found: $Source"
     }
 
-    $RootSetupName = 'Auto Core Setup.exe'
     $SourceFiles = @(
         Get-ChildItem -LiteralPath $Source -File |
-            Where-Object {
-                $_.Extension -in '.exe', '.dll' -and $_.Name -ne $RootSetupName
-            }
+            Where-Object { $_.Extension -in '.exe', '.dll' }
     )
     if ($SourceFiles.Count -eq 0) {
         throw "No executables or DLLs found in $Source"
@@ -69,7 +67,7 @@ try {
     $RunningProcesses = @(Get-RunningDistProcesses -Directory $Destination)
 
     if ($RunningProcesses.Count -gt 0) {
-        Write-Host "Cannot publish to dist\bin because Auto Core binaries are currently running."
+        Write-Host "Cannot publish to dist\app because Auto Core binaries are currently running."
 
         foreach ($Process in $RunningProcesses) {
             Write-Host ("  {0}.exe (PID {1})" -f $Process.Name, $Process.Id)
@@ -100,13 +98,7 @@ try {
             Move-Item -LiteralPath $_.FullName -Destination (Join-Path $Destination $_.Name) -Force
         }
 
-    $RootSetupSource = Join-Path $Source $RootSetupName
-    if (Test-Path -LiteralPath $RootSetupSource -PathType Leaf) {
-        Copy-Item -LiteralPath $RootSetupSource -Destination (Join-Path $Dist $RootSetupName) -Force
-        Write-Host "Published $RootSetupName -> dist\$RootSetupName"
-    }
-
-    Write-Host "Published bin -> dist\bin"
+    Write-Host "Published bin -> dist\app"
     exit 0
 }
 catch {

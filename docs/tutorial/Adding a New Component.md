@@ -53,15 +53,15 @@ This step is done when `<name>_settings.exe` can enable or disable the component
 
 Add each production `.vcxproj` to `<Name>.sln` and to `app/AutoCore.sln`. A test project joins `<Name>.sln` and `app/Tests.sln`, which builds the complete test suite. Do not add a test project to `app/AutoCore.sln`.
 
-From the repository root, `scripts/build-all.ps1` builds that solution Release x64 and publishes `bin/*.exe` into `dist/bin/`.
+From the repository root, `scripts/build-all.ps1` builds that solution Release x64 and publishes `bin/*.exe` into `dist/app/`.
 
-This step is done when `bin/<name>_ac.exe`, `bin/<name>_config.exe`, and `bin/<name>_settings.exe` exist, and the same names are under `dist/bin/`.
+This step is done when `bin/<name>_ac.exe`, `bin/<name>_config.exe`, and `bin/<name>_settings.exe` exist, and the same names are under `dist/app/`.
 
 Build outputs: `devs/building.md`.
 
 ## 6. Enable the component and verify it
 
-Run `<name>_config.exe` so a missing `dist/config/components/<name>.ini` is written. Enable the name with `<name>_settings.exe`. Restart `dist/bin/auto_core.exe`.
+Run `<name>_config.exe` so a missing `dist/config/components/<name>.ini` is written. Enable the name with `<name>_settings.exe`. Restart `dist/app/auto_core.exe`.
 
 This step is done when the host starts `<name>_ac.exe` on `ac_<name>_pipe` and any advertised command can be bound in `dist/keymap.map`.
 

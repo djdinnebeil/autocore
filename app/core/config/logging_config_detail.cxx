@@ -106,7 +106,7 @@ namespace ac::logging::config::detail {
             .directory = default_directory,
             .components_directory = default_directory / "components",
             .report = {},
-            .experimental = true
+            .experimental = false
         };
 
         const auto disable_all = parse_bool(raw.disable_all);
@@ -194,12 +194,12 @@ namespace ac::logging::config::detail {
         );
 
         const auto experimental = parse_bool(raw.experimental);
-        settings.experimental = experimental.value_or(true);
+        settings.experimental = experimental.value_or(false);
         append_bool(
             settings.report,
             "experimental",
             !experimental,
-            "on"
+            "off"
         );
 
         return settings;

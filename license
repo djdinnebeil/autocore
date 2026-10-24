@@ -2,10 +2,10 @@ Copyright © 2026 - Djdinn Dev
 
 Anyone is free to use, copy, modify, and distribute Auto Core.
 
-Auto Core is intended to be configured and customized by the user.
+Auto Core is designed to be configured, customized, and extended by users.
 
 Disclaimer
 
-This software installs a low-level keyboard hook and depends on the normal operation and configuration of Windows 11.
+This software registers a low-level keyboard hook and relies on the proper operation and configuration of Windows 11.
 
-It is provided as-is, without warranty, and may not function correctly if Windows or Auto Core is misconfigured.
+It is provided as-is, without warranty, and may not function correctly if Windows or Auto Core is damaged or misconfigured.

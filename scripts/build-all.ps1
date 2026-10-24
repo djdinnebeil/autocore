@@ -5,7 +5,7 @@
 .DESCRIPTION
   Builds app\AutoCore.sln Release x64 with devenv.com. That solution is
   production projects only. Test projects are built from app\Tests.sln.
-  After a successful build, publishes bin\ into dist\bin.
+  After a successful build, publishes bin\ into dist\app.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>
@@ -50,7 +50,7 @@ function Unlock-DistFile {
 }
 
 # A debugger can keep symbols\*.pdb mapped. Rename those so Link can replace them.
-# Shipped binaries publish to bin\. dist\bin is updated only by publish-dist.ps1.
+# Shipped binaries publish to bin\. dist\app is updated only by publish-dist.ps1.
 
 $SymbolsDir = Join-Path $RepoRoot 'symbols'
 if (Test-Path -LiteralPath $SymbolsDir) {
@@ -85,9 +85,9 @@ if ($PublishCode -eq 0) {
 }
 
 if ($PublishCode -eq 2) {
-    Write-Warning 'Build succeeded. dist\bin was not updated because Auto Core is running. Run scripts\publish-dist.ps1 after closing it.'
+    Write-Warning 'Build succeeded. dist\app was not updated because Auto Core is running. Run scripts\publish-dist.ps1 after closing it.'
     exit 0
 }
 
-Write-Host "Build succeeded, but publishing dist\bin failed (exit $PublishCode)."
+Write-Host "Build succeeded, but publishing dist\app failed (exit $PublishCode)."
 exit $PublishCode

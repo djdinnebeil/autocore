@@ -1,7 +1,7 @@
 # Contributing
 
 Auto Core is a Windows 11 C++23 project. Production shape is **Release x64**.
-Beta testers follow the same path: build, then run `dist\bin\auto_core.exe`.
+Beta testers follow the same path: build, then run `dist\app\auto_core.exe`.
 
 ## Before you start
 
@@ -29,7 +29,7 @@ linker searches `lib/auto_core.lib`. The production workspace is
 `app/Tests.sln` Release x64. `auto_core_dll` publishes `lib/auto_core.dll` to
 `bin/auto_core.dll`. Application executables publish to tracked `bin/`.
 [`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal
-publisher of `dist/bin/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
+publisher of `dist/app/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
 copies vendor runtime DLLs from `third_party/*/bin/` into `bin/` when
 those DLLs are added or updated, then runs `publish-dist.ps1`. Builds do
 not run that script (`dist/` stays gitignored; `bin/` is tracked). The build does not plant the Server

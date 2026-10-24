@@ -49,8 +49,8 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `components_init.exe` | `app/main/init/components` | first-run orchestrator | one-shot | per-component defaults, configure, or skip on no arguments and `--init`; `--seed` and `--init --seed` launch each `<name>_config.exe --init --seed` | Finalized: does not write files. Combined flags are Observed under C8. |
 | `auto_core_config.exe` | `app/main/config/auto_core` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `auto_core.ini`. |
 | `auto_core_settings.exe` | `app/main/settings` | settings application | one-shot | menu | Observed. Settings menu only. Launches `auto_core_config.exe` plus discovered `<name>_settings.exe`. Writes nothing. Does not launch initialization. Discovers Settings applications from `*_settings.exe`, not from `components.list` or `*_ac.exe`. |
-| `Auto Core Setup.exe` | `app/main/setup` | installation bootstrap | one-shot | none | Observed. Not a Component, config owner, editor, or init orchestrator. Does not link the DLL. Creates each installation-root shortcut only when that link is missing. When `config/auto_core.ini` is missing, opens a console, launches `auto_core_init.exe` in it, waits, and requires that file before printing the completion instruction and waiting for a key. When the file already exists, launches `auto_core_settings.exe` and does not open that console. |
 | `components_policy_config.exe` | `app/main/config/components_policy` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `components_policy.ini`. |
+| `startup_config.exe` | `app/main/config/startup` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of sectionless `startup.ini`. |
 | `warnings_config.exe` | `app/main/config/warnings` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `warnings.ini`. |
 | `logging_policy_config.exe` | `app/main/config/logging_policy` | INI writer | one-shot | `--seed`, `--init`, `--disable`, menu | Finalized owner of `logging_policy.ini`. `--disable` is an extra mode. Observed. |
 | `auto_core_logging_cleanup.exe` | `app/main/utilities/logging_cleanup` | startup utility | one-shot after Main is ready | none | Reads and reports `max_directory_mb` and `retention_days`, then exits. Performs no cleanup yet. |
@@ -115,7 +115,7 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 
 | Group | Members |
 | --- | --- |
-| Host session | `auto_core.exe`, `Auto Core Setup.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
+| Host session | `auto_core.exe`, `auto_core_settings.exe`, `auto_core_init.exe`, `components_init.exe`, the six Main `*_config.exe` programs, `components_editor.exe`, `keymap_editor.exe` |
 | Component Settings | every `<name>_settings.exe` on `component_settings` |
 | Configuration owners | every `<name>_config.exe`, including Main |
 | Operational editors | `components_editor`, `keymap_editor`, `writer_editor`, `server_editor`, `dash_editor`, `spotify_editor`, `journal_series`, `journal_builder` (also a builder), `journal_clock` |

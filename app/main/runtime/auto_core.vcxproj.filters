@@ -153,6 +153,9 @@
     <ClCompile Include="..\..\core\config\core_config.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\defaults.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\launch_descriptor.hpp">
@@ -168,6 +171,9 @@
       <Filter>keyboard</Filter>
     </ClInclude>
     <ClInclude Include="lifecycle\logger_shutdown_detail.hpp">
+      <Filter>lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="lifecycle\program_ready_detail.hpp">
       <Filter>lifecycle</Filter>
     </ClInclude>
   </ItemGroup>

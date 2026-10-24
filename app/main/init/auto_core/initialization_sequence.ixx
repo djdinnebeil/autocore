@@ -51,11 +51,12 @@ export namespace ac::main::init {
         OwnerKind kind;
     };
 
-    inline constexpr std::array<OwnerStep, 8> initialization_steps {{
+    inline constexpr std::array<OwnerStep, 9> initialization_steps {{
         {"auto_core_config.exe", OwnerKind::configured},
         {"components_policy_config.exe", OwnerKind::configured},
         {"shutdown_config.exe", OwnerKind::configured},
         {"crash_recovery_config.exe", OwnerKind::configured},
+        {"startup_config.exe", OwnerKind::configured},
         {"warnings_config.exe", OwnerKind::configured},
         {"components_init.exe", OwnerKind::components},
         {"components_editor.exe", OwnerKind::components_editor},

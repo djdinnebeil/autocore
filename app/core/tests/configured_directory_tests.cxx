@@ -9,23 +9,23 @@
 import auto_core.core.paths;
 
 TEST_CASE(
-    "Image path under bin yields installation root as parent",
+    "Image path under app yields installation root as parent",
     "[installation-layout][unit]"
 ) {
     const auto layout = ac::paths::detail::layout_from_image_path(
-        std::filesystem::path {R"(C:\Example\Auto Core\bin\auto_core.exe)"}
+        std::filesystem::path {R"(C:\Example\Auto Core\app\auto_core.exe)"}
     );
 
-    CHECK(layout.bin_directory == std::filesystem::path {R"(C:\Example\Auto Core\bin)"});
+    CHECK(layout.bin_directory == std::filesystem::path {R"(C:\Example\Auto Core\app)"});
     CHECK(layout.installation_root == std::filesystem::path {R"(C:\Example\Auto Core)"});
 }
 
 TEST_CASE(
-    "Taskbar relative directory joins the installation root not bin",
+    "Taskbar relative directory joins the installation root not app",
     "[configured-directory][unit]"
 ) {
     const auto layout = ac::paths::detail::layout_from_image_path(
-        std::filesystem::path {R"(C:\Example\Auto Core\bin\auto_core.exe)"}
+        std::filesystem::path {R"(C:\Example\Auto Core\app\auto_core.exe)"}
     );
     const auto directory = ac::paths::detail::resolve_configured_directory(
         std::filesystem::path {"taskbar"},
@@ -42,7 +42,7 @@ TEST_CASE(
     "[configured-directory][unit]"
 ) {
     const auto layout = ac::paths::detail::layout_from_image_path(
-        std::filesystem::path {R"(C:\Example\Auto Core\bin\journal_ac.exe)"}
+        std::filesystem::path {R"(C:\Example\Auto Core\app\journal_ac.exe)"}
     );
     const auto directory = ac::paths::detail::resolve_configured_directory(
         std::filesystem::path {R"(components\journal)"},

@@ -63,7 +63,7 @@ namespace ac::logging::config::detail {
      * `write_alerts_to_console` defaults to on.
      * `component_logging_default` defaults to on.
      * `max_directory_mb` defaults to 100. `retention_days` defaults to 30.
-     * `experimental` defaults to on.
+     * `experimental` defaults to off.
      * `0` is a stored purge value, not a disabled safeguard.
      * A relative directory
      * resolves against `installation_root`. An empty directory uses

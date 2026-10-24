@@ -55,7 +55,7 @@ namespace ac::logging::config {
                 directory / "components";
             bool ini_missing = false;
             std::string report;
-            bool experimental = true;
+            bool experimental = false;
 
             SharedData() {
                 const auto list_path = ac::paths::components_list_file();

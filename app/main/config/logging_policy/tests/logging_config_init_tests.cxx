@@ -34,7 +34,7 @@ constexpr std::string_view expected_header =
 constexpr std::string_view default_ini =
     "[logging]\n"
     "disable_all = off\n"
-    "directory = logs\n"
+    "directory = data\\logs\n"
     "max_directory_mb = 100\n"
     "retention_days = 30\n"
     "level = debug\n"
@@ -43,12 +43,12 @@ constexpr std::string_view default_ini =
     "write_logs_to_console = off\n"
     "write_alerts_to_console = on\n"
     "component_logging_default = on\n"
-    "experimental = on\n";
+    "experimental = off\n";
 
 constexpr std::string_view disabled_ini =
     "[logging]\n"
     "disable_all = on\n"
-    "directory = logs\n"
+    "directory = data\\logs\n"
     "max_directory_mb = 100\n"
     "retention_days = 30\n"
     "level = debug\n"
@@ -57,7 +57,7 @@ constexpr std::string_view disabled_ini =
     "write_logs_to_console = off\n"
     "write_alerts_to_console = on\n"
     "component_logging_default = on\n"
-    "experimental = on\n";
+    "experimental = off\n";
 
 [[nodiscard]] bool before(
     const std::string& text,
@@ -259,20 +259,21 @@ TEST_CASE("Failed write does not report initialization success", "[logging][init
 }
 
 TEST_CASE("Initialization mode propagates before components_init", "[logging][init]") {
-    REQUIRE(sequence::initialization_steps.size() == 8);
+    REQUIRE(sequence::initialization_steps.size() == 9);
     CHECK(sequence::initialization_steps[0].executable == "auto_core_config.exe");
     CHECK(sequence::initialization_steps[1].executable == "components_policy_config.exe");
     CHECK(sequence::initialization_steps[2].executable == "shutdown_config.exe");
     CHECK(sequence::initialization_steps[3].executable == "crash_recovery_config.exe");
-    CHECK(sequence::initialization_steps[4].executable == "warnings_config.exe");
-    CHECK(sequence::initialization_steps[5].executable == "components_init.exe");
-    CHECK(sequence::initialization_steps[6].executable == "components_editor.exe");
-    CHECK(sequence::initialization_steps[7].executable == "keymap_editor.exe");
+    CHECK(sequence::initialization_steps[4].executable == "startup_config.exe");
+    CHECK(sequence::initialization_steps[5].executable == "warnings_config.exe");
+    CHECK(sequence::initialization_steps[6].executable == "components_init.exe");
+    CHECK(sequence::initialization_steps[7].executable == "components_editor.exe");
+    CHECK(sequence::initialization_steps[8].executable == "keymap_editor.exe");
 
     CHECK(sequence::initialization_steps[0].kind == sequence::OwnerKind::configured);
-    CHECK(sequence::initialization_steps[5].kind == sequence::OwnerKind::components);
-    CHECK(sequence::initialization_steps[6].kind == sequence::OwnerKind::components_editor);
-    CHECK(sequence::initialization_steps[7].kind == sequence::OwnerKind::keymap_editor);
+    CHECK(sequence::initialization_steps[6].kind == sequence::OwnerKind::components);
+    CHECK(sequence::initialization_steps[7].kind == sequence::OwnerKind::components_editor);
+    CHECK(sequence::initialization_steps[8].kind == sequence::OwnerKind::keymap_editor);
 
     using sequence::InitializationMode;
     CHECK(sequence::arguments_for(

@@ -12,13 +12,19 @@ Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main
   machine-specific shortcuts, authorization data, logs, histories, caches,
   personal Writer and Journal data, and an initialization sentinel.
 
-## Investigate Windows application identity and icon behavior
+## Windows Console Host and Taskbar Icon
 
-- On some systems, `auto_core.exe` displays the standard Command Prompt icon
-  when running normally, while Administrator mode displays the Auto Core icon
-  correctly. Determine whether this can be corrected through AppUserModelID
-  (AUMID), Registry configuration, shortcut metadata, or another Windows
-  setting without requiring Administrator privileges.
+On some systems, Auto Core may display the Windows Terminal icon instead of its own when running without Administrator privileges.
+
+**Solution:**
+1. Open Windows Terminal.
+2. Navigate to **Settings → Startup**.
+3. Set **Default terminal application** to **Windows Console Host**.
+4. Restart Auto Core.
+
+This resolves the icon issue without requiring Administrator privileges. Running Auto Core without elevation is recommended, especially during development, to preserve Windows security protections.
+
+**Future investigation:** Explore AppUserModelID (AUMID), shortcut metadata, and other Windows configuration options to preserve the correct icon regardless of the default terminal host.
 
 ## Investigate iTunes privilege compatibility and security
 

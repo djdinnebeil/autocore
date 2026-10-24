@@ -188,6 +188,7 @@
     <ClCompile Include="keyboard\keyboard_input.ixx" />
     <ClCompile Include="taskbar\main_taskbar.ixx" />
     <ClCompile Include="lifecycle\program_ready.ixx" />
+    <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="test_commands.cxx" />
     <ClCompile Include="main.cxx" />
     <ClCompile Include="components\ac_components.cxx" />
@@ -206,6 +207,7 @@
     <ClInclude Include="..\shared\launch_descriptor_resource.hpp" />
     <ClInclude Include="keyboard\keymap_map_detail.hpp" />
     <ClInclude Include="lifecycle\logger_shutdown_detail.hpp" />
+    <ClInclude Include="lifecycle\program_ready_detail.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc">

@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 namespace {
 
     const fs::path crash_directory =
-        ac::paths::installation_root() / "crash";
+        ac::paths::installation_root() / "data" / "crash_reports";
 
     const fs::path crash_marker_path =
         crash_directory / ".crash";
@@ -104,7 +104,8 @@ bool check_for_previous_crash() {
     fs::remove(crash_marker_path, remove_error);
     if (remove_error) {
         std::cerr
-            << "Unable to remove crash/.crash after acknowledgement: "
+            << "Unable to remove data/crash_reports/.crash after "
+               "acknowledgement: "
             << remove_error.message()
             << '\n';
     }

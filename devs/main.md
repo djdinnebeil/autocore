@@ -28,7 +28,8 @@ process only.
    passes both flags to the Main configuration owners, then shows the
    Components menu. That Main mode is passed to `auto_core_config.exe`,
    `components_policy_config.exe`, `shutdown_config.exe`,
-   `crash_recovery_config.exe`, and `warnings_config.exe`. It does not select
+   `crash_recovery_config.exe`, `startup_config.exe`, and
+   `warnings_config.exe`. It does not select
    `components_init.exe`. After those owners succeed, no-argument, `--init`,
    and `--init --seed` ask `1. Use defaults for components`
    (`components_init.exe --seed`), `2. Configure components`
@@ -54,7 +55,7 @@ process only.
    keymap in memory and is not created.
 3. If `auto_core.ini` already exists, resolve the shared logging policy
    before any other startup log. A missing `logging_policy.ini` uses built-in
-   defaults (`disable_all = off`, `directory = logs`,
+   defaults (`disable_all = off`, `directory = data\logs`,
    `max_directory_mb = 100`, `retention_days = 30`, `level = debug`,
    `log_console_output = on`,
    `write_logs_to_files = on`,
@@ -67,9 +68,9 @@ process only.
    reported; the file is not created.
 5. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
-6. If `<installation_root>/crash/.crash` exists, prompt whether to continue. Yes removes the
-   marker and continues; No exits (`1`) and leaves the marker so the next start
-   asks again.
+6. If `<installation_root>/data/crash_reports/.crash` exists, prompt whether to
+   continue. Yes removes the marker and continues; No exits (`1`) and leaves the
+   marker so the next start asks again.
 7. Install the unhandled-exception restart filter.
 8. Capture `main_thread_id`, then install the low-level keyboard hook and
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
@@ -79,10 +80,13 @@ process only.
 11. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
-12. Print the ready banner on a detached thread (weekday and
-   Writer's `task_list.txt`). That task section is an intentional Main
-   banner, not component dispatch. A missing file is logged and the task
-   section is omitted; an empty file prints "Nothing pending today."
+12. Load the sectionless `config/startup.ini`. `show_day_of_week` and
+   `show_task_list` independently control the ready banner and both default to
+   `on` when the file, key, or value is unavailable. Main always prints
+   `Program ready` in one assembled message. The task section is an intentional
+   Main banner, not component dispatch. Main opens Writer's `task_list.txt`
+   only when `show_task_list` is enabled. A missing task file is logged and the
+   task section is omitted; an empty file prints "Nothing pending today."
 13. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
@@ -195,13 +199,13 @@ returns true.
 Every Auto Core executable initializes the shared `auto_core.dll` crash facility
 during its common Shell startup. With `[crash_recovery] crash_diagnostics = on`,
 an unhandled exception creates a collision-safe UTC/executable/PID folder under
-`<installation_root>/crash` containing `crash.txt` and a best-effort conservative
-`crash.dmp`. Diagnostics do not use normal logging and remain enabled when
+`<installation_root>/data/crash_reports` containing `crash.txt` and a
+best-effort conservative `crash.dmp`. Diagnostics do not use normal logging and remain enabled when
 `[logging] disable_all = on`. Reports contain no copied executable, DLL, or PDB.
 
 Main separately preserves its recovery policy: it writes
-`<installation_root>/crash/.crash`, starts the installed `auto_core.exe`, then
-runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
+`<installation_root>/data/crash_reports/.crash`, starts the installed
+`auto_core.exe`, then runs noninteractive shutdown and `ExitProcess(1)`. If the marker cannot be
 written, the handler does not restart. See
 [configuration.md](configuration.md) for `crash_recovery.ini`.
 

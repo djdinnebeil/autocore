@@ -10,11 +10,23 @@ A missing or unreadable file, a missing key, or an invalid value uses that key's
 
 Boolean switches are `on` and `off`. `default_response` uses `yes` and `no` because it is an answer. `components_policy.ini` compares `new_components`, `sort_components`, and `remove_missing_components` case-insensitively. Other boolean parsers require exact `on` or `off`.
 
-A relative path resolves from the installation root (`dist/` for a normal build). An absolute path is used directly. The process working directory and `bin/` are not the base.
+A relative path resolves from the installation root (`dist/` for a normal build). An absolute path is used directly. The process working directory and `app/` are not the base.
 
 Compiled default text for a component lives in that child's `shared/defaults.ixx`. Main host default text lives in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx).
 
 ## Main configuration
+
+### `config/startup.ini`
+
+Writer `startup_config.exe`. This file is sectionless.
+
+| Key | Type | Allowed | Default | Invalid or missing |
+| --- | --- | --- | --- | --- |
+| `show_day_of_week` | bool | `on`, `off` | `on` | uses `on` |
+| `show_task_list` | bool | `on`, `off` | `on` | uses `on` |
+
+When task-list display is off, Main does not open Writer's `task_list.txt`.
+When it is on, an empty task list displays `Nothing pending today.`
 
 ### `config/auto_core.ini`
 
@@ -59,7 +71,7 @@ Writer `logging_policy_config.exe`. Section `[logging]`. This is the shared logg
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
 | `disable_all` | bool | `on`, `off` | `off` | uses `off`. On suppresses diagnostic logging and the `print()` / `printnl()` file copy. Console output stays available. This is the logging-disable control |
-| `directory` | path | relative to the installation root, or absolute | `logs` | empty uses `<installation_root>/logs` |
+| `directory` | path | relative to the installation root, or absolute | `data\logs` | empty uses `<installation_root>/data/logs` |
 | `max_directory_mb` | integer | non-negative | `100` | uses `100`. `0` is valid and does not disable logging |
 | `retention_days` | integer | non-negative | `30` | uses `30`. `0` is valid and does not disable logging |
 | `level` | enum | `trace`,`debug`, `info`, `alert` | `debug` | uses `debug` |

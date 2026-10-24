@@ -1,2 +1,0 @@
-print_one_is_selected = print_and_insert_into_journal("1 is selected.")
-print_two_is_selected = print_and_insert_into_journal("2 is selected.")

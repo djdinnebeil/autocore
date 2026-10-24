@@ -6,9 +6,10 @@
  * system's keyboard manager. Recovery remains disabled until the previous-crash
  * acknowledgement has completed.
  *
- * The marker is `<installation_root>/crash/.crash`. Yes removes it; No leaves
- * it so the next start prompts again. Shared diagnostics in `auto_core.dll`
- * independently write one `crash.txt` and best-effort `crash.dmp` event. No
+ * The marker is `<installation_root>/data/crash_reports/.crash`. Yes removes
+ * it; No leaves it so the next start prompts again. Shared diagnostics in
+ * `auto_core.dll` independently write one `crash.txt` and best-effort
+ * `crash.dmp` event. No
  * executable or PDB is copied. If the marker cannot be written, the handler
  * does not restart. After a successful spawn it
  * runs `close_program()`, writes the local shutdown record, and `ExitProcess(1)`.

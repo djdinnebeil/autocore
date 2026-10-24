@@ -6,7 +6,7 @@
   Builds Core.sln, Main.sln, and each component family solution sequentially
   with devenv.com /Build "Release|x64". Core first. Test projects are members
   of those solutions and are not built. Renames locked symbol files so Link
-  can replace them. Does not publish dist\bin.
+  can replace them. Does not publish dist\app.
 .EXAMPLE
   .\scripts\build-all-components.ps1
 #>
@@ -51,7 +51,7 @@ function Unlock-DistFile {
 }
 
 # A debugger can keep symbols\*.pdb mapped. Rename those so Link can replace them.
-# Shipped binaries publish to bin\. This script does not update dist\bin.
+# Shipped binaries publish to bin\. This script does not update dist\app.
 
 $SymbolsDir = Join-Path $RepoRoot 'symbols'
 if (Test-Path -LiteralPath $SymbolsDir) {

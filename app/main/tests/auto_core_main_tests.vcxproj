@@ -55,18 +55,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\init\auto_core\initialization_sequence.ixx" />
     <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="command_precedence_tests.cxx" />
     <ClCompile Include="components_list_tests.cxx" />
     <ClCompile Include="settings_catalog_tests.cxx" />
     <ClCompile Include="logger_shutdown_tests.cxx" />
     <ClCompile Include="keymap_map_tests.cxx" />
+    <ClCompile Include="program_ready_tests.cxx" />
+    <ClCompile Include="startup_config_tests.cxx" />
     <ClCompile Include="$(AutoCoreThirdPartyDir)catch2\catch_amalgamated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\runtime\keyboard\keymap_map_detail.hpp" />
     <ClInclude Include="..\..\core\component\components_catalog_detail.hpp" />
     <ClInclude Include="..\..\core\component\components_list_detail.hpp" />
+    <ClInclude Include="..\runtime\lifecycle\program_ready_detail.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

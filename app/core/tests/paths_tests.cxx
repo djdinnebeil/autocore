@@ -74,12 +74,12 @@ TEST_CASE(
         ac::paths::keymap_commands_file() ==
         keymap / "keymap_commands.txt"
     );
-    CHECK(ac::paths::log_directory() == root / "logs");
+    CHECK(ac::paths::log_directory() == root / "data" / "logs");
     CHECK(ac::paths::error_log_directory() == root / "errors");
 }
 
 TEST_CASE(
-    "Assembled dist bin layout keeps data at the installation root",
+    "Assembled dist app layout keeps data at the installation root",
     "[paths][runtime-layout]"
 ) {
     const auto dist_exe = std::filesystem::path {__FILE__}
@@ -87,17 +87,17 @@ TEST_CASE(
         .parent_path()
         .parent_path()
         .parent_path() /
-        "dist" / "bin" / "auto_core.exe";
+        "dist" / "app" / "auto_core.exe";
     std::error_code error;
     if (!std::filesystem::exists(dist_exe, error) || error) {
-        SKIP("dist/bin/auto_core.exe is not present");
+        SKIP("dist/app/auto_core.exe is not present");
     }
 
-    const auto bin = dist_exe.parent_path();
-    const auto root = bin.parent_path();
-    CHECK(bin.filename() == "bin");
+    const auto app = dist_exe.parent_path();
+    const auto root = app.parent_path();
+    CHECK(app.filename() == "app");
     CHECK(std::filesystem::exists(root / "config", error));
-    CHECK_FALSE(std::filesystem::exists(bin / "config", error));
+    CHECK_FALSE(std::filesystem::exists(app / "config", error));
 }
 
 TEST_CASE(

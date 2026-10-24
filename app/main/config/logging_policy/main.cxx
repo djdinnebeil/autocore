@@ -192,7 +192,7 @@ menu::ApplyResult apply_setting(
     }
     else if (setting.key == "directory") {
         values.directory = value.empty()
-            ? std::string {ac::main::defaults::logging_directory}
+            ? ac::main::defaults::logging_directory_text
             : std::string {value};
     }
     else if (setting.key == "max_directory_mb") {

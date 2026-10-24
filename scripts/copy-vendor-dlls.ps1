@@ -7,8 +7,8 @@
   Creates bin\ when it does not exist. Does not read or copy lib\.
   A destination already mapped by a leftover child is renamed aside first so
   the new file can replace it. After the copy succeeds, runs
-  scripts\publish-dist.ps1 so dist\bin matches bin. Does not copy into
-  dist\bin itself. Run this when committed vendor runtime DLLs need
+  scripts\publish-dist.ps1 so dist\app matches bin. Does not copy into
+  dist\app itself. Run this when committed vendor runtime DLLs need
   refreshing. Normal Auto Core builds do not invoke this script.
 .EXAMPLE
   .\scripts\copy-vendor-dlls.ps1
@@ -74,9 +74,9 @@ if ($PublishCode -eq 0) {
 }
 
 if ($PublishCode -eq 2) {
-    Write-Warning 'dist\bin is in use. Vendor DLLs in bin are updated. Run scripts\publish-dist.ps1 after closing Auto Core.'
+    Write-Warning 'dist\app is in use. Vendor DLLs in bin are updated. Run scripts\publish-dist.ps1 after closing Auto Core.'
     exit 0
 }
 
-Write-Host "Vendor DLLs were copied to bin, but publishing dist\bin failed (exit $PublishCode)."
+Write-Host "Vendor DLLs were copied to bin, but publishing dist\app failed (exit $PublishCode)."
 exit $PublishCode

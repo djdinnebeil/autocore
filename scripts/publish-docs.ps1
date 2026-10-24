@@ -1,3 +1,4 @@
+
 #Requires -Version 5.1
 
 Set-StrictMode -Version Latest
@@ -5,6 +6,10 @@ $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $DistRoot = Join-Path $RepoRoot 'dist'
+$InfoRoot = Join-Path $DistRoot 'info'
+
+$GuideSource = Join-Path $RepoRoot 'docs\Auto Core Guide.md'
+$GuideDestination = Join-Path $DistRoot 'Auto Core Guide.md'
 
 $LegalSource = @(
     (Join-Path $RepoRoot 'notice.md'),
@@ -14,55 +19,50 @@ $LegalSource = @(
 $ManualSource = Join-Path $RepoRoot 'docs\manual'
 $TutorialSource = Join-Path $RepoRoot 'docs\tutorial'
 
-$TopLevelDocs = @(
+$InfoDocs = @(
     'Auto Core Manual.md',
-    'Auto Core Tutorial.md',
-    'Auto Core Guide.md'
+    'Auto Core Tutorial.md'
 )
 
 try {
-    New-Item -ItemType Directory -Force -Path $DistRoot | Out-Null
+    $LegalDestination = Join-Path $InfoRoot 'legal'
+    $ManualDestination = Join-Path $InfoRoot 'manual'
+    $TutorialDestination = Join-Path $InfoRoot 'tutorial'
 
-    $LegalDestination = Join-Path $DistRoot 'legal'
-    $ManualDestination = Join-Path $DistRoot 'manual'
-    $TutorialDestination = Join-Path $DistRoot 'tutorial'
+    $Sources = @(
+        $GuideSource
+        $ManualSource
+        $TutorialSource
+    ) + $LegalSource
 
-    foreach ($path in $LegalSource) {
+    foreach ($name in $InfoDocs) {
+        $Sources += Join-Path $RepoRoot "docs\$name"
+    }
+
+    foreach ($path in $Sources) {
         if (-not (Test-Path -LiteralPath $path)) {
             throw "Missing documentation source: $path"
         }
     }
 
-    if (-not (Test-Path -LiteralPath $ManualSource)) {
-        throw "Missing documentation source: $ManualSource"
-    }
-
-    if (-not (Test-Path -LiteralPath $TutorialSource)) {
-        throw "Missing documentation source: $TutorialSource"
-    }
-
-    foreach ($name in $TopLevelDocs) {
-        $path = Join-Path $RepoRoot "docs\$name"
-        if (-not (Test-Path -LiteralPath $path)) {
-            throw "Missing documentation source: $path"
-        }
-    }
+    New-Item -ItemType Directory -Force -Path $InfoRoot | Out-Null
 
     Remove-Item -LiteralPath $LegalDestination -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $ManualDestination -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $TutorialDestination -Recurse -Force -ErrorAction SilentlyContinue
 
-    foreach ($name in $TopLevelDocs) {
-        Remove-Item -LiteralPath (Join-Path $DistRoot $name) -Force -ErrorAction SilentlyContinue
+    foreach ($name in $InfoDocs) {
+        Remove-Item -LiteralPath (Join-Path $InfoRoot $name) -Force -ErrorAction SilentlyContinue
     }
+
+    # Remove the Guide from its previous location.
+    Remove-Item -LiteralPath (Join-Path $InfoRoot 'Auto Core Guide.md') -Force -ErrorAction SilentlyContinue
 
     New-Item -ItemType Directory -Force -Path $LegalDestination | Out-Null
 
-    Copy-Item -LiteralPath (Join-Path $RepoRoot 'notice.md') `
-        -Destination (Join-Path $LegalDestination 'notice.md')
-
-    Copy-Item -LiteralPath (Join-Path $RepoRoot 'license') `
-        -Destination (Join-Path $LegalDestination 'license')
+    foreach ($path in $LegalSource) {
+        Copy-Item -LiteralPath $path -Destination $LegalDestination
+    }
 
     Copy-Item -LiteralPath $ManualSource `
         -Destination $ManualDestination `
@@ -72,10 +72,14 @@ try {
         -Destination $TutorialDestination `
         -Recurse
 
-    foreach ($name in $TopLevelDocs) {
+    foreach ($name in $InfoDocs) {
         Copy-Item -LiteralPath (Join-Path $RepoRoot "docs\$name") `
-            -Destination (Join-Path $DistRoot $name)
+            -Destination (Join-Path $InfoRoot $name)
     }
+
+    Copy-Item -LiteralPath $GuideSource `
+        -Destination $GuideDestination `
+        -Force
 
     Write-Host 'Published documentation to dist.'
 }

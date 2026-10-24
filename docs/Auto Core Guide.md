@@ -1,42 +1,48 @@
 # Auto Core Guide
 
-Auto Core is designed to be launched and configured through shortcuts in the installation directory.
-
-## Setup
-
-Run:
-
-`Auto Core Setup.exe`
-
-This creates any missing shortcut and leaves an existing shortcut unchanged:
-
-- `Auto Core.lnk`
-- `Auto Core Settings.lnk`
-
-On a new installation, Setup runs initialization in a console window. When that finishes, the same window tells you to pin Auto Core to the taskbar, preferably in positions 1–10, then launch it. Press any key to close the window.
-
-When Auto Core is already initialized, Setup opens Auto Core Settings and does not show that instruction.
-
 ## Run Auto Core
 
-Use:
+Launch Auto Core using `Auto Core.lnk`.
 
-`Auto Core.lnk`
+For optimal performance, pin `Auto Core.lnk` to one of the first 10 positions (1–10) on the Windows taskbar. This allows Auto Core to use Windows key shortcuts for activation, providing more consistent responsiveness under system load.
 
-to start Auto Core.
-
-Optionally pin `Auto Core.lnk` to the Windows taskbar. For the best Taskbar integration and performance, place it in one of the first ten taskbar positions.
+Alternatively, run `app\auto_core.exe` directly.
 
 ## Configure Auto Core
 
-Use:
+Launch `Auto Core Settings.lnk` to manage settings and configure components.
 
-`Auto Core Settings.lnk`
+You can also manually modify the following files:
 
-to change Auto Core settings, configure components, and enable or disable components.
+- `components.list` — Enable or disable installed components.
+- `keymap.map` — Assign keyboard inputs to keymap commands.
 
-## More documentation
+Configuration Mode allows you to interactively select your preferred settings.
 
-See `Auto Core Tutorial.md` for customization and extension walkthroughs.
+Alternatively, run `app\<component>_settings.exe` to configure individual components.
 
-See `Auto Core Manual.md` for reference documentation. Component settings, commands, files, and other reference pages are under `manual\`.
+## Installation Structure
+
+| File or Directory | Purpose |
+|---|---|
+| `app/` | Application executables (`.exe`) and libraries (`.dll`). |
+| `components/` | Data used by installed components. |
+| `config/` | Application and component configuration settings. |
+| `data/` | Logs, diagnostics, and other application data. |
+| `info/` | User documentation, including the Manual and Tutorial. |
+| `keymap/` | Reference information for available keymap commands. |
+| `taskbar/` | Data used by the Taskbar component. |
+| `writer/` | Data used by the Writer component. |
+| `Auto Core.lnk` | Shortcut for launching Auto Core. Recommended for taskbar pinning. |
+| `Auto Core Settings.lnk` | Shortcut for accessing the settings manager. |
+| `Auto Core Guide.md` | Introduction to launching, configuring, and navigating Auto Core. |
+| `components.list` | List of installed components and their enabled or disabled states. |
+| `keymap.map` | Keyboard mappings that associate keys with configured commands. |
+
+## More Documentation
+
+See [Auto Core Tutorial](<info/Auto Core Tutorial.md>) for guided customization and extension walkthroughs.
+
+See [Auto Core Manual](<info/Auto Core Manual.md>) for detailed reference documentation, including component settings, commands, configuration files, and other features.
+
+Additional reference material is available under `info\manual\`.

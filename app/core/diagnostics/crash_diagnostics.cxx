@@ -40,6 +40,7 @@ namespace {
         volatile LONG report_claimed {0};
         std::atomic<Operation> operation {Operation::unspecified};
         std::atomic<State> context_state {State::unspecified};
+        wchar_t crash_parent_directory[path_capacity] {};
         wchar_t crash_directory[path_capacity] {};
         wchar_t executable_name[MAX_PATH] {};
         wchar_t executable_stem[MAX_PATH] {};
@@ -228,6 +229,10 @@ namespace {
         wchar_t* destination,
         const std::size_t destination_capacity
     ) noexcept {
+        if (CreateDirectoryW(cache.crash_parent_directory, nullptr) == FALSE &&
+            GetLastError() != ERROR_ALREADY_EXISTS) {
+            return false;
+        }
         if (CreateDirectoryW(cache.crash_directory, nullptr) == FALSE &&
             GetLastError() != ERROR_ALREADY_EXISTS) {
             return false;
@@ -445,7 +450,13 @@ namespace {
             return;
         }
 
-        const auto crash_path = ac::paths::installation_root() / "crash";
+        const auto crash_path =
+            ac::paths::installation_root() / "data" / "crash_reports";
+        copy_wide(
+            cache.crash_parent_directory,
+            std::size(cache.crash_parent_directory),
+            crash_path.parent_path().native()
+        );
         copy_wide(
             cache.crash_directory,
             std::size(cache.crash_directory),

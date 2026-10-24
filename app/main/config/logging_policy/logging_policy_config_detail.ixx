@@ -28,7 +28,7 @@ export namespace ac::main::logging {
 
     struct Values {
         bool disable_all {defaults::logging_disable_all};
-        std::string directory {defaults::logging_directory};
+        std::string directory {defaults::logging_directory_text};
         std::int64_t max_directory_mb {defaults::logging_max_directory_mb};
         std::int64_t retention_days {defaults::logging_retention_days};
         std::string level {defaults::logging_level};
@@ -68,7 +68,9 @@ export namespace ac::main::logging {
             .summary =
                 "Log directory. A relative path resolves against the "
                 "installation root.",
-            .default_value = defaults::logging_directory,
+            .default_value = std::string_view {
+                defaults::logging_directory_text
+            },
             .constraint = "Enter a relative or absolute directory.",
             .directory_path = true,
         },
@@ -152,7 +154,7 @@ export namespace ac::main::logging {
             .display_name = "Experimental",
             .summary =
                 "Controls the temporary logging-cleanup startup report.",
-            .default_value = "on",
+            .default_value = "off",
             .choices = on_off,
         },
     };

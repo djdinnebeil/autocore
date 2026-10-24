@@ -273,7 +273,7 @@ namespace ac::paths {
     const std::filesystem::path&
         log_directory() {
         static const std::filesystem::path directory =
-            installation_root() / "logs";
+            installation_root() / "data" / "logs";
 
         return directory;
     }
