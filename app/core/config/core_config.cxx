@@ -14,7 +14,7 @@ namespace ac::config {
 
         constexpr CoreSettings default_settings {
             .missing_winkey_mapping = true,
-            .unmapped_key = true
+            .unmapped_key = false
         };
 
         void append_report(std::string& report, const std::string_view text) {

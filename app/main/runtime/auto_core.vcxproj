@@ -187,6 +187,7 @@
     <ClCompile Include="keyboard\key_codes.ixx" />
     <ClCompile Include="keyboard\keyboard_input.ixx" />
     <ClCompile Include="taskbar\main_taskbar.ixx" />
+    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.ixx" />
     <ClCompile Include="lifecycle\program_ready.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="test_commands.cxx" />
@@ -199,6 +200,7 @@
     <ClCompile Include="components\main_component.cxx" />
     <ClCompile Include="keyboard\keyboard_input.cxx" />
     <ClCompile Include="taskbar\main_taskbar.cxx" />
+    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.cxx" />
     <ClCompile Include="lifecycle\program_ready.cxx" />
   </ItemGroup>
   <ItemGroup>

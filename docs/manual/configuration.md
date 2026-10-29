@@ -96,7 +96,7 @@ components.list
 
 ## Warnings
 
-`warnings.ini` contains warning switches. `missing_winkey_mapping` warns when Auto Core is not in taskbar positions 1 through 10. `unmapped_key` warns when a keymap key has no command. Both default to `on`.
+`warnings.ini` contains warning switches. `missing_winkey_mapping` warns when Auto Core is not in taskbar positions 1 through 10 and defaults to `on`. `unmapped_key` warns when a keymap key has no command and defaults to `off`.
 
 ## Keymap
 

@@ -2,6 +2,12 @@
 
 Auto Core is a C++23 Windows automation system. Production builds are **Release x64**.
 
+## Testing
+
+Do not generate, modify, build, execute, inspect, or analyze tests unless explicitly requested. Do not perform testing-related verification.
+
+AutoCore.sln is the production solution and may be built to verify compilation. Do not build Tests.sln unless explicitly requested.
+
 ## Project layout
 
 - `app/core/` — `auto_core.dll`

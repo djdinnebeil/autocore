@@ -93,7 +93,7 @@ Writer `warnings_config.exe`. Section `[warnings]`.
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
 | `missing_winkey_mapping` | bool | `on`, `off` | `on` | uses `on`. Only exact `off` disables the warning |
-| `unmapped_key` | bool | `on`, `off` | `on` | uses `on`. Only exact `off` disables the warning |
+| `unmapped_key` | bool | `on`, `off` | `off` | uses `off`. Only exact `on` enables the warning |
 
 ## Components
 

@@ -98,12 +98,12 @@ export namespace ac::main::defaults {
         "logging = on\n";
 
     constexpr bool warnings_missing_winkey_mapping = true;
-    constexpr bool warnings_unmapped_key = true;
+    constexpr bool warnings_unmapped_key = false;
 
     constexpr std::string_view warnings_ini =
         "[warnings]\n"
         "missing_winkey_mapping = on\n"
-        "unmapped_key = on\n";
+        "unmapped_key = off\n";
 
     [[nodiscard]]
     inline std::string ini_for_auto_core(

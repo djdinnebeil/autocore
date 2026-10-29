@@ -15,6 +15,7 @@ import auto_core.main.keymap;
 import auto_core.main.application;
 import auto_core.main.taskbar;
 import auto_core.main.test_commands;
+import taskbar_firefox;
 
 import <Windows.h>;
 
@@ -32,6 +33,10 @@ static command_registry::Registry create_runtime_command_registry() {
     taskbar_runtime_commands::register_configured_with(registry);
     ac::main::components::register_with(registry);
     taskbar_runtime_commands::register_with(registry);
+    registry.add(
+        "activate_firefox_or_open_reddit",
+        &activate_firefox_or_open_reddit
+    );
 
     return registry;
 }
@@ -43,7 +48,7 @@ static const command_registry::Registry& runtime_command_registry() {
 }
 
 struct KeymapSettings {
-    bool unmapped_key = true;
+    bool unmapped_key = false;
 };
 
 static KeymapSettings keymap_settings() {

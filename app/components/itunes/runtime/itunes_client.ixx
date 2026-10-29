@@ -42,13 +42,15 @@ public:
     [[nodiscard]] bool initialize_attempt() override;
     [[nodiscard]] bool is_initialized() const noexcept override;
     void shutdown() noexcept override;
+    /** Stops the COM worker without writing a component log. */
+    void release_quietly() noexcept;
     std::vector<std::wstring> song_history;
     std::wstring last_retrieved_song;
     std::wstring get_current_track() override;
     [[nodiscard]] bool has_current_track() const noexcept override;
     [[nodiscard]] std::filesystem::path remove_current_track() override;
     itunes::library_format::detail::LibraryFormat library_format {};
-    bool auto_start = true;
+    bool auto_start = false;
     std::filesystem::path data_directory;
     itunes::song::detail::Compiled song_format;
     void set_config();
@@ -69,6 +71,7 @@ public:
 private:
     [[nodiscard]] bool initialize_on_com_thread();
     void release_on_com_thread() noexcept;
+    void finish(bool log_completion) noexcept;
     void invoke_player_method(const wchar_t* method_name);
     void invoke_player_method_on_com_thread(const wchar_t* method_name);
     [[nodiscard]] bool is_playing();

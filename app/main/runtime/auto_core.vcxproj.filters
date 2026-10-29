@@ -93,6 +93,12 @@
     <ClCompile Include="taskbar\main_taskbar.ixx">
       <Filter>taskbar</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.cxx">
+      <Filter>taskbar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.ixx">
+      <Filter>taskbar</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\shared\command_registry.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

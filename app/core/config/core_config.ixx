@@ -22,8 +22,9 @@ export namespace ac::config {
     /**
      * \brief Values from `[warnings]` after initialization.
      *
-     * Both warnings default to on. Only lowercase `off` turns a warning
-     * off. Any other value keeps that warning on.
+     * `missing_winkey_mapping` defaults to on. Only lowercase `off` turns
+     * it off. Any other value keeps it on. `unmapped_key` defaults to off.
+     * Only lowercase `on` turns it on. Any other value keeps it off.
      */
     struct CoreSettings {
         bool missing_winkey_mapping;

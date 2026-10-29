@@ -32,7 +32,7 @@ const menu::Setting menu_settings[] {
         .key = "auto_start",
         .display_name = "Auto-start",
         .summary = "Start iTunes when the iTunes component starts.",
-        .default_value = "on",
+        .default_value = "off",
         .choices = on_off,
     },
     {

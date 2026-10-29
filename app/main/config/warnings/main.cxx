@@ -33,7 +33,7 @@ const menu::Setting settings[] {
         .key = "unmapped_key",
         .display_name = "Unmapped key",
         .summary = "Warn at load time for keys that have no command.",
-        .default_value = "on",
+        .default_value = "off",
         .choices = on_off,
     },
 };

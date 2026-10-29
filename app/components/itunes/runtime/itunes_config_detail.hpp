@@ -18,7 +18,7 @@ namespace itunes::config::detail {
 
     struct Settings {
         std::string directory = "components/itunes";
-        bool auto_start = true;
+        bool auto_start = false;
     };
 
     [[nodiscard]] Settings resolve(

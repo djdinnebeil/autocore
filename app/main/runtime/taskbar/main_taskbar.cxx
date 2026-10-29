@@ -329,57 +329,6 @@ void MainTaskbarState::activate_configured(
     emulate_configured(name);
 }
 
-bool is_firefox_window_class(const std::wstring_view class_name) {
-    return class_name == L"MozillaWindowClass" ||
-        class_name.starts_with(L"Mozilla_firefox_");
-}
-
-bool is_foreground_window_firefox() {
-    const HWND hwnd = GetForegroundWindow();
-
-    if (hwnd == nullptr) {
-        return false;
-    }
-
-    std::array<wchar_t, 256> class_name {};
-
-    const int class_length = GetClassNameW(
-        hwnd,
-        class_name.data(),
-        static_cast<int>(class_name.size())
-    );
-
-    if (class_length <= 0) {
-        return false;
-    }
-
-    return is_firefox_window_class(
-        std::wstring_view {
-            class_name.data(),
-            static_cast<std::size_t>(class_length)
-        }
-    );
-}
-
-/** \keymap_command */
-void refresh_firefox() {
-    auto_core.log_info("refresh_firefox()");
-    if (is_foreground_window_firefox()) {
-        start_reddit_new_tab();
-    }
-    else {
-        taskbar.activate_configured("firefox");
-    }
-}
-
-/** \keymap_command */
-void start_reddit_new_tab() {
-    auto_core.log_info("start_reddit_new_tab()");
-    std::wstring url = L"https://www.reddit.com";
-    std::wstring firefox_path = LR"(C:\Program Files\Mozilla Firefox\firefox.exe)";
-    ShellExecuteW(0, 0, firefox_path.c_str(), url.c_str(), 0, SW_SHOW);
-}
-
 command_registry::Action configured_activation_action(
     std::string_view arguments
 ) {
@@ -585,8 +534,6 @@ void taskbar_runtime_commands::register_reserved_with(
 void taskbar_runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
-    registry.add("refresh_firefox", &::refresh_firefox);
-    registry.add("start_reddit_new_tab", &::start_reddit_new_tab);
     registry.add_factory(
         "activate",
         &::configured_activation_action,

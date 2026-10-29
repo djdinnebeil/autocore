@@ -7,7 +7,7 @@ namespace ac::config::detail {
             .missing_winkey_mapping =
                 raw.missing_winkey_mapping != "off",
             .unmapped_key =
-                raw.unmapped_key != "off"
+                raw.unmapped_key == "on"
         };
     }
 

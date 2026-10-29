@@ -13,7 +13,7 @@ iTunes controls the desktop iTunes application: playback, current-track text, a 
 | Setting | Default | Values | Description |
 | --- | --- | --- | --- |
 | `directory` | `components/itunes` | A directory path | iTunes data directory. A relative path is relative to the installation root. An absolute path is used as stored. |
-| `auto_start` | `on` | `on`, `off` | Start iTunes when the iTunes component starts. |
+| `auto_start` | `off` | `on`, `off` | Start iTunes when the iTunes component starts. |
 | `logging` | `on` | `on`, `off` | Controls logging for the iTunes component. |
 
 ## Commands

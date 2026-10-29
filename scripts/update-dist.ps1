@@ -67,7 +67,7 @@ try {
     $RunningProcesses = @(Get-RunningDistProcesses -Directory $Destination)
 
     if ($RunningProcesses.Count -gt 0) {
-        Write-Host "Cannot publish to dist\app because Auto Core binaries are currently running."
+        Write-Host "Cannot update to dist\app because Auto Core binaries are currently running."
 
         foreach ($Process in $RunningProcesses) {
             Write-Host ("  {0}.exe (PID {1})" -f $Process.Name, $Process.Id)
@@ -98,12 +98,12 @@ try {
             Move-Item -LiteralPath $_.FullName -Destination (Join-Path $Destination $_.Name) -Force
         }
 
-    Write-Host "Published bin -> dist\app"
+    Write-Host "Updated bin -> dist\app"
     exit 0
 }
 catch {
     Write-Host ""
-    Write-Host "Publish failed."
+    Write-Host "Update failed."
     Write-Host $_.Exception.Message
     exit 1
 }

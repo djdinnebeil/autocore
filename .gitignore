@@ -64,6 +64,10 @@ ipch/
 
 # Runtime output (exes, DLLs, live config, local data)
 dist/
+dev/
 
 # Linker program databases (developer symbols; not part of dist/)
 symbols/
+
+# Release folder not tracked
+release/

@@ -35,7 +35,7 @@ namespace {
 
 int export_keymap_commands() {
     struct ClientShutdown {
-        ~ClientShutdown() { ac_itunes.shutdown(); }
+        ~ClientShutdown() { ac_itunes.release_quietly(); }
     } client_shutdown;
 
     try {

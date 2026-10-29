@@ -64,8 +64,9 @@ process only.
    `config/logging_policy.ini is missing; using built-in logging defaults.`,
    and does not create the file.
 4. Load `[warnings] missing_winkey_mapping` and `unmapped_key` from
-   `config/warnings.ini`. Missing or invalid values use `on` and are
-   reported; the file is not created.
+   `config/warnings.ini`. A missing or invalid `missing_winkey_mapping`
+   uses `on`. A missing or invalid `unmapped_key` uses `off`. Either case
+   is reported; the file is not created.
 5. Set console output to UTF-8 (`SetConsoleOutputCP`; input CP is unchanged)
    and set the console title to Auto Core.
 6. If `<installation_root>/data/crash_reports/.crash` exists, prompt whether to
@@ -162,10 +163,10 @@ skipped. Zero usable rows (no resolved command), or a file that cannot be
 opened, uses the emergency map. Unset messages are not printed after
 emergency fallback.
 
-`config/warnings.ini` `[warnings] unmapped_key` defaults to `on`, which
-prints the load-time unset messages. Only exact `off` skips them. A missing
-file keeps the warning on and is reported; the file is not created. Any
-other value leaves the warning on. See [configuration.md](configuration.md).
+`config/warnings.ini` `[warnings] unmapped_key` defaults to `off`, which
+skips the load-time unset messages. Only exact `on` prints them. A missing
+file keeps the warning off and is reported; the file is not created. Any
+other value leaves the warning off. See [configuration.md](configuration.md).
 
 ### Why keymap.map is the only map
 

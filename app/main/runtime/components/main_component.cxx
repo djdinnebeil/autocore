@@ -129,8 +129,6 @@ bool ac::main::create_process_and_focus(
  *
  * Hides and detaches the console, stops running child components, unhooks
  * the keyboard hook, and posts a quit message to the main thread.
- *
- * \keymap_command
  */
 namespace {
 
@@ -175,8 +173,6 @@ void close_program_noninteractive() {
     * \brief Activates the function key.
     *
     * This function sets the primary flag to false and logs the activation of the function key.
-    *
-    * \keymap_command
     */
 void activate_function_key() {
     primary = false;
@@ -187,8 +183,6 @@ void activate_function_key() {
     * \brief Deactivates the function key.
     *
     * This function sets the primary flag to true and logs the deactivation of the function key.
-    *
-    * \keymap_command
     */
 void deactivate_function_key() {
     primary = true;

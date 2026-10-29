@@ -32,13 +32,6 @@ export command_registry::Action taskbar_activation_action(
     std::string_view command = {}
 );
 
-export {
-    /** Main-owned Firefox refresh; not a `taskbar_ac.exe` authority command. */
-    void refresh_firefox();
-    /** Opens a Reddit new-tab workflow in the configured browser. */
-    void start_reddit_new_tab();
-}
-
 export class MainTaskbarState {
 public:
     /** Last dispatched key; compared in `switch_windows` to advance vs end a cycle. */

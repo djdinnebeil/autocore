@@ -107,6 +107,14 @@ bool itunes_client::is_initialized() const noexcept {
 }
 
 void itunes_client::shutdown() noexcept {
+    finish(true);
+}
+
+void itunes_client::release_quietly() noexcept {
+    finish(false);
+}
+
+void itunes_client::finish(bool log_completion) noexcept {
     if (shutdown_requested.exchange(true)) {
         return;
     }
@@ -127,7 +135,9 @@ void itunes_client::shutdown() noexcept {
         initialized = false;
     }
     com_executor.stop();
-    itunes_component.log_debug("end of itunes_client::shutdown()");
+    if (log_completion) {
+        itunes_component.log_debug("end of itunes_client::shutdown()");
+    }
 }
 
 void itunes_client::release_on_com_thread() noexcept {
