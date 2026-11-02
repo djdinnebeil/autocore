@@ -168,6 +168,12 @@
     <ClCompile Include="..\shared\defaults.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\installed_version.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\config_support.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\launch_descriptor.hpp">

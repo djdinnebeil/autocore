@@ -1,10 +1,10 @@
 # Configuration
 
-Component configuration is `config/components/<name>.ini`, written only by `<name>_config.exe`. Main host files stay directly under `config/` and are written only by their own `_config.exe`. `auto_core.exe` and `<name>_ac.exe` read configuration and do not create or rewrite it.
+Component configuration is `config/components/<name>.ini`, written only by `<name>_config.exe`. Main host files stay directly under `config/` and are written only by their own `_config.exe`. `auto_core.exe` and `<name>_ac.exe` read configuration and do not create or rewrite it, except that Main startup replaces a differing `[auto_core] version` with the compiled constant. That write does not change any other line.
 
 A launch with no arguments opens that owner's settings menu. `--seed` writes compiled defaults only when the file is missing. `--init` is interactive initialization. `--initialize` is an alias of `--init`. When both flags are set, seed runs first. Owners then return without prompting, except `spotify_config.exe`, which continues into client ID and OAuth. `logging_policy_config.exe --disable` writes a missing file with `disable_all = on` and does not change an existing file.
 
-A missing or unreadable file, a missing key, or an invalid value uses that key's compiled default in memory. Another valid key in the same file still applies. Readers do not repair the file.
+A missing or unreadable file, a missing key, or an invalid value uses that key's compiled default in memory. Another valid key in the same file still applies. Readers do not repair the file. The startup update of a differing `[auto_core] version` is the exception.
 
 `auto_core.ini` is created during initialization and retained as the sentinel only if the required initialization sequence succeeds. There is no `initialized` key. The startup sequence is in [main.md](main.md#startup-order).
 
@@ -35,10 +35,10 @@ Writer `auto_core_config.exe`. Section `[auto_core]`.
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
 | `logging` | bool | `on`, `off` | `on` | uses `component_logging_default` |
-| `version` | version | `MAJOR.MINOR.PATCH` | `1.0.0` | uses `1.0.0` |
+| `version` | version | `MAJOR.MINOR.PATCH` | `1.0.1` | uses `1.0.1` |
 | `check_for_updates` | bool | `on`, `off` | `on` | uses `on` |
 
-`version` is the installed Auto Core version. `auto_core_config.exe` writes the compiled constant whenever it rewrites the file. When `check_for_updates` is `on`, `auto_core.exe` retrieves `version.txt` from GitHub once after the ready banner and prints one line if that version is newer. `off` makes no request. A failed request does not change startup.
+`version` records the compiled Auto Core version. `auto_core_config.exe` writes that constant into a new file and, when it opens an existing file, updates only `[auto_core] version` if the value differs. `auto_core.exe` does the same update at startup. `logging`, `check_for_updates`, and every other line stay as stored. The GitHub comparison uses the compiled constant. When `check_for_updates` is `on`, `auto_core.exe` retrieves `version.txt` from GitHub once after the ready banner and prints one line if that version is newer. `off` makes no request. A failed request does not change startup.
 
 ### `config/components_policy.ini`
 

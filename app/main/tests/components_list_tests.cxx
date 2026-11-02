@@ -3,8 +3,6 @@
 #include "../../core/component/components_list_detail.hpp"
 #include "../shared/launch_descriptor.hpp"
 
-import auto_core.main.defaults;
-
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -227,18 +225,6 @@ TEST_CASE("File-open failure fails closed", "[components-list][unit]") {
     CHECK_FALSE(result.ok);
     CHECK(result.enabled.empty());
     CHECK(result.error.find("Unable to open") != std::string::npos);
-}
-
-TEST_CASE("Portable default components.list enables the known names", "[components-list][unit]") {
-    const auto result = list::parse(ac::main::defaults::components_list);
-
-    REQUIRE(result.ok);
-    CHECK(enabled(result, "journal"));
-    CHECK(enabled(result, "logger"));
-    CHECK(enabled(result, "writer"));
-    CHECK(enabled(result, "dash"));
-    CHECK(enabled(result, "slash"));
-    CHECK(result.invalid_names.empty());
 }
 
 TEST_CASE("Discovery includes specials and valid *_ac.exe names", "[components-list][unit]") {

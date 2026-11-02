@@ -5,6 +5,7 @@ import auto_core.core.logging.config;
 import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
+import auto_core.main.installed_version;
 import components_editor_request;
 import config_menu;
 
@@ -278,6 +279,10 @@ int main(int argc, char* argv[]) {
 
     namespace req = ac::config::components_request;
     req::log_config_request(auto_core_config, *launch);
+    if (present && !ac::main::synchronize_installed_version()) {
+        auto_core_config.print("Failed to write {}.", path.string());
+        return 1;
+    }
     if (launch->seed) {
         if (present) {
             req::log_seed_skipped(auto_core_config, "config/auto_core.ini");

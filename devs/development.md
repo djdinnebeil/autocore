@@ -99,9 +99,8 @@ component that embeds that resource.
 
 Run `<name>_settings.exe` to enable the component, or run `components_editor.exe`
 with no arguments so a live catalog full-syncs
-discovered `<name>_ac.exe` names that already have `config/components/<name>.ini`. The portable
-`[components]` seed is `components_list` in
-[`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx).
+discovered `<name>_ac.exe` names that already have `config/components/<name>.ini`.
+`components_editor.exe` builds that list from those discovered names.
 Do not put ordinary component names in `auto_core.dll`.
 
 A clone does not need an `obj` junction. If you want intermediates

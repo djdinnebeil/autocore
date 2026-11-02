@@ -143,12 +143,6 @@ namespace {
             document->find("auto_core", "check_for_updates"),
             installed.check_for_updates
         );
-        if (const auto value = document->find("auto_core", "version")) {
-            if (const auto parsed = parse_version(*value)) {
-                installed.version = *parsed;
-                installed.text = std::string {trim(*value)};
-            }
-        }
         return installed;
     }
 

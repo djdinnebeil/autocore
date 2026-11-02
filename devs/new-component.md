@@ -308,7 +308,7 @@ or run `components_editor.exe` with no arguments to full-sync discovered
 example
 ```
 
-An on-demand component embeds `AC_LAUNCH_DESCRIPTOR` and is not also given a v1 hello session. The portable seed is `components_list` in [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). Do not hard-code ordinary component names into `auto_core.dll`.
+An on-demand component embeds `AC_LAUNCH_DESCRIPTOR` and is not also given a v1 hello session. `components_editor.exe` discovers installed `*_ac.exe` names that already have `config/components/<name>.ini`. Do not hard-code ordinary component names into `auto_core.dll`.
 
 ## Bind a command (runtime configuration)
 

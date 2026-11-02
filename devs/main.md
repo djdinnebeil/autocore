@@ -62,7 +62,10 @@ process only.
    `write_logs_to_console = off`, `write_alerts_to_console = on`,
    `component_logging_default = on`, `experimental = on`), prints
    `config/logging_policy.ini is missing; using built-in logging defaults.`,
-   and does not create the file.
+   and does not create the file. After logging is resolved, if
+   `[auto_core] version` differs from the compiled version, Main replaces
+   only that value. A matching value is left untouched. A failed write is
+   logged and is not fatal.
 4. Load `[warnings] missing_winkey_mapping` and `unmapped_key` from
    `config/warnings.ini`. A missing or invalid `missing_winkey_mapping`
    uses `on`. A missing or invalid `unmapped_key` uses `off`. Either case
@@ -93,7 +96,8 @@ process only.
    once on a background thread. A missing or invalid value uses `on`. The
    request uses a short timeout and does not delay the message loop. A newer
    `MAJOR.MINOR.PATCH` prints
-   `[Auto Core] Update available: <installed> -> <latest>`. The same version,
+   `[Auto Core] Update available: <installed> -> <latest>`. The installed
+   version is the compiled constant. The same version,
    a newer installed version, and any failed request print nothing. `off`
    makes no request. The thread is joined after the message loop.
 14. Enter the thread message loop.

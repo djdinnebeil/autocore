@@ -1,8 +1,6 @@
 /**
  * \file defaults.ixx
  * \brief Portable defaults for Main `_config.exe` files.
- *
- * Tracked samples under `defaults/` must match these strings.
  */
 export module auto_core.main.defaults;
 
@@ -17,35 +15,9 @@ export namespace ac::main::defaults {
     constexpr bool startup_show_day_of_week = true;
     constexpr bool startup_show_task_list = true;
 
-    constexpr std::string_view auto_core_ini =
-        "[auto_core]\n"
-        "logging = on\n"
-        "version = 1.0.0\n"
-        "check_for_updates = on\n";
-
     constexpr std::string_view components_new_components = "on";
     constexpr bool components_sort = true;
     constexpr bool components_remove_missing = false;
-
-    constexpr std::string_view components_ini =
-        "[settings]\n"
-        "new_components = on\n"
-        "sort_components = on\n"
-        "remove_missing_components = off\n";
-
-    constexpr std::string_view components_list =
-        "# Leave blank for on; use explicit on/off to override\n"
-        "[components]\n"
-        "dash\n"
-        "itunes\n"
-        "journal\n"
-        "logger\n"
-        "server\n"
-        "slash\n"
-        "spotify\n"
-        "taskbar\n"
-        "wake\n"
-        "writer\n";
 
     constexpr std::string_view crash_default_response = "no";
     constexpr bool crash_diagnostics = true;
@@ -114,10 +86,6 @@ export namespace ac::main::defaults {
         const bool logging = auto_core_logging,
         const bool check_for_updates = auto_core_check_for_updates
     ) {
-        if (logging == auto_core_logging &&
-            check_for_updates == auto_core_check_for_updates) {
-            return std::string {auto_core_ini};
-        }
         return std::string {"[auto_core]\nlogging = "} +
             (logging ? "on" : "off") +
             "\nversion = " +
@@ -138,11 +106,6 @@ export namespace ac::main::defaults {
             "\nshow_task_list = " +
             (show_task_list ? "on" : "off") +
             "\n";
-    }
-
-    [[nodiscard]]
-    inline std::string ini_for_components() {
-        return std::string {components_ini};
     }
 
     [[nodiscard]]

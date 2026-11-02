@@ -18,6 +18,7 @@ import auto_core.main.keyboard_input;
 import auto_core.main.keymap.runtime;
 import auto_core.main.logging;
 import auto_core.core.logging.config;
+import auto_core.main.installed_version;
 import auto_core.main.program_ready;
 import auto_core.main.shutdown_events;
 import auto_core.main.version_check;
@@ -205,6 +206,11 @@ int main() {
     }
     if (!prepare_logging(first_run)) {
         return 1;
+    }
+    if (!ac::main::synchronize_installed_version()) {
+        auto_core.log_debug(
+            "Could not update config/auto_core.ini version."
+        );
     }
 
     ac::config::initialize_core_settings();

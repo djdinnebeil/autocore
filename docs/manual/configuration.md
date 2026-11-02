@@ -52,11 +52,11 @@ neither task content nor `Nothing pending today.` is displayed.
 `config\auto_core.ini` also stores the installed version and the update check:
 
 ```ini
-version = 1.0.0
+version = 1.0.1
 check_for_updates = on
 ```
 
-`version` is `MAJOR.MINOR.PATCH` and defaults to `1.0.0`. `check_for_updates`
+`version` is `MAJOR.MINOR.PATCH` and defaults to `1.0.1`. `check_for_updates`
 accepts `on` or `off` and defaults to `on`. When it is `on`, Auto Core checks
 GitHub once at startup and prints a line if a newer version is published.
 `off` skips that request. A missing or invalid value uses the default.
