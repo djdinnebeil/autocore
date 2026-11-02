@@ -13,7 +13,8 @@ export namespace ac::main {
 
     /**
      * Replaces a differing `[auto_core] version` with the compiled version.
-     * Every other line is preserved. A matching value is not written.
+     * A differing `# version` comment value is updated the same way.
+     * Every other line is preserved. Matching values are not written.
      *
      * \return False when the file cannot be read or written.
      */
@@ -41,6 +42,32 @@ export namespace ac::main {
             std::string text;
         };
         std::vector<Replacement> replacements;
+        const auto note_version_value = [&](
+            const std::string_view raw,
+            const std::size_t value_line_start,
+            const std::size_t equals
+        ) {
+            const auto value = cfg::trim(raw.substr(equals + 1));
+            if (value == compiled) {
+                return;
+            }
+            const auto value_region = raw.substr(equals + 1);
+            const auto first = value_region.find_first_not_of(" \t");
+            if (first == std::string_view::npos) {
+                replacements.push_back({
+                    .begin = value_line_start + equals + 1,
+                    .end = value_line_start + raw.size(),
+                    .text = std::string {" "} + std::string {compiled},
+                });
+                return;
+            }
+            const auto last = value_region.find_last_not_of(" \t");
+            replacements.push_back({
+                .begin = value_line_start + equals + 1 + first,
+                .end = value_line_start + equals + 1 + last + 1,
+                .text = std::string {compiled},
+            });
+        };
         std::string section;
         bool saw_section = false;
         bool saw_version = false;
@@ -61,9 +88,18 @@ export namespace ac::main {
                 raw.remove_suffix(1);
             }
             const auto trimmed = cfg::trim(raw);
-            if (!trimmed.empty() &&
-                !trimmed.starts_with('#') &&
-                !trimmed.starts_with(';')) {
+            if (trimmed.starts_with('#')) {
+                const auto comment = cfg::trim(trimmed.substr(1));
+                const auto equals = comment.find('=');
+                if (equals != std::string_view::npos &&
+                    cfg::trim(comment.substr(0, equals)) == "version") {
+                    const auto raw_equals = raw.find('=');
+                    if (raw_equals != std::string_view::npos) {
+                        note_version_value(raw, line_start, raw_equals);
+                    }
+                }
+            }
+            else if (!trimmed.empty() && !trimmed.starts_with(';')) {
                 if (trimmed.starts_with('[') && trimmed.ends_with(']')) {
                     section = std::string {
                         cfg::trim(trimmed.substr(1, trimmed.size() - 2))
@@ -81,29 +117,7 @@ export namespace ac::main {
                     if (equals != std::string_view::npos &&
                         cfg::trim(raw.substr(0, equals)) == "version") {
                         saw_version = true;
-                        const auto value = cfg::trim(raw.substr(equals + 1));
-                        if (value != compiled) {
-                            const auto value_region = raw.substr(equals + 1);
-                            const auto first =
-                                value_region.find_first_not_of(" \t");
-                            if (first == std::string_view::npos) {
-                                replacements.push_back({
-                                    .begin = line_start + equals + 1,
-                                    .end = line_start + raw.size(),
-                                    .text = std::string {" "} +
-                                        std::string {compiled},
-                                });
-                            }
-                            else {
-                                const auto last =
-                                    value_region.find_last_not_of(" \t");
-                                replacements.push_back({
-                                    .begin = line_start + equals + 1 + first,
-                                    .end = line_start + equals + 1 + last + 1,
-                                    .text = std::string {compiled},
-                                });
-                            }
-                        }
+                        note_version_value(raw, line_start, equals);
                     }
                 }
             }
@@ -113,34 +127,47 @@ export namespace ac::main {
             line_start = line_break + 1;
         }
 
+        for (auto replacement = replacements.rbegin();
+             replacement != replacements.rend();
+             ++replacement) {
+            const auto old_length = replacement->end - replacement->begin;
+            if (replacement->end <= insert_at) {
+                const auto new_length = replacement->text.size();
+                if (new_length >= old_length) {
+                    insert_at += new_length - old_length;
+                }
+                else {
+                    insert_at -= old_length - new_length;
+                }
+            }
+            text.replace(
+                replacement->begin,
+                old_length,
+                replacement->text
+            );
+        }
+
         if (!saw_version) {
             if (!saw_section) {
-                return true;
+                if (replacements.empty()) {
+                    return true;
+                }
             }
-            const bool crlf = text.find("\r\n") != std::string::npos;
-            const std::string newline = crlf ? "\r\n" : "\n";
-            std::string insertion;
-            if (!header_has_newline) {
+            else {
+                const bool crlf = text.find("\r\n") != std::string::npos;
+                const std::string newline = crlf ? "\r\n" : "\n";
+                std::string insertion;
+                if (!header_has_newline) {
+                    insertion += newline;
+                }
+                insertion += "version = ";
+                insertion += compiled;
                 insertion += newline;
+                text.insert(insert_at, insertion);
             }
-            insertion += "version = ";
-            insertion += compiled;
-            insertion += newline;
-            text.insert(insert_at, insertion);
         }
         else if (replacements.empty()) {
             return true;
-        }
-        else {
-            for (auto replacement = replacements.rbegin();
-                 replacement != replacements.rend();
-                 ++replacement) {
-                text.replace(
-                    replacement->begin,
-                    replacement->end - replacement->begin,
-                    replacement->text
-                );
-            }
         }
 
         return cfg::write_bytes(path, text);

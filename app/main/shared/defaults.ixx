@@ -86,12 +86,12 @@ export namespace ac::main::defaults {
         const bool logging = auto_core_logging,
         const bool check_for_updates = auto_core_check_for_updates
     ) {
-        return std::string {"[auto_core]\nlogging = "} +
-            (logging ? "on" : "off") +
-            "\nversion = " +
+        return std::string {"[auto_core]\nversion = "} +
             std::string {auto_core_version} +
             "\ncheck_for_updates = " +
             (check_for_updates ? "on" : "off") +
+            "\nlogging = " +
+            (logging ? "on" : "off") +
             "\n";
     }
 

@@ -21,6 +21,7 @@ namespace {
 ac::Component auto_core_config {"auto_core_config"};
 
 constexpr std::string_view on_off[] {"on", "off"};
+constexpr std::string_view version_value[] {defaults::auto_core_version};
 
 const menu::Setting menu_settings[] {
     {
@@ -89,10 +90,24 @@ AutoCoreFlags current_flags() {
 
 [[nodiscard]]
 bool write_settings(const AutoCoreFlags& flags) {
+    const menu::Setting header[] {
+        {
+            .key = "version",
+            .choices = version_value,
+        },
+        {
+            .key = "check_for_updates",
+            .choices = on_off,
+        },
+        {
+            .key = "logging",
+            .choices = on_off,
+        },
+    };
     return cfg::write_bytes(
         ini_path(),
         menu::with_header(
-            menu_settings,
+            header,
             defaults::ini_for_auto_core(
                 flags.logging,
                 flags.check_for_updates
