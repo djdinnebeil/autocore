@@ -88,7 +88,15 @@ process only.
    Main banner, not component dispatch. Main opens Writer's `task_list.txt`
    only when `show_task_list` is enabled. A missing task file is logged and the
    task section is omitted; an empty file prints "Nothing pending today."
-13. Enter the thread message loop.
+13. If `[auto_core] check_for_updates` is `on`, retrieve
+   `https://raw.githubusercontent.com/djdinnebeil/autocore/main/version.txt`
+   once on a background thread. A missing or invalid value uses `on`. The
+   request uses a short timeout and does not delay the message loop. A newer
+   `MAJOR.MINOR.PATCH` prints
+   `[Auto Core] Update available: <installed> -> <latest>`. The same version,
+   a newer installed version, and any failed request print nothing. `off`
+   makes no request. The thread is joined after the message loop.
+14. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two

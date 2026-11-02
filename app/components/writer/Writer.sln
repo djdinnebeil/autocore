@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_editor", "editor\wri
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_settings", "settings\writer_settings.vcxproj", "{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_builder", "builder\writer_builder.vcxproj", "{8F2C6B14-A591-4E37-B8D0-6C1E4A9F2D75}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "writer_tests", "tests\writer_tests.vcxproj", "{A7C3E1D4-5B28-4F6A-9C01-8E2D4B7A6F15}"
 EndProject
 Global
@@ -34,6 +36,10 @@ Global
 		{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}.Debug|x64.Build.0 = Debug|x64
 		{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}.Release|x64.ActiveCfg = Release|x64
 		{54AD9C8E-C1E5-4FCB-A65F-19E61330E9A0}.Release|x64.Build.0 = Release|x64
+		{8F2C6B14-A591-4E37-B8D0-6C1E4A9F2D75}.Debug|x64.ActiveCfg = Debug|x64
+		{8F2C6B14-A591-4E37-B8D0-6C1E4A9F2D75}.Debug|x64.Build.0 = Debug|x64
+		{8F2C6B14-A591-4E37-B8D0-6C1E4A9F2D75}.Release|x64.ActiveCfg = Release|x64
+		{8F2C6B14-A591-4E37-B8D0-6C1E4A9F2D75}.Release|x64.Build.0 = Release|x64
 		{A7C3E1D4-5B28-4F6A-9C01-8E2D4B7A6F15}.Debug|x64.ActiveCfg = Release|x64
 		{A7C3E1D4-5B28-4F6A-9C01-8E2D4B7A6F15}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection

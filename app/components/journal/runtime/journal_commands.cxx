@@ -45,8 +45,8 @@ command_registry::Registry create_journal_command_registry(
     registry.add(std::string {::print_episode_title.name}, [] {
         start_title_action(&journal_title::print_episode_title);
     });
-    registry.add(std::string {::save_file_and_create_new_file.name}, [] {
-        start_title_action(&journal_title::save_file_and_create_new_file);
+    registry.add(std::string {::save_and_create_new_document.name}, [] {
+        start_title_action(&journal_title::save_and_create_new_document);
     });
     journal::factories::register_factory_commands(registry);
     journal::factories::load_alias_commands(registry);

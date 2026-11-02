@@ -20,6 +20,7 @@ import auto_core.main.logging;
 import auto_core.core.logging.config;
 import auto_core.main.program_ready;
 import auto_core.main.shutdown_events;
+import auto_core.main.version_check;
 
 namespace {
     constexpr wchar_t instance_mutex_name[] = L"Local\\AutoCore.main";
@@ -229,6 +230,7 @@ int main() {
     initialize_keymap();
     announce_program_ready();
 
+    std::jthread version_check_thread = start_version_check();
     std::jthread logging_cleanup_thread {[] {
         const auto helper =
             ac::paths::bin_directory() / "auto_core_logging_cleanup.exe";
@@ -237,6 +239,9 @@ int main() {
 
     run_message_loop();
     logging_cleanup_thread.join();
+    if (version_check_thread.joinable()) {
+        version_check_thread.join();
+    }
     shutdown_logging();
 
     return 0;

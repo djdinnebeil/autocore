@@ -119,8 +119,11 @@ Data directory default `writer`. Notes subdirectory default `notes`.
 | `session_prompts.list` | prompt lines | `writer_editor.exe` | `writer_ac.exe` opens the file | editor `--seed` / `--init` creates it. `writer_ac.exe` does not | yes | no | |
 | `task_list.txt` | task lines | `writer_editor.exe` | `writer_ac.exe` opens the file | same | yes | no | |
 | `notes/YYYY-MM-DD.txt` | daily note | `writer_editor.exe` (`--daily-note` and the editor menu) | the user, in Notepad | that command creates the day's file by appending | yes | notes may be private | `writer_ac.exe` and `writer_settings.exe` launch `writer_editor.exe --daily-note`. They do not write the file. |
+| `text/*.txt` | text inserted by the file menu and by generated `insert_*` commands | the user | `writer_ac.exe` reads the chosen file | the directory is not created | yes | text may be private | `select_and_insert_text` lists filenames when the menu opens and pastes the file unchanged, including trailing newlines. An `insert_*` command reads its file at execution and pastes those bytes unchanged. An empty file inserts nothing. |
+| `insert_text.list` | `insert_*` command catalog | `writer_builder.exe` | `writer_ac.exe` | skipped at startup, not created by `writer_ac.exe` | yes | filenames only | Replaced in full. A missing or unreadable `text` directory leaves the existing file unchanged. Colliding names are omitted and reported. |
+| `profile_urls.txt` | `name = url` lines. The menu shows the name and the command inserts the URL | the user | `writer_ac.exe` | the file is not created | yes | URLs may be personal | `select_and_insert_profile_url` reads the file each time the menu opens. Blank lines are skipped. A line without `=` or with an empty name or URL is logged and skipped. A later `=` stays in the URL. |
 
-The notes directory is created by `writer_editor.exe` when it resolves today's note.
+The notes directory is created by `writer_editor.exe` when it resolves today's note. `writer_ac.exe` does not create `text` or `profile_urls.txt`.
 
 ## Extensions in use
 

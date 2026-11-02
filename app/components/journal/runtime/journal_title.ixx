@@ -6,5 +6,5 @@ export module journal_title;
 
 export namespace journal_title {
     void print_episode_title();
-    void save_file_and_create_new_file();
+    void save_and_create_new_document();
 }

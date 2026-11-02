@@ -45,17 +45,20 @@ namespace ac::component_detail {
          * \brief Inserts text and then restores a Unicode-text snapshot.
          *
          * Sequence: write the temporary text, Ctrl+V, wait briefly so the
-         * target can consume that paste, Shift+Enter once, then restore.
-         * Restoration is also attempted after write, paste, or linebreak
-         * failures so the previous snapshot is not left displaced.
+         * target can consume that paste, optionally send Shift+Enter once,
+         * then restore. Restoration is also attempted after write, paste,
+         * or linebreak failures so the previous snapshot is not left
+         * displaced.
          *
          * \param message The temporary Unicode clipboard text.
          * \param previous_clipboard The Unicode-text state to restore.
+         * \param send_linebreak When true, send Shift+Enter after the paste.
          */
         [[nodiscard]] std::expected<void, InsertError>
             insert_preserving_clipboard_text(
                 std::wstring_view message,
-                const ac::clipboard::ClipboardTextSnapshot& previous_clipboard
+                const ac::clipboard::ClipboardTextSnapshot& previous_clipboard,
+                bool send_linebreak
             );
 
     };

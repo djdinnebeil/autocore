@@ -29,6 +29,18 @@ const menu::Setting menu_settings[] {
         .default_value = "on",
         .choices = on_off,
     },
+    {
+        .key = "check_for_updates",
+        .display_name = "Check for updates",
+        .summary = "Checks GitHub for a newer Auto Core version at startup.",
+        .default_value = "on",
+        .choices = on_off,
+    },
+};
+
+struct AutoCoreFlags {
+    bool logging;
+    bool check_for_updates;
 };
 
 [[nodiscard]]
@@ -37,12 +49,10 @@ std::filesystem::path ini_path() {
 }
 
 [[nodiscard]]
-bool current_logging(const bool fallback) {
-    const auto document = ac::ini::read(ini_path());
-    if (!document) {
-        return fallback;
-    }
-    const auto value = document->find("auto_core", "logging");
+bool enabled_value(
+    const std::optional<std::string_view> value,
+    const bool fallback
+) {
     if (!value) {
         return fallback;
     }
@@ -56,30 +66,63 @@ bool current_logging(const bool fallback) {
 }
 
 [[nodiscard]]
-bool write_settings(const bool logging) {
+AutoCoreFlags current_flags() {
+    AutoCoreFlags flags {
+        .logging = ac::logging::config::component_logging_default(),
+        .check_for_updates = defaults::auto_core_check_for_updates,
+    };
+    const auto document = ac::ini::read(ini_path());
+    if (!document) {
+        return flags;
+    }
+    flags.logging = enabled_value(
+        document->find("auto_core", "logging"),
+        flags.logging
+    );
+    flags.check_for_updates = enabled_value(
+        document->find("auto_core", "check_for_updates"),
+        flags.check_for_updates
+    );
+    return flags;
+}
+
+[[nodiscard]]
+bool write_settings(const AutoCoreFlags& flags) {
     return cfg::write_bytes(
         ini_path(),
         menu::with_header(
             menu_settings,
-            defaults::ini_for_auto_core(logging)
+            defaults::ini_for_auto_core(
+                flags.logging,
+                flags.check_for_updates
+            )
         )
     );
 }
 
 [[nodiscard]]
-std::string current_text(const menu::Setting&) {
-    return current_logging(ac::logging::config::component_logging_default())
-        ? "on"
-        : "off";
+std::string current_text(const menu::Setting& setting) {
+    const auto flags = current_flags();
+    const bool enabled = setting.key == "check_for_updates"
+        ? flags.check_for_updates
+        : flags.logging;
+    return enabled ? "on" : "off";
 }
 
 [[nodiscard]]
 menu::ApplyResult apply_setting(
-    const menu::Setting&,
+    const menu::Setting& setting,
     const std::string_view value
 ) {
-    const bool logging = value == "on";
-    if (!write_settings(logging)) {
+    AutoCoreFlags flags = current_flags();
+    const bool enabled = value == "on";
+    if (setting.key == "check_for_updates") {
+        flags.check_for_updates = enabled;
+    }
+    else {
+        flags.logging = enabled;
+    }
+    if (!write_settings(flags)) {
         auto_core_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
     }
@@ -163,7 +206,10 @@ int configuration_mode() {
 int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
     const auto path = ini_path();
     if (!prompt) {
-        if (!write_settings(defaults::auto_core_logging)) {
+        if (!write_settings({
+                .logging = defaults::auto_core_logging,
+                .check_for_updates = defaults::auto_core_check_for_updates,
+            })) {
             auto_core_config.print("Failed to write {}.", path.string());
             return 1;
         }
@@ -171,7 +217,10 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
         return 0;
     }
 
-    if (!write_settings(defaults::auto_core_logging)) {
+    if (!write_settings({
+            .logging = defaults::auto_core_logging,
+            .check_for_updates = defaults::auto_core_check_for_updates,
+        })) {
         auto_core_config.print("Failed to write {}.", path.string());
         return 1;
     }

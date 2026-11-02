@@ -142,7 +142,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>auto_core.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;winhttp.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -189,6 +189,7 @@
     <ClCompile Include="taskbar\main_taskbar.ixx" />
     <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.ixx" />
     <ClCompile Include="lifecycle\program_ready.ixx" />
+    <ClCompile Include="lifecycle\version_check.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="test_commands.cxx" />
     <ClCompile Include="main.cxx" />
@@ -202,6 +203,7 @@
     <ClCompile Include="taskbar\main_taskbar.cxx" />
     <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.cxx" />
     <ClCompile Include="lifecycle\program_ready.cxx" />
+    <ClCompile Include="lifecycle\version_check.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\core\component\components_list_detail.hpp" />

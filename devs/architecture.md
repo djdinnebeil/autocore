@@ -103,6 +103,7 @@ The failure this glossary exists to stop is "the database component of the iTune
 | `writer_ac.exe` | `app/components/writer/runtime` | Component | long-running while hosted | `ac.component.v1` | Observed hosted member. The daily-note command launches `writer_editor.exe --daily-note`. |
 | `writer_config.exe` | `app/components/writer/config` | INI writer | one-shot | `--seed`, `--init`, menu | Finalized owner of `config/components/writer.ini`. |
 | `writer_editor.exe` | `app/components/writer/editor` | operational editor | one-shot | `--seed`, `--init`, `--daily-note`, menu | Observed owner of `task_list.txt`, `session_prompts.list`, and the daily note. |
+| `writer_builder.exe` | `app/components/writer/builder` | recipe materializer | one-shot | no arguments | Observed owner of `insert_text.list`. Does not write keymap catalogs. |
 | `writer_settings.exe` | `app/components/writer/settings` | settings application | one-shot | shared menu | Observed. |
 
 `--initialize` is a compatibility alias of `--init` in `parse_config_launch`. **Legacy** alias. It is not a second mode. Production INI parsers that use that function accept it.
@@ -121,7 +122,7 @@ These sit under Components or under Main. Grouping is **Observed**. The word "su
 | Operational editors | `components_editor`, `keymap_editor`, `writer_editor`, `server_editor`, `dash_editor`, `spotify_editor`, `journal_series`, `journal_builder` (also a builder), `journal_clock` |
 | Database services | `itunes_db.exe`, `spotify_db.exe`, `journal_db.exe` |
 | Other long-running pipe host | `journal_cloud.exe --serve`. Spotify devices is a private pipe from `spotify_editor.exe` to `spotify_ac.exe`, not a separate process. |
-| One-shot utilities | `spotify_oauth.exe`, `itunes_formatter.exe`, `spotify_formatter.exe`, `server_builder.exe`, `taskbar_builder.exe`, `logger_ac.exe --once`, `wake_ac.exe --snapshot`, `taskbar_ac.exe --refresh-cache` |
+| One-shot utilities | `spotify_oauth.exe`, `itunes_formatter.exe`, `spotify_formatter.exe`, `server_builder.exe`, `taskbar_builder.exe`, `writer_builder.exe`, `logger_ac.exe --once`, `wake_ac.exe --snapshot`, `taskbar_ac.exe --refresh-cache` |
 | Platform substrates in the DLL | taskbar snapshot authority, pipes, process, paths, logging, INI read, clipboard, keyboard, crash diagnostics |
 | Non-hosted commands | Dash and Slash, launched from `AC_LAUNCH_DESCRIPTOR` rather than hello/invoke |
 | Installation trampoline | `auto_core_shell_launcher.exe` |

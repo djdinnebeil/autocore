@@ -81,6 +81,12 @@
     <ClCompile Include="lifecycle\program_ready.ixx">
       <Filter>lifecycle</Filter>
     </ClCompile>
+    <ClCompile Include="lifecycle\version_check.ixx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="lifecycle\version_check.cxx">
+      <Filter>lifecycle</Filter>
+    </ClCompile>
     <ClCompile Include="lifecycle\shutdown_events.cxx">
       <Filter>lifecycle</Filter>
     </ClCompile>

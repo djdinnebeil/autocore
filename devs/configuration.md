@@ -35,6 +35,10 @@ Writer `auto_core_config.exe`. Section `[auto_core]`.
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
 | `logging` | bool | `on`, `off` | `on` | uses `component_logging_default` |
+| `version` | version | `MAJOR.MINOR.PATCH` | `1.0.0` | uses `1.0.0` |
+| `check_for_updates` | bool | `on`, `off` | `on` | uses `on` |
+
+`version` is the installed Auto Core version. `auto_core_config.exe` writes the compiled constant whenever it rewrites the file. When `check_for_updates` is `on`, `auto_core.exe` retrieves `version.txt` from GitHub once after the ready banner and prints one line if that version is newer. `off` makes no request. A failed request does not change startup.
 
 ### `config/components_policy.ini`
 

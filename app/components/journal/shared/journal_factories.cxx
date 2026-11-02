@@ -509,7 +509,7 @@ bool is_alias_name(std::string_view name) {
 bool is_reserved_alias_name(std::string_view name) {
     if (name == ::print_extended_timestamp.name ||
         name == ::print_episode_title.name ||
-        name == ::save_file_and_create_new_file.name) {
+        name == ::save_and_create_new_document.name) {
         return true;
     }
     return find_factory(name) != nullptr;

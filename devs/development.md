@@ -40,7 +40,7 @@ A public clone should not contain another person's keymap, journal print-choice 
 
 An existing `keymap.map`, `components.list`, or Journal `<factory_name>.list` file is left unchanged. `*.local.ini` / `*.local.ixx` are gitignored and are not loaded.
 
-Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe` and `journal_builder.exe`. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_builder.exe` creates a missing `.map` and does not overwrite an existing one. `taskbar_config.exe` writes only `config/components/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
+Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe` and `journal_builder.exe`. `writer_builder.exe` replaces `<writer directory>/insert_text.list` from `text/*.txt`. `writer_ac.exe` loads those `insert_*` names at startup. Restart Writer after a catalog change; editing a text file does not require a rebuild. `keymap_builder.exe` publishes both keymap command lists. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_builder.exe` creates a missing `.map` and does not overwrite an existing one. `taskbar_config.exe` writes only `config/components/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
 
 ## Main process session
 
@@ -86,7 +86,7 @@ Put the project at `app/components/<name>/`. Import
 `journal_ac`, `logger_ac`, `server_ac`, `slash_ac`,
 `spotify_ac`, `taskbar_ac`, `wake_ac`, `writer_ac`). Leave `auto_core`,
 `spotify_oauth`, `spotify_editor`, `spotify_db`, `itunes_db`, `journal_config`, `journal_builder`, `journal_clock`, `journal_db`, `journal_series`, `journal_cloud`, `server_config`, `server_editor`, `server_builder`,
-`taskbar_config`, `taskbar_builder`, `writer_config`, and `writer_editor` unsuffixed.
+`taskbar_config`, `taskbar_builder`, `writer_config`, `writer_builder`, and `writer_editor` unsuffixed.
 
 Enable a v1 child in live `dist/components.list` (`name` or `name on`).
 Advertise

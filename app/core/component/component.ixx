@@ -258,10 +258,15 @@ export namespace ac {
          * console prompt temporarily owns focus. The target remains
          * authoritative through any clipboard warning prompt. Activation
          * failure skips insertion and leaves the clipboard unchanged.
+         *
+         * \param send_linebreak When true, the default, remove trailing
+         * `\n` characters and send Shift+Enter after the paste. When
+         * false, paste `message` unchanged and do not send Shift+Enter.
          */
         AC_API void insert_text_preserving_clipboard_text(
             void* target_window,
-            std::wstring_view message
+            std::wstring_view message,
+            bool send_linebreak = true
         );
 
         /**

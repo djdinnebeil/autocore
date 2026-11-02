@@ -119,7 +119,7 @@ void journal_title::print_episode_title() {
     save_file();
 }
 
-void journal_title::save_file_and_create_new_file() {
+void journal_title::save_and_create_new_document() {
     const std::wstring previous_title = foreground_window_title();
     save_file();
     Sleep(50);

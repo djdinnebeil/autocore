@@ -11,13 +11,17 @@ import std;
 export namespace ac::main::defaults {
 
     constexpr bool auto_core_logging = true;
+    constexpr std::string_view auto_core_version = "1.0.0";
+    constexpr bool auto_core_check_for_updates = true;
 
     constexpr bool startup_show_day_of_week = true;
     constexpr bool startup_show_task_list = true;
 
     constexpr std::string_view auto_core_ini =
         "[auto_core]\n"
-        "logging = on\n";
+        "logging = on\n"
+        "version = 1.0.0\n"
+        "check_for_updates = on\n";
 
     constexpr std::string_view components_new_components = "on";
     constexpr bool components_sort = true;
@@ -107,15 +111,19 @@ export namespace ac::main::defaults {
 
     [[nodiscard]]
     inline std::string ini_for_auto_core(
-        const bool logging = auto_core_logging
+        const bool logging = auto_core_logging,
+        const bool check_for_updates = auto_core_check_for_updates
     ) {
-        if (logging == auto_core_logging) {
+        if (logging == auto_core_logging &&
+            check_for_updates == auto_core_check_for_updates) {
             return std::string {auto_core_ini};
         }
-        return std::string {
-            "[auto_core]\n"
-            "logging = "
-        } + std::string {logging ? "on" : "off"} +
+        return std::string {"[auto_core]\nlogging = "} +
+            (logging ? "on" : "off") +
+            "\nversion = " +
+            std::string {auto_core_version} +
+            "\ncheck_for_updates = " +
+            (check_for_updates ? "on" : "off") +
             "\n";
     }
 

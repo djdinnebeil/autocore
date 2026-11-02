@@ -65,7 +65,8 @@ namespace ac::component_detail {
     std::expected<void, InsertError>
         TextInserter::insert_preserving_clipboard_text(
             const std::wstring_view message,
-            const ac::clipboard::ClipboardTextSnapshot& previous_clipboard
+            const ac::clipboard::ClipboardTextSnapshot& previous_clipboard,
+            const bool send_linebreak
         ) {
         std::scoped_lock lock(insertion_mutex);
 
@@ -88,7 +89,7 @@ namespace ac::component_detail {
         // Chromium text controls.
         std::this_thread::sleep_for(paste_processing_delay);
 
-        if (!ac::keyboard::send_linebreak()) {
+        if (send_linebreak && !ac::keyboard::send_linebreak()) {
             (void)ac::clipboard::restore_clipboard_text(
                 previous_clipboard
             );

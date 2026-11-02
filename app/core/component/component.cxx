@@ -296,14 +296,17 @@ namespace ac {
 
     void Component::insert_text_preserving_clipboard_text(
         const ac::console::WindowHandle target_window,
-        const std::wstring_view message
+        const std::wstring_view message,
+        const bool send_linebreak
     ) {
         const auto representation =
             ac::clipboard::capture_clipboard_text_representation();
         std::wstring insertion {message};
 
-        while (!insertion.empty() && insertion.back() == L'\n') {
-            insertion.pop_back();
+        if (send_linebreak) {
+            while (!insertion.empty() && insertion.back() == L'\n') {
+                insertion.pop_back();
+            }
         }
         ac::clipboard::ClipboardTextSnapshot previous_clipboard;
 
@@ -358,7 +361,8 @@ namespace ac {
         const auto result =
             impl_->text_inserter.insert_preserving_clipboard_text(
                 insertion,
-                previous_clipboard
+                previous_clipboard,
+                send_linebreak
             );
 
         if (!result) {

@@ -79,6 +79,8 @@
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\shared\writer_protocol.ixx" />
+    <ClCompile Include="..\shared\writer_text_commands.ixx" />
+    <ClCompile Include="..\shared\writer_text_commands.cxx" />
     <ClCompile Include="..\shared\writer_notepad.ixx" />
     <ClCompile Include="..\shared\writer_notepad.cxx" />
     <ClCompile Include="..\shared\defaults.ixx" />
@@ -86,6 +88,7 @@
     <ClCompile Include="writer_commands.ixx" />
     <ClCompile Include="writer_registry.cxx" />
     <ClCompile Include="writer.cxx" />
+    <ClCompile Include="text_menu.cxx" />
     <ClCompile Include="notepad_notes.cxx" />
     <ClCompile Include="text_actions.cxx" />
     <ClCompile Include="tasks.cxx" />
