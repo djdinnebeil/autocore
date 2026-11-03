@@ -6,6 +6,7 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 import auto_core.main.defaults;
 import auto_core.main.installed_version;
+import auto_core.version;
 import components_editor_request;
 import config_menu;
 
@@ -21,7 +22,7 @@ namespace {
 ac::Component auto_core_config {"auto_core_config"};
 
 constexpr std::string_view on_off[] {"on", "off"};
-constexpr std::string_view version_value[] {defaults::auto_core_version};
+constexpr std::string_view version_value[] {ac::version::auto_core_version};
 
 const menu::Setting menu_settings[] {
     {
@@ -109,6 +110,7 @@ bool write_settings(const AutoCoreFlags& flags) {
         menu::with_header(
             header,
             defaults::ini_for_auto_core(
+                ac::version::auto_core_version,
                 flags.logging,
                 flags.check_for_updates
             )

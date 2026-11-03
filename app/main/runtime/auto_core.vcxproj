@@ -191,6 +191,7 @@
     <ClCompile Include="lifecycle\program_ready.ixx" />
     <ClCompile Include="lifecycle\version_check.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\version.ixx" />
     <ClCompile Include="..\shared\installed_version.ixx" />
     <ClCompile Include="..\shared\config_support.ixx" />
     <ClCompile Include="test_commands.cxx" />

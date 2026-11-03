@@ -7,7 +7,7 @@ export module auto_core.main.installed_version;
 import std;
 import auto_core.core.paths;
 import auto_core.main.config_support;
-import auto_core.main.defaults;
+import auto_core.version;
 
 export namespace ac::main {
 
@@ -21,7 +21,6 @@ export namespace ac::main {
     [[nodiscard]]
     bool synchronize_installed_version() {
         namespace cfg = ac::main::config;
-        namespace defaults = ac::main::defaults;
         const auto path = ac::paths::config_directory() / "auto_core.ini";
         std::ifstream input(path, std::ios::binary);
         if (!input) {
@@ -35,7 +34,7 @@ export namespace ac::main {
             return false;
         }
 
-        const std::string_view compiled = defaults::auto_core_version;
+        const std::string_view compiled = ac::version::auto_core_version;
         struct Replacement {
             std::size_t begin;
             std::size_t end;

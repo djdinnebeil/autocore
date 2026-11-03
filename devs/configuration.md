@@ -35,10 +35,10 @@ Writer `auto_core_config.exe`. Section `[auto_core]`.
 | Key | Type | Allowed | Default | Invalid or missing |
 | --- | --- | --- | --- | --- |
 | `logging` | bool | `on`, `off` | `on` | uses `component_logging_default` |
-| `version` | version | `MAJOR.MINOR.PATCH` | `1.0.1` | uses `1.0.1` |
+| `version` | version | compiled `MAJOR.MINOR` or `MAJOR.MINOR.PATCH` | `1.0.1` | uses `1.0.1` |
 | `check_for_updates` | bool | `on`, `off` | `on` | uses `on` |
 
-`version` records the compiled Auto Core version. `auto_core_config.exe` writes that constant into a new file and, when it opens an existing file, updates only `[auto_core] version` if the value differs. `auto_core.exe` does the same update at startup. `logging`, `check_for_updates`, and every other line stay as stored. The GitHub comparison uses the compiled constant. When `check_for_updates` is `on`, `auto_core.exe` retrieves `version.txt` from GitHub once after the ready banner and prints one line if that version is newer. `off` makes no request. A failed request does not change startup.
+`version` records the compiled Auto Core version. Incremental releases use `MAJOR.MINOR.PATCH`. The finalized release of that line uses `MAJOR.MINOR` and is newer than every patch with the same major and minor. `auto_core_config.exe` writes the compiled constant into a new file and, when it opens an existing file, updates only `[auto_core] version` when the text differs. `auto_core.exe` does the same update at startup. `logging`, `check_for_updates`, and every other line stay as stored. The GitHub comparison uses the compiled constant and accepts either form in `version.txt`. When `check_for_updates` is `on`, `auto_core.exe` retrieves `version.txt` from GitHub once after the ready banner and prints one line if that version is newer. `off` makes no request. A failed request does not change startup.
 
 ### `config/components_policy.ini`
 

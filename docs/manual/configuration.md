@@ -56,9 +56,12 @@ version = 1.0.1
 check_for_updates = on
 ```
 
-`version` is `MAJOR.MINOR.PATCH` and defaults to `1.0.1`. `check_for_updates`
-accepts `on` or `off` and defaults to `on`. When it is `on`, Auto Core checks
-GitHub once at startup and prints a line if a newer version is published.
+`version` records the compiled release and defaults to `1.0.1`. Incremental
+releases use `MAJOR.MINOR.PATCH`. The finalized release of that line uses
+`MAJOR.MINOR` and replaces every `MAJOR.MINOR.PATCH` release with the same
+major and minor. `check_for_updates` accepts `on` or `off` and defaults to
+`on`. When it is `on`, Auto Core checks GitHub once at startup and prints a
+line if a newer version is published. `version.txt` may use either form.
 `off` skips that request. A missing or invalid value uses the default.
 
 `logging_policy.ini` also defines the temporary `experimental` switch and the

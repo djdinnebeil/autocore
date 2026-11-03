@@ -168,6 +168,9 @@
     <ClCompile Include="..\shared\defaults.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\version.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\shared\installed_version.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>

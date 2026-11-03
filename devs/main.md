@@ -94,8 +94,11 @@ process only.
 13. If `[auto_core] check_for_updates` is `on`, retrieve
    `https://raw.githubusercontent.com/djdinnebeil/autocore/main/version.txt`
    once on a background thread. A missing or invalid value uses `on`. The
-   request uses a short timeout and does not delay the message loop. A newer
-   `MAJOR.MINOR.PATCH` prints
+   request uses a short timeout and does not delay the message loop. Published
+   text is `MAJOR.MINOR.PATCH` during incremental work. The finalized release
+   of that line is `MAJOR.MINOR`, and it is newer than every patch with the
+   same major and minor. Major and minor are compared first, so `1.0` is older
+   than `1.1` and `1.1.0`. A newer published version prints
    `[Auto Core] Update available: <installed> -> <latest>`. The installed
    version is the compiled constant. The same version,
    a newer installed version, and any failed request print nothing. `off`

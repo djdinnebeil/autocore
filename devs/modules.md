@@ -143,9 +143,10 @@ Protocol, configuration, and persistent-state relationships are not copied onto 
 | `app/main/runtime/test_commands.ixx` | `auto_core.main.test_commands` | Main host | Temporary diagnostic keymap commands. | executable-internal | command_registry, test_commands::runtime_commands | std only | prefixed match | Observed | pending |
 | `app/main/shared/config_support.ixx` | `auto_core.main.config_support` | Main shared | Shared helpers for Main `_config.exe` programs. | Main shared | ac::main::config | auto_core.core.paths | prefixed match | Observed | pending |
 | `app/main/shared/defaults.ixx` | `auto_core.main.defaults` | Main shared | Portable defaults for Main `_config.exe` files. | Main shared | ac::main::defaults | std only | prefixed match | Observed | pending |
+| `app/main/shared/version.ixx` | `auto_core.version` | Main shared | Compiled Auto Core version. | Main shared | ac::version | std only | prefixed match | Observed | pending |
 | `app/shared/command_registry.ixx` | `command_registry` | shared contract | Stores and resolves commands available to runtime configuration. | shared contract | command_registry | std only | bare match | Observed | pending |
 | `app/shared/component_settings.ixx` | `component_settings` | shared contract | Shared menu for `<name>_settings.exe`. | shared contract | ac::component_settings | auto_core.core.component, auto_core.core.logging.config, auto_core.core.paths, components_editor_request | bare match | Observed | pending |
 | `app/shared/components_editor_request.ixx` | `components_editor_request` | shared contract | Launch `components_editor.exe` from a child helper. | shared contract | ac::config::components_request | auto_core.core.paths | bare match | Observed | pending |
 | `app/shared/protocols/component_protocol.ixx` | `component_protocol` | shared contract | Shared Auto Core generic component control protocol (v1). | shared contract | ac::protocol::component | std only | bare match | Observed | pending |
 
-122 production modules.
+123 production modules.

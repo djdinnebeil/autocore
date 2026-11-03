@@ -9,7 +9,6 @@ import std;
 export namespace ac::main::defaults {
 
     constexpr bool auto_core_logging = true;
-    constexpr std::string_view auto_core_version = "1.0";
     constexpr bool auto_core_check_for_updates = true;
 
     constexpr bool startup_show_day_of_week = true;
@@ -83,11 +82,12 @@ export namespace ac::main::defaults {
 
     [[nodiscard]]
     inline std::string ini_for_auto_core(
+        const std::string_view version,
         const bool logging = auto_core_logging,
         const bool check_for_updates = auto_core_check_for_updates
     ) {
         return std::string {"[auto_core]\nversion = "} +
-            std::string {auto_core_version} +
+            std::string {version} +
             "\ncheck_for_updates = " +
             (check_for_updates ? "on" : "off") +
             "\nlogging = " +

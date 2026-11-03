@@ -16,6 +16,7 @@ import auto_core.core.paths;
 import auto_core.core.thread;
 import auto_core.main.application;
 import auto_core.main.defaults;
+import auto_core.version;
 
 namespace {
 
@@ -28,9 +29,32 @@ namespace {
     struct Version {
         unsigned long major = 0;
         unsigned long minor = 0;
-        unsigned long patch = 0;
+        std::optional<unsigned long> patch;
 
-        friend auto operator<=>(const Version&, const Version&) = default;
+        // An empty patch is a finalized MAJOR.MINOR release. It is newer than
+        // every MAJOR.MINOR.PATCH release with the same major and minor.
+        [[nodiscard]]
+        friend std::strong_ordering operator<=>(
+            const Version& left,
+            const Version& right
+        ) noexcept {
+            if (const auto major = left.major <=> right.major; major != 0) {
+                return major;
+            }
+            if (const auto minor = left.minor <=> right.minor; minor != 0) {
+                return minor;
+            }
+            if (!left.patch.has_value() && !right.patch.has_value()) {
+                return std::strong_ordering::equal;
+            }
+            if (!left.patch.has_value()) {
+                return std::strong_ordering::greater;
+            }
+            if (!right.patch.has_value()) {
+                return std::strong_ordering::less;
+            }
+            return *left.patch <=> *right.patch;
+        }
     };
 
     struct InstalledVersion {
@@ -76,7 +100,7 @@ namespace {
         Version version;
         const char* cursor = trimmed.data();
         const char* const end = trimmed.data() + trimmed.size();
-        const auto read_part = [&](unsigned long& part, const bool last) {
+        const auto read_number = [&](unsigned long& part) {
             if (cursor == end ||
                 !std::isdigit(static_cast<unsigned char>(*cursor))) {
                 return false;
@@ -86,21 +110,30 @@ namespace {
                 return false;
             }
             cursor = parsed.ptr;
-            if (last) {
-                return cursor == end;
-            }
-            if (cursor == end || *cursor != '.') {
-                return false;
-            }
-            ++cursor;
             return true;
         };
 
-        if (!read_part(version.major, false) ||
-            !read_part(version.minor, false) ||
-            !read_part(version.patch, true)) {
+        if (!read_number(version.major) ||
+            cursor == end ||
+            *cursor != '.') {
             return std::nullopt;
         }
+        ++cursor;
+        if (!read_number(version.minor)) {
+            return std::nullopt;
+        }
+        if (cursor == end) {
+            return version;
+        }
+        if (*cursor != '.') {
+            return std::nullopt;
+        }
+        ++cursor;
+        unsigned long patch = 0;
+        if (!read_number(patch) || cursor != end) {
+            return std::nullopt;
+        }
+        version.patch = patch;
         return version;
     }
 
@@ -124,11 +157,11 @@ namespace {
     [[nodiscard]]
     InstalledVersion read_installed_version() {
         const auto fallback = parse_version(
-            ac::main::defaults::auto_core_version
+            ac::version::auto_core_version
         );
         InstalledVersion installed {
             .version = *fallback,
-            .text = std::string {ac::main::defaults::auto_core_version},
+            .text = std::string {ac::version::auto_core_version},
             .check_for_updates = ac::main::defaults::auto_core_check_for_updates,
         };
 
