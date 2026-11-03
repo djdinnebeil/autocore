@@ -9,7 +9,7 @@ import std;
 export namespace ac::main::defaults {
 
     constexpr bool auto_core_logging = true;
-    constexpr std::string_view auto_core_version = "1.0.0";
+    constexpr std::string_view auto_core_version = "1.0";
     constexpr bool auto_core_check_for_updates = true;
 
     constexpr bool startup_show_day_of_week = true;
