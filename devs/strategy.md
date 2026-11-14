@@ -76,7 +76,7 @@ Detailed output semantics belong in `devs/building.md`. Detailed architecture be
 
 ## Locked: component architecture
 
-A normal component satisfies `ac.component.v1`.
+A normal component satisfies `ac.component.v2`.
 
 Main must not require compile-time knowledge of a normal component.
 

@@ -1,3 +1,6 @@
+module;
+#include "../../../core/taskbar/activation_catalog_description.hpp"
+
 module taskbar_commands;
 
 import std;
@@ -45,11 +48,17 @@ command_registry::Registry create_taskbar_command_registry() {
 
     registry.add(
         std::string {commands::activate_auto_core},
-        &::activate_auto_core
+        &::activate_auto_core,
+        ac::taskbar::activation_catalog_description(
+            commands::activate_auto_core,
+            "auto_core",
+            {}
+        )
     );
     registry.add(
         std::string {commands::refresh_taskbar_positions},
-        &::refresh_taskbar_positions
+        &::refresh_taskbar_positions,
+        "Recalculates taskbar Win+number positions."
     );
 
     return registry;

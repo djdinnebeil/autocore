@@ -2,7 +2,7 @@
  * \file devices_protocol.ixx
  * \brief Private request from `spotify_ac.exe --editor` to `spotify_ac.exe`.
  *
- * This is not `ac.component.v1` and it is not a keymap command.
+ * This is not `ac.component.v2` and it is not a keymap command.
  */
 export module spotify_devices_protocol;
 

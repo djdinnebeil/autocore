@@ -35,7 +35,8 @@ static command_registry::Registry create_runtime_command_registry() {
     taskbar_runtime_commands::register_with(registry);
     registry.add(
         "activate_firefox_or_open_reddit",
-        &activate_firefox_or_open_reddit
+        &activate_firefox_or_open_reddit,
+        "Opens Reddit when Firefox is in front; otherwise activates Firefox."
     );
 
     return registry;
@@ -55,23 +56,20 @@ static KeymapSettings keymap_settings() {
     return { ac::config::core_settings().unmapped_key };
 }
 
-static std::string autocomplete_contents(
+static std::string catalog_contents(
     const command_registry::Registry& registry
 ) {
-    std::vector<std::string> values = registry.autocomplete_values();
-    std::ranges::sort(values);
+    const std::vector<std::string> lines = registry.catalog_lines();
 
-    std::size_t required_size = values.size();
-
-    for (const std::string& value : values) {
-        required_size += value.size();
+    std::size_t required_size = lines.size();
+    for (const std::string& line : lines) {
+        required_size += line.size();
     }
 
     std::string contents;
     contents.reserve(required_size);
-
-    for (const std::string& value : values) {
-        contents += value;
+    for (const std::string& line : lines) {
+        contents += line;
         contents += '\n';
     }
 
@@ -235,7 +233,7 @@ static bool refresh_keymap_commands(
 
     return replace_text_file(
         destination,
-        autocomplete_contents(registry),
+        catalog_contents(registry),
         "Failed to create temporary keymap command list",
         "Failed to write temporary keymap command list",
         "Failed to replace keymap command list"
@@ -333,9 +331,14 @@ static bool set_keymap_from_stream(
     std::string line;
     std::size_t configured_entries = 0;
 
+    bool in_commands = false;
     while (std::getline(config_file, line)) {
-        if (ac::keymap::map_file::is_ignored_line(
-                ac::keymap::map_file::trim(line))) {
+        const auto trimmed = ac::keymap::map_file::trim(line);
+        if (ac::keymap::map_file::is_section_header(trimmed)) {
+            in_commands = ac::keymap::map_file::is_commands_header(trimmed);
+            continue;
+        }
+        if (in_commands || ac::keymap::map_file::is_ignored_line(trimmed)) {
             continue;
         }
 

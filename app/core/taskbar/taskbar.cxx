@@ -10,6 +10,7 @@ module;
 #include <shellapi.h>
 #include <shobjidl.h>
 #include <wrl/client.h>
+#include "activation_catalog_description.hpp"
 
 module auto_core.taskbar;
 
@@ -84,6 +85,7 @@ namespace {
 
     struct ApplicationConfiguration {
         std::string taskbar_application_id;
+        std::string display_name;
         std::vector<std::string> activation_commands;
         std::wstring fallback_executable_path;
         MultiWindowBehavior multi_window {MultiWindowBehavior::one_shot};
@@ -283,6 +285,9 @@ namespace {
                 !setting.empty()) {
                 application = normalized_application_key(setting);
             }
+            else if (section == "application" && key == "display_name") {
+                definition.display_name = setting;
+            }
             else if (section == "taskbar" &&
                 key == "application_id") {
                 definition.taskbar_application_id = setting;
@@ -321,6 +326,9 @@ namespace {
             if (!definition.taskbar_application_id.empty()) {
                 configured.taskbar_application_id =
                     std::move(definition.taskbar_application_id);
+            }
+            if (!definition.display_name.empty()) {
+                configured.display_name = std::move(definition.display_name);
             }
             if (!definition.activation_commands.empty()) {
                 configured.activation_commands =
@@ -1452,18 +1460,45 @@ namespace ac::taskbar {
         return commands;
     }
 
-    std::vector<std::string> configured_activation_commands_from_disk() {
+    std::vector<ConfiguredActivationCatalogEntry>
+    configured_activation_catalog_from_disk() {
         Configuration config;
         load_taskbar_applications(config);
-        std::vector<std::string> names;
+        std::vector<ConfiguredActivationCatalogEntry> entries;
         for (const auto& [application, definition] : config.applications) {
             for (const std::string& command : definition.activation_commands) {
-                if (std::ranges::find(names, command) == names.end()) {
-                    names.push_back(command);
+                if (std::ranges::find(
+                        entries,
+                        command,
+                        &ConfiguredActivationCatalogEntry::command
+                    ) != entries.end()) {
+                    continue;
                 }
+                entries.push_back(ConfiguredActivationCatalogEntry {
+                    command,
+                    activation_catalog_description(
+                        command,
+                        application,
+                        definition.display_name
+                    )
+                });
             }
         }
-        std::ranges::sort(names);
+        std::ranges::sort(
+            entries,
+            {},
+            &ConfiguredActivationCatalogEntry::command
+        );
+        return entries;
+    }
+
+    std::vector<std::string> configured_activation_commands_from_disk() {
+        const auto catalog = configured_activation_catalog_from_disk();
+        std::vector<std::string> names;
+        names.reserve(catalog.size());
+        for (const ConfiguredActivationCatalogEntry& entry : catalog) {
+            names.push_back(entry.command);
+        }
         return names;
     }
 

@@ -6,7 +6,8 @@
  * other side is empty or unknown. Unknown expressions log at load and again
  * on press of that side. A blank binding (`key =`), `primary | secondary`, and omitted keys stay out of the map (the
  * physical key passes through); after a successful load they print "hasn't
- * been set" when `[warnings] unmapped_key` is `on`. `auto_core_keymap.exe --seed`
+ * been set" when `[warnings] unmapped_key` is `on`. A `[commands]` section is
+ * ignored until the next section header. `auto_core_keymap.exe --seed`
  * writes `keymap.map` when missing. File-load failure installs a two-key
  * emergency map in memory and does not write the file.
  */

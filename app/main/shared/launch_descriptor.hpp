@@ -174,4 +174,17 @@ namespace ac::main::launch_descriptor {
         return result;
     }
 
+    [[nodiscard]]
+    inline std::string_view catalog_description(
+        const std::string_view command
+    ) noexcept {
+        if (command == "launch_dash") {
+            return "Starts the Dash session in a new console.";
+        }
+        if (command == "report_and_empty_recycle_bin") {
+            return "Empties the Recycle Bin and inserts a report according to the mode in config/components/slash.ini.";
+        }
+        return {};
+    }
+
 } // namespace ac::main::launch_descriptor

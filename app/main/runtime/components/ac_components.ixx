@@ -2,7 +2,7 @@
  * \file ac_components.ixx
  * \brief Generic Main-side host for Auto Core boot-time components.
  *
- * A normal component is an executable that satisfies `ac.component.v1`.
+ * A normal component is an executable that satisfies `ac.component.v2`.
  * Main must not know that component at compile time.
  */
 export module auto_core.main.components;
@@ -14,7 +14,7 @@ export namespace ac::main::components {
     class Session;
 
     /**
-     * \brief Starts enabled generic v1 components from `components.list`
+     * \brief Starts enabled generic components from `components.list`
      *        `[components]`.
      * \return An RAII session. `shutdown()` (from `close_program()`) stops
      *         children in reverse successful-start order. Names with a

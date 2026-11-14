@@ -38,6 +38,8 @@ std::string mappings_seed() {
             contents += ac::keymap::map_file::format_line(key.name, {}, {});
         }
     }
+    ac::keymap::map_file::ensure_blank_line(contents, "\n");
+    contents += "[commands]\n";
     return contents;
 }
 
@@ -206,4 +208,22 @@ int seed_keymap() {
     created.handle = INVALID_HANDLE_VALUE;
     keymap_editor.log_debug("Wrote {}", path.string());
     return 0;
+}
+
+int seed_keymap_if_missing() {
+    const auto path = ac::paths::keymap_file();
+    std::error_code error;
+    const bool exists = std::filesystem::exists(path, error);
+    if (error) {
+        keymap_editor.print(
+            "Failed to inspect {}: {}",
+            path.string(),
+            error.message()
+        );
+        return 1;
+    }
+    if (exists) {
+        return 0;
+    }
+    return seed_keymap();
 }

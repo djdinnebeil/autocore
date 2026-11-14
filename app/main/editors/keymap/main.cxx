@@ -2,9 +2,10 @@
  * \file main.cxx
  * \brief Process entry for auto_core_keymap.exe.
  *
- * No arguments open the keymap menu. `--seed` creates a missing
- * `keymap.map`. `--build` publishes the command catalogs. The two
- * operations are separate in-process calls.
+ * No arguments seed a missing `keymap.map`, build the command catalogs and
+ * `[commands]` section, then open the keymap menu. `--seed` creates a missing
+ * `keymap.map`. `--build` publishes the command catalogs and updates the
+ * final `[commands]` section. Seed and build remain separate in-process calls.
  */
 
 import std;
@@ -14,6 +15,7 @@ import auto_core.main.config_support;
 import <iostream>;
 
 int seed_keymap();
+int seed_keymap_if_missing();
 int build_keymap_commands();
 
 namespace {
@@ -24,29 +26,51 @@ void print_usage(std::ostream& output) {
     output << "Usage: auto_core_keymap.exe [--seed | --build | --help]\n";
 }
 
+/**
+ * \brief Seeds a missing map, then builds catalogs and `[commands]`.
+ *
+ * `seed_keymap()` does not take the build lock. The build acquires that lock
+ * once. This function does not call itself.
+ */
+[[nodiscard]]
+int rebuild_keymap() {
+    if (seed_keymap_if_missing() != 0) {
+        return 1;
+    }
+    return build_keymap_commands();
+}
+
 [[nodiscard]]
 int run_menu() {
+    bool refresh = true;
     while (true) {
+        if (refresh) {
+            std::cout << "Keymap commands\n";
+            const int result = rebuild_keymap();
+            std::cout << '\n';
+            if (result == 0) {
+                std::cout << "Keymap commands successfully built.\n";
+            }
+            else {
+                std::cout << "Keymap commands could not be built.\n";
+            }
+            refresh = false;
+        }
         std::cout
-            << '\n'
-            << "Keymap\n"
             << "\n"
-            << "1. Create keymap if missing\n"
-            << "2. Build command list\n"
-            << "3. Exit\n"
+            << "1. Rebuild keymap\n"
+            << "2. Exit\n"
             << "\n"
-            << "Choice [3]: ";
+            << "Choice [2]: ";
         const auto line = cfg::read_line();
-        if (!line || line->empty() || *line == "3") {
+        if (!line || line->empty() || *line == "2") {
             return 0;
         }
         if (*line == "1") {
-            return seed_keymap();
+            refresh = true;
+            continue;
         }
-        if (*line == "2") {
-            return build_keymap_commands();
-        }
-        std::cout << "Enter 1, 2, or 3.\n";
+        std::cout << "Enter 1 or 2.\n";
     }
 }
 

@@ -34,6 +34,8 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .menu_label = "Print choice",
         .filename = "make_print_choice.list",
         .autocomplete = R"(make_print_choice("", false))",
+        .catalog_description =
+            "A Journal factory function that creates a numbered print-choice command.",
     },
     {
         .id = FactoryId::insert_text,
@@ -41,6 +43,8 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .menu_label = "Insert text",
         .filename = "print_and_insert_into_journal.list",
         .autocomplete = R"(print_and_insert_into_journal(""))",
+        .catalog_description =
+            "A Journal factory function that creates a command which prints and inserts fixed text.",
     },
     {
         .id = FactoryId::roll_dice,
@@ -48,6 +52,8 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .menu_label = "Roll dice",
         .filename = "roll_dice.list",
         .autocomplete = "roll_dice(1, 6)",
+        .catalog_description =
+            "A Journal factory function that creates a command which rolls dice and inserts the result.",
     },
 };
 
@@ -890,6 +896,61 @@ command_registry::Action materialize(const AliasDefinition& definition) {
     return {};
 }
 
+std::string describe_print_choice(const PrintChoiceArguments& choice) {
+    const std::string name =
+        command_registry::normalize_catalog_description(choice.name);
+    if (name.empty()) {
+        return {};
+    }
+    return std::format(
+        "Prompts for an upper bound and inserts \"{} selects N.\", where N ranges from {} through that bound.",
+        name,
+        choice.lower_bound
+    );
+}
+
+bool ends_with_sentence_punctuation(const std::string_view text) {
+    if (text.empty()) {
+        return false;
+    }
+    const char last = text.back();
+    return last == '.' || last == '!' || last == '?';
+}
+
+std::string describe_insert_text(const InsertTextArguments& insert) {
+    const std::string text =
+        command_registry::normalize_catalog_description(insert.text);
+    if (text.empty()) {
+        return {};
+    }
+    std::string description = "Prints and inserts \"" + text + "\"";
+    if (!ends_with_sentence_punctuation(text)) {
+        description.push_back('.');
+    }
+    return description;
+}
+
+std::string describe_dice(const DiceArguments& rolled) {
+    return std::format(
+        "Rolls {}d{} and inserts each roll and the total.",
+        rolled.number_of_dice,
+        rolled.number_of_sides
+    );
+}
+
+std::string alias_description(const AliasDefinition& definition) {
+    if (const DiceArguments* rolled = dice(definition)) {
+        return describe_dice(*rolled);
+    }
+    if (const PrintChoiceArguments* choice = print_choice(definition)) {
+        return describe_print_choice(*choice);
+    }
+    if (const InsertTextArguments* insert = insert_text(definition)) {
+        return describe_insert_text(*insert);
+    }
+    return {};
+}
+
 void register_factory_commands(command_registry::Registry& registry) {
     for (const FactoryDescriptor& descriptor : factory_descriptors) {
         registry.add_factory(
@@ -904,7 +965,8 @@ void register_factory_commands(command_registry::Registry& registry) {
                 definition.arguments = std::move(*parsed);
                 return materialize(definition);
             },
-            std::string {descriptor.autocomplete}
+            std::string {descriptor.autocomplete},
+            std::string {descriptor.catalog_description}
         );
     }
 }
@@ -936,7 +998,11 @@ void load_alias_commands(command_registry::Registry& registry) {
                 );
                 continue;
             }
-            registry.add(definition.alias, std::move(action));
+            registry.add(
+                definition.alias,
+                std::move(action),
+                alias_description(definition)
+            );
             accepted.push_back(definition);
         }
     }

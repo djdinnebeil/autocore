@@ -3,8 +3,14 @@
  * \brief Builds the production component keymap command catalogs.
  *
  * Called in-process by auto_core_keymap.exe. This file has no process entry.
+ * A catalog line is a command name, or `name - description` when the
+ * description is non-empty. The same names, without descriptions, fill the
+ * final `[commands]` section of `keymap.map`.
  */
+#include "../../runtime/keyboard/keymap_map_detail.hpp"
+
 import std;
+import command_registry;
 
 import auto_core.core.paths;
 
@@ -31,9 +37,13 @@ constexpr Provider providers[] {
     {"writer", L"writer_ac.exe", "writer.keymap_commands.txt"},
 };
 
+struct ExportedCommand {
+    std::string name;
+    std::string description;
+};
+
 struct CapturedExport {
-    std::string provider;
-    std::vector<std::string> names;
+    std::vector<ExportedCommand> commands;
 };
 
 [[nodiscard]]
@@ -52,15 +62,16 @@ bool is_command_name(const std::string_view name) {
 }
 
 [[nodiscard]]
-std::optional<std::vector<std::string>> parse_export(
+std::optional<std::vector<ExportedCommand>> parse_export(
     const std::string_view text,
     std::string& failure
 ) {
     if (text.empty()) {
-        return std::vector<std::string> {};
+        return std::vector<ExportedCommand> {};
     }
 
-    std::vector<std::string> names;
+    constexpr std::string_view separator = " - ";
+    std::vector<ExportedCommand> commands;
     std::size_t offset = 0;
     while (offset < text.size()) {
         const std::size_t newline = text.find('\n', offset);
@@ -73,22 +84,36 @@ std::optional<std::vector<std::string>> parse_export(
         if (!line.empty() && line.back() == '\r') {
             line.remove_suffix(1);
         }
-        if (line.empty() || !is_command_name(line)) {
-            failure = line.empty()
+        const auto split = line.find(separator);
+        const std::string_view name = split == std::string_view::npos
+            ? line
+            : line.substr(0, split);
+        const std::string_view description = split == std::string_view::npos
+            ? std::string_view {}
+            : line.substr(split + separator.size());
+        if (name.empty() || !is_command_name(name)) {
+            failure = name.empty()
                 ? "export contained an empty line"
                 : "export contained an invalid command name";
             return std::nullopt;
         }
-        names.emplace_back(line);
+        commands.push_back(ExportedCommand {
+            std::string {name},
+            std::string {description}
+        });
         if (newline == std::string_view::npos) {
             break;
         }
         offset = newline + 1;
     }
 
-    std::vector<std::string> ordered = names;
-    std::ranges::sort(ordered);
-    if (std::ranges::adjacent_find(ordered) != ordered.end()) {
+    std::vector<ExportedCommand> ordered = commands;
+    std::ranges::sort(ordered, {}, &ExportedCommand::name);
+    if (std::ranges::adjacent_find(
+            ordered,
+            {},
+            &ExportedCommand::name
+        ) != ordered.end()) {
         failure = "export contained a duplicate command name";
         return std::nullopt;
     }
@@ -229,7 +254,7 @@ std::optional<CapturedExport> export_provider(const Provider& provider) {
         std::cerr << provider.name << " export failed: " << failure << '\n';
         return std::nullopt;
     }
-    return CapturedExport {std::string {provider.name}, std::move(*names)};
+    return CapturedExport {std::move(*names)};
 }
 
 struct OwnedTemporary {
@@ -336,27 +361,11 @@ bool write_catalog_temporary(
 }
 
 [[nodiscard]]
-bool replace_catalog(
+bool publish_text(
     const std::filesystem::path& destination,
-    const std::vector<std::string>& names
+    const std::string_view contents,
+    const bool replace_existing
 ) {
-    std::string contents;
-    for (const std::string& name : names) {
-        contents += name;
-        contents += '\n';
-    }
-
-    std::error_code directory_error;
-    std::filesystem::create_directories(
-        destination.parent_path(),
-        directory_error
-    );
-    if (directory_error) {
-        std::cerr << "Failed to create " << destination.parent_path().string()
-                  << ": " << directory_error.message() << '\n';
-        return false;
-    }
-
     OwnedTemporary temporary;
     if (!create_catalog_temporary(destination, temporary)) {
         return false;
@@ -381,19 +390,290 @@ bool replace_catalog(
     }
     temporary.handle = INVALID_HANDLE_VALUE;
 
-    if (!MoveFileExW(
-            temporary.path.c_str(),
-            destination.c_str(),
-            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
-        )) {
+    const DWORD flags = replace_existing
+        ? MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH
+        : MOVEFILE_WRITE_THROUGH;
+    if (!MoveFileExW(temporary.path.c_str(), destination.c_str(), flags)) {
+        const DWORD move_error = GetLastError();
         const auto failed_path = temporary.path;
         remove_owned_temporary(temporary);
-        std::cerr << "Failed to replace " << destination.string()
-                  << " from " << failed_path.string() << '\n';
+        if (!replace_existing && move_error == ERROR_ALREADY_EXISTS) {
+            std::cerr << destination.string()
+                      << " already exists. keymap.map was not changed.\n";
+        }
+        else if (replace_existing) {
+            std::cerr << "Failed to replace " << destination.string()
+                      << " from " << failed_path.string() << '\n';
+        }
+        else {
+            std::cerr << "Failed to publish " << destination.string()
+                      << " from " << failed_path.string() << '\n';
+        }
         return false;
     }
     temporary.path.clear();
     return true;
+}
+
+[[nodiscard]]
+bool replace_catalog(
+    const std::filesystem::path& destination,
+    const std::vector<ExportedCommand>& commands
+) {
+    std::string contents;
+    for (const ExportedCommand& command : commands) {
+        contents += command_registry::format_catalog_line(
+            command.name,
+            command.description
+        );
+        contents += '\n';
+    }
+
+    std::error_code directory_error;
+    std::filesystem::create_directories(
+        destination.parent_path(),
+        directory_error
+    );
+    if (directory_error) {
+        std::cerr << "Failed to create " << destination.parent_path().string()
+                  << ": " << directory_error.message() << '\n';
+        return false;
+    }
+
+    return publish_text(destination, contents, true);
+}
+
+struct TextLine {
+    std::size_t begin = 0;
+    std::size_t content_end = 0;
+};
+
+[[nodiscard]]
+std::vector<TextLine> split_lines(const std::string_view text) {
+    std::vector<TextLine> lines;
+    std::size_t index = 0;
+    while (index < text.size()) {
+        TextLine line;
+        line.begin = index;
+        const auto newline = text.find('\n', index);
+        if (newline == std::string_view::npos) {
+            line.content_end = text.size();
+            lines.push_back(line);
+            break;
+        }
+        line.content_end = newline;
+        if (line.content_end > line.begin && text[line.content_end - 1] == '\r') {
+            --line.content_end;
+        }
+        lines.push_back(line);
+        index = newline + 1;
+    }
+    return lines;
+}
+
+[[nodiscard]]
+std::string_view line_text(
+    const std::string_view text,
+    const TextLine& line
+) {
+    return text.substr(line.begin, line.content_end - line.begin);
+}
+
+[[nodiscard]]
+std::string command_section(
+    const std::vector<std::string>& names,
+    const std::string_view newline
+) {
+    std::string section = "[commands]";
+    section += newline;
+    for (const std::string& name : names) {
+        section += name;
+        section += newline;
+    }
+    return section;
+}
+
+[[nodiscard]]
+std::string default_keymap_map(const std::vector<std::string>& names) {
+    std::string contents =
+        "# Key binding: key = primary | secondary\n"
+        "# Example: numpad_1 = activate_auto_core | close_program\n"
+        "# Leave a binding blank to return control to the OS\n"
+        "\n"
+        "[keymap: concise]\n";
+    contents += ac::keymap::map_file::format_line(
+        "numpad_0",
+        "activate_function_key",
+        "deactivate_function_key"
+    );
+    contents += ac::keymap::map_file::format_line(
+        "numpad_1",
+        "activate_auto_core",
+        "close_program"
+    );
+    constexpr std::string_view blank_keys[] {
+        "numpad_2",
+        "numpad_3",
+        "numpad_4",
+        "numpad_5",
+        "numpad_6",
+        "numpad_7",
+        "numpad_8",
+        "numpad_9",
+        "numpad_multiply",
+        "numpad_add",
+        "numpad_decimal",
+        "numpad_enter",
+        "numpad_subtract",
+        "numpad_divide",
+        "media_play_pause",
+        "browser_home",
+        "launch_mail",
+        "launch_calculator",
+    };
+    for (const std::string_view key : blank_keys) {
+        contents += ac::keymap::map_file::format_line(key, {}, {});
+    }
+    ac::keymap::map_file::ensure_blank_line(contents, "\n");
+    contents += command_section(names, "\n");
+    return contents;
+}
+
+[[nodiscard]]
+bool compose_keymap_map(
+    const std::string& existing,
+    const std::vector<std::string>& names,
+    std::string& updated
+) {
+    if (existing.find('\0') != std::string::npos) {
+        std::cerr << "keymap.map contains a NUL byte. "
+                     "keymap.map was not changed.\n";
+        return false;
+    }
+
+    const std::string newline =
+        existing.find("\r\n") == std::string::npos ? "\n" : "\r\n";
+    const auto lines = split_lines(existing);
+    std::vector<std::size_t> commands_headers;
+    for (std::size_t index = 0; index < lines.size(); ++index) {
+        const auto trimmed = ac::keymap::map_file::trim(
+            line_text(existing, lines[index])
+        );
+        if (ac::keymap::map_file::is_commands_header(trimmed)) {
+            commands_headers.push_back(index);
+        }
+    }
+
+    if (commands_headers.size() > 1) {
+        std::cerr << "keymap.map contains more than one [commands] section. "
+                     "keymap.map was not changed.\n";
+        return false;
+    }
+
+    std::string prefix;
+    if (commands_headers.empty()) {
+        prefix = existing;
+        if (!prefix.empty() && prefix.back() != '\n') {
+            prefix += newline;
+        }
+    }
+    else {
+        const std::size_t header = commands_headers.front();
+        for (std::size_t index = header + 1; index < lines.size(); ++index) {
+            const auto text = line_text(existing, lines[index]);
+            const auto trimmed = ac::keymap::map_file::trim(text);
+            if (ac::keymap::map_file::is_section_header(trimmed)) {
+                std::cerr << "keymap.map has a section after [commands]. "
+                             "keymap.map was not changed.\n";
+                return false;
+            }
+            if (ac::keymap::map_file::parse_line(text)) {
+                std::cerr << "keymap.map has a binding inside [commands]. "
+                             "keymap.map was not changed.\n";
+                return false;
+            }
+        }
+        prefix = existing.substr(0, lines[header].begin);
+    }
+
+    ac::keymap::map_file::ensure_blank_line(prefix, newline);
+    updated = std::move(prefix);
+    updated += command_section(names, newline);
+    return true;
+}
+
+[[nodiscard]]
+std::optional<std::string> read_keymap_bytes(
+    const std::filesystem::path& path
+) {
+    std::ifstream input {path, std::ios::binary};
+    if (!input) {
+        std::cerr << "Failed to read " << path.string()
+                  << ". keymap.map was not changed.\n";
+        return std::nullopt;
+    }
+    std::string bytes {
+        std::istreambuf_iterator<char> {input},
+        std::istreambuf_iterator<char> {}
+    };
+    if (input.bad()) {
+        std::cerr << "Failed to read " << path.string()
+                  << ". keymap.map was not changed.\n";
+        return std::nullopt;
+    }
+    return bytes;
+}
+
+[[nodiscard]]
+bool update_keymap_map(const std::vector<std::string>& names) {
+    const auto path = ac::paths::keymap_file();
+    std::error_code error;
+    const bool exists = std::filesystem::exists(path, error);
+    if (error) {
+        std::cerr << "Failed to inspect " << path.string() << ": "
+                  << error.message() << ". keymap.map was not changed.\n";
+        return false;
+    }
+    if (!exists) {
+        return publish_text(path, default_keymap_map(names), false);
+    }
+
+    error.clear();
+    if (std::filesystem::is_directory(path, error) && !error) {
+        std::cerr << path.string()
+                  << " is a directory. keymap.map was not changed.\n";
+        return false;
+    }
+    if (error) {
+        std::cerr << "Failed to inspect " << path.string() << ": "
+                  << error.message() << ". keymap.map was not changed.\n";
+        return false;
+    }
+    error.clear();
+    if (!std::filesystem::is_regular_file(path, error) || error) {
+        if (error) {
+            std::cerr << "Failed to inspect " << path.string() << ": "
+                      << error.message() << ". keymap.map was not changed.\n";
+        }
+        else {
+            std::cerr << path.string()
+                      << " is not a file. keymap.map was not changed.\n";
+        }
+        return false;
+    }
+
+    const auto existing = read_keymap_bytes(path);
+    if (!existing) {
+        return false;
+    }
+    std::string updated;
+    if (!compose_keymap_map(*existing, names, updated)) {
+        return false;
+    }
+    if (updated == *existing) {
+        return true;
+    }
+    return publish_text(path, updated, true);
 }
 
 /**
@@ -523,29 +803,37 @@ int build_keymap_commands() {
         for (std::size_t index = 0; index < exports.size(); ++index) {
             const auto destination =
                 components / providers[index].catalog_filename;
-            if (!replace_catalog(destination, exports[index].names)) {
+            if (!replace_catalog(destination, exports[index].commands)) {
                 return 1;
             }
         }
 
-        std::map<std::string, std::vector<std::string>> providers_by_name;
+        std::map<std::string, std::string> combined_commands;
         for (const CapturedExport& exported : exports) {
-            for (const std::string& name : exported.names) {
-                providers_by_name[name].push_back(exported.provider);
-            }
-        }
-        std::vector<std::string> combined;
-        combined.reserve(providers_by_name.size());
-        for (const auto& [name, sources] : providers_by_name) {
-            if (sources.size() > 1) {
-                std::cerr << name << '\n';
-                for (const std::string& source : sources) {
-                    std::cerr << "    " << source << '\n';
+            for (const ExportedCommand& command : exported.commands) {
+                const auto [existing, inserted] = combined_commands.emplace(
+                    command.name,
+                    command.description
+                );
+                if (!inserted &&
+                    existing->second.empty() &&
+                    !command.description.empty()) {
+                    existing->second = command.description;
                 }
             }
-            combined.push_back(name);
+        }
+        std::vector<ExportedCommand> combined;
+        std::vector<std::string> combined_names;
+        combined.reserve(combined_commands.size());
+        combined_names.reserve(combined_commands.size());
+        for (const auto& [name, description] : combined_commands) {
+            combined.push_back(ExportedCommand {name, description});
+            combined_names.push_back(name);
         }
         if (!replace_catalog(ac::paths::keymap_commands_file(), combined)) {
+            return 1;
+        }
+        if (!update_keymap_map(combined_names)) {
             return 1;
         }
     }

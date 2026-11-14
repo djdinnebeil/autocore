@@ -7,6 +7,8 @@
  * The scan runs first when a report needs it. The Recycle Bin is then emptied.
  * The report is copied to the clipboard and displayed after that empty succeeds.
  */
+#include "../../../main/shared/launch_descriptor.hpp"
+
 import std;
 import auto_core.core.component;
 import auto_core.core.logging.config;
@@ -399,7 +401,12 @@ namespace {
             std::string {
                 slash::commands::report_and_empty_recycle_bin.name
             },
-            &report_and_empty_recycle_bin
+            &report_and_empty_recycle_bin,
+            std::string {
+                ac::main::launch_descriptor::catalog_description(
+                    slash::commands::report_and_empty_recycle_bin.name
+                )
+            }
         );
         return registry;
     }
@@ -413,8 +420,8 @@ namespace {
 int export_keymap_commands() {
     try {
         const auto registry = create_slash_command_registry();
-        for (const std::string& name : registry.registered_names()) {
-            std::cout << name << '\n';
+        for (const std::string& line : registry.catalog_lines()) {
+            std::cout << line << '\n';
         }
     }
     catch (const std::exception& error) {

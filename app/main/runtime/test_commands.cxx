@@ -47,5 +47,9 @@ void encoding_test() {
 void test_commands::runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
-    registry.add("encoding_test", &::encoding_test);
+    registry.add(
+        "encoding_test",
+        &::encoding_test,
+        "Prints UTF-16 round-trip, invalid UTF-8, and Latin-1 conversion samples."
+    );
 }

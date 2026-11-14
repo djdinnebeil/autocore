@@ -65,13 +65,23 @@ namespace ac::keymap::map_file {
     };
 
     [[nodiscard]]
+    inline bool is_section_header(const std::string_view trimmed) noexcept {
+        return trimmed.size() >= 2 &&
+            trimmed.front() == '[' &&
+            trimmed.back() == ']';
+    }
+
+    [[nodiscard]]
+    inline bool is_commands_header(const std::string_view trimmed) noexcept {
+        return trimmed == "[commands]";
+    }
+
+    [[nodiscard]]
     inline bool is_ignored_line(const std::string_view trimmed) noexcept {
         return trimmed.empty() ||
             trimmed.starts_with(';') ||
             trimmed.starts_with('#') ||
-            (trimmed.size() >= 2 &&
-                trimmed.front() == '[' &&
-                trimmed.back() == ']');
+            is_section_header(trimmed);
     }
 
     enum class Slot { primary, secondary };
@@ -173,6 +183,51 @@ namespace ac::keymap::map_file {
         }
         return std::string {key} + " = " + std::string {primary} + " | " +
             std::string {secondary} + "\n";
+    }
+
+    /**
+     * \brief Whether `text` already ends with a blank line.
+     *
+     * A terminated whitespace-only line counts. The check looks at the end of
+     * `text`, so earlier blank lines are left unchanged.
+     */
+    [[nodiscard]]
+    inline bool ends_with_blank_line(const std::string_view text) noexcept {
+        if (text.empty() || text.back() != '\n') {
+            return false;
+        }
+        const auto last_newline = text.size() - 1;
+        const auto previous = last_newline == 0
+            ? std::string_view::npos
+            : text.rfind('\n', last_newline - 1);
+        const auto line_begin = previous == std::string_view::npos
+            ? 0
+            : previous + 1;
+        auto last_line = text.substr(line_begin, last_newline - line_begin);
+        if (!last_line.empty() && last_line.back() == '\r') {
+            last_line.remove_suffix(1);
+        }
+        return trim(last_line).empty();
+    }
+
+    /**
+     * \brief Inserts one blank line when `prefix` has content and no trailing
+     * blank line. An empty prefix is left empty. Existing trailing blank
+     * lines are preserved.
+     */
+    inline void ensure_blank_line(
+        std::string& prefix,
+        const std::string_view newline
+    ) {
+        if (prefix.empty()) {
+            return;
+        }
+        if (prefix.back() != '\n') {
+            prefix += newline;
+        }
+        if (!ends_with_blank_line(prefix)) {
+            prefix += newline;
+        }
     }
 
 } // namespace ac::keymap::map_file

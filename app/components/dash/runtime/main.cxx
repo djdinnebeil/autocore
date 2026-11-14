@@ -304,7 +304,14 @@ int export_keymap_commands() {
     auto commands = loaded->descriptor.commands;
     std::ranges::sort(commands);
     for (const std::string& name : commands) {
-        std::cout << name << '\n';
+        const std::string_view description =
+            ac::main::launch_descriptor::catalog_description(name);
+        if (description.empty()) {
+            std::cout << name << '\n';
+        }
+        else {
+            std::cout << name << " - " << description << '\n';
+        }
     }
     std::cout.flush();
     return std::cout ? 0 : 1;

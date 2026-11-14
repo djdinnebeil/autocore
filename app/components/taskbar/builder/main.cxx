@@ -857,7 +857,11 @@ namespace {
         const std::string activate = item.application.activate_command.empty()
             ? activate_commands_for_key(item.application.key)
             : item.application.activate_command;
-        output << "[application]\nkey = " << item.application.key << "\n\n"
+        output << "[application]\nkey = " << item.application.key << "\n";
+        if (!item.application.display_name.empty()) {
+            output << "display_name = " << item.application.display_name << "\n";
+        }
+        output << "\n"
                << "[taskbar]\napplication_id = "
                << item.application.application_id << "\n\n"
                << "[window]\nprocess_name = "
@@ -905,6 +909,20 @@ namespace {
             key = std::format("{}_{}", original, suffix++);
         }
         item.application.key = key;
+        if (const auto title = to_utf8(display_base(button.name))) {
+            std::string display = *title;
+            for (char& character : display) {
+                if (character == '\r' || character == '\n') {
+                    character = ' ';
+                }
+            }
+            const auto first = display.find_first_not_of(" \t");
+            if (first != std::string::npos) {
+                const auto last = display.find_last_not_of(" \t");
+                item.application.display_name =
+                    display.substr(first, last - first + 1);
+            }
+        }
         item.application.activate_command = activate_commands_for_key(key);
         item.application.application_id = button.application_id;
         item.application.fallback_executable_path = infer_fallback(

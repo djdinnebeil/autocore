@@ -174,8 +174,8 @@ int export_keymap_commands() {
 
     try {
         const auto registry = create_itunes_command_registry();
-        for (const std::string& name : registry.registered_names()) {
-            std::cout << name << '\n';
+        for (const std::string& line : registry.catalog_lines()) {
+            std::cout << line << '\n';
         }
     }
     catch (const std::exception& error) {
@@ -254,7 +254,7 @@ int run(int argc, char* argv[]) {
         if (const auto hello = ac::pipes::send_string(
                 ac_itunes_pipe,
                 ac::protocol::component::make_hello(
-                    registry.autocomplete_values()
+                    registry.hello_lines()
                 )
             ); !hello) {
             itunes_component.log_alert(

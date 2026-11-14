@@ -6,6 +6,10 @@
  * the process handle for the session. The child connects and sends one
  * length-prefixed hello. After hello, Main sends `invoke` plus one expression
  * string, or `shutdown` with no payload. Do not reuse or renumber request IDs.
+ *
+ * A catalog line is a command name, or a factory expression `name(...)`.
+ * An optional description follows that complete identity: ` - description`.
+ * The description may contain further hyphens. It is not part of the name.
  */
 export module component_protocol;
 
@@ -14,7 +18,8 @@ import std;
 export namespace ac::protocol::component {
 
     /** First line of the hello/catalog payload. */
-    inline constexpr std::string_view protocol_id = "ac.component.v1";
+    inline constexpr std::string_view protocol_id = "ac.component.v2";
+    inline constexpr std::string_view catalog_description_separator = " - ";
 
     /**
      * \brief Control requests sent by Main after hello.
@@ -57,6 +62,7 @@ export namespace ac::protocol::component {
         std::string name;
         bool accepts_arguments {};
         std::string autocomplete;
+        std::string description;
     };
 
     struct Hello {
@@ -110,6 +116,21 @@ export namespace ac::protocol::component {
     }
 
     [[nodiscard]]
+    inline bool is_command_name(const std::string_view name) noexcept {
+        if (name.empty()) {
+            return false;
+        }
+        const auto first = static_cast<unsigned char>(name.front());
+        if (first != '_' && !std::isalpha(first)) {
+            return false;
+        }
+        return std::ranges::all_of(name, [](const char character) {
+            const auto value = static_cast<unsigned char>(character);
+            return value == '_' || std::isalnum(value);
+        });
+    }
+
+    [[nodiscard]]
     inline std::optional<CatalogEntry> parse_catalog_line(
         const std::string_view line
     ) {
@@ -119,27 +140,70 @@ export namespace ac::protocol::component {
         }
 
         const auto opening = trimmed.find('(');
-        if (opening == std::string_view::npos) {
+        if (opening != std::string_view::npos) {
+            const auto name = trim_hello_line(trimmed.substr(0, opening));
+            if (!is_command_name(name)) {
+                return std::nullopt;
+            }
+
+            int depth = 0;
+            std::size_t close = std::string_view::npos;
+            for (std::size_t index = opening; index < trimmed.size(); ++index) {
+                if (trimmed[index] == '(') {
+                    ++depth;
+                }
+                else if (trimmed[index] == ')') {
+                    --depth;
+                    if (depth == 0) {
+                        close = index;
+                        break;
+                    }
+                }
+            }
+            if (close == std::string_view::npos) {
+                return std::nullopt;
+            }
+
+            const auto identity = trimmed.substr(0, close + 1);
+            const auto rest = trimmed.substr(close + 1);
+            std::string description;
+            if (!rest.empty()) {
+                if (!rest.starts_with(catalog_description_separator)) {
+                    return std::nullopt;
+                }
+                description = std::string {trim_hello_line(
+                    rest.substr(catalog_description_separator.size())
+                )};
+            }
+
             return CatalogEntry {
-                std::string {trimmed},
-                false,
-                std::string {trimmed}
+                std::string {name},
+                true,
+                std::string {identity},
+                std::move(description)
             };
         }
 
-        if (!trimmed.ends_with(')')) {
+        const auto separator = trimmed.find(catalog_description_separator);
+        const auto name = separator == std::string_view::npos
+            ? trimmed
+            : trim_hello_line(trimmed.substr(0, separator));
+        if (!is_command_name(name)) {
             return std::nullopt;
         }
 
-        const auto name = trim_hello_line(trimmed.substr(0, opening));
-        if (name.empty()) {
-            return std::nullopt;
+        std::string description;
+        if (separator != std::string_view::npos) {
+            description = std::string {trim_hello_line(
+                trimmed.substr(separator + catalog_description_separator.size())
+            )};
         }
 
         return CatalogEntry {
             std::string {name},
-            true,
-            std::string {trimmed}
+            false,
+            std::string {name},
+            std::move(description)
         };
     }
 

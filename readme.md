@@ -49,7 +49,7 @@ When `config/auto_core.ini` is missing, Auto Core launches `auto_core_settings.e
 
 Common follow-up tasks:
 
-- **Keymap:** Edit `dist/keymap.map`; use `auto_core_keymap.exe --seed` if you need to create the initial map. Existing maps are not overwritten.
+- **Keymap:** Edit `dist/keymap.map`. `auto_core_keymap.exe` with no arguments seeds a missing map, builds the command lists, and opens a menu to rebuild or exit. `--seed` does not overwrite an existing map. `--build` updates the final `[commands]` section with command names.
 - **Taskbar:** Run `taskbar_ac.exe --builder` when pinned applications or executable paths differ. See the [Taskbar manual](docs/manual/components/taskbar.md).
 - **Component settings:** Run `<name>_ac.exe --config` to create or update `config/components/<name>.ini`. A third-party component uses the same command.
 - **Spotify:** Authorize separately with `spotify_ac.exe --oauth`. See the [Spotify manual](docs/manual/components/spotify.md).

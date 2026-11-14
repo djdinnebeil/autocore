@@ -87,7 +87,10 @@ void register_text_commands(command_registry::Registry& registry) {
             [name = command.name, filename = command.filename] {
                 writer_component().log_info("{}()", name);
                 insert_catalog_file(filename);
-            }
+            },
+            command.filename.empty()
+                ? std::string {}
+                : "Inserts the contents of " + command.filename + "."
         );
     }
 }
@@ -98,53 +101,64 @@ command_registry::Registry create_writer_command_registry() {
     command_registry::Registry registry;
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_session_prompt.name},
-        writer_actions::select_and_insert_session_prompt
+        writer_actions::select_and_insert_session_prompt,
+        "Opens a menu of session_prompts.list and inserts the chosen line."
     );
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_text.name},
-        writer_actions::select_and_insert_text
+        writer_actions::select_and_insert_text,
+        "Opens a menu of text files and inserts the chosen file."
     );
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_profile_url.name},
-        writer_actions::select_and_insert_profile_url
+        writer_actions::select_and_insert_profile_url,
+        "Opens a menu of profile_urls.txt and inserts the chosen URL."
     );
     registry.add(
         std::string {ac::protocol::writer::create_new_note_in_notepad.name},
-        writer_actions::create_or_open_daily_note_in_notepad
+        writer_actions::create_or_open_daily_note_in_notepad,
+        "Opens today's note in Notepad, creating it when missing. The folder is notes_subdirectory in writer.ini."
     );
     registry.add(
         std::string {ac::protocol::writer::launch_task_list.name},
-        writer_actions::launch_task_list
+        writer_actions::launch_task_list,
+        "Opens task_list.txt in Notepad."
     );
     registry.add(
         std::string {ac::protocol::writer::print_timestamp.name},
-        writer_actions::print_timestamp
+        writer_actions::print_timestamp,
+        "Inserts the local time as HH:MM."
     );
     registry.add(
         std::string {ac::protocol::writer::print_date_iso.name},
-        writer_actions::print_date_iso
+        writer_actions::print_date_iso,
+        "Inserts the local date as YYYY-MM-DD."
     );
     registry.add(
         std::string {ac::protocol::writer::print_date_compact.name},
-        writer_actions::print_date_compact
+        writer_actions::print_date_compact,
+        "Inserts the local date as M-D-YY."
     );
     registry.add(
         std::string {
             ac::protocol::writer::print_date_iso_with_timestamp.name
         },
-        writer_actions::print_date_iso_with_timestamp
+        writer_actions::print_date_iso_with_timestamp,
+        "Inserts the local date and time as YYYY-MM-DD - HH:MM."
     );
     registry.add(
         std::string {
             ac::protocol::writer::print_date_iso_with_timestamp_w.name
         },
-        writer_actions::print_date_iso_with_timestamp_w
+        writer_actions::print_date_iso_with_timestamp_w,
+        "Inserts the local date and time as YYYY-MM-DD \u2013 HH:MM."
     );
     registry.add(
         std::string {
             ac::protocol::writer::add_brackets_around_clipboard.name
         },
-        writer_actions::add_brackets_around_clipboard
+        writer_actions::add_brackets_around_clipboard,
+        "Inserts the clipboard text wrapped in square brackets."
     );
     register_text_commands(registry);
     return registry;

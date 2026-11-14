@@ -67,6 +67,13 @@ export namespace ac::taskbar {
         std::string application;
     };
 
+    /** One activation command and its optional keymap catalog description.
+        The text comes from `activation_catalog_description.hpp`. */
+    struct ConfiguredActivationCatalogEntry {
+        std::string command;
+        std::string description;
+    };
+
     /** A process-local decision produced from an immutable application route.
         A matching window count of 2 means two or more windows. Returned only
         when the application has a native Win+position mapping. */
@@ -152,6 +159,16 @@ export namespace ac::taskbar {
      */
     [[nodiscard]] AC_API std::vector<std::string>
         configured_activation_commands_from_disk();
+
+    /**
+     * \brief Returns activation commands and catalog descriptions from maps.
+     *
+     * Uses the same loader as `configured_activation_commands_from_disk`.
+     * A repeated command name keeps the first description. The result is
+     * sorted by command name.
+     */
+    [[nodiscard]] AC_API std::vector<ConfiguredActivationCatalogEntry>
+        configured_activation_catalog_from_disk();
 
     /** Returns the optional executable launched when an application has no
         matching windows and no native Win+position mapping. This performs

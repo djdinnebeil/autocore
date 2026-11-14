@@ -35,6 +35,7 @@ namespace taskbar_windows {
     struct ApplicationConfiguration {
         std::filesystem::path path;
         std::string key;
+        std::string display_name;
         std::string application_id;
         WindowMatcher matcher;
         std::wstring fallback_executable_path;

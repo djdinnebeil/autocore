@@ -275,6 +275,9 @@ namespace {
                         launch = descriptor->descriptor
                     ] {
                         launch_from_descriptor(component, command, launch);
+                    },
+                    std::string {
+                        ac::main::launch_descriptor::catalog_description(command)
                     }
                 );
             }
@@ -1731,7 +1734,8 @@ void ac::main::components::register_with(
                             ac::main::components::invoke(component, expression);
                         };
                     },
-                    entry.autocomplete
+                    entry.autocomplete,
+                    entry.description
                 );
             }
             else {
@@ -1739,7 +1743,8 @@ void ac::main::components::register_with(
                     entry.name,
                     [component, command = entry.name] {
                         ac::main::components::invoke(component, command);
-                    }
+                    },
+                    entry.description
                 );
             }
         }

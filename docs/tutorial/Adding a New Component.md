@@ -25,7 +25,7 @@ Project creation and folder layout: `devs/new-component.md` and `devs/STRATEGY.m
 
 Put the portable INI text in `shared/defaults.ixx`. The `config/` executable owns `config/components/<name>.ini`.
 
-`runtime/main.cxx` connects as the pipe client on `ac_<name>_pipe`, sends an `ac.component.v1` hello, and handles invoke and shutdown. If the INI is missing or unreadable, the runtime uses those defaults in memory and does not create the file.
+`runtime/main.cxx` connects as the pipe client on `ac_<name>_pipe`, sends an `ac.component.v2` hello, and handles invoke and shutdown. If the INI is missing or unreadable, the runtime uses those defaults in memory and does not create the file.
 
 This step is done when the runtime speaks that host protocol and `<name>_ac.exe --config` is the only writer of the INI.
 
@@ -33,9 +33,9 @@ Protocol and defaults: `devs/development.md`.
 
 ## 3. Advertise commands
 
-Register plain command names, with no parentheses, in the hello catalog. See `app/components/slash/`.
+Register plain command names, with no parentheses, in the hello catalog. A description is optional text after ` - ` and is not part of the name. See `app/components/slash/`.
 
-After hello, Main records those names and rewrites `dist/keymap/keymap_commands.txt`. Do not add the component name to `auto_core.dll` or to Main.
+After hello, Main records those commands and rewrites `dist/keymap/keymap_commands.txt`. Do not add the component name to `auto_core.dll` or to Main.
 
 This step is done when the catalog lists the names a keymap can bind.
 

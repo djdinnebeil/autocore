@@ -208,7 +208,19 @@ void set_focus_auto_core() {
 void main_component::runtime_commands::register_with(
     command_registry::Registry& registry
 ) {
-    registry.add("close_program", &::close_program);
-    registry.add("activate_function_key", &::activate_function_key);
-    registry.add("deactivate_function_key", &::deactivate_function_key);
+    registry.add(
+        "close_program",
+        &::close_program,
+        "Shuts down hosted components using config/shutdown.ini and exits."
+    );
+    registry.add(
+        "activate_function_key",
+        &::activate_function_key,
+        "Enables the function-key layer."
+    );
+    registry.add(
+        "deactivate_function_key",
+        &::deactivate_function_key,
+        "Disables the function-key layer."
+    );
 }

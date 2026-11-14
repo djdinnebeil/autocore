@@ -127,9 +127,25 @@ keymap.map
 ```
 
 `app\auto_core_keymap.exe --seed` creates a starter `keymap.map` when the file is
-missing. Edit an existing map as a text file. Available command names are
-listed in `keymap\keymap_commands.txt`; component-specific lists are under
-`keymap\components\`. Restart Auto Core after editing the map.
+missing and does not overwrite an existing map. That starter ends with a blank
+line and an empty `[commands]` section. Edit an existing map as a text file.
+Running `auto_core_keymap.exe` with no arguments shows `Keymap commands`,
+creates a missing `keymap.map` with `--seed`, then builds the command catalogs
+and the final `[commands]` section. Success shows `Keymap commands successfully
+built.` A failure shows `Keymap commands could not be built.` The menu then
+offers `1. Rebuild keymap`, which repeats that seed-if-missing and build
+sequence, and `2. Exit`. An empty choice exits. An existing map's bindings are
+not replaced. `auto_core_keymap.exe --build` rewrites the command catalogs
+and updates the final `[commands]` section of `keymap.map` from those command
+names. Text before that section is kept. One blank line separates that text
+from `[commands]` when the text does not already end with one. `[commands]`
+contains command names only. A catalog line is a command name, or
+`name - description` when the description is non-empty. The description is
+not copied into `[commands]`.
+Available command names are listed in `keymap\keymap_commands.txt`;
+component-specific lists are under `keymap\components\`. Auto Core still
+rewrites `keymap\keymap_commands.txt` from the live registry at startup.
+Restart Auto Core after editing the map.
 
 ## Paths
 

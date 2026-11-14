@@ -51,6 +51,7 @@ struct FactoryDescriptor {
     std::string_view menu_label;
     std::string_view filename;
     std::string_view autocomplete;
+    std::string_view catalog_description;
 };
 
 enum class FieldKind {

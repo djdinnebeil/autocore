@@ -150,17 +150,36 @@ namespace {
 
 int export_keymap_commands() {
     try {
-        std::vector<std::string> names =
-            create_taskbar_command_registry().registered_names();
-        for (const std::string& command :
-             ac::taskbar::configured_activation_commands_from_disk()) {
-            if (std::ranges::find(names, command) == names.end()) {
-                names.push_back(command);
+        std::vector<command_registry::CatalogEntry> entries =
+            create_taskbar_command_registry().catalog_entries();
+        for (const ac::taskbar::ConfiguredActivationCatalogEntry& command :
+             ac::taskbar::configured_activation_catalog_from_disk()) {
+            const auto found = std::ranges::find(
+                entries,
+                command.command,
+                &command_registry::CatalogEntry::name
+            );
+            if (found == entries.end()) {
+                entries.push_back(command_registry::CatalogEntry {
+                    command.command,
+                    command.description,
+                    command.command
+                });
+            }
+            else if (!command.description.empty()) {
+                found->description = command.description;
             }
         }
-        std::ranges::sort(names);
-        for (const std::string& name : names) {
-            std::cout << name << '\n';
+        std::ranges::sort(
+            entries,
+            {},
+            &command_registry::CatalogEntry::name
+        );
+        for (const command_registry::CatalogEntry& entry : entries) {
+            std::cout << command_registry::format_catalog_line(
+                entry.name,
+                entry.description
+            ) << '\n';
         }
     }
     catch (const std::exception& error) {
@@ -334,7 +353,7 @@ int run(const int argument_count, char* arguments[]) {
 
     if (const auto ready = ac::pipes::send_string(
             control_pipe,
-            ac::protocol::component::make_hello(registry.autocomplete_values())
+            ac::protocol::component::make_hello(registry.hello_lines())
         ); !ready) {
         taskbar_component().log_alert(
             "Failed to signal taskbar readiness. Error: {}",

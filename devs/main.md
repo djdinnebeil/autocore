@@ -79,7 +79,7 @@ process only.
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
 9. Create the log directory and write Main's local session log.
-10. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled). A missing `logger.ini` is reported here. Built-in merge defaults stay in memory and the file is not created.
+10. Initialize the generic component session from `components.list` (hello on `ac.component.v2`, child process handles, and snapshot attach when `taskbar` is enabled). A missing `logger.ini` is reported here. Built-in merge defaults stay in memory and the file is not created.
 11. Load `<installation root>/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
@@ -153,11 +153,37 @@ calls `primary()` / `secondary()` with no further name lookup.
 - `numpad_0`: `activate_function_key` / `deactivate_function_key`
 - `numpad_1`: `activate_auto_core` / `close_program`
 - All other keys: blank (`key =`, unbound)
+- A blank line, then an empty `[commands]` section. `--seed` does not export command names.
 
-An existing regular `keymap.map` is never overwritten, including empty or broken
-files. `--seed` creates a missing file with `CREATE_NEW`. A directory or other
-non-file at that path is an error and is not replaced. A failed write removes
-the new file instead of reporting success.
+`--seed` does not overwrite an existing regular `keymap.map`, including an empty
+or broken file. It creates a missing file with `CREATE_NEW`. A directory or
+other non-file at that path is an error and is not replaced. A failed write
+removes the new file instead of reporting success.
+
+A no-argument `auto_core_keymap.exe` prints `Keymap commands`, runs `--seed`
+only when `keymap.map` is missing, then runs `--build`. Those two calls stay
+separate, so the build lock is acquired once. Success prints `Keymap commands
+successfully built.` Failure prints `Keymap commands could not be built.`
+The menu is `1. Rebuild keymap`, which repeats that sequence, and `2. Exit`.
+An empty choice exits. `--seed`, `--build`, and `--help` keep their direct
+dispatch.
+
+`auto_core_keymap.exe --build` keeps the name-only catalog files and fills
+`[commands]` from that same command-name collection. If `keymap.map` does not
+exist, `--build` creates the short numpad and media template, then a blank
+line and `[commands]`, and does not replace a file that appears before
+publication. An existing file keeps the bytes before the single final
+`[commands]` section. When that preserved text does not already end with a
+blank line, the update inserts one. Extra blank lines already there stay.
+The builder refuses the map update when `[commands]` is duplicated, when
+another section follows it, or when a binding line is inside it, and leaves
+the file unchanged. A failed read, or a file containing a NUL byte, is also
+left unchanged. Catalog publication and the map update are separate. A later
+failure does not roll back a file already replaced. `[commands]` is command
+names only. Each `.txt` catalog line is a command name, or `name - description` when
+that command has a description. A blank description is omitted, including
+its separator. Main's startup rewrite of `keymap/keymap_commands.txt`
+publishes those lines from the live registry.
 
 A file that cannot be opened, or that has no usable
 rows (no resolved command on either side of any key), logs and installs an
@@ -170,7 +196,9 @@ from the command registry, including names advertised by started generic
 children. Journal aliases are advertised by `journal_ac.exe` after it reads its per-factory alias files.
 
 `keymap.map` lines are `key = primary | secondary`. `[...]` headers and `;` /
-`#` comments are ignored. A `|` inside `()` or quotes is not the action
+`#` comments are ignored. A trimmed `[commands]` header starts a region the
+binding parser ignores until the next section header or the end of the file.
+Binding parsing resumes after that next header. A `|` inside `()` or quotes is not the action
 split, and a second top-level `|` is invalid. Each side is resolved on its
 own: a valid name still binds when the other is empty or unknown. The seed
 writes an unbound key as `key =`. `key =`, `key = |`, and

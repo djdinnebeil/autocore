@@ -52,8 +52,8 @@ void report_invalid_notes_subdirectory() {
 int export_keymap_commands() {
     try {
         const auto registry = create_writer_command_registry();
-        for (const std::string& name : registry.registered_names()) {
-            std::cout << name << '\n';
+        for (const std::string& line : registry.catalog_lines()) {
+            std::cout << line << '\n';
         }
     }
     catch (const std::exception& error) {
@@ -159,7 +159,7 @@ int run(int argc, char* argv[]) {
 
     if (const auto ready = ac::pipes::send_string(
             pipe, ac::protocol::component::make_hello(
-                registry.autocomplete_values()
+                registry.hello_lines()
             )
         ); !ready) {
         writer_component().log_alert(

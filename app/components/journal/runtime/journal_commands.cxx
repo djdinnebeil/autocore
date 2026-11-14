@@ -1,3 +1,6 @@
+module;
+#include "../../../core/taskbar/activation_catalog_description.hpp"
+
 module journal_commands;
 
 import std;
@@ -40,17 +43,22 @@ command_registry::Registry create_journal_command_registry(
     command_registry::Action activate_word
 ) {
     command_registry::Registry registry;
-    registry.add("activate_word", std::move(activate_word));
+    registry.add(
+        "activate_word",
+        std::move(activate_word),
+        ac::taskbar::activation_catalog_description("activate_word", "word", {})
+    );
     registry.add(
         std::string {::print_extended_timestamp.name},
-        actions::print_extended_timestamp
+        actions::print_extended_timestamp,
+        "Inserts the local time using the extended hour in extended_hour.clock."
     );
     registry.add(std::string {::print_episode_title.name}, [] {
         start_title_action(&journal_title::print_episode_title);
-    });
+    }, "Inserts the next episode title from series.db and saves the foreground document.");
     registry.add(std::string {::save_and_create_new_document.name}, [] {
         start_title_action(&journal_title::save_and_create_new_document);
-    });
+    }, "Saves the foreground document, opens a new one, and inserts an episode title when its window title changes.");
     journal::factories::register_factory_commands(registry);
     journal::factories::load_alias_commands(registry);
     return registry;
