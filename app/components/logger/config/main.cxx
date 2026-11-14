@@ -214,9 +214,11 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::logger::config {
+
+int run(const int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    logger_config.log_info("logger_config.exe started");
+    logger_config.log_info("logger_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -272,3 +274,5 @@ int main(int argc, char* argv[]) {
     }
     return run_configuration_menu();
 }
+
+} // namespace ac::logger::config

@@ -412,7 +412,7 @@ void open_folder(const std::filesystem::path& directory) {
         : std::nullopt;
     if (!stored) {
         server_editor.log_alert(
-            "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
+            "Server document_root.id is missing or invalid. Run server_ac.exe --editor to configure Server."
         );
         return;
     }
@@ -489,15 +489,17 @@ int run_menu(const std::filesystem::path& directory) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::server_app::editor {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    server_editor.log_info("server_editor.exe started");
+    server_editor.log_info("server_ac.exe --editor started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {
-        std::cerr << "Usage: server_editor.exe [--init | --seed]\n";
+        std::cerr << "Usage: server_ac.exe --editor [--init | --seed]\n";
         return 1;
     }
 
@@ -516,3 +518,5 @@ int main(int argc, char* argv[]) {
     }
     return run_menu(directory.path);
 }
+
+} // namespace ac::server_app::editor

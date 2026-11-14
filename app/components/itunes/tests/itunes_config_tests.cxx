@@ -10,7 +10,7 @@ namespace detail = itunes::config::detail;
 TEST_CASE("iTunes configuration uses component defaults", "[itunes][config][unit]") {
     const auto settings = detail::resolve({});
 
-    CHECK(settings.directory == "components/itunes");
+    CHECK(settings.directory == "data/itunes");
     CHECK(settings.auto_start);
 }
 
@@ -23,15 +23,15 @@ TEST_CASE("iTunes ini defaults omit tab_end", "[itunes][config][unit]") {
 
     CHECK(seeded.find("tab_end") == std::string::npos);
     CHECK(rewritten.find("tab_end") == std::string::npos);
-    CHECK(seeded.find("directory = components/itunes\n") != std::string::npos);
+    CHECK(seeded.find("directory = data/itunes\n") != std::string::npos);
     CHECK(seeded.find("auto_start = on\n") != std::string::npos);
 }
 
 TEST_CASE("iTunes directory keeps a non-empty stored value", "[itunes][config][unit]") {
     CHECK(detail::resolve({.directory = "D:/Music"}).directory == "D:/Music");
     CHECK(detail::resolve({.directory = "  library  "}).directory == "library");
-    CHECK(detail::resolve({.directory = ""}).directory == "components/itunes");
-    CHECK(detail::resolve({.directory = "   "}).directory == "components/itunes");
+    CHECK(detail::resolve({.directory = ""}).directory == "data/itunes");
+    CHECK(detail::resolve({.directory = "   "}).directory == "data/itunes");
 
     const detail::Settings custom {.directory = "keep-me"};
     CHECK(detail::resolve({}, custom).directory == "keep-me");
@@ -64,16 +64,17 @@ TEST_CASE("iTunes auto_start accepts only lowercase on and off", "[itunes][confi
 
 TEST_CASE("iTunes directory resolves against the installation root", "[itunes][config][unit]") {
     const std::filesystem::path root {R"(C:\Example\Auto Core)"};
-    const auto fallback = (root / "components" / "itunes").lexically_normal();
+    const auto fallback = (root / "data" / "itunes").lexically_normal();
+    const auto custom = (root / "components" / "itunes").lexically_normal();
 
     CHECK(detail::resolve_directory(std::nullopt, root) == fallback);
     CHECK(detail::resolve_directory("", root) == fallback);
     CHECK(detail::resolve_directory("   ", root) == fallback);
     CHECK(
-        detail::resolve_directory("components/itunes", root) == fallback
+        detail::resolve_directory("components/itunes", root) == custom
     );
     CHECK(
-        detail::resolve_directory(R"(components\itunes)", root) == fallback
+        detail::resolve_directory(R"(components\itunes)", root) == custom
     );
     CHECK(
         detail::resolve_directory(R"(D:\itunes-data)", root) ==

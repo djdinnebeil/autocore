@@ -6,10 +6,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_tests", "tests\logge
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger", "runtime\logger.vcxproj", "{C4E1A7B2-6D58-4F91-9A03-2B7E5C8D1F40}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_config", "config\logger_config.vcxproj", "{A9E3C6D4-B15F-4C3A-AD80-4E7F1B2C3D55}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logger_settings", "settings\logger_settings.vcxproj", "{D27D2A27-BB82-4857-8C6D-989B41541590}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,14 +19,6 @@ Global
 		{C4E1A7B2-6D58-4F91-9A03-2B7E5C8D1F40}.Debug|x64.Build.0 = Debug|x64
 		{C4E1A7B2-6D58-4F91-9A03-2B7E5C8D1F40}.Release|x64.ActiveCfg = Release|x64
 		{C4E1A7B2-6D58-4F91-9A03-2B7E5C8D1F40}.Release|x64.Build.0 = Release|x64
-		{A9E3C6D4-B15F-4C3A-AD80-4E7F1B2C3D55}.Debug|x64.ActiveCfg = Debug|x64
-		{A9E3C6D4-B15F-4C3A-AD80-4E7F1B2C3D55}.Debug|x64.Build.0 = Debug|x64
-		{A9E3C6D4-B15F-4C3A-AD80-4E7F1B2C3D55}.Release|x64.ActiveCfg = Release|x64
-		{A9E3C6D4-B15F-4C3A-AD80-4E7F1B2C3D55}.Release|x64.Build.0 = Release|x64
-		{D27D2A27-BB82-4857-8C6D-989B41541590}.Debug|x64.ActiveCfg = Debug|x64
-		{D27D2A27-BB82-4857-8C6D-989B41541590}.Debug|x64.Build.0 = Debug|x64
-		{D27D2A27-BB82-4857-8C6D-989B41541590}.Release|x64.ActiveCfg = Release|x64
-		{D27D2A27-BB82-4857-8C6D-989B41541590}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

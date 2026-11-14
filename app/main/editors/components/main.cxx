@@ -1,391 +1,128 @@
-#include "../../../core/component/components_catalog_detail.hpp"
-#include "../../../core/component/components_list_detail.hpp"
+/**
+ * \file main.cxx
+ * \brief Process entry for auto_core_components.exe.
+ *
+ * No arguments open the component menu. `--edit` synchronizes
+ * `components.list`. `--enable` and `--disable` set one listed state.
+ * `--initialize` runs component initialization. `--init` is an alias of
+ * `--initialize`. The dispatch token is removed before the role parser
+ * sees the remaining arguments.
+ */
+
+#include "components_usage.hpp"
 
 import std;
-import auto_core.core.component;
-import auto_core.core.paths;
+import auto_core.core.shell;
 import auto_core.main.config_support;
-import auto_core.main.defaults;
 
 import <iostream>;
-import auto_core.core.shell;
 
-namespace cfg = ac::main::config;
-namespace defaults = ac::main::defaults;
-namespace catalog = ac::config::components_catalog;
-namespace list = ac::config::components_list;
+int run_components_editor(int argc, char* argv[]);
+int set_component_listed_state(std::string_view name, bool enabled);
+int run_components_initialization(int argc, char* argv[]);
+
+void print_components_usage() {
+    std::cerr
+        << "Usage: auto_core_components.exe "
+           "[--edit [--seed] | --enable <name> | --disable <name> | "
+           "--initialize [--seed] | --init [--seed]]\n";
+}
 
 namespace {
 
-ac::Component components_editor {"components_editor"};
+namespace cfg = ac::main::config;
 
 [[nodiscard]]
-std::filesystem::path ini_path() {
-    return ac::paths::config_directory() / "components_policy.ini";
-}
-
-[[nodiscard]]
-std::filesystem::path list_path() {
-    return ac::paths::components_list_file();
-}
-
-[[nodiscard]]
-std::filesystem::path component_ini_path(const std::string_view name) {
-    return ac::paths::component_config_file(name);
-}
-
-[[nodiscard]]
-catalog::Settings default_settings() {
-    catalog::Settings settings;
-    settings.new_components =
-        catalog::parse_new_components(defaults::components_new_components);
-    settings.sort_components = defaults::components_sort;
-    settings.remove_missing_components = defaults::components_remove_missing;
-    return settings;
-}
-
-[[nodiscard]]
-bool write_list(const catalog::Document& document) {
-    if (!cfg::write_bytes(list_path(), catalog::format_list(document))) {
-        components_editor.print("Failed to write {}.", list_path().string());
-        return false;
-    }
-    components_editor.log_debug("Wrote {}", list_path().string());
-    return true;
-}
-
-[[nodiscard]]
-bool file_exists(const std::filesystem::path& path, std::error_code& error) {
-    return std::filesystem::exists(path, error);
-}
-
-[[nodiscard]]
-bool component_ini_exists(const std::string_view name) {
-    std::error_code error;
-    const bool present = file_exists(component_ini_path(name), error);
-    return !error && present;
-}
-
-[[nodiscard]]
-std::optional<std::string> read_text(const std::filesystem::path& path) {
-    std::ifstream input(path, std::ios::binary);
-    if (!input) {
-        components_editor.print("Failed to read {}", path.string());
-        return std::nullopt;
-    }
-    return std::string {
-        std::istreambuf_iterator<char> {input},
-        std::istreambuf_iterator<char> {}
-    };
-}
-
-[[nodiscard]]
-std::optional<catalog::Settings> load_settings() {
-    std::error_code error;
-    const bool ini_present = file_exists(ini_path(), error);
-    if (error) {
-        components_editor.print(
-            "Failed to inspect {}",
-            ini_path().string()
-        );
-        return std::nullopt;
-    }
-    if (!ini_present) {
-        return default_settings();
-    }
-    const auto text = read_text(ini_path());
-    if (!text) {
-        return std::nullopt;
-    }
-    return catalog::parse_settings(*text);
-}
-
-[[nodiscard]]
-std::optional<catalog::Document> load_document() {
-    const auto settings = load_settings();
-    if (!settings) {
-        return std::nullopt;
-    }
-    catalog::Document document;
-    document.settings = *settings;
-
-    std::error_code error;
-    const bool list_present = file_exists(list_path(), error);
-    if (error) {
-        components_editor.print(
-            "Failed to inspect {}",
-            list_path().string()
-        );
-        return std::nullopt;
-    }
-    if (!list_present) {
-        return document;
-    }
-    const auto text = read_text(list_path());
-    if (!text) {
-        return std::nullopt;
-    }
-    auto listed = catalog::parse_list(*text);
-    document.components = std::move(listed.components);
-    document.settings = *settings;
-    return document;
-}
-
-[[nodiscard]]
-std::vector<std::string> discovered_names() {
-    return list::discover_ac_executables(ac::paths::bin_directory());
-}
-
-[[nodiscard]]
-std::optional<bool> resolve_new_enabled(
-    const std::string_view name,
-    const catalog::NewComponentsPolicy policy
-) {
-    switch (policy) {
-    case catalog::NewComponentsPolicy::on:
-        return true;
-    case catalog::NewComponentsPolicy::off:
-        return false;
-    case catalog::NewComponentsPolicy::prompt:
-    default:
-        return cfg::prompt_on_off(name, true);
-    }
-}
-
-[[nodiscard]]
-bool apply_new_names(
-    catalog::Document& document,
-    const std::vector<std::string>& names
-) {
-    for (const auto& name : names) {
-        if (catalog::listed(document, name)) {
-            continue;
-        }
-        if (!component_ini_exists(name)) {
-            continue;
-        }
-        const auto enabled = resolve_new_enabled(
-            name,
-            document.settings.new_components
-        );
-        if (!enabled) {
-            return false;
-        }
-        catalog::add_if_missing(
-            document,
-            name,
-            [&](std::string_view) { return *enabled; }
-        );
-    }
-    return true;
-}
-
-[[nodiscard]]
-int full_synchronize() {
-    auto document = load_document();
-    if (!document) {
-        return 1;
-    }
-    catalog::remove_missing(*document, discovered_names());
-    if (!apply_new_names(*document, discovered_names())) {
-        return 1;
-    }
-    catalog::apply_sort(*document);
-    if (!write_list(*document)) {
-        return 1;
-    }
-    return 0;
-}
-
-[[nodiscard]]
-int set_explicit_state(const std::string_view name, const bool enabled) {
-    if (!list::is_valid_component_name(name)) {
-        components_editor.print(
-            "Invalid component name: {}",
-            name
-        );
-        return 1;
-    }
-    if (!component_ini_exists(name)) {
-        components_editor.print(
-            "config/components/{}.ini is missing. components.list was not modified.",
-            name
-        );
-        return 1;
-    }
-
-    std::error_code error;
-    const bool list_present = file_exists(list_path(), error);
-    if (error) {
-        components_editor.print(
-            "Failed to inspect {}",
-            list_path().string()
-        );
-        return 1;
-    }
-    if (!list_present) {
-        components_editor.print(
-            "components.list is missing. It was not modified."
-        );
-        return 1;
-    }
-
-    const auto text = read_text(list_path());
-    if (!text) {
-        return 1;
-    }
-    const auto updated = catalog::set_listed_state(*text, name, enabled);
-    if (!updated) {
-        components_editor.print(
-            "Invalid component name: {}",
-            name
-        );
-        return 1;
-    }
-    if (!cfg::write_bytes(list_path(), *updated)) {
-        components_editor.print("Failed to write {}.", list_path().string());
-        return 1;
-    }
-    components_editor.log_debug("Wrote {}", list_path().string());
-    return 0;
-}
-
-[[nodiscard]]
-int single_component_update(const std::string_view name) {
-    if (!list::is_valid_component_name(name)) {
-        components_editor.print(
-            "Invalid component name: {}",
-            name
-        );
-        return 1;
-    }
-    if (!component_ini_exists(name)) {
-        components_editor.print(
-            "config/components/{}.ini is missing. components.list was not modified.",
-            name
-        );
-        return 1;
-    }
-
-    auto document = load_document();
-    if (!document) {
-        return 1;
-    }
-    if (!apply_new_names(*document, {std::string {name}})) {
-        return 1;
-    }
-    catalog::apply_sort(*document);
-    if (!write_list(*document)) {
-        return 1;
-    }
-    return 0;
-}
-
-struct EditorArguments {
-    std::string component;
-    std::optional<bool> enabled;
-    bool seed {false};
-};
-
-[[nodiscard]]
-std::optional<EditorArguments> parse_arguments(const int argc, char* argv[]) {
-    EditorArguments arguments;
-    bool saw_on = false;
-    bool saw_off = false;
-
-    for (int i = 1; i < argc; ++i) {
-        const std::string_view argument {argv[i]};
-        if (argument == "--component") {
-            if (i + 1 >= argc) {
-                std::cerr << "Missing component name after --component.\n";
-                return std::nullopt;
-            }
-            arguments.component = argv[++i];
-            continue;
-        }
-        if (argument.starts_with("--component=")) {
-            const auto name = argument.substr(12);
-            if (name.empty()) {
-                std::cerr << "Missing component name after --component.\n";
-                return std::nullopt;
-            }
-            arguments.component = std::string {name};
-            continue;
-        }
-        if (argument == "--on") {
-            saw_on = true;
-            continue;
-        }
-        if (argument == "--off") {
-            saw_off = true;
-            continue;
-        }
-        if (argument == "--seed") {
-            arguments.seed = true;
-            continue;
-        }
-        std::cerr << "Unknown argument: " << argument << '\n';
-        return std::nullopt;
-    }
-
-    if (arguments.seed &&
-        (!arguments.component.empty() || saw_on || saw_off)) {
-        std::cerr
-            << "--seed cannot be combined with --component, --on, or --off.\n";
-        return std::nullopt;
-    }
-
-    if (saw_on && saw_off) {
-        std::cerr << "--on and --off cannot be used together.\n";
-        return std::nullopt;
-    }
-    if ((saw_on || saw_off) && arguments.component.empty()) {
-        std::cerr << "Missing component name for --on or --off.\n";
-        return std::nullopt;
-    }
-    if (saw_on) {
-        arguments.enabled = true;
-    }
-    else if (saw_off) {
-        arguments.enabled = false;
+std::vector<char*> arguments_after_dispatch(int argc, char* argv[]) {
+    std::vector<char*> arguments;
+    arguments.reserve(static_cast<std::size_t>(argc - 1));
+    arguments.push_back(argv[0]);
+    for (int index = 2; index < argc; ++index) {
+        arguments.push_back(argv[index]);
     }
     return arguments;
+}
+
+[[nodiscard]]
+int run_with_program_name(int (*operation)(int, char**)) {
+    char program[] = "auto_core_components.exe";
+    char* arguments[] = {program};
+    return operation(1, arguments);
+}
+
+[[nodiscard]]
+int run_menu() {
+    while (true) {
+        std::cout
+            << '\n'
+            << "Components\n"
+            << "\n"
+            << "1. Synchronize component list\n"
+            << "2. Initialize components\n"
+            << "3. Exit\n"
+            << "\n"
+            << "Choice [3]: ";
+        const auto line = cfg::read_line();
+        if (!line || line->empty() || *line == "3") {
+            return 0;
+        }
+        if (*line == "1") {
+            return run_with_program_name(run_components_editor);
+        }
+        if (*line == "2") {
+            return run_with_program_name(run_components_initialization);
+        }
+        std::cout << "Enter 1, 2, or 3.\n";
+    }
+}
+
+[[nodiscard]]
+int run_listed_state(const int argc, char* argv[], const bool enabled) {
+    const std::string_view command {argv[1]};
+    if (argc < 3 || argv[2][0] == '\0') {
+        std::cerr << "Missing component name after " << command << ".\n";
+        print_components_usage();
+        return 1;
+    }
+    if (argc > 3) {
+        std::cerr << "Unknown argument: " << argv[3] << '\n';
+        print_components_usage();
+        return 1;
+    }
+    return set_component_listed_state(argv[2], enabled);
 }
 
 } // namespace
 
 int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    components_editor.log_info("components_editor.exe started");
+    if (argc < 2) {
+        return run_menu();
+    }
 
-    const auto arguments = parse_arguments(argc, argv);
-    if (!arguments) {
-        return 1;
-    }
-    if (arguments->seed) {
-        std::error_code error;
-        const bool list_present = file_exists(list_path(), error);
-        if (error) {
-            components_editor.print(
-                "Failed to inspect {}",
-                list_path().string()
-            );
-            return 1;
-        }
-        if (list_present) {
-            components_editor.log_debug("components.list already exists.");
-            return 0;
-        }
-        return full_synchronize();
-    }
-    if (arguments->enabled) {
-        return set_explicit_state(
-            arguments->component,
-            *arguments->enabled
+    const std::string_view command {argv[1]};
+    if (command == "--edit") {
+        auto arguments = arguments_after_dispatch(argc, argv);
+        return run_components_editor(
+            static_cast<int>(arguments.size()),
+            arguments.data()
         );
     }
-    if (!arguments->component.empty()) {
-        return single_component_update(arguments->component);
+    if (command == "--enable") {
+        return run_listed_state(argc, argv, true);
     }
-    return full_synchronize();
+    if (command == "--disable") {
+        return run_listed_state(argc, argv, false);
+    }
+    if (command == "--initialize" || command == "--init") {
+        auto arguments = arguments_after_dispatch(argc, argv);
+        return run_components_initialization(
+            static_cast<int>(arguments.size()),
+            arguments.data()
+        );
+    }
+
+    std::cerr << "Unknown argument: " << argv[1] << '\n';
+    print_components_usage();
+    return 1;
 }

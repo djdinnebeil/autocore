@@ -1,6 +1,6 @@
 /**
  * \file itunes_db_client.ixx
- * \brief `itunes_ac.exe` client for `itunes_db.exe --serve`.
+ * \brief `itunes_ac.exe` owner of one persistent `history.db` connection.
  */
 export module itunes_db_client;
 

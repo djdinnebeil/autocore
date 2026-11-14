@@ -264,11 +264,11 @@ TEST_CASE("Malformed or oversized Spotify song.format is not replaced", "[spotif
 }
 
 TEST_CASE("Spotify config directory defaults stay compiled", "[spotify][format][unit]") {
-    CHECK(std::string {spotify::defaults::directory} == "components\\spotify");
+    CHECK(std::string {spotify::defaults::directory} == "data\\spotify");
     CHECK(
         std::string {spotify::defaults::ini_text} ==
         "[spotify]\n"
-        "directory = components\\spotify\n"
+        "directory = data\\spotify\n"
         "auto_launch_oauth = off\n"
         "logging = on\n"
     );

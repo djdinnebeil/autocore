@@ -225,7 +225,7 @@ std::wstring quote_argument(std::wstring_view value) {
 
 void Spotify::launch_spotify_oauth() {
     const auto executable_path =
-        ac::paths::bin_directory() / "spotify_oauth.exe";
+        ac::paths::component_executable_directory() / "spotify_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -236,7 +236,8 @@ void Spotify::launch_spotify_oauth() {
         return;
     }
 
-    std::wstring command_line = quote_argument(executable_path.wstring());
+    std::wstring command_line =
+        quote_argument(executable_path.wstring()) + L" \"--oauth\"";
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
     PROCESS_INFORMATION process_info {};
@@ -265,14 +266,14 @@ void Spotify::launch_spotify_oauth() {
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
         spotify_component.log_alert(
-            "Unable to read the exit code from spotify_oauth.exe."
+            "Unable to read the exit code from spotify_ac.exe --oauth."
         );
         return;
     }
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        spotify_component.log_alert("spotify_oauth.exe exited {}.", code);
+        spotify_component.log_alert("spotify_ac.exe --oauth exited {}.", code);
     }
 }
 

@@ -9,11 +9,11 @@ import journal_remote_sync;
 
 export namespace journal::defaults {
 
-    constexpr std::string_view directory = "components\\journal";
+    constexpr std::string_view directory = "data\\journal";
 
     constexpr std::string_view ini_text =
         "[journal]\n"
-        "directory = components\\journal\n"
+        "directory = data\\journal\n"
         "auto_select_new_series = on\n"
         "remote_sync = off\n"
         "logging = on\n";

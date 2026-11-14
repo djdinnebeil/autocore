@@ -29,7 +29,7 @@ namespace ac::logging::config {
             case detail::LogLevel::alert:
                 return LogLevel::alert;
             }
-            return LogLevel::debug;
+            return LogLevel::info;
         }
 
         detail::LoggingFallback to_detail_fallback(
@@ -42,20 +42,19 @@ namespace ac::logging::config {
 
         struct SharedData {
             bool disable_all = false;
-            LogLevel level = LogLevel::debug;
+            LogLevel level = LogLevel::info;
             bool log_console_output = true;
             bool write_logs_to_files = true;
             bool write_logs_to_console = false;
             bool write_alerts_to_console = true;
             bool component_logging_default = true;
-            std::int64_t max_directory_mb = 100;
-            std::int64_t retention_days = 30;
+            std::int64_t max_directory_mb = 25;
+            std::int64_t retention_days = 10;
             std::filesystem::path directory = ac::paths::log_directory();
             std::filesystem::path components_directory =
                 directory / "components";
             bool ini_missing = false;
             std::string report;
-            bool experimental = false;
 
             SharedData() {
                 const auto list_path = ac::paths::components_list_file();
@@ -66,7 +65,7 @@ namespace ac::logging::config {
                     (!list_present && !list_error)
                         ? std::string {
                             "components.list is missing. Run "
-                            "components_editor.exe to generate it. The file "
+                            "auto_core_components.exe --edit to generate it. The file "
                             "will not be created.\n"
                         }
                         : std::string {};
@@ -100,7 +99,6 @@ namespace ac::logging::config {
                         : "logging_policy.ini unreadable; using defaults\n";
                     report += resolved.report;
                     report += catalog_note;
-                    experimental = resolved.experimental;
                     return;
                 }
 
@@ -136,10 +134,7 @@ namespace ac::logging::config {
                             ? std::optional<std::filesystem::path> {
                                 ac::encoding::to_utf16(*directory_value)
                             }
-                            : std::nullopt,
-                        .experimental = document->find(
-                            "logging", "experimental"
-                        )
+                            : std::nullopt
                     },
                     ac::paths::log_directory(),
                     ac::paths::installation_root()
@@ -157,7 +152,6 @@ namespace ac::logging::config {
                 components_directory = resolved.components_directory;
                 report = resolved.report;
                 report += catalog_note;
-                experimental = resolved.experimental;
             }
         };
 
@@ -212,10 +206,6 @@ namespace ac::logging::config {
 
     bool disable_all() {
         return shared_data().disable_all;
-    }
-
-    bool experimental() {
-        return shared_data().experimental;
     }
 
     bool log_console_output() {

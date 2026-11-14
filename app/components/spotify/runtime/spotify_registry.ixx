@@ -8,7 +8,7 @@ import std;
 import command_registry;
 
 export inline constexpr std::string_view spotify_activation_fallback_message =
-    "Pin or start Spotify, then run taskbar_builder.exe to generate "
+    "Pin or start Spotify, then run taskbar_ac.exe --builder to generate "
     "spotify.map.";
 
 export struct spotify_command_actions {

@@ -39,6 +39,7 @@ Dash and the destination application must run at compatible Windows integrity le
 | Tool | What it is for |
 | --- | --- |
 | `dash_ac.exe` | Select and insert a secret. |
-| `dash_editor.exe` | Add, remove, or list secrets. List shows names only. Add does not ask for Windows Hello. Remove asks for Windows Hello and then the word `yes`. |
-| `dash_config.exe` | Edits `dash.ini`. |
-| `dash_settings.exe` | Opens configuration, secret management, and enablement. |
+| `dash_ac.exe --run` | Opens the secret menu. Main starts it as `dash_ac.exe --run --target <hwnd> --parent-pid <pid>` in a new console. |
+| `dash_ac.exe --editor` | Add, remove, or list secrets. List shows names only. Add does not ask for Windows Hello. Remove asks for Windows Hello and then the word `yes`. |
+| `dash_ac.exe --config` | Edits `dash.ini`. Logging stays off unless changed. `--config --init` and `--config --seed` initialize it. |
+| `dash_ac.exe` | Opens settings. A missing INI runs `--config --init` first. `--settings` opens the same menu without that initialization. Manage secrets starts `dash_ac.exe --editor`. |

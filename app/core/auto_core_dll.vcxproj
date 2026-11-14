@@ -153,7 +153,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="PublishAutoCoreDll" AfterTargets="Link" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <MakeDir Directories="$(AutoCoreBinDir)" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(AutoCoreBinDir)auto_core.dll" SkipUnchangedFiles="false" />
+    <MakeDir Directories="$(AutoCoreBinAppDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(AutoCoreBinAppDir)auto_core.dll" SkipUnchangedFiles="false" />
   </Target>
 </Project>

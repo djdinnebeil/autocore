@@ -1,6 +1,6 @@
 /**
  * \file main.cxx
- * \brief Creates missing Server starter files for `server_builder.exe`.
+ * \brief Creates missing Server starter files for `server_ac.exe --builder`.
  *
  * `--seed` is the only successful invocation. It resolves the Server data
  * directory from `config/components/server.ini`, then reads `document_root.id`.
@@ -141,7 +141,7 @@ int seed_site() {
     const bool present = std::filesystem::exists(scalar_path, error);
     if (error || !present) {
         server_builder.print(
-            "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
+            "Server document_root.id is missing or invalid. Run server_ac.exe --editor to configure Server."
         );
         return 1;
     }
@@ -149,7 +149,7 @@ int seed_site() {
     std::ifstream input(scalar_path, std::ios::binary);
     if (!input) {
         server_builder.print(
-            "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
+            "Server document_root.id is missing or invalid. Run server_ac.exe --editor to configure Server."
         );
         return 1;
     }
@@ -158,14 +158,14 @@ int seed_site() {
     const auto stored = server::data::parse_document_root(contents.str());
     if (!stored) {
         server_builder.print(
-            "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
+            "Server document_root.id is missing or invalid. Run server_ac.exe --editor to configure Server."
         );
         return 1;
     }
 
     if (server::data::document_root_is_absolute(*stored)) {
         server_builder.print(
-            "document_root.id is absolute. server_builder.exe does not modify that directory."
+            "document_root.id is absolute. server_ac.exe --builder does not modify that directory."
         );
         return 1;
     }
@@ -204,12 +204,16 @@ int seed_site() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::server_app::builder {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    server_builder.log_info("server_builder.exe started");
+    server_builder.log_info("server_ac.exe --builder started");
     if (argc != 2 || std::string_view {argv[1]} != "--seed") {
-        std::cerr << "Usage: server_builder.exe --seed\n";
+        std::cerr << "Usage: server_ac.exe --builder --seed\n";
         return 1;
     }
     return seed_site();
 }
+
+} // namespace ac::server_app::builder

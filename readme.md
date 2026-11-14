@@ -41,25 +41,25 @@ The project is intended for developers who want to **build, run, or extend Auto 
 
 4. Complete the first-run initialization when prompted, then configure your keyboard mappings and any components you intend to use.
 
-The build script publishes executables and DLLs to `bin/` and assembles `dist/app/` with [`publish-dist.ps1`](scripts/publish-dist.ps1). The `dist/` directory contains local runtime state and is excluded from Git. See [build details](devs/building.md) for MSBuild order, output paths, and vendor DLL handling.
+The build script publishes Main executables and shared DLLs to `bin/app/` and component executables to `bin/components/`. [`update-dist.ps1`](scripts/update-dist.ps1) copies those directories to `dist/app/` and `dist/components/`. Place a new or third-party `<name>_ac.exe` in `components\`, not `app\`. The `dist/` directory contains local runtime state and is excluded from Git. See [build details](devs/building.md) for MSBuild order, output paths, and vendor DLL handling.
 
 ### First-run configuration
 
-When `config/auto_core.ini` is missing, Auto Core launches `auto_core_init.exe` to initialize Main and component configuration, create missing starter data, and seed the keymap. The initialization process retains `auto_core.ini` as its completion marker only after required steps succeed; no separate `initialized` setting is used.
+When `config/auto_core.ini` is missing, Auto Core launches `auto_core_settings.exe --initialize` to initialize Main and component configuration, create missing starter data, and seed the keymap. The initialization process retains `auto_core.ini` as its completion marker only after required steps succeed; no separate `initialized` setting is used.
 
 Common follow-up tasks:
 
-- **Keymap:** Edit `dist/keymap.map`; use `keymap_editor.exe` if you need to create the initial map. Existing maps are not overwritten.
-- **Taskbar:** Run `taskbar_builder.exe` when pinned applications or executable paths differ. See the [Taskbar manual](docs/manual/components/taskbar.md).
-- **Component settings:** Run the relevant `<name>_config.exe` to create or update `config/components/<name>.ini`.
-- **Spotify:** Authorize separately with `spotify_oauth.exe`. See the [Spotify manual](docs/manual/components/spotify.md).
+- **Keymap:** Edit `dist/keymap.map`; use `auto_core_keymap.exe --seed` if you need to create the initial map. Existing maps are not overwritten.
+- **Taskbar:** Run `taskbar_ac.exe --builder` when pinned applications or executable paths differ. See the [Taskbar manual](docs/manual/components/taskbar.md).
+- **Component settings:** Run `<name>_ac.exe --config` to create or update `config/components/<name>.ini`. A third-party component uses the same command.
+- **Spotify:** Authorize separately with `spotify_ac.exe --oauth`. See the [Spotify manual](docs/manual/components/spotify.md).
 - **Local server:** Restart `server_ac.exe` after changing its configuration, port, or document root.
 
 If a component configuration file is missing during normal operation, that component reports the omission and uses its compiled defaults rather than writing a replacement. See the [configuration guide](docs/manual/configuration.md) and [configuration contract](devs/configuration.md).
 
 ### Running on another PC
 
-Copy the complete `dist/` tree, install the matching MSVC redistributable if necessary, and review machine-specific settings. Reauthorize Spotify rather than copying `components/spotify/tokens.map`; adjust absolute logging paths and rebuild taskbar mappings as needed. Dash data is not portable between ordinary Windows installations.
+Copy the complete `dist/` tree, install the matching MSVC redistributable if necessary, and review machine-specific settings. Reauthorize Spotify rather than copying `data/spotify/tokens.map`; adjust absolute logging paths and rebuild taskbar mappings as needed. Dash data is not portable between ordinary Windows installations.
 
 ## Architecture
 
@@ -98,7 +98,7 @@ Auto Core/
 ├─ third_party/     Bundled third-party dependencies
 ├─ devs/           Developer documentation
 ├─ docs/           User guides and component manuals
-├─ bin/            Published executables and DLLs
+├─ bin/            Published binaries (`app/` and `components/`)
 ├─ lib/            Canonical core DLL and import library
 ├─ obj/            Intermediate build files (Git-ignored)
 ├─ symbols/        Linker debug symbols (Git-ignored)

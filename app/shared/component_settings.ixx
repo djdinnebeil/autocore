@@ -1,9 +1,9 @@
 /**
  * \file component_settings.ixx
- * \brief Shared menu for `<name>_settings.exe`.
+ * \brief Shared menu for `<name>_ac.exe --settings`.
  *
- * The menu delegates configuration to `<name>_config.exe` and enablement
- * to `components_editor.exe`. It does not parse `config/<name>.ini` and
+ * Configure and Initialize launch `<name>_ac.exe --config`. Enablement goes
+ * to `auto_core_components.exe`. It does not parse `config/<name>.ini` and
  * it does not write `components.list`. A component may pass a baseline
  * probe. When the INI exists and that probe returns true, the menu inserts
  * "Complete initialization" after Configure.
@@ -80,7 +80,7 @@ export namespace ac::component_settings {
      * \brief Returns true when required baseline state is still missing.
      *
      * Called only after `config/<name>.ini` is present. A true result inserts
-     * "Complete initialization", which launches `<name>_config.exe --init`.
+     * "Complete initialization", which launches `<name>_ac.exe --config --init`.
      */
     using BaselineProbe = bool (*)();
 
@@ -154,11 +154,24 @@ export namespace ac::component_settings {
         );
     }
 
+    /**
+     * \brief Executable and arguments for Configure and Initialize.
+     *
+     * An empty executable means `<name>_ac.exe`. `initialize_arguments`
+     * is the full argument list for Initialize and Complete initialization.
+     */
+    struct ConfigLaunch {
+        std::string executable;
+        std::vector<std::string> configure_arguments {"--config"};
+        std::vector<std::string> initialize_arguments {"--config", "--init"};
+    };
+
     [[nodiscard]]
     int run(
         std::string_view name,
         std::span<const DelegatedAction> delegated = {},
-        BaselineProbe baseline_incomplete = nullptr
+        BaselineProbe baseline_incomplete = nullptr,
+        const ConfigLaunch& config_launch = {}
     );
 
     [[nodiscard]]
@@ -166,7 +179,8 @@ export namespace ac::component_settings {
         std::string_view name,
         ac::logging::config::LoggingFallback fallback,
         std::span<const DelegatedAction> delegated = {},
-        BaselineProbe baseline_incomplete = nullptr
+        BaselineProbe baseline_incomplete = nullptr,
+        const ConfigLaunch& config_launch = {}
     );
 
 } // namespace ac::component_settings
@@ -222,7 +236,8 @@ namespace ac::component_settings {
             const DWORD creation_flags = 0
         ) {
             const auto executable_path =
-                ac::paths::bin_directory() / std::string {executable};
+                ac::paths::component_executable_directory() /
+                    std::string {executable};
             std::error_code error;
             const bool present = std::filesystem::exists(executable_path, error);
             if (error || !present) {
@@ -322,13 +337,15 @@ namespace ac::component_settings {
     int run(
         const std::string_view name,
         const std::span<const DelegatedAction> delegated,
-        const BaselineProbe baseline_incomplete
+        const BaselineProbe baseline_incomplete,
+        const ConfigLaunch& config_launch
     ) {
         return run(
             name,
             ac::logging::config::LoggingFallback::global_default,
             delegated,
-            baseline_incomplete
+            baseline_incomplete,
+            config_launch
         );
     }
 
@@ -337,7 +354,8 @@ namespace ac::component_settings {
         const std::string_view name,
         const ac::logging::config::LoggingFallback fallback,
         const std::span<const DelegatedAction> delegated,
-        const BaselineProbe baseline_incomplete
+        const BaselineProbe baseline_incomplete,
+        const ConfigLaunch& config_launch
     ) {
         if (!request::is_valid_component_name(name)) {
             std::cerr << "Invalid component name: " << name << '\n';
@@ -348,7 +366,11 @@ namespace ac::component_settings {
             std::string {name} + "_settings",
             ac::logging::config::LoggingScope {name, fallback}
         };
-        const std::string config_executable = std::string {name} + "_config.exe";
+        ConfigLaunch launch = config_launch;
+        if (launch.executable.empty()) {
+            launch.executable = std::string {name} + "_ac.exe";
+        }
+        const std::string& config_executable = launch.executable;
 
         while (true) {
             const auto state = get_state(name);
@@ -407,11 +429,15 @@ namespace ac::component_settings {
                     (void)launch_executable(
                         settings,
                         config_executable,
-                        {"--init"}
+                        launch.initialize_arguments
                     );
                     break;
                 case MenuKind::configure:
-                    (void)launch_executable(settings, config_executable, {});
+                    (void)launch_executable(
+                        settings,
+                        config_executable,
+                        launch.configure_arguments
+                    );
                     break;
                 case MenuKind::delegated: {
                     const DelegatedAction& action =

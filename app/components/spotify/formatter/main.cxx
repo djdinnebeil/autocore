@@ -1,10 +1,10 @@
 /**
  * \file main.cxx
- * \brief Edits `<spotify directory>/song.format` for `spotify_formatter.exe`.
+ * \brief Edits `<spotify directory>/song.format` for `spotify_ac.exe --formatter`.
  *
  * This program is the sole writer of `song.format`. It reads `spotify.ini`
  * and does not write it. `--seed` and `--init` require a readable INI.
- * The no-argument menu still launches `spotify_config.exe --init` when it is missing.
+ * The no-argument menu still launches `spotify_ac.exe --config --init` when it is missing.
  */
 import std;
 
@@ -47,7 +47,7 @@ std::wstring quote_argument(std::wstring_view value) {
 
 int launch_config_init() {
     const auto executable_path =
-        ac::paths::bin_directory() / "spotify_config.exe";
+        ac::paths::component_executable_directory() / "spotify_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -56,7 +56,7 @@ int launch_config_init() {
     }
 
     std::wstring command_line =
-        quote_argument(executable_path.wstring()) + L" \"--init\"";
+        quote_argument(executable_path.wstring()) + L" \"--config\" \"--init\"";
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
     PROCESS_INFORMATION process_info {};
@@ -85,14 +85,14 @@ int launch_config_init() {
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
         spotify_formatter.log_alert(
-            "Unable to read the exit code from spotify_config.exe."
+            "Unable to read the exit code from spotify_ac.exe --config."
         );
         return 1;
     }
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        spotify_formatter.log_alert("spotify_config.exe exited {}.", code);
+        spotify_formatter.log_alert("spotify_ac.exe --config exited {}.", code);
     }
     return code;
 }
@@ -124,7 +124,7 @@ int ensure_spotify_ini(const std::filesystem::path& path) {
     }
 
     spotify_formatter.log_alert(
-        "config/components/spotify.ini is missing. Running spotify_config.exe --init."
+        "config/components/spotify.ini is missing. Running spotify_ac.exe --config --init."
     );
     if (launch_config_init() != 0) {
         spotify_formatter.log_alert(
@@ -158,7 +158,7 @@ int require_readable_ini() {
     }
     if (!present || !ini_readable(path)) {
         spotify_formatter.log_alert(
-            "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
+            "config/components/spotify.ini is missing or unreadable. spotify_ac.exe --config owns it."
         );
         return 1;
     }
@@ -367,14 +367,16 @@ int run_init() {
     return edit_song_format();
 }
 
-int main(int argc, char* argv[]) {
+namespace ac::spotify_app::formatter {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_formatter.log_info("spotify_formatter.exe started");
+    spotify_formatter.log_info("spotify_ac.exe --formatter started");
 
     const bool seed = argc == 2 && std::string_view {argv[1]} == "--seed";
     const bool init = argc == 2 && std::string_view {argv[1]} == "--init";
     if (argc > 2 || (argc == 2 && !seed && !init)) {
-        std::cerr << "Usage: spotify_formatter.exe [--init | --seed]\n";
+        std::cerr << "Usage: spotify_ac.exe --formatter [--init | --seed]\n";
         return 1;
     }
     if (seed) {
@@ -390,3 +392,5 @@ int main(int argc, char* argv[]) {
     }
     return edit_song_format();
 }
+
+} // namespace ac::spotify_app::formatter

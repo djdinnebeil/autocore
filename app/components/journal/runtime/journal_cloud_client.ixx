@@ -1,6 +1,6 @@
 /**
  * \file journal_cloud_client.ixx
- * \brief `journal_ac.exe` process owner for `journal_cloud.exe --serve`.
+ * \brief `journal_ac.exe` process owner for `journal_ac.exe --cloud --serve`.
  */
 export module journal_cloud_client;
 

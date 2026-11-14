@@ -81,7 +81,7 @@ TEST_CASE("Snapshot render uses database rows and padding", "[journal][unit]") {
 TEST_CASE("Only an unknown series is retried with an empty key", "[journal][unit]") {
     CHECK(journal::db::is_unknown_series("Unknown journal series 'Auto Core'."));
     CHECK_FALSE(journal::db::is_unknown_series(
-        "No journal series yet. Add one with journal_series.exe."
+        "No journal series yet. Add one with journal_ac.exe --series."
     ));
     CHECK_FALSE(journal::db::is_unknown_series("The journal database is busy."));
     CHECK_FALSE(journal::db::is_unknown_series("Journal database request failed."));

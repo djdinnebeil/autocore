@@ -18,7 +18,7 @@ export namespace journal {
      * A relative `[journal] directory` is resolved against the installation
      * root. An absolute value is used as-is. A missing file, missing key,
      * empty value, or unusable value keeps
-     * `<installation root>/components/journal`. Cached for the process
+     * `<installation root>/data/journal`. Cached for the process
      * lifetime. The directory is not created or validated.
      */
     [[nodiscard]]
@@ -28,7 +28,7 @@ export namespace journal {
                 ac::paths::component_config_file("journal"),
                 "journal",
                 "directory",
-                ac::paths::installation_root() / "components" / "journal"
+                ac::paths::installation_root() / "data" / "journal"
             );
         return directory;
     }

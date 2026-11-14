@@ -4,7 +4,7 @@
  *
  * Generic `{name}_ac.exe` children inherit Auto Core's console so `print()`
  * shares `std::cout`. Interactive prompts clear pending input and activate
- * that console.
+ * that console. `read_line()` reads one submitted line from it.
  */
 module;
 
@@ -100,4 +100,40 @@ export namespace ac::console {
     [[nodiscard]]
     AC_API std::expected<void, Error>
         restore_focus(WindowHandle previous_window) noexcept;
+
+    /**
+     * \brief Errors produced while reading one console line.
+     *
+     * These values are for `read_line()` only. Window activation continues
+     * to report `Error`.
+     */
+    enum class LineError {
+        /** The user pressed Escape. */
+        cancelled,
+        /** Another `read_line()` call already owns console input. */
+        busy,
+        /** Standard input is not an attached console. */
+        unavailable,
+        /** The console read, its echo, or text conversion failed. */
+        read_failed
+    };
+
+    /** \brief Returns a stable user-facing description of a line error. */
+    [[nodiscard]]
+    AC_API std::string_view error_message(LineError error) noexcept;
+
+    /**
+     * \brief Reads one line from the attached console.
+     *
+     * Enter returns the entered text, including an empty string. Escape
+     * returns `cancelled`. Printable characters and Backspace are handled.
+     * Key releases, navigation keys, and mouse events are ignored.
+     *
+     * The call does not change console modes, install a keyboard hook, or
+     * coordinate with readers that do not call `read_line()`.
+     *
+     * \return The entered UTF-8 text, or a line error.
+     */
+    [[nodiscard]]
+    AC_API std::expected<std::string, LineError> read_line();
 } // namespace ac::console

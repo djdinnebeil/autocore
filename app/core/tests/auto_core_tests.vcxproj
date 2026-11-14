@@ -59,6 +59,7 @@
   <ItemGroup>
     <ClCompile Include="..\formatting\clock.ixx" />
     <ClCompile Include="..\component\component.ixx" />
+    <ClCompile Include="..\console\console.ixx" />
     <ClCompile Include="..\formatting\encoding.ixx" />
     <ClCompile Include="..\diagnostics\error.ixx" />
     <ClCompile Include="..\formatting\formatting.ixx" />
@@ -74,6 +75,7 @@
     <ClCompile Include="..\..\shared\component_settings.ixx" />
     <ClCompile Include="..\..\shared\config_menu.ixx" />
     <ClCompile Include="clock_tests.cxx" />
+    <ClCompile Include="console_input_tests.cxx" />
     <ClCompile Include="config_menu_tests.cxx" />
     <ClCompile Include="component_settings_tests.cxx" />
     <ClCompile Include="component_log_tests.cxx" />

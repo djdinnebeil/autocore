@@ -1,5 +1,6 @@
 # Build outputs (plain names also ignore machine-local directory symlinks).
-# Published binaries in /bin are tracked. Other bin/ directories stay ignored.
+# Published binaries in /bin/app and /bin/components are tracked.
+# Other bin/ directories stay ignored.
 bin/
 !/bin/
 !/bin/**
@@ -18,7 +19,8 @@ x86/
 
 # Compiled binaries and debug symbols
 *.exe
-!/bin/*.exe
+!/bin/app/*.exe
+!/bin/components/*.exe
 *.pdb
 *.obj
 *.ilk
@@ -27,7 +29,8 @@ x86/
 # Leftover generated core outputs if an older layout still has them
 # (vendored third-party .lib files stay under third_party/<dep>/lib).
 # Disposable intermediates are obj/. Canonical auto_core.dll and
-# auto_core.lib live in lib/. Published copies live in tracked bin/.
+# auto_core.lib live in lib/. The published auto_core.dll lives in
+# tracked bin/app/.
 # Do not ignore lib/ or *.dll. dist/ is the ignored local installation.
 # Developer scripts under scripts/ stay tracked.
 *.exp

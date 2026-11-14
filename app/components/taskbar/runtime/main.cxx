@@ -178,7 +178,9 @@ int export_keymap_commands() {
 
 } // namespace
 
-int main(const int argument_count, char* arguments[]) {
+namespace ac::taskbar_app::runtime {
+
+int run(const int argument_count, char* arguments[]) {
     ac::shell::set_process_app_user_model_id();
     if (argument_count == 2 &&
         std::string_view {arguments[1]} == "--export-keymap-commands") {
@@ -387,3 +389,5 @@ int main(const int argument_count, char* arguments[]) {
     taskbar_component().log_info("program terminated");
     return 0;
 }
+
+} // namespace ac::taskbar_app::runtime

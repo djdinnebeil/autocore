@@ -4,10 +4,6 @@ VisualStudioVersion = 17.14.37531.7 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake", "runtime\wake.vcxproj", "{523FAC93-9CA7-49E0-B374-9C7A0E985270}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake_config", "config\wake_config.vcxproj", "{B0F4D7E5-C26A-4D4B-BE91-5F802C3D4E66}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake_settings", "settings\wake_settings.vcxproj", "{3ECF9626-D769-488C-9249-CDCBA87AC964}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wake_tests", "tests\wake_tests.vcxproj", "{B7E2A4C1-6D18-4F93-8C55-1A9E3D70B2F6}"
 EndProject
 Global
@@ -20,14 +16,6 @@ Global
 		{523FAC93-9CA7-49E0-B374-9C7A0E985270}.Debug|x64.Build.0 = Debug|x64
 		{523FAC93-9CA7-49E0-B374-9C7A0E985270}.Release|x64.ActiveCfg = Release|x64
 		{523FAC93-9CA7-49E0-B374-9C7A0E985270}.Release|x64.Build.0 = Release|x64
-		{B0F4D7E5-C26A-4D4B-BE91-5F802C3D4E66}.Debug|x64.ActiveCfg = Debug|x64
-		{B0F4D7E5-C26A-4D4B-BE91-5F802C3D4E66}.Debug|x64.Build.0 = Debug|x64
-		{B0F4D7E5-C26A-4D4B-BE91-5F802C3D4E66}.Release|x64.ActiveCfg = Release|x64
-		{B0F4D7E5-C26A-4D4B-BE91-5F802C3D4E66}.Release|x64.Build.0 = Release|x64
-		{3ECF9626-D769-488C-9249-CDCBA87AC964}.Debug|x64.ActiveCfg = Debug|x64
-		{3ECF9626-D769-488C-9249-CDCBA87AC964}.Debug|x64.Build.0 = Debug|x64
-		{3ECF9626-D769-488C-9249-CDCBA87AC964}.Release|x64.ActiveCfg = Release|x64
-		{3ECF9626-D769-488C-9249-CDCBA87AC964}.Release|x64.Build.0 = Release|x64
 		{B7E2A4C1-6D18-4F93-8C55-1A9E3D70B2F6}.Debug|x64.ActiveCfg = Release|x64
 		{B7E2A4C1-6D18-4F93-8C55-1A9E3D70B2F6}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection

@@ -1,6 +1,6 @@
 /**
  * \file spotify_db_client.ixx
- * \brief `spotify_ac.exe` client for `spotify_db.exe --serve`.
+ * \brief `spotify_ac.exe` owner of one persistent `history.db` connection.
  */
 export module spotify_db_client;
 

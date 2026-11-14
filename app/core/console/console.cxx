@@ -1,6 +1,7 @@
 module auto_core.core.console;
 
 import std;
+import auto_core.core.encoding;
 import auto_core.core.keyboard;
 import auto_core.taskbar;
 import <Windows.h>;
@@ -151,6 +152,162 @@ namespace ac::console {
             return bind_console_streams();
         }
 
+        bool is_console_handle(const HANDLE handle) noexcept {
+            if (handle == nullptr || handle == INVALID_HANDLE_VALUE) {
+                return false;
+            }
+
+            DWORD mode = 0;
+            return GetConsoleMode(handle, &mode) != FALSE;
+        }
+
+        bool write_console(
+            const HANDLE output,
+            const std::wstring_view text
+        ) noexcept {
+            if (text.empty()) {
+                return true;
+            }
+
+            DWORD written = 0;
+            return WriteConsoleW(
+                output,
+                text.data(),
+                static_cast<DWORD>(text.size()),
+                &written,
+                nullptr
+            ) != FALSE && written == text.size();
+        }
+
+        class InputOwnership {
+        public:
+            InputOwnership(const InputOwnership&) = delete;
+            InputOwnership& operator=(const InputOwnership&) = delete;
+            InputOwnership(InputOwnership&& other) noexcept
+                : mutex_ {std::exchange(other.mutex_, nullptr)} {}
+            InputOwnership& operator=(InputOwnership&&) = delete;
+
+            ~InputOwnership() {
+                if (mutex_ == nullptr) {
+                    return;
+                }
+                ReleaseMutex(mutex_);
+                CloseHandle(mutex_);
+            }
+
+            [[nodiscard]] static std::expected<InputOwnership, LineError>
+                try_acquire() {
+                const HANDLE mutex = CreateMutexW(
+                    nullptr,
+                    FALSE,
+                    L"Local\\AutoCore.ConsoleInput"
+                );
+                if (mutex == nullptr) {
+                    return std::unexpected(LineError::read_failed);
+                }
+
+                const DWORD wait_result = WaitForSingleObject(mutex, 0);
+                if (
+                    wait_result == WAIT_OBJECT_0 ||
+                    wait_result == WAIT_ABANDONED
+                ) {
+                    return InputOwnership {mutex};
+                }
+
+                CloseHandle(mutex);
+                if (wait_result == WAIT_TIMEOUT) {
+                    return std::unexpected(LineError::busy);
+                }
+                return std::unexpected(LineError::read_failed);
+            }
+
+        private:
+            explicit InputOwnership(const HANDLE mutex) noexcept
+                : mutex_ {mutex} {}
+
+            HANDLE mutex_ = nullptr;
+        };
+
+        std::expected<std::string, LineError> read_console_line(
+            const HANDLE input,
+            const HANDLE output
+        ) {
+            std::wstring buffer;
+
+            while (true) {
+                INPUT_RECORD record {};
+                DWORD read = 0;
+                if (
+                    ReadConsoleInputW(input, &record, 1, &read) == FALSE ||
+                    read != 1
+                ) {
+                    return std::unexpected(LineError::read_failed);
+                }
+
+                if (
+                    record.EventType != KEY_EVENT ||
+                    record.Event.KeyEvent.bKeyDown == FALSE
+                ) {
+                    continue;
+                }
+
+                const KEY_EVENT_RECORD& key = record.Event.KeyEvent;
+                const WORD repeat = key.wRepeatCount == 0
+                    ? WORD {1}
+                    : key.wRepeatCount;
+
+                if (key.wVirtualKeyCode == VK_ESCAPE) {
+                    if (!write_console(output, L"\r\n")) {
+                        return std::unexpected(LineError::read_failed);
+                    }
+                    return std::unexpected(LineError::cancelled);
+                }
+
+                if (key.wVirtualKeyCode == VK_RETURN) {
+                    if (!write_console(output, L"\r\n")) {
+                        return std::unexpected(LineError::read_failed);
+                    }
+                    try {
+                        return ac::encoding::to_utf8(buffer);
+                    }
+                    catch (const std::exception&) {
+                        return std::unexpected(LineError::read_failed);
+                    }
+                }
+
+                if (key.wVirtualKeyCode == VK_BACK) {
+                    const std::size_t count = repeat < buffer.size()
+                        ? static_cast<std::size_t>(repeat)
+                        : buffer.size();
+                    buffer.resize(buffer.size() - count);
+                    if (
+                        count > 0 &&
+                        !write_console(
+                            output,
+                            std::wstring(count, L'\b') +
+                                std::wstring(count, L' ') +
+                                std::wstring(count, L'\b')
+                        )
+                    ) {
+                        return std::unexpected(LineError::read_failed);
+                    }
+                    continue;
+                }
+
+                if (key.uChar.UnicodeChar < 32) {
+                    continue;
+                }
+
+                buffer.append(repeat, key.uChar.UnicodeChar);
+                if (!write_console(
+                    output,
+                    std::wstring(repeat, key.uChar.UnicodeChar)
+                )) {
+                    return std::unexpected(LineError::read_failed);
+                }
+            }
+        }
+
     }
 
     std::string_view error_message(const Error error) noexcept {
@@ -278,5 +435,41 @@ namespace ac::console {
     std::expected<void, Error>
         restore_focus(const WindowHandle previous_window) noexcept {
         return activate_window(previous_window);
+    }
+
+    std::string_view error_message(const LineError error) noexcept {
+        switch (error) {
+        case LineError::cancelled:
+            return "Console input was cancelled";
+        case LineError::busy:
+            return "Console input is already in use";
+        case LineError::unavailable:
+            return "Console input is unavailable";
+        case LineError::read_failed:
+            return "Console input could not be read";
+        }
+
+        return "Unknown console input error";
+    }
+
+    std::expected<std::string, LineError> read_line() {
+        const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+        if (!is_console_handle(input)) {
+            return std::unexpected(LineError::unavailable);
+        }
+
+        const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (!is_console_handle(output)) {
+            return std::unexpected(LineError::read_failed);
+        }
+
+        auto ownership = InputOwnership::try_acquire();
+        if (!ownership) {
+            return std::unexpected(ownership.error());
+        }
+
+        std::cout.flush();
+        std::cerr.flush();
+        return read_console_line(input, output);
     }
 }

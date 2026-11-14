@@ -1,6 +1,6 @@
 /**
  * \file config_menu.ixx
- * \brief Console presentation for `<name>_config.exe` setting menus.
+ * \brief Console presentation for component and Main configuration menus.
  *
  * The module renders menus and the compact `#` reference header. It does
  * not read or write INI files. Each owner supplies current values, validates

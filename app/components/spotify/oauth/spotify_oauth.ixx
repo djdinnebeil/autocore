@@ -1,6 +1,6 @@
 /**
  * \file spotify_oauth.ixx
- * \brief Spotify OAuth authorization for `spotify_oauth.exe`.
+ * \brief Spotify OAuth authorization for `spotify_ac.exe --oauth`.
  */
 export module spotify_oauth;
 

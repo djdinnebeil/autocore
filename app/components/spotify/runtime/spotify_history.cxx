@@ -1,6 +1,6 @@
 /**
  * \file spotify_history.cxx
- * \brief Sends listening-history updates to `spotify_db.exe`.
+ * \brief Records listening history in the Spotify runtime's open database.
  */
 module spotify_client;
 

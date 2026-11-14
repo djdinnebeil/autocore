@@ -13,6 +13,8 @@ import config_menu;
 import <iostream>;
 import auto_core.core.shell;
 
+#include "config_areas.hpp"
+
 namespace cfg = ac::main::config;
 namespace defaults = ac::main::defaults;
 namespace menu = ac::config_menu;
@@ -161,65 +163,6 @@ int configure_settings() {
     return result.ok ? 0 : 1;
 }
 
-void launch_owner(const std::string_view name) {
-    if (cfg::run_config_exe(name) != 0) {
-        auto_core_config.print(
-            "{} did not complete successfully.",
-            name
-        );
-    }
-}
-
-void print_menu() {
-    std::cout
-        << "\nAuto Core Configuration\n"
-        << "\n"
-        << "1. Auto Core settings\n"
-        << "2. Warnings\n"
-        << "3. Component policy\n"
-        << "4. Shutdown settings\n"
-        << "5. Crash recovery settings\n"
-        << "6. Startup settings\n"
-        << "0. Exit\n"
-        << "Choice: ";
-}
-
-int configuration_mode() {
-    while (true) {
-        print_menu();
-        const auto line = cfg::read_line();
-        if (!line) {
-            return 1;
-        }
-        if (*line == "1") {
-            if (configure_settings() != 0) {
-                return 1;
-            }
-        }
-        else if (*line == "2") {
-            launch_owner("warnings_config.exe");
-        }
-        else if (*line == "3") {
-            launch_owner("components_policy_config.exe");
-        }
-        else if (*line == "4") {
-            launch_owner("shutdown_config.exe");
-        }
-        else if (*line == "5") {
-            launch_owner("crash_recovery_config.exe");
-        }
-        else if (*line == "6") {
-            launch_owner("startup_config.exe");
-        }
-        else if (*line == "0" || line->empty()) {
-            return 0;
-        }
-        else {
-            std::cout << "Enter 0-6.\n";
-        }
-    }
-}
-
 [[nodiscard]]
 int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
     const auto path = ini_path();
@@ -272,9 +215,8 @@ int create_auto_core_ini(const bool prompt, const bool walk_settings = false) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    auto_core_config.log_info("auto_core_config.exe started");
+int run_auto_core_config(int argc, char* argv[]) {
+    auto_core_config.log_info("Auto Core configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -342,7 +284,117 @@ int main(int argc, char* argv[]) {
     }
 
     if (present) {
-        return configuration_mode();
+        return configure_settings();
     }
     return create_auto_core_ini(true);
+}
+
+namespace {
+
+struct ConfigArea {
+    std::string_view route;
+    std::string_view display_name;
+    int (*run)(int, char*[]);
+};
+
+constexpr ConfigArea config_areas[] {
+    {"auto-core", "Auto Core", run_auto_core_config},
+    {"components-policy", "Components Policy", run_components_policy_config},
+    {"crash-recovery", "Crash Recovery", run_crash_recovery_config},
+    {"logging-policy", "Logging Policy", run_logging_policy_config},
+    {"shutdown", "Shutdown", run_shutdown_config},
+    {"startup", "Startup", run_startup_config},
+    {"warnings", "Warnings", run_warnings_config},
+};
+
+[[nodiscard]]
+const ConfigArea* find_area(const std::string_view route) {
+    const auto found = std::ranges::find(config_areas, route, &ConfigArea::route);
+    return found == std::end(config_areas) ? nullptr : &*found;
+}
+
+[[nodiscard]]
+int run_area(const ConfigArea& area, const std::span<char*> arguments) {
+    const int code = area.run(
+        static_cast<int>(arguments.size()),
+        arguments.data()
+    );
+    if (code != 0) {
+        auto_core_config.print(
+            "{} configuration did not complete successfully.",
+            area.display_name
+        );
+    }
+    return code;
+}
+
+void print_area_menu() {
+    std::cout
+        << "\nAuto Core Configuration\n"
+        << "\n"
+        << "1. Auto Core\n"
+        << "2. Components Policy\n"
+        << "3. Crash Recovery\n"
+        << "4. Logging Policy\n"
+        << "5. Shutdown\n"
+        << "6. Startup\n"
+        << "7. Warnings\n"
+        << "0. Exit\n"
+        << "Choice: ";
+}
+
+[[nodiscard]]
+int run_area_menu(char* executable) {
+    std::array<char*, 1> arguments {executable};
+    while (true) {
+        print_area_menu();
+        const auto line = cfg::read_line();
+        if (!line) {
+            return 1;
+        }
+        if (*line == "0" || line->empty()) {
+            return 0;
+        }
+        unsigned selection = 0;
+        const auto parsed = std::from_chars(
+            line->data(), line->data() + line->size(), selection
+        );
+        if (parsed.ec != std::errc {} ||
+            parsed.ptr != line->data() + line->size() ||
+            selection < 1 || selection > std::size(config_areas)) {
+            std::cout << "Enter 0-7.\n";
+            continue;
+        }
+        (void)run_area(config_areas[selection - 1], arguments);
+    }
+}
+
+} // namespace
+
+int run_configuration_program(int argc, char* argv[]) {
+    ac::shell::set_process_app_user_model_id();
+
+    if (argc == 1) {
+        return run_area_menu(argv[0]);
+    }
+
+    if (std::string_view {argv[1]} != "--area") {
+        // Preserve the retained executable's existing --seed/--init behavior.
+        return run_auto_core_config(argc, argv);
+    }
+    if (argc < 3) {
+        std::cerr << "Missing configuration area after --area.\n";
+        return 1;
+    }
+    const auto* area = find_area(argv[2]);
+    if (!area) {
+        std::cerr << "Unknown configuration area: " << argv[2] << '\n';
+        return 1;
+    }
+
+    std::vector<char*> arguments;
+    arguments.reserve(static_cast<std::size_t>(argc - 1));
+    arguments.push_back(argv[0]);
+    arguments.insert(arguments.end(), argv + 3, argv + argc);
+    return area->run(static_cast<int>(arguments.size()), arguments.data());
 }

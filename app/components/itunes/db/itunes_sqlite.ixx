@@ -2,7 +2,7 @@
  * \file itunes_sqlite.ixx
  * \brief Private SQLite store for iTunes `history.db`.
  *
- * Compiled only into `itunes_db.exe`.
+ * Compiled into `itunes_ac.exe`. SQL and transactions stay in this module.
  */
 export module itunes_sqlite;
 

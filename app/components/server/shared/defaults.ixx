@@ -2,7 +2,7 @@
  * \file defaults.ixx
  * \brief Portable defaults for `config/components/server.ini` and Server seed files.
  *
- * `port` and `document_root` are seed values for `server_editor.exe`.
+ * `port` and `document_root` are seed values for `server_ac.exe --editor`.
  * They are not `server.ini` keys and they are not runtime fallbacks.
  */
 export module server_defaults;
@@ -11,13 +11,13 @@ import std;
 
 export namespace server::defaults {
 
-    constexpr std::string_view directory = "components\\server";
+    constexpr std::string_view directory = "data\\server";
     constexpr int port = 8585;
     constexpr std::string_view document_root = "site";
 
     constexpr std::string_view ini_text =
         "[server]\n"
-        "directory = components\\server\n"
+        "directory = data\\server\n"
         "logging = on\n";
 
     [[nodiscard]]

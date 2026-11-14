@@ -1,7 +1,6 @@
 module;
 
 #include "console_route_detail.hpp"
-
 module auto_core.core.component;
 
 import :console_writer;
@@ -174,7 +173,8 @@ namespace ac {
         const auto& component_name = impl_->name;
         const auto file =
             std::string {"config/components/"} + component_name + ".ini";
-        const auto exe = component_name + "_config.exe";
+        const auto exe =
+            std::string {component_name} + "_ac.exe --config";
         if (malformed) {
             log_alert(
                 "{} is malformed. Run {} to generate a valid file. "

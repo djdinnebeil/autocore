@@ -20,7 +20,7 @@ export namespace wake {
      * A relative `[wake] directory` is resolved against the installation
      * root. An absolute value is used as-is. A missing file, missing key,
      * empty value, or unusable value keeps
-     * `<installation root>/components/wake`. Cached for the process
+     * `<installation root>/data/wake`. Cached for the process
      * lifetime. The directory is not created or validated.
      */
     [[nodiscard]]

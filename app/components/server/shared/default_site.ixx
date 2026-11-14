@@ -2,7 +2,7 @@
  * \file default_site.ixx
  * \brief Compiled starter page for the Server document root.
  *
- * `server_builder.exe` writes these strings only when the matching file
+ * `server_ac.exe --builder` writes these strings only when the matching file
  * is missing. `defaults.ixx` stays limited to `config/components/server.ini`.
  */
 export module server_default_site;
@@ -33,9 +33,9 @@ export namespace server::default_site {
         "file only when it is missing, so an edited page stays as it was "
         "left.</p>\n"
         "<h2>Choose another document root</h2>\n"
-        "<p><code>server_editor.exe</code> writes <code>document_root.id</code>. "
+        "<p><code>server_ac.exe --editor</code> writes <code>document_root.id</code>. "
         "A relative value stays under the Server data directory. An absolute "
-        "path is served as-is and is not modified by <code>server_builder.exe</code>.</p>\n"
+        "path is served as-is and is not modified by <code>server_ac.exe --builder</code>.</p>\n"
         "<p>Do not put secrets here. Anything reachable through the configured "
         "document root can be opened in a browser on this computer.</p>\n"
         "</main>\n"

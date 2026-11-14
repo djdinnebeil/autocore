@@ -3,6 +3,7 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <string_view>
 #include <system_error>
 #include <Windows.h>
 
@@ -98,6 +99,22 @@ TEST_CASE(
     CHECK(app.filename() == "app");
     CHECK(std::filesystem::exists(root / "config", error));
     CHECK_FALSE(std::filesystem::exists(app / "config", error));
+
+    const auto components = root / "components";
+    CHECK(std::filesystem::is_regular_file(components / "logger_ac.exe", error));
+    CHECK_FALSE(std::filesystem::is_regular_file(components / "auto_core.dll", error));
+    bool component_executable_in_app = false;
+    std::error_code scan_error;
+    for (const auto& entry : std::filesystem::directory_iterator(app, scan_error)) {
+        const auto name = entry.path().filename().string();
+        constexpr std::string_view suffix = "_ac.exe";
+        if (name.size() >= suffix.size() &&
+            name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            component_executable_in_app = true;
+        }
+    }
+    CHECK_FALSE(scan_error);
+    CHECK_FALSE(component_executable_in_app);
 }
 
 TEST_CASE(

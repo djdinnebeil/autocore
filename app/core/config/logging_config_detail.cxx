@@ -95,18 +95,17 @@ namespace ac::logging::config::detail {
     ) {
         LoggingSettings settings {
             .disable_all = false,
-            .level = LogLevel::debug,
+            .level = LogLevel::info,
             .log_console_output = true,
             .write_logs_to_files = true,
             .write_logs_to_console = false,
             .write_alerts_to_console = true,
             .component_logging_default = true,
-            .max_directory_mb = 100,
-            .retention_days = 30,
+            .max_directory_mb = 25,
+            .retention_days = 10,
             .directory = default_directory,
             .components_directory = default_directory / "components",
-            .report = {},
-            .experimental = false
+            .report = {}
         };
 
         const auto disable_all = parse_bool(raw.disable_all);
@@ -125,27 +124,27 @@ namespace ac::logging::config::detail {
         );
         settings.components_directory = settings.directory / "components";
         const auto max_directory_mb = parse_non_negative(raw.max_directory_mb);
-        settings.max_directory_mb = max_directory_mb.value_or(100);
+        settings.max_directory_mb = max_directory_mb.value_or(25);
         append_integer(
             settings.report,
             "max_directory_mb",
             !max_directory_mb,
-            100
+            25
         );
 
         const auto retention_days = parse_non_negative(raw.retention_days);
-        settings.retention_days = retention_days.value_or(30);
+        settings.retention_days = retention_days.value_or(10);
         append_integer(
             settings.report,
             "retention_days",
             !retention_days,
-            30
+            10
         );
 
         const auto level = parse_level(raw.level);
-        settings.level = level.value_or(LogLevel::debug);
+        settings.level = level.value_or(LogLevel::info);
         if (!level) {
-            settings.report += "level missing or invalid; using debug\n";
+            settings.report += "level missing or invalid; using info\n";
         }
 
         const auto log_console_output = parse_bool(raw.log_console_output);
@@ -191,15 +190,6 @@ namespace ac::logging::config::detail {
             "component_logging_default",
             !family_default,
             "on"
-        );
-
-        const auto experimental = parse_bool(raw.experimental);
-        settings.experimental = experimental.value_or(false);
-        append_bool(
-            settings.report,
-            "experimental",
-            !experimental,
-            "off"
         );
 
         return settings;

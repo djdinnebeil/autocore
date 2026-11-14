@@ -65,10 +65,11 @@ std::wstring quote_argument(std::wstring_view value) {
 }
 
 int launch_owner(
-    const std::wstring_view executable_name,
+    const std::wstring_view operation,
     const std::wstring_view arguments
 ) {
-    const auto executable_path = ac::paths::bin_directory() / executable_name;
+    const auto executable_path =
+        ac::paths::component_executable_directory() / L"journal_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -78,6 +79,7 @@ int launch_owner(
 
     std::wstring command =
         quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(operation) + L" " +
         quote_argument(arguments);
     STARTUPINFOW startup {};
     startup.cb = sizeof(startup);
@@ -134,23 +136,19 @@ int launch_owner(
 }
 
 int launch_owned_stores(const std::wstring_view mode) {
-    if (const int builder = launch_owner(L"journal_builder.exe", mode);
+    if (const int builder = launch_owner(L"--builder", mode);
         builder != 0) {
         return builder;
     }
-    if (const int cloud = launch_owner(L"journal_cloud.exe", mode);
+    if (const int cloud = launch_owner(L"--cloud", mode);
         cloud != 0) {
         return cloud;
     }
-    if (const int clock = launch_owner(L"journal_clock.exe", mode);
+    if (const int clock = launch_owner(L"--clock", mode);
         clock != 0) {
         return clock;
     }
-    if (const int database = launch_owner(L"journal_db.exe", mode);
-        database != 0) {
-        return database;
-    }
-    return launch_owner(L"journal_series.exe", mode);
+    return launch_owner(L"--series", mode);
 }
 
 std::filesystem::path ini_path() {
@@ -322,10 +320,12 @@ void activate_own_console() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::config {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_config.log_info("journal_config.exe started");
+    journal_config.log_info("journal_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -399,10 +399,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (launch_owner(L"journal_builder.exe", L"--seed") != 0) {
+    if (launch_owner(L"--builder", L"--seed") != 0) {
         return 1;
     }
 
     activate_own_console();
     return run_configuration_menu();
 }
+
+} // namespace ac::journal_app::config

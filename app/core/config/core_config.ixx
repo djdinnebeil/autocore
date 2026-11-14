@@ -5,7 +5,7 @@
  * Settings are loaded from `config/warnings.ini`. The first access caches
  * the result for the lifetime of the process. A missing or malformed file
  * keeps the defaults in memory and does not write the file. Only
- * `warnings_config.exe` creates or rewrites `warnings.ini`.
+ * `auto_core_settings.exe --config --area warnings` creates or rewrites `warnings.ini`.
  * `config/auto_core.ini` remains the initialization sentinel and is not
  * loaded here. `[auto_core] logging` is family logging for `auto_core.exe`.
  */

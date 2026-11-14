@@ -26,8 +26,8 @@ Windows integrity levels. The iTunes requirements are documented in
 
 Do not share or copy:
 
-- `components\spotify\tokens.map` or a populated `client.id`
-- private data under `components\journal\`, including `series.db`,
+- `data\spotify\tokens.map` or a populated `client.id`
+- private data under `data\journal\`, including `series.db`,
   `series.map`, `firebase.id`, and alias `.list` files
 - Dash vault at `%LOCALAPPDATA%\Auto Core\dash.vault`
 - logs, crash reports, or Writer notes and task lists

@@ -146,7 +146,9 @@ void remove_secret(const std::filesystem::path& path) {
 
 } // namespace
 
-int wmain() {
+namespace ac::dash_app::editor {
+
+int run() {
     ac::shell::set_process_app_user_model_id();
     // Held until process exit. A second editor must not open the vault.
     const HANDLE editor_mutex = CreateMutexW(nullptr, FALSE, editor_mutex_name);
@@ -170,7 +172,7 @@ int wmain() {
                 ac::logging::config::LoggingFallback::off
             }
         };
-        dash_editor.log_info("dash_editor.exe started");
+        dash_editor.log_info("dash_ac.exe --editor started");
 
         while (true) {
             std::wcout << L"\ndash - Secret Editor\n\n"
@@ -202,3 +204,5 @@ int wmain() {
         return 1;
     }
 }
+
+} // namespace ac::dash_app::editor

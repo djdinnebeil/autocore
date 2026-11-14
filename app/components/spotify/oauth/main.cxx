@@ -56,10 +56,12 @@ int run_authorize() {
     return 0;
 }
 
-int main() {
+namespace ac::spotify_app::oauth {
+
+int run() {
     ac::shell::set_process_app_user_model_id();
     ::SetConsoleCtrlHandler(oauth_console_control, TRUE);
-    spotify_oauth_log.log_info("spotify_oauth.exe started");
+    spotify_oauth_log.log_info("spotify_ac.exe --oauth started");
 
     while (true) {
         std::cout
@@ -82,3 +84,5 @@ int main() {
         spotify_oauth_log.log_alert("Unknown option.");
     }
 }
+
+} // namespace ac::spotify_app::oauth

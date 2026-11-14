@@ -183,9 +183,8 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    startup_config.log_info("startup_config.exe started");
+int run_startup_config(int argc, char* argv[]) {
+    startup_config.log_info("Startup configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

@@ -11,7 +11,7 @@ The C++23 module catalog is [modules.md](modules.md).
 | Folder or Module | Purpose |
 | --- | --- |
 | `app/shared/command_registry.ixx` | Stores and resolves runtime keymap command names. |
-| `app/shared/components_editor_request.ixx` | Shared `--init` / `--seed` parsing. `<name>_settings.exe` launches `components_editor.exe --component <name> --on` or `--off`. |
+| `app/shared/components_editor_request.ixx` | Shared `--init` / `--seed` parsing. `<name>_ac.exe --settings` launches `auto_core_components.exe --enable <name>` or `--disable <name>`. |
 | `app/shared/protocols/component_protocol.ixx` | Generic `ac.component.v1` hello, invoke, and shutdown. |
 | `itunes/shared/itunes_protocol.ixx` | iTunes command names used by `itunes_ac.exe`. |
 | `journal/shared/journal_protocol.ixx` | Journal command tokens used by `journal_ac.exe`. |
@@ -26,21 +26,21 @@ To make a function available to the keymap, advertise it from a hosted child's `
 
 The command registry is a process-lifetime static built in this order: test commands, Main-owned commands, reserved Taskbar commands, configured Taskbar activation commands, hosted hello catalogs and enabled on-demand commands, then the remaining Main-owned Taskbar commands. A configured Taskbar command cannot override a reserved name, but it takes precedence over a duplicate child fallback command. Duplicate `add` / `add_factory` throws `std::logic_error` for Main-local names. A child catalog name that matches an earlier command is skipped; collisions between child catalogs are skipped and logged.
 
-Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `keymap_editor.exe` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [main.md](main.md#keymap).
+Mappings in `dist/keymap.map` are the key map. If `keymap.map` is missing, run `auto_core_keymap.exe --seed` to write a seed of every `key_codes` name (`numpad_0` / `numpad_1` filled, other keys left blank as `key =`). If workspace use or file load fails, Main installs a two-key emergency map in memory and does not write `keymap.map`. See [main.md](main.md#keymap).
 
 ## Defaults vs live files
 
 A public clone should not contain another person's keymap, journal print-choice table, or machine-specific config. `dist/` is gitignored. Portable text is compiled; the live files are written when missing:
 
-- `components/journal/<factory_name>.list` — `journal_builder.exe --seed` writes a missing starter alias file from [`journal_factories.ixx`](../app/components/journal/shared/journal_factories.ixx). An existing file is left unchanged. `journal_config.exe --init` and `--seed` launch that owner, then `journal_cloud.exe`, `journal_clock.exe`, `journal_db.exe`, and `journal_series.exe`, each for its own missing file.
-- `keymap.map` — `keymap_editor.exe` writes a seed (`numpad_0` / `numpad_1` filled, every other `key_codes` name blank)
-- `components.list` — `components_editor.exe --seed` creates it from installed `*_ac.exe` names that already have `config/components/<name>.ini`
-- `config/*.ini` — Main host INIs are written only by the matching `_config.exe` from [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). Component `<name>.ini` is written only by `<name>_config.exe` from that child's `shared/defaults.ixx`
-- `dist/components/server/` — default Server data directory. `server_config.exe --init` and `--seed` write a missing `config/components/server.ini`, then launch `server_editor.exe` for missing `port.id` and `document_root.id` and `server_builder.exe --seed` for missing `index.html` and `styles.css`. `--seed` always requests the starter site. `--init` asks first. An existing file is left unchanged. The builder reads `document_root.id` and writes only under a relative document root from [`default_site.ixx`](../app/components/server/shared/default_site.ixx)
+- `data/journal/<factory_name>.list` — `journal_ac.exe --builder --seed` writes a missing starter alias file from [`journal_factories.ixx`](../app/components/journal/shared/journal_factories.ixx). An existing file is left unchanged. `journal_ac.exe --config --init` and `--seed` launch that owner, then `journal_ac.exe --cloud`, `journal_ac.exe --clock`, and `journal_ac.exe --series`, each for its own missing file. `journal_ac.exe --series` also creates a missing `series.db`.
+- `keymap.map` — `auto_core_keymap.exe --seed` writes a seed (`numpad_0` / `numpad_1` filled, every other `key_codes` name blank)
+- `components.list` — `auto_core_components.exe --edit --seed` creates it from installed `*_ac.exe` names that already have `config/components/<name>.ini`
+- `config/*.ini` — Main host INIs are written only by `auto_core_settings.exe --config` from [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). A component `<name>.ini` is written only by `<name>_ac.exe --config` from that child's `shared/defaults.ixx`
+- `dist/data/server/` — default Server data directory. `server_ac.exe --config --init` and `--seed` write a missing `config/components/server.ini`, then launch `server_ac.exe --editor` for missing `port.id` and `document_root.id` and `server_ac.exe --builder --seed` for missing `index.html` and `styles.css`. `--seed` always requests the starter site. `--init` asks first. An existing file is left unchanged. The builder reads `document_root.id` and writes only under a relative document root from [`default_site.ixx`](../app/components/server/shared/default_site.ixx)
 
 An existing `keymap.map`, `components.list`, or Journal `<factory_name>.list` file is left unchanged. `*.local.ini` / `*.local.ixx` are gitignored and are not loaded.
 
-Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe` and `journal_builder.exe`. `writer_builder.exe` replaces `<writer directory>/insert_text.list` from `text/*.txt`. `writer_ac.exe` loads those `insert_*` names at startup. Restart Writer after a catalog change; editing a text file does not require a rebuild. `keymap_builder.exe` publishes both keymap command lists. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_builder.exe` creates a missing `.map` and does not overwrite an existing one. `taskbar_config.exe` writes only `config/components/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
+Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe`. `writer_ac.exe --builder` replaces `<writer directory>/insert_text.list` from `text/*.txt`. `writer_ac.exe` loads those `insert_*` names at startup. Restart Writer after a catalog change; editing a text file does not require a rebuild. `auto_core_keymap.exe --build` publishes both keymap command lists. Do not commit the live alias file. Per-program `.map` definitions live under the configured taskbar data directory (portable default gitignored `dist/taskbar/applications/`). `taskbar_ac.exe --builder` creates a missing `.map` and does not overwrite an existing one. `taskbar_ac.exe --config` writes only `config/components/taskbar.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `taskbar_ac.exe --run --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
 
 ## Main process session
 
@@ -53,7 +53,7 @@ and starts each enabled generic child:
    snapshot `connect`). Snapshot failure keeps the child and skips native
    Win+position.
 2. Start every other enabled hosted name: create `ac_{name}_pipe` and
-   launch `{name}_ac.exe` without waiting, then wait for those
+   launch `{name}_ac.exe --run` without waiting. Then wait for those
    `ac.component.v1` hellos in parallel (5s window). A name whose executable
    embeds `AC_LAUNCH_DESCRIPTOR` is not started. A missing exe, bad
    hello, or timeout disables only that child.
@@ -70,7 +70,8 @@ component name. Only `force_allowed` uses `TerminateJobObject`. A hosted
 component that cannot be assigned to its job is not started. A component
 whose executable embeds `AC_LAUNCH_DESCRIPTOR` is not a session
 child. When that name is enabled, Main registers the command names in the
-resource and launches `{name}_ac.exe` on demand. Journal parameterized names
+resource and launches `{name}_ac.exe --run` plus those descriptor
+arguments on demand. Journal parameterized names
 and print-choice aliases are advertised in the same hello catalog.
 
 Process lifetime, hook, F-lock, and crash restart are in [main.md](main.md).
@@ -84,23 +85,21 @@ Put the project at `app/components/<name>/`. Import
 `..\..\..\msbuild\AutoCore.props` once (relative). Target name is
 `<name>_ac` for short children (`dash_ac`, `example_ac`, `itunes_ac`,
 `journal_ac`, `logger_ac`, `server_ac`, `slash_ac`,
-`spotify_ac`, `taskbar_ac`, `wake_ac`, `writer_ac`). Leave `auto_core`,
-`spotify_oauth`, `spotify_editor`, `spotify_db`, `itunes_db`, `journal_config`, `journal_builder`, `journal_clock`, `journal_db`, `journal_series`, `journal_cloud`, `server_config`, `server_editor`, `server_builder`,
-`taskbar_config`, `taskbar_builder`, `writer_config`, `writer_builder`, and `writer_editor` unsuffixed.
+`spotify_ac`, `taskbar_ac`, `wake_ac`, `writer_ac`). Leave `auto_core` unsuffixed. A component does not get a separate `<name>_config` or `<name>_settings` target.
 
 Enable a v1 child in live `dist/components.list` (`name` or `name on`).
 Advertise
 commands in the child's hello catalog and bind them in live
-`dist/keymap/keymap.map`. Main does not need a per-component protocol
+`<installation root>/keymap.map`. Main does not need a per-component protocol
 file or `register_with` entry. An on-demand component is any listed name
 whose executable embeds `AC_LAUNCH_DESCRIPTOR`. Dash and Slash
 are the current on-demand components. Do not start a v1 session for a
 component that embeds that resource.
 
-Run `<name>_settings.exe` to enable the component, or run `components_editor.exe`
-with no arguments so a live catalog full-syncs
+Every component's settings menu is `<name>_ac.exe --settings`, and a missing INI points at `<name>_ac.exe --config`. A third-party component implements the same commands. See [component-commands.md](component-commands.md). Or run `auto_core_components.exe --edit`
+so a live catalog full-syncs
 discovered `<name>_ac.exe` names that already have `config/components/<name>.ini`.
-`components_editor.exe` builds that list from those discovered names.
+`auto_core_components.exe --edit` builds that list from those discovered names.
 Do not put ordinary component names in `auto_core.dll`.
 
 A clone does not need an `obj` junction. If you want intermediates

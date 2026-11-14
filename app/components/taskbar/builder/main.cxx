@@ -1026,7 +1026,7 @@ namespace {
 
     int launch_taskbar_ac_refresh() {
         const auto executable_path =
-            ac::paths::bin_directory() / "taskbar_ac.exe";
+            ac::paths::component_executable_directory() / "taskbar_ac.exe";
         std::error_code error;
         const bool present = std::filesystem::exists(executable_path, error);
         if (error || !present) {
@@ -1035,7 +1035,7 @@ namespace {
         }
 
         std::wstring command_line =
-            L"\"" + executable_path.wstring() + L"\" --refresh-cache";
+            L"\"" + executable_path.wstring() + L"\" --run --refresh-cache";
         STARTUPINFOW startup_info {};
         startup_info.cb = sizeof(startup_info);
         PROCESS_INFORMATION process_info {};
@@ -1198,25 +1198,26 @@ namespace {
     }
 }
 
-int wmain(int argc, wchar_t* argv[]) {
+namespace ac::taskbar_app::builder {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_builder.log_info("taskbar_builder.exe started");
+    taskbar_builder.log_info("taskbar_ac.exe --builder started");
     try {
         const ToolConfiguration configuration = default_configuration();
         if (argc > 2) {
-            std::wcerr << L"Usage: taskbar_builder.exe [--seed]\n";
+            std::cerr << "Usage: taskbar_ac.exe --builder [--seed]\n";
             return 1;
         }
         if (argc == 2) {
-            const std::wstring_view argument {argv[1]};
-            if (argument == L"--seed") {
+            if (std::string_view {argv[1]} == "--seed") {
                 taskbar_builder.log_debug("Seed requested");
                 if (generate_maps_with_com(configuration, false) != 0) {
                     return 1;
                 }
                 return launch_taskbar_ac_refresh();
             }
-            std::wcerr << L"Usage: taskbar_builder.exe [--seed]\n";
+            std::cerr << "Usage: taskbar_ac.exe --builder [--seed]\n";
             return 1;
         }
 
@@ -1224,9 +1225,11 @@ int wmain(int argc, wchar_t* argv[]) {
     }
     catch (const std::exception& error) {
         taskbar_builder.print(
-            "taskbar_builder.exe failed: {}",
+            "taskbar_ac.exe --builder failed: {}",
             error.what()
         );
         return 1;
     }
 }
+
+} // namespace ac::taskbar_app::builder

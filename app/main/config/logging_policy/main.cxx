@@ -84,7 +84,8 @@ LoggingValues current_values() {
         }
     }
     if (const auto level = document->find("logging", "level")) {
-        if (*level == "debug" || *level == "info" || *level == "alert") {
+        if (*level == "trace" || *level == "debug" ||
+            *level == "info" || *level == "alert") {
             values.level = std::string {*level};
         }
     }
@@ -124,12 +125,6 @@ LoggingValues current_values() {
         bool parsed = values.component_logging_default;
         if (parse_on_off(*family, parsed)) {
             values.component_logging_default = parsed;
-        }
-    }
-    if (const auto experimental = document->find("logging", "experimental")) {
-        bool parsed = values.experimental;
-        if (parse_on_off(*experimental, parsed)) {
-            values.experimental = parsed;
         }
     }
     return values;
@@ -175,10 +170,7 @@ std::string current_text(const menu::Setting& setting) {
     if (setting.key == "write_alerts_to_console") {
         return on_off(values.write_alerts_to_console);
     }
-    if (setting.key == "component_logging_default") {
-        return on_off(values.component_logging_default);
-    }
-    return on_off(values.experimental);
+    return on_off(values.component_logging_default);
 }
 
 [[nodiscard]]
@@ -227,9 +219,6 @@ menu::ApplyResult apply_setting(
     else if (setting.key == "component_logging_default") {
         values.component_logging_default = value == "on";
     }
-    else {
-        values.experimental = value == "on";
-    }
     if (!write_values(values)) {
         logging_policy_config.print("Failed to write {}.", ini_path().string());
         return menu::ApplyResult::failed;
@@ -257,7 +246,7 @@ int initialize_missing() {
         std::cerr << "Failed to write " << ini_path().string() << ".\n";
         return 1;
     }
-    logging_policy_config.log_info("logging_policy_config.exe started");
+    logging_policy_config.log_info("Logging Policy configuration opened");
     ac::config::components_request::log_configuration_missing(logging_policy_config);
     ac::config::components_request::log_writing_defaults(logging_policy_config);
     logging_policy_config.log_debug("Wrote {}", ini_path().string());
@@ -274,8 +263,7 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
+int run_logging_policy_config(int argc, char* argv[]) {
     bool disable_requested = false;
     std::vector<char*> filtered;
     filtered.reserve(static_cast<std::size_t>(argc));
@@ -315,7 +303,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_info("logging_policy_config.exe started");
+        logging_policy_config.log_info("Logging Policy configuration opened");
         req::log_configuration_initialized(logging_policy_config);
         return 0;
     }
@@ -324,7 +312,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_info("logging_policy_config.exe started");
+        logging_policy_config.log_info("Logging Policy configuration opened");
         req::log_writing_defaults(logging_policy_config);
         req::log_configuration_initialized(logging_policy_config);
         return 0;
@@ -341,14 +329,14 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_info("logging_policy_config.exe started");
+        logging_policy_config.log_info("Logging Policy configuration opened");
         req::log_configuration_missing(logging_policy_config);
         req::log_writing_defaults(logging_policy_config);
         logging_policy_config.log_debug("Wrote {}", ini_path().string());
         return run_configuration_menu();
     }
 
-    logging_policy_config.log_info("logging_policy_config.exe started");
+    logging_policy_config.log_info("Logging Policy configuration opened");
     req::log_config_request(logging_policy_config, *launch);
     if (launch->seed) {
         req::log_seed_skipped(logging_policy_config, "config/logging_policy.ini");

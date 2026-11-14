@@ -16,7 +16,7 @@ TEST_CASE("server.ini defaults are directory and logging", "[server][data][unit]
     CHECK(server::defaults::port == 8585);
     CHECK(server::defaults::document_root == "site");
     CHECK(seeded == rewritten);
-    CHECK(seeded.find("directory = components\\server\n") != std::string::npos);
+    CHECK(seeded.find("directory = data\\server\n") != std::string::npos);
     CHECK(seeded.find("logging = on\n") != std::string::npos);
     CHECK(seeded.find("port") == std::string::npos);
     CHECK(seeded.find("document_root") == std::string::npos);
@@ -27,12 +27,13 @@ TEST_CASE("server.ini defaults are directory and logging", "[server][data][unit]
 
 TEST_CASE("Server directory resolves against the installation root", "[server][data][unit]") {
     const std::filesystem::path root {R"(C:\Example\Auto Core)"};
-    const auto fallback = (root / "components" / "server").lexically_normal();
+    const auto fallback = (root / "data" / "server").lexically_normal();
+    const auto custom = (root / "components" / "server").lexically_normal();
 
     CHECK(server::data::resolve_directory(std::nullopt, root) == fallback);
     CHECK(server::data::resolve_directory("", root) == fallback);
     CHECK(server::data::resolve_directory("   ", root) == fallback);
-    CHECK(server::data::resolve_directory(R"(components\server)", root) == fallback);
+    CHECK(server::data::resolve_directory(R"(components\server)", root) == custom);
     CHECK(
         server::data::resolve_directory(R"(D:\AutoCoreServer)", root) ==
         std::filesystem::path {R"(D:\AutoCoreServer)"}

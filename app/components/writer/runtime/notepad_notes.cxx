@@ -19,10 +19,10 @@ std::wstring quote_argument(std::wstring_view value) {
 
 int run_writer_editor(std::string_view argument) {
     const std::filesystem::path executable =
-        ac::paths::bin_directory() / "writer_editor.exe";
+        ac::paths::component_executable_directory() / "writer_ac.exe";
     const std::wstring wide_argument {argument.begin(), argument.end()};
     std::wstring command =
-        quote_argument(executable.wstring()) + L" " +
+        quote_argument(executable.wstring()) + L" \"--editor\" " +
         quote_argument(wide_argument);
 
     STARTUPINFOW startup {};
@@ -40,7 +40,7 @@ int run_writer_editor(std::string_view argument) {
             &startup,
             &process
         )) {
-        writer_component().log_alert("Unable to start writer_editor.exe.");
+        writer_component().log_alert("Unable to start writer_ac.exe --editor.");
         return 1;
     }
 
@@ -50,7 +50,7 @@ int run_writer_editor(std::string_view argument) {
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
         writer_component().log_alert(
-            "Unable to read the exit code from writer_editor.exe."
+            "Unable to read the exit code from writer_ac.exe --editor."
         );
         return 1;
     }
@@ -58,7 +58,7 @@ int run_writer_editor(std::string_view argument) {
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
         writer_component().log_alert(
-            "writer_editor.exe --daily-note exited {}.",
+            "writer_ac.exe --editor --daily-note exited {}.",
             code
         );
     }

@@ -153,26 +153,16 @@ std::optional<std::filesystem::path> select_text_file(
         );
     }
     menu << "> ";
-    writer_component().printnl(menu.str());
 
-    std::string input;
-    while (std::getline(std::cin, input)) {
-        writer_component().log_info("Text file selection: {}", input);
-        std::size_t selection = 0;
-        const char* const first = input.data();
-        const char* const last = first + input.size();
-        const auto result = std::from_chars(first, last, selection);
-        if (result.ec == std::errc {} && result.ptr == last &&
-            selection > 0 && selection <= files.size()) {
-            return files[selection - 1];
-        }
-        writer_component().printnl("Incorrect input\nEnter again: ");
-    }
-
-    writer_component().log_alert(
-        "Text file selection cancelled: input closed"
+    const auto selection = writer_actions::select_numbered_entry(
+        menu.str(),
+        files.size(),
+        "Text file"
     );
-    return std::nullopt;
+    if (!selection) {
+        return std::nullopt;
+    }
+    return files[*selection];
 }
 
 std::optional<std::string> read_text_file(const std::filesystem::path& file) {
@@ -208,6 +198,8 @@ void select_and_insert_text_worker() {
         return;
     }
 
+    writer_actions::PromptFocus focus {*target_window};
+
     const auto files = list_text_files();
     if (!files) {
         return;
@@ -240,6 +232,7 @@ void select_and_insert_text_worker() {
         text,
         false
     );
+    focus.release();
 }
 
 } // namespace

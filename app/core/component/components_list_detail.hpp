@@ -13,13 +13,16 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 
 namespace ac::config::components_list {
 
@@ -271,32 +274,87 @@ namespace ac::config::components_list {
         return result;
     }
 
+    enum class ListReadStatus {
+        ok,
+        not_found,
+        open_failed,
+        read_failed
+    };
+
+    struct ListRead {
+        ListReadStatus status {ListReadStatus::open_failed};
+        std::string bytes;
+    };
+
+    /**
+     * \brief Reads the whole file with delete sharing, then closes it.
+     *
+     * A failed read is not an empty catalog. An empty successful read is
+     * `ok` with empty bytes.
+     */
     [[nodiscard]]
-    inline ParseResult load(const std::filesystem::path& path) {
-        std::ifstream input(path, std::ios::binary);
-        if (!input) {
-            ParseResult result;
-            result.error =
-                "Unable to open components.list. Run "
-                "components_editor.exe to generate it. Optional components "
-                "are disabled; the file will not be created.";
+    inline ListRead read_list_bytes(const std::filesystem::path& path) {
+        ListRead result;
+        const HANDLE handle = CreateFileW(
+            path.c_str(),
+            GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+        );
+        if (handle == INVALID_HANDLE_VALUE) {
+            const DWORD error = GetLastError();
+            result.status =
+                error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND
+                    ? ListReadStatus::not_found
+                    : ListReadStatus::open_failed;
             return result;
         }
 
-        const std::string bytes(
-            (std::istreambuf_iterator<char>(input)),
-            std::istreambuf_iterator<char>()
-        );
-        if (!input && !input.eof()) {
+        std::string bytes;
+        char buffer[4096];
+        while (true) {
+            DWORD read = 0;
+            if (!ReadFile(handle, buffer, sizeof(buffer), &read, nullptr)) {
+                CloseHandle(handle);
+                result.status = ListReadStatus::read_failed;
+                return result;
+            }
+            if (read == 0) {
+                break;
+            }
+            bytes.append(buffer, buffer + read);
+        }
+
+        CloseHandle(handle);
+        result.status = ListReadStatus::ok;
+        result.bytes = std::move(bytes);
+        return result;
+    }
+
+    [[nodiscard]]
+    inline ParseResult load(const std::filesystem::path& path) {
+        const ListRead read = read_list_bytes(path);
+        if (read.status == ListReadStatus::read_failed) {
             ParseResult result;
             result.error =
                 "Unable to read components.list. Run "
-                "components_editor.exe to generate it. Optional components "
+                "auto_core_components.exe --edit to generate it. Optional components "
+                "are disabled; the file will not be created.";
+            return result;
+        }
+        if (read.status != ListReadStatus::ok) {
+            ParseResult result;
+            result.error =
+                "Unable to open components.list. Run "
+                "auto_core_components.exe --edit to generate it. Optional components "
                 "are disabled; the file will not be created.";
             return result;
         }
 
-        return parse(bytes);
+        return parse(read.bytes);
     }
 
     [[nodiscard]]

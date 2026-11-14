@@ -19,7 +19,7 @@ export namespace spotify {
      * A relative `[spotify] directory` is resolved against the installation
      * root. An absolute value is used as-is. A missing file, missing key,
      * empty value, or unusable value keeps
-     * `<installation root>/components/spotify`. Cached for the process
+     * `<installation root>/data/spotify`. Cached for the process
      * lifetime. The directory is not created or validated.
      */
     [[nodiscard]]

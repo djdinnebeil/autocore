@@ -41,13 +41,13 @@ These files live in the Taskbar directory.
 | `applications\<program>.map` | One program definition. `[commands] activate` is the keymap name. `[window]` matches an open window. `[fallback] executable_path` starts the program when it is not open. `[activation] multi_window` is `cycle` or `one-shot`. |
 | `winkey_map.cache` | The current Win+1 through Win+0 positions. `live` mode replaces it. `cache` mode reads it. |
 
-`taskbar_builder.exe` creates a missing map. It does not replace an existing one. Run it again after pinned programs change. Windows Notepad is written as `notepad.map` with the packaged Notepad fallback. Microsoft Edge is written as `microsoft_edge.map`.
+`taskbar_ac.exe --builder` creates a missing map. It does not replace an existing one. Run it again after pinned programs change. Windows Notepad is written as `notepad.map` with the packaged Notepad fallback. Microsoft Edge is written as `microsoft_edge.map`.
 
 ## Component tools
 
 | Tool | What it is for |
 | --- | --- |
 | `taskbar_ac.exe` | Keeps the position cache and handles `activate_auto_core` and `refresh_taskbar_positions`. |
-| `taskbar_config.exe` | Edits `taskbar.ini`. |
-| `taskbar_builder.exe` | Discovers pinned programs and writes missing maps. |
-| `taskbar_settings.exe` | Opens configuration and discovery. |
+| `taskbar_ac.exe --config` | Edits `taskbar.ini`. |
+| `taskbar_ac.exe --builder` | Discovers pinned programs and writes missing maps, then runs `taskbar_ac.exe --run --refresh-cache`. |
+| `taskbar_ac.exe` or `taskbar_ac.exe --settings` | Opens configuration and discovery. |

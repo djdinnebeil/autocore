@@ -1,8 +1,8 @@
 /**
  * \file components_editor_request.ixx
- * \brief Launch `components_editor.exe` from a child helper.
- *        `--component <name>` registers a name. `--on` or `--off` with
- *        that flag sets an explicit `components.list` state.
+ * \brief Launch `auto_core_components.exe` from a child helper.
+ *        `--enable <name>` or `--disable <name>` sets an explicit
+ *        `components.list` state.
  */
 export module components_editor_request;
 
@@ -14,10 +14,9 @@ import <iostream>;
 
 export namespace ac::config::components_request {
 
-    inline constexpr std::string_view executable_name = "components_editor.exe";
-    inline constexpr std::string_view flag = "--component";
-    inline constexpr std::string_view on_flag = "--on";
-    inline constexpr std::string_view off_flag = "--off";
+    inline constexpr std::string_view executable_name = "auto_core_components.exe";
+    inline constexpr std::string_view enable_flag = "--enable";
+    inline constexpr std::string_view disable_flag = "--disable";
     inline constexpr std::string_view initialize_flag = "--initialize";
     inline constexpr std::string_view init_flag = "--init";
     inline constexpr std::string_view seed_flag = "--seed";
@@ -29,7 +28,7 @@ export namespace ac::config::components_request {
     };
 
     /**
-     * \brief Flags for a `_config.exe` launch.
+     * \brief Flags for a configuration launch.
      *
      * `--init` is interactive initialization. `--initialize` is a
      * compatibility alias of `--init`. `--seed` writes default
@@ -232,23 +231,23 @@ export namespace ac::config::components_request {
         }
 
         const auto executable_path =
-            ac::paths::bin_directory() / executable_name;
+            ac::paths::app_directory() / executable_name;
         STARTUPINFOW startup_info {};
         startup_info.cb = sizeof(startup_info);
         PROCESS_INFORMATION process_info {};
 
+        if (state != ListedState::on && state != ListedState::off) {
+            std::cerr << "Component list state was not specified.\n";
+            return 1;
+        }
+
+        const std::string_view state_flag = state == ListedState::on
+            ? enable_flag
+            : disable_flag;
         std::wstring command_line = L"\"" + executable_path.wstring() + L"\" ";
-        command_line.append(flag.begin(), flag.end());
+        command_line.append(state_flag.begin(), state_flag.end());
         command_line += L' ';
         command_line.append(name.begin(), name.end());
-        if (state == ListedState::on) {
-            command_line += L' ';
-            command_line.append(on_flag.begin(), on_flag.end());
-        }
-        else if (state == ListedState::off) {
-            command_line += L' ';
-            command_line.append(off_flag.begin(), off_flag.end());
-        }
 
         if (!CreateProcessW(
                 executable_path.c_str(),

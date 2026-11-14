@@ -35,6 +35,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\console\console.ixx">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\formatting\encoding.ixx">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -72,6 +75,9 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="clock_tests.cxx">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="console_input_tests.cxx">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="component_settings_tests.cxx">

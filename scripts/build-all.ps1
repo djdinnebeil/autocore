@@ -5,7 +5,8 @@
 .DESCRIPTION
   Builds app\AutoCore.sln Release x64 with devenv.com. That solution is
   production projects only. Test projects are built from app\Tests.sln.
-  After a successful build, publishes bin\ into dev\app.
+  After a successful build, publishes Main executables and shared DLLs to
+  dist\app and component executables to dist\components.
 .EXAMPLE
   .\scripts\build-all.ps1
 #>
@@ -38,7 +39,7 @@ foreach ($solution in $Solutions) {
 
 Write-Host 'Release x64 build finished.'
 
-# Call update-dist.ps1 to write to dist\app
+# Call update-dist.ps1 to write dist\app and dist\components.
 
 $PublishScript = Join-Path $PSScriptRoot 'update-dist.ps1'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PublishScript
@@ -49,9 +50,9 @@ if ($PublishCode -eq 0) {
 }
 
 if ($PublishCode -eq 2) {
-    Write-Warning 'Build succeeded. dev\app was not updated because Auto Core is running. Run scripts\update-dist.ps1 after closing it.'
+    Write-Warning 'Build succeeded. dist was not updated because Auto Core is running. Run scripts\update-dist.ps1 after closing it.'
     exit 0
 }
 
-Write-Host "Build succeeded, but publishing dev\app failed (exit $PublishCode)."
+Write-Host "Build succeeded, but publishing dist failed (exit $PublishCode)."
 exit $PublishCode

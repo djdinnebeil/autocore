@@ -2,7 +2,7 @@
  * \file spotify_sqlite.ixx
  * \brief Private SQLite store for `history.db`.
  *
- * Compiled only into `spotify_db.exe`.
+ * Compiled into `spotify_ac.exe`. SQL stays in this module.
  */
 export module spotify_sqlite;
 

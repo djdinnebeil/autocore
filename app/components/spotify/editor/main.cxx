@@ -64,7 +64,7 @@ int require_readable_ini() {
     const auto path = ac::paths::component_config_file("spotify");
     if (!ac::ini::read(path)) {
         spotify_editor.log_alert(
-            "config/components/spotify.ini is missing or unreadable. spotify_config.exe owns it."
+            "config/components/spotify.ini is missing or unreadable. spotify_ac.exe --config owns it."
         );
         return 1;
     }
@@ -182,9 +182,11 @@ int retrieve_devices() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::spotify_app::editor {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_editor.log_info("spotify_editor.exe started");
+    spotify_editor.log_info("spotify_ac.exe --editor started");
     if (argc == 2 && std::string_view {argv[1]} == "--client-id") {
         return set_client_id(true);
     }
@@ -192,7 +194,7 @@ int main(int argc, char* argv[]) {
         return seed_client_id();
     }
     if (argc != 1) {
-        std::cerr << "Usage: spotify_editor.exe [--client-id | --seed]\n";
+        std::cerr << "Usage: spotify_ac.exe --editor [--client-id | --seed]\n";
         return 1;
     }
 
@@ -222,3 +224,5 @@ int main(int argc, char* argv[]) {
         }
     }
 }
+
+} // namespace ac::spotify_app::editor

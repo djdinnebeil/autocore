@@ -2,7 +2,7 @@
  * \file writer_text_commands.ixx
  * \brief Generated Writer text-file commands.
  *
- * `writer_builder.exe` scans `<writer directory>/text` and replaces
+ * `writer_ac.exe --builder` scans `<writer directory>/text` and replaces
  * `<writer directory>/insert_text.list`. `writer_ac.exe` reads that catalog.
  * File bytes are read when a command runs.
  */

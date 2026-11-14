@@ -12,80 +12,84 @@ Logs and crash reports are written by whichever process produced them. That is m
 
 | Path | Purpose | Sole writer | Readers | Created | Missing | Portable | Secrets | First-run | Legacy | Disposition |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `config/*.ini` | settings | the matching `_config.exe` | the family that names the file | `--seed` or `--init` when missing | compiled defaults, no create | yes, if paths stay relative | no | yes, through the orchestrators | unknown keys drop out on rewrite. No `true`/`false` spellings in production parsers | keep. See the INI ledger. |
-| `components.list` | enablement | `components_editor.exe` | Main, every `<name>_settings.exe` | `--seed`, no-arg rebuild, or `--component` | runtime enables every valid `*_ac.exe` and does not create the file | yes | no | `components_editor.exe --seed` | none. Lines are `name`, `name on`, or `name off` | keep. Finalized. |
-| `keymap.map` | key bindings | `keymap_editor.exe` | `auto_core.exe` | `--seed` when missing | in-memory emergency map, no create | yes | no | `keymap_editor.exe` during first-run | none. Lines are `key = primary \| secondary` | keep. |
-| `keymap/keymap_commands.txt` | autocomplete catalog | `auto_core.exe` during keymap initialization | keymap editor consumers | rewritten when bytes differ | editor autocomplete lacks the generated list | yes | no | written on the next keymap init | none | keep. |
+| `config/*.ini` | settings | `<name>_ac.exe --config` for a component; `auto_core_settings.exe --config` for a Main host file | the family that names the file | `--seed` or `--init` when missing | compiled defaults, no create | yes, if paths stay relative | no | yes, through the orchestrators | unknown keys drop out on rewrite. No `true`/`false` spellings in production parsers | keep. See the INI ledger. |
+| `components.list` | enablement | `auto_core_components.exe` | Main and each component settings menu | `--edit`, or `--edit --seed` when the file is missing | runtime enables every valid `*_ac.exe` and does not create the file | yes | no | `auto_core_components.exe --edit --seed` | none. Lines are `name`, `name on`, or `name off`. Updates are published from a same-directory temporary file. A failed publication can leave that temporary file. | keep. Finalized. |
+| `data/auto_core/components.list.lock` | exclusive update lock for `components.list` | `auto_core_components.exe` creates a missing `data/auto_core` and the lock file on the first update and does not delete or replace the lock file | none. It is not opened with delete sharing. | first list update. A missing `data/auto_core` is created automatically | if `data/auto_core` cannot be created, or the lock file cannot be opened or locked, the update stops before the list is read or published and does not create `components.list` | yes | no | created when the first list update runs | empty coordination file. Not a backup or a recovery log. | keep. |
+| `keymap.map` | key bindings | `auto_core_keymap.exe` | `auto_core.exe` | `--seed` creates a missing regular file with `CREATE_NEW`. A directory or other non-file fails and is not replaced | in-memory emergency map, no create | yes | no | `auto_core_keymap.exe --seed` during first-run | none. Lines are `key = primary \| secondary`. An existing regular file is left unchanged. A failed write deletes the new file | keep. |
+| `data/auto_core/keymap_build.lock` | exclusive lock for one `--build` | `auto_core_keymap.exe` creates it on the first build and does not delete or replace it | none. It is not opened with delete sharing | first `--build` | that build fails and does not export or replace catalogs | yes | no | not created by first-run | empty coordination file. The byte-range lock is released when the process exits | keep. |
+| `keymap/keymap_commands.txt` | autocomplete catalog | `auto_core.exe` during keymap initialization, and `auto_core_keymap.exe --build` | keymap editor consumers | rewritten when bytes differ. Each publication uses a uniquely named temporary file beside the destination | editor autocomplete lacks the generated list | yes | no | written on the next keymap init | none. The last successful publication wins. A failed publication removes only that invocation's temporary file | keep. |
 
 ## Logs, crashes, and errors
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets | Legacy |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `logs/components/<identity>/{date}_{name}.log` | component log | that executable's component logger | people, `logger_ac.exe` merges these | no file until the first gated write | no | may contain local paths | none |
-| `logs/{date}_main.log` | merged daily main log | `logger_ac.exe` (hosted interval, or `--once`) | people | rebuilt from sources | no | same as the sources | none. Same deletion policy as other `.log` files |
-| `logs/merge.state` | consumed offsets | `logger_ac.exe` only. Hosted mode and `--once` are the same executable | `logger_ac.exe` | merge starts from the beginning | no | no | none |
+| `logs/{date}_main.log` | merged daily main log | `logger_ac.exe --run` (hosted interval, or `--run --once`) | people | rebuilt from sources | no | same as the sources | none. Same deletion policy as other `.log` files. A name starting with the current local `YYYY-MM-DD_` is kept |
+| `logs/merge.state` | consumed offsets | `logger_ac.exe --run` only. Hosted mode and `--run --once` are the same executable | `logger_ac.exe` | merge starts from the beginning | no | no | none |
 | `data/crash_reports/.crash` | Main recovery marker | Main | next `auto_core.exe` start | no prompt | no | no | none |
 | `data/crash_reports/<event>/crash.txt` and `crash.dmp` | crash report | the process that crashed, except `auto_core_shell_launcher.exe` | people | directory created on the event | no | dumps can contain process data | none. Not deleted automatically. Outside the log directory |
 | `errors/errors.log` | best-effort stderr companion | `auto_core.core.error` in whichever process called it | people | created on the first report | no | may contain local detail | none |
 
 Family logging does not gate Wake history. Crash reports are independent of `logging_policy.ini`, including `disable_all = on`.
 
+`auto_core.exe` deletes `.log` files under the resolved log directory from a background thread. The directory and limits are the logging configuration resolved when the host started, so edits to `logging_policy.ini` apply after the host restarts. Retention uses a strict elapsed-UTC last-write cutoff, then size cleanup deletes the oldest remaining files. A filename that starts with the current local `YYYY-MM-DD_` is kept and still counts toward `max_directory_mb`. `merge.state` is not deleted.
+
 ## Dash
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets |
 | --- | --- | --- | --- | --- | --- | --- |
-| `%LOCALAPPDATA%\Auto Core\dash.vault` | DPAPI vault | `dash_editor.exe` | `dash_ac.exe` reads and does not mutate | retrieval fails | no | yes |
+| `%LOCALAPPDATA%\Auto Core\dash.vault` | DPAPI vault | `dash_ac.exe --editor` | `dash_ac.exe --run` reads and does not mutate | retrieval fails | no | yes |
 
 ## iTunes
 
-Data directory default `components/itunes`.
+Data directory default `data/itunes`.
 
 | Path | Purpose | Writer | Readers | Missing | Invalid | Portable | Secrets | Legacy |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `history.db` | listening history | `itunes_db.exe` only | none. `itunes_ac.exe` uses the pipe | `--seed` creates an empty file. Runtime does not | open failure is reported | yes, as a SQLite file | no | `user_version` 0 is stamped to 1. **Legacy.** |
-| `song.format` | COM song line | `itunes_formatter.exe` | `itunes_ac.exe` | compiled template in memory | compiled template, file not rewritten | yes | no | none |
-| `library.format` | library row layout. Keys `format` (default `[column]`) and `column_count` (default `4`) | `itunes_formatter.exe` | `itunes_ac.exe` | each missing field uses its compiled default | that field only falls back | yes | no | none |
+| `history.db` | listening history | `itunes_ac.exe`. `--database` reads it | none | `--seed` creates an empty file. Hosted open also creates a missing file | open failure is reported | yes, as a SQLite file | no | `user_version` 0 is stamped to 1. **Legacy.** |
+| `song.format` | COM song line | `itunes_ac.exe --formatter` | `itunes_ac.exe` | compiled template in memory | compiled template, file not rewritten | yes | no | none |
+| `library.format` | library row layout. Keys `format` (default `[column]`) and `column_count` (default `4`) | `itunes_ac.exe --formatter` | `itunes_ac.exe` | each missing field uses its compiled default | that field only falls back | yes | no | none |
 
 ## Spotify
 
-Data directory default `components/spotify`.
+Data directory default `data/spotify`.
 
 | Path | Purpose | Writer | Readers | Missing | Invalid | Portable | Secrets | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `history.db` | play history | `spotify_db.exe` only | none. `spotify_ac.exe` uses the pipe | `--seed` creates an empty file | open failure is reported | yes | no | no schema migrator |
-| `song.format` | song line | `spotify_formatter.exe` | `spotify_ac.exe` | compiled template | compiled template, file not replaced | yes | no | |
-| `client.id` | Spotify application client id | `spotify_editor.exe` | `spotify_ac.exe`, `spotify_oauth.exe`, `spotify_config.exe` | authorization cannot finish | blank is treated as missing | no | yes | `--seed` can write a blank file |
-| `devices.list` | device id lines | `spotify_editor.exe` | `spotify_ac.exe` | no stored devices | unusable lines are skipped | no | device ids | written after `ac.spotify.devices.v1` |
-| `tokens.map` | `access_token`, `refresh_token`, `authorized_at`, `refresh_expires_at` | **two writers:** `spotify_oauth.exe` for the initial grant, `spotify_ac.exe` on refresh | both of those, under `Local\AutoCoreSpotifyTokens` | interactive authorization required | incomplete file is not a usable session | no | yes | C9 proposed sole-writer does not hold. Disposition decision required. |
+| `history.db` | play history | `spotify_ac.exe`. `--database` reads it | none | `--seed` creates an empty file. Hosted open also creates a missing file | open failure is reported | yes | no | no schema migrator |
+| `song.format` | song line | `spotify_ac.exe --formatter` | `spotify_ac.exe` | compiled template | compiled template, file not replaced | yes | no | |
+| `client.id` | Spotify application client id | `spotify_ac.exe --editor` | `spotify_ac.exe`, `spotify_ac.exe --oauth`, `spotify_ac.exe --config` | authorization cannot finish | blank is treated as missing | no | yes | `--seed` can write a blank file |
+| `devices.list` | device id lines | `spotify_ac.exe --editor` | `spotify_ac.exe` | no stored devices | unusable lines are skipped | no | device ids | written after `ac.spotify.devices.v1` |
+| `tokens.map` | `access_token`, `refresh_token`, `authorized_at`, `refresh_expires_at` | **two writers:** `spotify_ac.exe --oauth` for the initial grant, `spotify_ac.exe` on refresh | both of those, under `Local\AutoCoreSpotifyTokens` | interactive authorization required | incomplete file is not a usable session | no | yes | C9 proposed sole-writer does not hold. Disposition decision required. |
 
-`spotify_config.exe --seed` does not create `tokens.map`.
+`spotify_ac.exe --config --seed` does not create `tokens.map`.
 
 ## Journal
 
-Data directory default `components\journal`.
+Data directory default `data\journal`.
 
 | Path | Purpose | Writer | Readers | Missing | Invalid | Portable | Secrets | Legacy |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `series.db` | series counters | `journal_db.exe` only | none. Clients use `ac.journal.db.v2` | `--seed` creates it and can add `Auto Core` with padding `2` only on that create | rejected or migrated | yes | no | in-place `ALTER` from user_version 1 to 2. **Legacy.** |
-| `series.map` | `active = Name` plus a snapshot | `journal_series.exe` | `journal_ac.exe` reads `active` and does not write | allocate uses an empty key | malformed `active` is the same | yes | no | snapshot can lag the database |
-| `firebase.id` | Firebase endpoint | `journal_cloud.exe` | `journal_cloud.exe` | remote sync cannot run | rejected URL | no | yes, it is an account locator | |
-| `extended_hour.clock` | one line `extended_hours = <token>` | `journal_clock.exe` | `journal_ac.exe` | behaves as `extended_hours = 0` | same | yes | no | `--seed` writes `+0` |
-| `make_print_choice.list` | aliases | `journal_builder.exe` | `journal_ac.exe` | skipped at startup, not created by `journal_ac.exe` | bad lines skipped | yes | no | factory arguments accept `true`/`false` as bool shorthand. That is alias text, not an INI spelling. |
-| `print_and_insert_into_journal.list` | aliases | `journal_builder.exe` | `journal_ac.exe` | same | same | yes | no | same |
-| `roll_dice.list` | aliases | `journal_builder.exe` | `journal_ac.exe` | same | same | yes | no | same |
+| `series.db` | series counters | `journal_ac.exe` allocates. `journal_ac.exe --series` edits, seeds, and initializes. SQLite locking coordinates them | both of those | `--seed` creates it and can add `Auto Core` with padding `2` only on that create. Hosted open creates a missing schema without that row | rejected or migrated | yes | no | in-place `ALTER` from user_version 1 to 2. **Legacy.** |
+| `series.map` | `active = Name` plus a snapshot | `journal_ac.exe --series` | `journal_ac.exe` reads `active` and does not write | allocate uses an empty key | malformed `active` is the same | yes | no | snapshot can lag the database |
+| `firebase.id` | Firebase endpoint | `journal_ac.exe --cloud` | `journal_ac.exe --cloud` | remote sync cannot run | rejected URL | no | yes, it is an account locator | |
+| `extended_hour.clock` | one line `extended_hours = <token>` | `journal_ac.exe --clock` | `journal_ac.exe` | behaves as `extended_hours = 0` | same | yes | no | `--seed` writes `+0` |
+| `make_print_choice.list` | aliases | `journal_ac.exe --builder` | `journal_ac.exe` | skipped at startup, not created by `journal_ac.exe` | bad lines skipped | yes | no | factory arguments accept `true`/`false` as bool shorthand. That is alias text, not an INI spelling. |
+| `print_and_insert_into_journal.list` | aliases | `journal_ac.exe --builder` | `journal_ac.exe` | same | same | yes | no | same |
+| `roll_dice.list` | aliases | `journal_ac.exe --builder` | `journal_ac.exe` | same | same | yes | no | same |
 
-`journal_builder.exe` interactive edit is the same owner. `--seed` does not replace an existing alias file.
+`journal_ac.exe --builder` interactive edit is the same owner. `--seed` does not replace an existing alias file.
 
 ## Server
 
-Data directory default `components\server`.
+Data directory default `data\server`.
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets |
 | --- | --- | --- | --- | --- | --- | --- |
-| `port.id` | one integer, seed `8585` | `server_editor.exe` | `server_ac.exe` | startup fails. No invented port | yes | no |
-| `document_root.id` | one path, seed `site` | `server_editor.exe` | `server_ac.exe`, `server_builder.exe` | startup fails | relative yes; absolute is this machine | no |
-| `<document root>/index.html` | starter page | `server_builder.exe`, and only under a relative root inside the data directory | the HTTP listener | `server_ac.exe` does not create it | yes | no |
-| `<document root>/styles.css` | starter stylesheet | `server_builder.exe`, independently of `index.html` | the HTTP listener | same | yes | no |
+| `port.id` | one integer, seed `8585` | `server_ac.exe --editor` | `server_ac.exe` | startup fails. No invented port | yes | no |
+| `document_root.id` | one path, seed `site` | `server_ac.exe --editor` | `server_ac.exe`, `server_ac.exe --builder` | startup fails | relative yes; absolute is this machine | no |
+| `<document root>/index.html` | starter page | `server_ac.exe --builder`, and only under a relative root inside the data directory | the HTTP listener | `server_ac.exe` does not create it | yes | no |
+| `<document root>/styles.css` | starter stylesheet | `server_ac.exe --builder`, independently of `index.html` | the HTTP listener | same | yes | no |
 
 An existing starter file is left unchanged. An absolute `document_root.id` is not modified by the builder.
 
@@ -95,16 +99,16 @@ Data directory default `taskbar`.
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets |
 | --- | --- | --- | --- | --- | --- | --- |
-| `applications/*.map` | per-application sections `application`, `window`, `activation`, `commands`, `fallback` | `taskbar_builder.exe` | `auto_core.taskbar` | that application is absent from discovery configuration | only if those programs exist on the machine | no |
+| `applications/*.map` | per-application sections `application`, `window`, `activation`, `commands`, `fallback` | `taskbar_ac.exe --builder` | `auto_core.taskbar` | that application is absent from discovery configuration | only if those programs exist on the machine | no |
 | `winkey_map.cache` | Win+1 through Win+10 cache. Section `[taskbar]` | `taskbar_ac.exe`, including `--refresh-cache` | `auto_core.taskbar` | `mode = cache` discovers live; `mode = live` replaces the cache during authority startup | no | no |
 
 ## Wake
 
-Data directory default `components\wake`. Written even when family logging is off.
+Data directory default `data\wake`. Written even when family logging is off.
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets |
 | --- | --- | --- | --- | --- | --- | --- |
-| `current.event` | latest wake record | `wake_ac.exe` | `wake_ac.exe` | `--snapshot` from config when any of the three is missing | no | no |
+| `current.event` | latest wake record | `wake_ac.exe` | `wake_ac.exe` | `--run --snapshot` from config when any of the three is missing | no | no |
 | `previous.event` | previous record | `wake_ac.exe` | `wake_ac.exe` | same | no | no |
 | `wake_events.log` | appended history | `wake_ac.exe` | people | same | no | no |
 
@@ -116,14 +120,14 @@ Data directory default `writer`. Notes subdirectory default `notes`.
 
 | Path | Purpose | Writer | Readers | Missing | Portable | Secrets | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `session_prompts.list` | prompt lines | `writer_editor.exe` | `writer_ac.exe` opens the file | editor `--seed` / `--init` creates it. `writer_ac.exe` does not | yes | no | |
-| `task_list.txt` | task lines | `writer_editor.exe` | `writer_ac.exe` opens the file | same | yes | no | |
-| `notes/YYYY-MM-DD.txt` | daily note | `writer_editor.exe` (`--daily-note` and the editor menu) | the user, in Notepad | that command creates the day's file by appending | yes | notes may be private | `writer_ac.exe` and `writer_settings.exe` launch `writer_editor.exe --daily-note`. They do not write the file. |
+| `session_prompts.list` | prompt lines | `writer_ac.exe --editor` | `writer_ac.exe` opens the file | editor `--seed` / `--init` creates it. `writer_ac.exe` does not | yes | no | |
+| `task_list.txt` | task lines | `writer_ac.exe --editor` | `writer_ac.exe` opens the file | same | yes | no | |
+| `notes/YYYY-MM-DD.txt` | daily note | `writer_ac.exe --editor` (`--daily-note` and the editor menu) | the user, in Notepad | that command creates the day's file by appending | yes | notes may be private | `writer_ac.exe` and `writer_ac.exe --settings` launch `writer_ac.exe --editor --daily-note`. They do not write the file. |
 | `text/*.txt` | text inserted by the file menu and by generated `insert_*` commands | the user | `writer_ac.exe` reads the chosen file | the directory is not created | yes | text may be private | `select_and_insert_text` lists filenames when the menu opens and pastes the file unchanged, including trailing newlines. An `insert_*` command reads its file at execution and pastes those bytes unchanged. An empty file inserts nothing. |
-| `insert_text.list` | `insert_*` command catalog | `writer_builder.exe` | `writer_ac.exe` | skipped at startup, not created by `writer_ac.exe` | yes | filenames only | Replaced in full. A missing or unreadable `text` directory leaves the existing file unchanged. Colliding names are omitted and reported. |
+| `insert_text.list` | `insert_*` command catalog | `writer_ac.exe --builder` | `writer_ac.exe` | skipped at startup, not created by `writer_ac.exe` | yes | filenames only | Replaced in full. A missing or unreadable `text` directory leaves the existing file unchanged. Colliding names are omitted and reported. |
 | `profile_urls.txt` | `name = url` lines. The menu shows the name and the command inserts the URL | the user | `writer_ac.exe` | the file is not created | yes | URLs may be personal | `select_and_insert_profile_url` reads the file each time the menu opens. Blank lines are skipped. A line without `=` or with an empty name or URL is logged and skipped. A later `=` stays in the URL. |
 
-The notes directory is created by `writer_editor.exe` when it resolves today's note. `writer_ac.exe` does not create `text` or `profile_urls.txt`.
+The notes directory is created by `writer_ac.exe --editor` when it resolves today's note. `writer_ac.exe` does not create `text` or `profile_urls.txt`.
 
 ## Extensions in use
 

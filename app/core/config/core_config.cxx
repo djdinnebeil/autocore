@@ -40,14 +40,14 @@ namespace ac::config {
                     if (present && !exists_error) {
                         report =
                             "config/warnings.ini is malformed. Run "
-                            "warnings_config.exe to generate a valid file. "
+                            "auto_core_settings.exe --config --area warnings to generate a valid file. "
                             "Using built-in defaults; the file will not be "
                             "created.";
                     }
                     else {
                         report =
                             "config/warnings.ini is missing. Run "
-                            "warnings_config.exe to generate it. Using "
+                            "auto_core_settings.exe --config --area warnings to generate it. Using "
                             "built-in defaults; the file will not be created.";
                     }
                     return;
@@ -74,7 +74,7 @@ namespace ac::config {
                     append_report(
                         report,
                         "config/warnings.ini is missing [warnings] "
-                        "missing_winkey_mapping. Run warnings_config.exe to "
+                        "missing_winkey_mapping. Run auto_core_settings.exe --config --area warnings to "
                         "repair it. Using the default; the file will not be "
                         "rewritten."
                     );
@@ -84,7 +84,7 @@ namespace ac::config {
                         report,
                         "config/warnings.ini [warnings] "
                         "missing_winkey_mapping is invalid. Run "
-                        "warnings_config.exe to repair it. Using the default; "
+                        "auto_core_settings.exe --config --area warnings to repair it. Using the default; "
                         "the file will not be rewritten."
                     );
                 }
@@ -93,7 +93,7 @@ namespace ac::config {
                     append_report(
                         report,
                         "config/warnings.ini is missing [warnings] "
-                        "unmapped_key. Run warnings_config.exe to repair it. "
+                        "unmapped_key. Run auto_core_settings.exe --config --area warnings to repair it. "
                         "Using the default; the file will not be rewritten."
                     );
                 }
@@ -101,7 +101,7 @@ namespace ac::config {
                     append_report(
                         report,
                         "config/warnings.ini [warnings] unmapped_key is "
-                        "invalid. Run warnings_config.exe to repair it. Using "
+                        "invalid. Run auto_core_settings.exe --config --area warnings to repair it. Using "
                         "the default; the file will not be rewritten."
                     );
                 }

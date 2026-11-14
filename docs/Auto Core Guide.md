@@ -19,14 +19,14 @@ You can also manually modify the following files:
 
 Configuration Mode allows you to interactively select your preferred settings.
 
-Alternatively, run `app\<component>_settings.exe` to configure individual components.
+Run `components\<name>_ac.exe` with no arguments, or `components\<name>_ac.exe --settings`, to configure a component. Place a new component executable in `components\`. A third-party component uses the same commands and directory.
 
 ## Installation Structure
 
 | File or Directory | Purpose |
 |---|---|
-| `app/` | Application executables (`.exe`) and libraries (`.dll`). |
-| `components/` | Data used by installed components. |
+| `app/` | Auto Core Main executables and shared libraries (`.dll`). |
+| `components/` | Component executables (`<name>_ac.exe`), including third-party components. Configuration remains in `config\`, and component data remains in its existing directories. |
 | `config/` | Application and component configuration settings. |
 | `data/` | Logs, diagnostics, and other application data. |
 | `info/` | User documentation, including the Manual and Tutorial. |

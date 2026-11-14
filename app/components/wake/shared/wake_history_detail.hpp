@@ -3,7 +3,7 @@
  * \brief Wake history filenames and capture apply rules.
  *
  * `current.event`, `previous.event`, and `wake_events.log` are Wake
- * operational history. `wake_config.exe` may test whether they exist.
+ * operational history. `wake_ac.exe --config` may test whether they exist.
  * Only `wake_ac.exe` applies a capture.
  */
 #pragma once

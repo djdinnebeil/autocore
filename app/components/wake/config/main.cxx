@@ -132,7 +132,7 @@ std::wstring quote_argument(const std::wstring_view value) {
 [[nodiscard]]
 int launch_snapshot() {
     const auto executable_path =
-        ac::paths::bin_directory() / L"wake_ac.exe";
+        ac::paths::component_executable_directory() / L"wake_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -142,6 +142,7 @@ int launch_snapshot() {
 
     std::wstring command =
         quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(L"--run") + L" " +
         quote_argument(L"--snapshot");
     STARTUPINFOW startup {};
     startup.cb = sizeof(startup);
@@ -204,7 +205,7 @@ int provision_history() {
         wake_config.log_debug("Wake history is already present.");
         return 0;
     }
-    wake_config.log_debug("Launching wake_ac.exe --snapshot.");
+    wake_config.log_debug("Launching wake_ac.exe --run --snapshot.");
     return launch_snapshot();
 }
 
@@ -248,9 +249,11 @@ int run_configuration_menu() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::wake::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    wake_config.log_info("wake_config.exe started");
+    wake_config.log_info("wake_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -273,7 +276,7 @@ int main(int argc, char* argv[]) {
         }
         else {
             req::log_writing_defaults(wake_config);
-            if (!write_directory(wake::defaults::directory, true)) {
+            if (!write_directory(::wake::defaults::directory, true)) {
                 return 1;
             }
             req::log_configuration_initialized(wake_config);
@@ -292,7 +295,7 @@ int main(int argc, char* argv[]) {
         else {
             req::log_configuration_missing(wake_config);
             req::log_writing_defaults(wake_config);
-            if (!write_directory(wake::defaults::directory, true)) {
+            if (!write_directory(::wake::defaults::directory, true)) {
                 return 1;
             }
             const auto result = menu::prompt_settings(
@@ -317,9 +320,11 @@ int main(int argc, char* argv[]) {
     if (!exists) {
         req::log_configuration_missing(wake_config);
         req::log_writing_defaults(wake_config);
-        if (!write_directory(wake::defaults::directory, true)) {
+        if (!write_directory(::wake::defaults::directory, true)) {
             return 1;
         }
     }
     return run_configuration_menu();
 }
+
+} // namespace ac::wake::config

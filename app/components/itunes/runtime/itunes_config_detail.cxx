@@ -28,7 +28,7 @@ namespace itunes::config::detail {
         [[nodiscard]] std::filesystem::path default_directory(
             const std::filesystem::path& installation_root
         ) {
-            return (installation_root / "components" / "itunes").lexically_normal();
+            return (installation_root / "data" / "itunes").lexically_normal();
         }
 
     } // namespace

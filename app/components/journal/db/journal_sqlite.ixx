@@ -2,8 +2,8 @@
  * \file journal_sqlite.ixx
  * \brief Private SQLite store for `series.db`.
  *
- * Compiled only into `journal_db.exe` and the Journal test binary. Other
- * Journal executables do not import this module.
+ * Compiled into `journal_ac.exe`, `journal_ac.exe --series`, and the Journal test
+ * binary. SQL and transactions stay in this module.
  */
 export module journal_sqlite;
 
@@ -77,6 +77,17 @@ private:
 /** \brief Opens or creates a `series.db` at `path`. Used by schema tests. */
 [[nodiscard]] std::expected<Store, std::string> open_at(
     const std::filesystem::path& path
+);
+
+/**
+ * \brief Creates a new `series.db` containing one series.
+ *
+ * Writes a temporary database, then replaces `series.db`. The caller checks
+ * that `series.db` is absent. An existing file is not overwritten.
+ */
+[[nodiscard]] std::expected<void, std::string> create_initial(
+    std::string_view name,
+    int padding
 );
 
 } // namespace journal::sqlite

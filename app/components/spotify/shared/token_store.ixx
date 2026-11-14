@@ -2,7 +2,7 @@
  * \file token_store.ixx
  * \brief `tokens.map` parse, serialize, and coordinated replace.
  *
- * Link this module only into `spotify_oauth.exe`, `spotify_ac.exe`, and tests.
+ * Link this module only into `spotify_ac.exe --oauth`, `spotify_ac.exe`, and tests.
  * The editor does not read or write token state.
  */
 export module spotify_token_store;

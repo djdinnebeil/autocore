@@ -1,11 +1,12 @@
 /**
  * \file initialization_sequence.ixx
- * \brief Ordered first-run owners launched by auto_core_init.exe.
+ * \brief Ordered first-run owners launched by auto_core_settings.exe --initialize.
  *
- * Main configuration owners run before the optional components_init.exe
- * stage. The Auto Core menu does not select that stage. Editors run after
- * it, so the component list is seeded from INI files that component
- * initialization may already have created. No init executable writes an
+ * Main configuration owners run before the optional component
+ * initialization stage of auto_core_components.exe. The Auto Core menu
+ * does not select that stage. The list edit runs after it, so
+ * components.list is seeded from INI files that component initialization
+ * may already have created. That initialization stage does not write an
  * INI file.
  * logging_policy.ini is established before this sequence.
  */
@@ -19,13 +20,13 @@ export namespace ac::main::init {
         configured,
         components,
         components_editor,
-        keymap_editor
+        keymap
     };
 
     /**
      * \brief How Main configuration owners are launched.
      *
-     * This does not select `components_init.exe`. `seed` is `--seed`.
+     * This does not select component initialization. `seed` is `--seed`.
      * `interactive` is `--init` and never includes `--seed`.
      * `seeded_interactive` passes both flags.
      */
@@ -36,7 +37,7 @@ export namespace ac::main::init {
     };
 
     /**
-     * \brief Whether to launch components_init.exe, and with which flag.
+     * \brief Whether to launch component initialization, and with which flags.
      *
      * Chosen by the Components menu, or forced to `seed` for plain `--seed`.
      */
@@ -49,18 +50,19 @@ export namespace ac::main::init {
     struct OwnerStep {
         std::string_view executable;
         OwnerKind kind;
+        std::wstring_view route;
     };
 
     inline constexpr std::array<OwnerStep, 9> initialization_steps {{
-        {"auto_core_config.exe", OwnerKind::configured},
-        {"components_policy_config.exe", OwnerKind::configured},
-        {"shutdown_config.exe", OwnerKind::configured},
-        {"crash_recovery_config.exe", OwnerKind::configured},
-        {"startup_config.exe", OwnerKind::configured},
-        {"warnings_config.exe", OwnerKind::configured},
-        {"components_init.exe", OwnerKind::components},
-        {"components_editor.exe", OwnerKind::components_editor},
-        {"keymap_editor.exe", OwnerKind::keymap_editor}
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area auto-core"},
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area components-policy"},
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area shutdown"},
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area crash-recovery"},
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area startup"},
+        {"auto_core_settings.exe", OwnerKind::configured, L"--config --area warnings"},
+        {"auto_core_components.exe", OwnerKind::components, L""},
+        {"auto_core_components.exe", OwnerKind::components_editor, L""},
+        {"auto_core_keymap.exe", OwnerKind::keymap, L""}
     }};
 
     [[nodiscard]]
@@ -82,9 +84,9 @@ export namespace ac::main::init {
         case OwnerKind::components:
             return L"";
         case OwnerKind::components_editor:
+            return L"--edit --seed";
+        case OwnerKind::keymap:
             return L"--seed";
-        case OwnerKind::keymap_editor:
-            return L"";
         }
         return L"";
     }
@@ -95,9 +97,9 @@ export namespace ac::main::init {
     ) noexcept {
         switch (launch) {
         case ComponentLaunch::seed:
-            return L"--seed";
+            return L"--initialize --seed";
         case ComponentLaunch::configure:
-            return L"--init";
+            return L"--initialize";
         case ComponentLaunch::skip:
             return L"";
         }

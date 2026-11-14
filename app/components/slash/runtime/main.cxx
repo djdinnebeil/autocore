@@ -430,7 +430,9 @@ int export_keymap_commands() {
     return std::cout ? 0 : 1;
 }
 
-int main(int argument_count, char* arguments[]) {
+namespace ac::slash::runtime {
+
+int run(int argument_count, char* arguments[]) {
     ac::shell::set_process_app_user_model_id();
     if (argument_count == 2 &&
         std::string_view {arguments[1]} == "--export-keymap-commands") {
@@ -440,7 +442,7 @@ int main(int argument_count, char* arguments[]) {
 
     const std::string_view command_name = argument_count == 2
         ? std::string_view {arguments[1]}
-        : slash::commands::report_and_empty_recycle_bin.name;
+        : ::slash::commands::report_and_empty_recycle_bin.name;
 
     try {
         auto action = registry.resolve(command_name);
@@ -466,3 +468,5 @@ int main(int argument_count, char* arguments[]) {
     }
     return 0;
 }
+
+} // namespace ac::slash::runtime

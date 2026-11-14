@@ -55,13 +55,13 @@ int run_journal_config(
     const ac::config::components_request::ConfigLaunch& launch
 ) {
     const std::filesystem::path executable =
-        ac::paths::bin_directory() / "journal_config.exe";
+        ac::paths::component_executable_directory() / "journal_ac.exe";
     std::wstring arguments = launch.seed ? L"--seed" : L"--init";
     if (launch.seed && launch.init) {
         arguments += L" --init";
     }
     std::wstring command =
-        quote_argument(executable.wstring()) + L" " + arguments;
+        quote_argument(executable.wstring()) + L" --config " + arguments;
 
     STARTUPINFOW startup {};
     startup.cb = sizeof(startup);
@@ -78,7 +78,7 @@ int run_journal_config(
             &startup,
             &process
         )) {
-        journal_clock.log_alert("Unable to start journal_config.exe.");
+        journal_clock.log_alert("Unable to start journal_ac.exe --config.");
         return 1;
     }
 
@@ -88,14 +88,14 @@ int run_journal_config(
     if (!GetExitCodeProcess(process.hProcess, &exit_code)) {
         CloseHandle(process.hProcess);
         journal_clock.log_alert(
-            "Unable to read the exit code from journal_config.exe."
+            "Unable to read the exit code from journal_ac.exe --config."
         );
         return 1;
     }
     CloseHandle(process.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        journal_clock.log_alert("journal_config.exe exited {}.", code);
+        journal_clock.log_alert("journal_ac.exe --config exited {}.", code);
     }
     return code;
 }
@@ -203,10 +203,12 @@ void print_menu() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::clock {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_clock.log_info("journal_clock.exe started");
+    journal_clock.log_info("journal_ac.exe --clock started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -294,3 +296,5 @@ int main(int argc, char* argv[]) {
         }
     }
 }
+
+} // namespace ac::journal_app::clock

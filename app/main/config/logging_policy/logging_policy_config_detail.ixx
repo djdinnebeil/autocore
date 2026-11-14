@@ -41,7 +41,6 @@ export namespace ac::main::logging {
         bool component_logging_default {
             defaults::logging_component_logging_default
         };
-        bool experimental {defaults::logging_experimental};
     };
 
     struct CommitResult {
@@ -50,7 +49,7 @@ export namespace ac::main::logging {
     };
 
     inline constexpr std::string_view on_off[] {"on", "off"};
-    inline constexpr std::string_view levels[] {"debug", "info", "alert"};
+    inline constexpr std::string_view levels[] {"trace", "debug", "info", "alert"};
 
     inline const ac::config_menu::Setting menu_settings[] {
         {
@@ -78,24 +77,26 @@ export namespace ac::main::logging {
             .key = "max_directory_mb",
             .display_name = "Maximum directory size",
             .summary =
-                "Megabytes of .log files to keep. 0 purges historical logs "
-                "and keeps logs from the current local date.",
-            .default_value = "100",
+                "Megabytes of .log files to keep. Oldest files are deleted "
+                "first. A log named with today's local date is kept and "
+                "still counts toward the total. 0 keeps those logs.",
+            .default_value = "25",
             .constraint =
-                "Enter a non-negative integer. 0 purges historical logs "
-                "and keeps today's logs.",
+                "Enter a non-negative integer. 0 keeps logs named with "
+                "today's local date.",
             .numeric_prompt = "Enter an integer",
         },
         {
             .key = "retention_days",
             .display_name = "Retention days",
             .summary =
-                "Days of .log files to keep. 0 purges historical logs and "
-                "keeps logs from the current local date.",
-            .default_value = "30",
+                "Elapsed UTC days to keep, using each file's last write "
+                "time. A log named with today's local date is kept. "
+                "0 deletes every other .log file last written before now.",
+            .default_value = "10",
             .constraint =
-                "Enter a non-negative integer. 0 purges historical logs "
-                "and keeps today's logs.",
+                "Enter a non-negative integer. 0 keeps logs named with "
+                "today's local date.",
             .numeric_prompt = "Enter an integer",
         },
         {
@@ -149,14 +150,6 @@ export namespace ac::main::logging {
             .default_value = "on",
             .choices = on_off,
         },
-        {
-            .key = "experimental",
-            .display_name = "Experimental",
-            .summary =
-                "Controls the temporary logging-cleanup startup report.",
-            .default_value = "off",
-            .choices = on_off,
-        },
     };
 
     [[nodiscard]] Action select_action(
@@ -202,8 +195,7 @@ export namespace ac::main::logging {
                 values.write_logs_to_files,
                 values.write_logs_to_console,
                 values.write_alerts_to_console,
-                values.component_logging_default,
-                values.experimental
+                values.component_logging_default
             )
         );
         constexpr std::string_view disable_all =
@@ -211,9 +203,9 @@ export namespace ac::main::logging {
         constexpr std::string_view directory_notes =
             "# directory = relative or absolute path\n"
             "# max_directory_mb = a non-negative integer in megabytes. "
-            "0 purges historical logs and keeps today's.\n"
-            "# retention_days = a non-negative integer. "
-            "0 purges historical logs and keeps today's.\n";
+            "0 keeps logs named with today's local date.\n"
+            "# retention_days = elapsed UTC days, from last write time. "
+            "0 keeps logs named with today's local date.\n";
         if (text.starts_with(disable_all)) {
             text.insert(disable_all.size(), directory_notes);
         }

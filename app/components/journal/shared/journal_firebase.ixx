@@ -2,7 +2,7 @@
  * \file journal_firebase.ixx
  * \brief `firebase.id` text and the Firebase JSON body.
  *
- * HTTP stays in `journal_cloud.exe`. This module only handles the file and
+ * HTTP stays in `journal_ac.exe --cloud`. This module only handles the file and
  * the payload string.
  */
 export module journal_firebase;

@@ -3,17 +3,14 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.ini;
 import auto_core.core.paths;
-import auto_core.core.process;
 import journal_auto_select;
 import journal_db_protocol;
-import journal_db_session;
 import journal_episode_format;
-import journal_data_directory;
 import journal_series_map;
+import journal_sqlite;
 import components_editor_request;
 
 import <iostream>;
-import <Windows.h>;
 import auto_core.core.shell;
 
 namespace {
@@ -23,37 +20,11 @@ ac::Component journal_series {
     ac::logging::config::LoggingScope {"journal"}
 };
 
-struct OwnedService {
-    HANDLE process = nullptr;
-    bool owns_process = false;
-};
+std::optional<journal::sqlite::Store> series_connection;
+journal::sqlite::Store* series_store = nullptr;
 
-std::wstring quote_argument(const std::wstring_view value) {
-    std::wstring quoted;
-    quoted.reserve(value.size() + 2);
-    quoted.push_back(L'"');
-    quoted.append(value);
-    quoted.push_back(L'"');
-    return quoted;
-}
-
-bool process_exited(const HANDLE process) {
-    if (process == nullptr) {
-        return true;
-    }
-    DWORD exit_code = STILL_ACTIVE;
-    if (!GetExitCodeProcess(process, &exit_code)) {
-        return true;
-    }
-    return exit_code != STILL_ACTIVE;
-}
-
-void close_process(OwnedService& service) {
-    if (service.process != nullptr) {
-        CloseHandle(service.process);
-        service.process = nullptr;
-    }
-}
+constexpr std::string_view seed_series_name = "Auto Core";
+constexpr int seed_series_padding = 2;
 
 std::string_view trim(const std::string_view value) {
     const auto first = value.find_first_not_of(" \t");
@@ -118,7 +89,7 @@ bool refresh_map(const std::optional<std::string>& override_name) {
 
     std::string resolved;
     if (!candidate.empty()) {
-        const auto found = journal::db::session::find_series(candidate);
+        const auto found = series_store->find_series(candidate);
         if (found) {
             resolved = found->name;
         }
@@ -129,7 +100,7 @@ bool refresh_map(const std::optional<std::string>& override_name) {
         }
     }
     if (resolved.empty()) {
-        const auto latest = journal::db::session::find_series("");
+        const auto latest = series_store->find_series("");
         if (latest) {
             resolved = latest->name;
         }
@@ -139,7 +110,7 @@ bool refresh_map(const std::optional<std::string>& override_name) {
         }
     }
 
-    const auto series = journal::db::session::list_series();
+    const auto series = series_store->list_series();
     if (!series) {
         print_error(series.error());
         return false;
@@ -157,7 +128,7 @@ bool refresh_map(const std::optional<std::string>& override_name) {
 }
 
 void report_no_series() {
-    print_error("No journal series yet. Add one with journal_series.exe.");
+    print_error("No journal series yet. Add one with journal_ac.exe --series.");
 }
 
 std::optional<int> prompt_whole_number(const std::string_view label) {
@@ -186,7 +157,7 @@ std::optional<int> prompt_whole_number(const std::string_view label) {
 }
 
 void select_active() {
-    const auto series = journal::db::session::list_series();
+    const auto series = series_store->list_series();
     if (!series) {
         print_error(series.error());
         return;
@@ -208,7 +179,7 @@ void select_active() {
     if (!std::getline(std::cin, name)) {
         return;
     }
-    const auto found = journal::db::session::find_series(trim(name));
+    const auto found = series_store->find_series(trim(name));
     if (!found) {
         print_error(found.error());
         return;
@@ -229,13 +200,13 @@ void add_series() {
     if (!padding) {
         return;
     }
-    const auto added = journal::db::session::add_series(name, *padding);
+    const auto added = series_store->add_series(name, *padding);
     if (!added) {
         print_error(added.error());
         return;
     }
     journal_series.log_alert("Created the series.");
-    const auto created = journal::db::session::find_series(trim(name));
+    const auto created = series_store->find_series(trim(name));
     if (!created) {
         print_error(created.error());
         (void)refresh_map(std::nullopt);
@@ -261,7 +232,7 @@ void update_counter() {
     if (!std::getline(std::cin, name)) {
         return;
     }
-    const auto current = journal::db::session::find_series(trim(name));
+    const auto current = series_store->find_series(trim(name));
     if (!current) {
         print_error(current.error());
         return;
@@ -274,7 +245,7 @@ void update_counter() {
     if (!counter) {
         return;
     }
-    const auto updated = journal::db::session::set_counter(current->name, *counter);
+    const auto updated = series_store->set_counter(current->name, *counter);
     if (!updated) {
         print_error(updated.error());
         return;
@@ -293,7 +264,7 @@ void update_padding() {
     if (!std::getline(std::cin, name)) {
         return;
     }
-    const auto current = journal::db::session::find_series(trim(name));
+    const auto current = series_store->find_series(trim(name));
     if (!current) {
         print_error(current.error());
         return;
@@ -306,7 +277,7 @@ void update_padding() {
     if (!padding) {
         return;
     }
-    const auto updated = journal::db::session::set_padding(current->name, *padding);
+    const auto updated = series_store->set_padding(current->name, *padding);
     if (!updated) {
         print_error(updated.error());
         return;
@@ -359,41 +330,143 @@ int run_menu() {
     }
 }
 
-std::expected<OwnedService, std::string> start_database() {
-    const std::filesystem::path executable =
-        ac::paths::bin_directory() / "journal_db.exe";
-    std::wstring command =
-        quote_argument(executable.wstring()) + L" " +
-        quote_argument(L"--serve");
-    auto process = ac::process::create_process_with_owner(
-        executable,
-        command,
-        executable.parent_path()
-    );
-    if (!process) {
-        return std::unexpected("Unable to start journal_db.exe.");
+std::expected<void, std::string> open_connection() {
+    auto opened = journal::sqlite::open();
+    if (!opened) {
+        return std::unexpected(opened.error());
     }
-    OwnedService service;
-    service.process = static_cast<HANDLE>(*process);
-    const auto ready = journal::db::session::probe(service.process);
-    if (!ready) {
-        if (!process_exited(service.process)) {
-            TerminateProcess(service.process, 1);
-        }
-        close_process(service);
-        return std::unexpected(ready.error());
-    }
-    if (process_exited(service.process)) {
-        close_process(service);
-        service.owns_process = false;
-    }
-    else {
-        service.owns_process = true;
-    }
-    return service;
+    series_connection = std::move(*opened);
+    series_store = &*series_connection;
+    return {};
 }
 
-void stop_database(OwnedService& service);
+void close_connection() {
+    series_store = nullptr;
+    series_connection.reset();
+}
+
+bool database_file_present(bool& present) {
+    const auto path = journal::sqlite::file_path();
+    std::error_code error;
+    present = std::filesystem::exists(path, error);
+    if (error) {
+        print_error(std::format(
+            "Failed to inspect {}: {}",
+            path.string(),
+            error.message()
+        ));
+        return false;
+    }
+    return true;
+}
+
+std::optional<std::string> prompt_series_name() {
+    while (true) {
+        std::cout << "Series name [" << seed_series_name << "]: ";
+        std::string input;
+        if (!std::getline(std::cin, input)) {
+            print_error("Journal database was not initialized.");
+            return std::nullopt;
+        }
+        const auto value = trim(input);
+        if (value == "cancel") {
+            print_error("Cancelled.");
+            return std::nullopt;
+        }
+        const std::string name = value.empty()
+            ? std::string {seed_series_name}
+            : std::string {value};
+        if (name.empty()) {
+            std::cout << "Enter a series name.\n";
+            continue;
+        }
+        return name;
+    }
+}
+
+std::optional<int> prompt_initial_padding() {
+    while (true) {
+        std::cout << "Padding [" << seed_series_padding << "]: ";
+        std::string input;
+        if (!std::getline(std::cin, input)) {
+            print_error("Journal database was not initialized.");
+            return std::nullopt;
+        }
+        const auto value = trim(input);
+        if (value == "cancel") {
+            print_error("Cancelled.");
+            return std::nullopt;
+        }
+        const std::string text = value.empty()
+            ? std::to_string(seed_series_padding)
+            : std::string {value};
+        int padding = 0;
+        const auto parsed = std::from_chars(
+            text.data(),
+            text.data() + text.size(),
+            padding
+        );
+        if (parsed.ec != std::errc {} || parsed.ptr != text.data() + text.size()) {
+            std::cout << "Enter a whole number.\n";
+            continue;
+        }
+        if (padding < 0 || padding > 16) {
+            std::cout << "Padding must be from 0 through 16.\n";
+            continue;
+        }
+        return padding;
+    }
+}
+
+int ensure_database(const bool init) {
+    bool present = false;
+    if (!database_file_present(present)) {
+        return 1;
+    }
+    const auto path = journal::sqlite::file_path().string();
+    namespace req = ac::config::components_request;
+    if (present) {
+        if (init) {
+            req::log_initialization_skipped(journal_series, path);
+        }
+        else {
+            req::log_seed_skipped(journal_series, path);
+        }
+        return 0;
+    }
+
+    if (init) {
+        req::log_configuration_missing(journal_series);
+        const auto name = prompt_series_name();
+        if (!name) {
+            return 1;
+        }
+        const auto padding = prompt_initial_padding();
+        if (!padding) {
+            return 1;
+        }
+        const auto created = journal::sqlite::create_initial(*name, *padding);
+        if (!created) {
+            print_error(created.error());
+            return 1;
+        }
+        journal_series.log_debug("Wrote {}", path);
+        return 0;
+    }
+
+    req::log_writing_defaults(journal_series);
+    const auto created = journal::sqlite::create_initial(
+        seed_series_name,
+        seed_series_padding
+    );
+    if (!created) {
+        print_error(created.error());
+        return 1;
+    }
+    journal_series.log_debug("Wrote {}", path);
+    req::log_configuration_initialized(journal_series);
+    return 0;
+}
 
 int generate_missing_map() {
     const auto map_path = journal::series_map::file_path();
@@ -410,24 +483,10 @@ int generate_missing_map() {
     if (present) {
         return 0;
     }
-
-    const auto database_path = journal::data_directory() / "series.db";
-    const bool database_present = std::filesystem::exists(database_path, error);
-    if (error || !database_present) {
-        print_error("series.db is missing. journal_db.exe owns that file.");
+    if (series_store == nullptr) {
+        print_error("series.db is missing.");
         return 1;
     }
-
-    auto database = start_database();
-    if (!database) {
-        print_error(database.error());
-        return 1;
-    }
-    struct Guard {
-        OwnedService* service;
-        ~Guard() { stop_database(*service); }
-    } guard {&*database};
-
     if (!refresh_map(std::nullopt)) {
         return 1;
     }
@@ -435,25 +494,13 @@ int generate_missing_map() {
     return 0;
 }
 
-void stop_database(OwnedService& service) {
-    if (service.owns_process) {
-        (void)journal::db::session::shutdown();
-        if (service.process != nullptr) {
-            WaitForSingleObject(service.process, 5000);
-            if (!process_exited(service.process)) {
-                TerminateProcess(service.process, 1);
-                WaitForSingleObject(service.process, 1000);
-            }
-        }
-    }
-    close_process(service);
-}
-
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::series {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    journal_series.log_info("journal_series.exe started");
+    journal_series.log_info("journal_ac.exe --series started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -463,6 +510,16 @@ int main(int argc, char* argv[]) {
     if (launch->seed || launch->init) {
         namespace req = ac::config::components_request;
         req::log_config_request(journal_series, *launch);
+        if (ensure_database(launch->init) != 0) {
+            return 1;
+        }
+        if (const auto opened = open_connection(); !opened) {
+            print_error(opened.error());
+            return 1;
+        }
+        struct ConnectionGuard {
+            ~ConnectionGuard() { close_connection(); }
+        } connection_guard;
         const auto map_path = journal::series_map::file_path().string();
         std::error_code error;
         const bool present = std::filesystem::exists(
@@ -493,18 +550,18 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (argc > 1) {
-        std::cerr << "Usage: journal_series.exe [--seed | --init]\n";
+        std::cerr << "Usage: journal_ac.exe --series [--seed | --init]\n";
         return 1;
     }
 
-    auto database = start_database();
-    if (!database) {
-        print_error(database.error());
+    if (const auto opened = open_connection(); !opened) {
+        print_error(opened.error());
         return 1;
     }
-    struct Guard {
-        OwnedService* service;
-        ~Guard() { stop_database(*service); }
-    } guard {&*database};
+    struct ConnectionGuard {
+        ~ConnectionGuard() { close_connection(); }
+    } connection_guard;
     return run_menu();
 }
+
+} // namespace ac::journal_app::series

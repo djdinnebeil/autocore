@@ -27,14 +27,15 @@ Or follow the MSBuild order in [building.md](building.md). The
 linker searches `lib/auto_core.lib`. The production workspace is
 `app/AutoCore.sln`. The complete test suite is built from
 `app/Tests.sln` Release x64. `auto_core_dll` publishes `lib/auto_core.dll` to
-`bin/auto_core.dll`. Application executables publish to tracked `bin/`.
-[`scripts/publish-dist.ps1`](../scripts/publish-dist.ps1) is the only normal
-publisher of `dist/app/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
-copies vendor runtime DLLs from `third_party/*/bin/` into `bin/` when
-those DLLs are added or updated, then runs `publish-dist.ps1`. Builds do
+`bin/app/auto_core.dll`. Main executables publish to tracked `bin/app/`.
+Component executables publish to tracked `bin/components/`.
+[`scripts/update-dist.ps1`](../scripts/update-dist.ps1) is the only normal
+publisher of `dist/app/` and `dist/components/`. [`scripts/copy-vendor-dlls.ps1`](../scripts/copy-vendor-dlls.ps1)
+copies vendor runtime DLLs from `third_party/*/bin/` into `bin/app/` when
+those DLLs are added or updated, then runs `update-dist.ps1`. Builds do
 not run that script (`dist/` stays gitignored; `bin/` is tracked). The build does not plant the Server
-data directory. `server_editor.exe --seed` creates missing `port.id` and
-`document_root.id`. `server_builder.exe` creates missing starter files
+data directory. `server_ac.exe --editor --seed` creates missing `port.id` and
+`document_root.id`. `server_ac.exe --builder` creates missing starter files
 under a relative document root (default `dist/components/server/site`).
 
 ## Adding a component

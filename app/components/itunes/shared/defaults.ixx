@@ -12,13 +12,13 @@ import std;
 
 export namespace itunes::defaults {
 
-    constexpr std::string_view directory = "components/itunes";
+    constexpr std::string_view directory = "data/itunes";
     constexpr bool auto_start = false;
     constexpr std::string_view song_format = itunes::song::detail::default_template;
 
     constexpr std::string_view ini_text =
         "[itunes]\n"
-        "directory = components/itunes\n"
+        "directory = data/itunes\n"
         "auto_start = off\n"
         "logging = on\n";
 

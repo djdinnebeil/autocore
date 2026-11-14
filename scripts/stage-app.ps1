@@ -4,8 +4,11 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$BinSource = Join-Path $RepoRoot 'bin'
-$AppDestination = Join-Path $RepoRoot 'release\latest\stage\app'
+$AppSource = Join-Path $RepoRoot 'bin\app'
+$ComponentsSource = Join-Path $RepoRoot 'bin\components'
+$StageRoot = Join-Path $RepoRoot 'release\latest\stage'
+$AppDestination = Join-Path $StageRoot 'app'
+$ComponentsDestination = Join-Path $StageRoot 'components'
 
 function Copy-DirectoryContents {
     param(
@@ -34,9 +37,10 @@ function Copy-DirectoryContents {
 }
 
 try {
-    Copy-DirectoryContents -Source $BinSource -Destination $AppDestination
+    Copy-DirectoryContents -Source $AppSource -Destination $AppDestination
+    Copy-DirectoryContents -Source $ComponentsSource -Destination $ComponentsDestination
 
-    Write-Host 'Staged bin to release\latest\stage\app.'
+    Write-Host 'Staged bin\app and bin\components to release\latest\stage.'
 }
 catch {
     Write-Host ''

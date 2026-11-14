@@ -491,7 +491,7 @@ std::expected<void, ShellLaunchError> shell_launch_outside_job(
     const std::wstring_view parameters,
     const std::wstring_view directory
 ) {
-    const auto launcher = ac::paths::bin_directory() / L"auto_core_shell_launcher.exe";
+    const auto launcher = ac::paths::app_directory() / L"auto_core_shell_launcher.exe";
     std::error_code exists_error;
     if (!std::filesystem::exists(launcher, exists_error) || exists_error) {
         return std::unexpected(ShellLaunchError {

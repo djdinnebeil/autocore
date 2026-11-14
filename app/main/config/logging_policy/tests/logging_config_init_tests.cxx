@@ -20,44 +20,41 @@ constexpr std::string_view expected_header =
     "# disable_all = on | off\n"
     "# directory = relative or absolute path\n"
     "# max_directory_mb = a non-negative integer in megabytes. "
-    "0 purges historical logs and keeps today's.\n"
-    "# retention_days = a non-negative integer. "
-    "0 purges historical logs and keeps today's.\n"
-    "# level = debug | info | alert\n"
+    "0 keeps logs named with today's local date.\n"
+    "# retention_days = elapsed UTC days, from last write time. "
+    "0 keeps logs named with today's local date.\n"
+    "# level = trace | debug | info | alert\n"
     "# log_console_output = on | off\n"
     "# write_logs_to_files = on | off\n"
     "# write_logs_to_console = on | off\n"
     "# write_alerts_to_console = on | off\n"
-    "# component_logging_default = on | off\n"
-    "# experimental = on | off\n\n";
+    "# component_logging_default = on | off\n\n";
 
 constexpr std::string_view default_ini =
     "[logging]\n"
     "disable_all = off\n"
     "directory = data\\logs\n"
-    "max_directory_mb = 100\n"
-    "retention_days = 30\n"
-    "level = debug\n"
+    "max_directory_mb = 25\n"
+    "retention_days = 10\n"
+    "level = info\n"
     "log_console_output = on\n"
     "write_logs_to_files = on\n"
     "write_logs_to_console = off\n"
     "write_alerts_to_console = on\n"
-    "component_logging_default = on\n"
-    "experimental = off\n";
+    "component_logging_default = on\n";
 
 constexpr std::string_view disabled_ini =
     "[logging]\n"
     "disable_all = on\n"
     "directory = data\\logs\n"
-    "max_directory_mb = 100\n"
-    "retention_days = 30\n"
-    "level = debug\n"
+    "max_directory_mb = 25\n"
+    "retention_days = 10\n"
+    "level = info\n"
     "log_console_output = on\n"
     "write_logs_to_files = on\n"
     "write_logs_to_console = off\n"
     "write_alerts_to_console = on\n"
-    "component_logging_default = on\n"
-    "experimental = off\n";
+    "component_logging_default = on\n";
 
 [[nodiscard]] bool before(
     const std::string& text,
@@ -96,9 +93,8 @@ TEST_CASE("Fresh seed writes the exact default file", "[logging][init]") {
     CHECK(before(
         written,
         "# component_logging_default = on | off\n",
-        "# experimental = on | off\n"
+        "[logging]\n"
     ));
-    CHECK(before(written, "# experimental = on | off\n", "[logging]\n"));
     CHECK(written.find(default_ini) != std::string::npos);
 }
 
@@ -127,13 +123,11 @@ TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[loggi
     values.write_logs_to_console = true;
     values.write_alerts_to_console = false;
     values.component_logging_default = false;
-    values.experimental = false;
 
     const auto text = logging::ini_text(values);
     CHECK(text.starts_with(expected_header));
     CHECK(text.find("# disable_all = on | off\n") != std::string::npos);
-    CHECK(text.find("# experimental = on | off\n") != std::string::npos);
-    CHECK(text.find("# level = debug | info | alert\n") != std::string::npos);
+    CHECK(text.find("# level = trace | debug | info | alert\n") != std::string::npos);
     CHECK(text.find("# log_console_output = on | off\n") != std::string::npos);
     CHECK(text.find("# write_alerts_to_console = on | off\n") != std::string::npos);
     CHECK(before(
@@ -145,27 +139,24 @@ TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[loggi
         text,
         "# directory = relative or absolute path\n",
         "# max_directory_mb = a non-negative integer in megabytes. "
-        "0 purges historical logs and keeps today's.\n"
+        "0 keeps logs named with today's local date.\n"
     ));
     CHECK(before(
         text,
         "# max_directory_mb = a non-negative integer in megabytes. "
-        "0 purges historical logs and keeps today's.\n",
-        "# retention_days = a non-negative integer. "
-        "0 purges historical logs and keeps today's.\n"
+        "0 keeps logs named with today's local date.\n",
+        "# retention_days = elapsed UTC days, from last write time. "
+        "0 keeps logs named with today's local date.\n"
     ));
     CHECK(before(
         text,
-        "# retention_days = a non-negative integer. "
-        "0 purges historical logs and keeps today's.\n",
-        "# level = debug | info | alert\n"
+        "# retention_days = elapsed UTC days, from last write time. "
+        "0 keeps logs named with today's local date.\n",
+        "# level = trace | debug | info | alert\n"
     ));
     CHECK(before(
         text,
-        "# level = debug | info | alert\n",
-    ));
-    CHECK(before(
-        text,
+        "# level = trace | debug | info | alert\n",
         "# log_console_output = on | off\n"
     ));
     CHECK(before(
@@ -176,9 +167,8 @@ TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[loggi
     CHECK(before(
         text,
         "# component_logging_default = on | off\n",
-        "# experimental = on | off\n"
+        "[logging]\n"
     ));
-    CHECK(before(text, "# experimental = on | off\n", "[logging]\n"));
     CHECK(text.find(
         "[logging]\n"
         "disable_all = on\n"
@@ -191,7 +181,6 @@ TEST_CASE("Logging text keeps canonical keys and closed-value comments", "[loggi
         "write_logs_to_console = on\n"
         "write_alerts_to_console = off\n"
         "component_logging_default = off\n"
-        "experimental = off\n"
     ) != std::string::npos);
 }
 
@@ -258,22 +247,22 @@ TEST_CASE("Failed write does not report initialization success", "[logging][init
     CHECK_FALSE(disabled.reported_success);
 }
 
-TEST_CASE("Initialization mode propagates before components_init", "[logging][init]") {
+TEST_CASE("Initialization mode propagates before component initialization", "[logging][init]") {
     REQUIRE(sequence::initialization_steps.size() == 9);
-    CHECK(sequence::initialization_steps[0].executable == "auto_core_config.exe");
-    CHECK(sequence::initialization_steps[1].executable == "components_policy_config.exe");
-    CHECK(sequence::initialization_steps[2].executable == "shutdown_config.exe");
-    CHECK(sequence::initialization_steps[3].executable == "crash_recovery_config.exe");
-    CHECK(sequence::initialization_steps[4].executable == "startup_config.exe");
-    CHECK(sequence::initialization_steps[5].executable == "warnings_config.exe");
-    CHECK(sequence::initialization_steps[6].executable == "components_init.exe");
-    CHECK(sequence::initialization_steps[7].executable == "components_editor.exe");
-    CHECK(sequence::initialization_steps[8].executable == "keymap_editor.exe");
+    CHECK(sequence::initialization_steps[0].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[1].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[2].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[3].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[4].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[5].executable == "auto_core_settings.exe");
+    CHECK(sequence::initialization_steps[6].executable == "auto_core_components.exe");
+    CHECK(sequence::initialization_steps[7].executable == "auto_core_components.exe");
+    CHECK(sequence::initialization_steps[8].executable == "auto_core_keymap.exe");
 
     CHECK(sequence::initialization_steps[0].kind == sequence::OwnerKind::configured);
     CHECK(sequence::initialization_steps[6].kind == sequence::OwnerKind::components);
     CHECK(sequence::initialization_steps[7].kind == sequence::OwnerKind::components_editor);
-    CHECK(sequence::initialization_steps[8].kind == sequence::OwnerKind::keymap_editor);
+    CHECK(sequence::initialization_steps[8].kind == sequence::OwnerKind::keymap);
 
     using sequence::InitializationMode;
     CHECK(sequence::arguments_for(
@@ -300,35 +289,35 @@ TEST_CASE("Initialization mode propagates before components_init", "[logging][in
         sequence::OwnerKind::components,
         InitializationMode::seeded_interactive
     ).empty());
-    CHECK(sequence::component_arguments(sequence::ComponentLaunch::seed) == L"--seed");
+    CHECK(sequence::component_arguments(sequence::ComponentLaunch::seed) == L"--initialize --seed");
     CHECK(sequence::component_arguments(
         sequence::ComponentLaunch::configure
-    ) == L"--init");
+    ) == L"--initialize");
     CHECK(sequence::component_arguments(sequence::ComponentLaunch::skip).empty());
     CHECK(sequence::arguments_for(
         sequence::OwnerKind::components_editor,
         InitializationMode::interactive
-    ) == L"--seed");
+    ) == L"--edit --seed");
     CHECK(sequence::arguments_for(
-        sequence::OwnerKind::keymap_editor,
+        sequence::OwnerKind::keymap,
         InitializationMode::interactive
-    ).empty());
+    ) == L"--seed");
 
-    bool saw_components_init = false;
+    bool saw_component_initialization = false;
     for (const auto& step : sequence::initialization_steps) {
         CHECK(step.executable != "logging_policy_config.exe");
         CHECK(step.executable != "logger_config.exe");
         CHECK(step.executable != "logger_init.exe");
         CHECK(sequence::stops_on_failure(step.kind));
         if (step.kind == sequence::OwnerKind::configured) {
-            CHECK_FALSE(saw_components_init);
+            CHECK_FALSE(saw_component_initialization);
         }
-        if (step.executable == "components_init.exe") {
-            saw_components_init = true;
+        if (step.kind == sequence::OwnerKind::components) {
+            saw_component_initialization = true;
         }
         if (step.kind == sequence::OwnerKind::components_editor ||
-            step.kind == sequence::OwnerKind::keymap_editor) {
-            CHECK(saw_components_init);
+            step.kind == sequence::OwnerKind::keymap) {
+            CHECK(saw_component_initialization);
         }
     }
 }
@@ -349,7 +338,7 @@ TEST_CASE("Interactive logging bootstrap selects seed or init", "[logging][init]
     );
     CHECK_FALSE(blank.cancelled);
     CHECK(blank.arguments == boot::ConfigArguments::seed);
-    CHECK(boot::config_arguments(blank.arguments) == L"--seed");
+    CHECK(boot::config_arguments(blank.arguments) == L"--config --area logging-policy --seed");
     CHECK(blank_output.str().find("Enable logging? [Y/n]:") != std::string::npos);
     CHECK(blank_output.str().find("1. Use defaults") != std::string::npos);
 
@@ -363,7 +352,7 @@ TEST_CASE("Interactive logging bootstrap selects seed or init", "[logging][init]
     );
     CHECK_FALSE(configured.cancelled);
     CHECK(configured.arguments == boot::ConfigArguments::initialize);
-    CHECK(boot::config_arguments(configured.arguments) == L"--init");
+    CHECK(boot::config_arguments(configured.arguments) == L"--config --area logging-policy --init");
 
     std::istringstream lower_yes {"y\n1\n"};
     std::ostringstream lower_output;
@@ -385,7 +374,7 @@ TEST_CASE("Interactive logging bootstrap selects seed or init", "[logging][init]
     );
     CHECK_FALSE(disabled.cancelled);
     CHECK(disabled.arguments == boot::ConfigArguments::disable);
-    CHECK(boot::config_arguments(disabled.arguments) == L"--disable");
+    CHECK(boot::config_arguments(disabled.arguments) == L"--config --area logging-policy --disable");
     CHECK(invalid_output.str().find("Enter Y or N.") != std::string::npos);
     CHECK(invalid_output.str().find("Use defaults") == std::string::npos);
 

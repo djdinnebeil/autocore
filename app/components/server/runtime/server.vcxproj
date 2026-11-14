@@ -57,6 +57,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\..\..\..\msbuild\AutoCore.props" />
+    <Import Project="..\..\..\..\msbuild\ComponentRuntime.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -137,7 +138,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>civetweb-cpp.lib;civetweb.lib;auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>civetweb-cpp.lib;civetweb.lib;auto_core.lib;Shell32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
@@ -161,8 +162,34 @@
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\core\system\thread.ixx" />
     <ClCompile Include="..\shared\server_data_detail.cxx" />
+    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\default_site.ixx" />
+    <ClCompile Include="..\..\..\shared\component_dispatch.ixx" />
+    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
+    <ClCompile Include="..\..\..\shared\component_settings.ixx" />
     <ClCompile Include="server_logging.ixx" />
-    <ClCompile Include="main.cxx" />
+    <ClCompile Include="..\config\main.cxx">
+      <ObjectFileName>$(IntDir)server_config_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)server_config_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\editor\main.cxx">
+      <ObjectFileName>$(IntDir)server_editor_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)server_editor_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\builder\main.cxx">
+      <ObjectFileName>$(IntDir)server_builder_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)server_builder_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\settings\main.cxx">
+      <ObjectFileName>$(IntDir)server_settings_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)server_settings_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="dispatch.cxx" />
+    <ClCompile Include="main.cxx">
+      <ObjectFileName>$(IntDir)server_runtime_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)server_runtime_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">

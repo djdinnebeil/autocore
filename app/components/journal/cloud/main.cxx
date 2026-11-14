@@ -300,10 +300,12 @@ int run_serve(void* const owner) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::cloud {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_cloud.log_info("journal_cloud.exe started");
+    journal_cloud.log_info("journal_ac.exe --cloud started");
     if (argc >= 2 && std::string_view {argv[1]} == "--serve") {
         void* owner = nullptr;
         if (argc == 4 && std::string_view {argv[2]} == "--owner-handle") {
@@ -315,7 +317,7 @@ int main(int argc, char* argv[]) {
             owner = *handle;
         }
         else if (argc != 2) {
-            std::cerr << "Usage: journal_cloud.exe [--serve | --seed | --init]\n";
+            std::cerr << "Usage: journal_ac.exe --cloud [--serve | --seed | --init]\n";
             return 1;
         }
         return run_serve(owner);
@@ -335,8 +337,10 @@ int main(int argc, char* argv[]) {
         return run_init();
     }
     if (argc > 1) {
-        std::cerr << "Usage: journal_cloud.exe [--serve | --seed | --init]\n";
+        std::cerr << "Usage: journal_ac.exe --cloud [--serve | --seed | --init]\n";
         return 1;
     }
     return run_menu();
 }
+
+} // namespace ac::journal_app::cloud

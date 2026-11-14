@@ -12,39 +12,38 @@ process only.
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
 2. If `config/auto_core.ini` is missing, the installation is new. Launch
-   `auto_core_init.exe` and wait. Before its Auto Core menu, it establishes
+   `auto_core_settings.exe --initialize` and wait. Before its Auto Core menu, it establishes
    `config/logging_policy.ini` with console I/O only. No-argument and `--init` ask
-   `Enable logging? [Y/n]:`. No runs `logging_policy_config.exe --disable`, which
+   `Enable logging? [Y/n]:`. No runs `auto_core_settings.exe --config --area logging-policy --disable`, which
    writes the compiled logging file with `disable_all = on`. Yes asks
-   `1. Use defaults` or `2. Configure`, which run `logging_policy_config.exe --seed`
-   or `logging_policy_config.exe --init`. `--seed` runs `logging_policy_config.exe --seed`
+   `1. Use defaults` or `2. Configure`, which run the `logging-policy` route with `--seed`
+   or `--init`. `--seed` runs `auto_core_settings.exe --config --area logging-policy --seed`
    and does not prompt. `--init --seed` asks only the enable question.
-   An existing `logging_policy.ini` is preserved. `auto_core_init.exe` does not
+   An existing `logging_policy.ini` is preserved. `auto_core_settings.exe --initialize` does not
    write the file. After logging is resolved, its menu is `Auto Core` with
    `1. Use defaults` and `2. Configure`. Use defaults propagates `--seed`.
    Configure propagates `--init` and does not attach `--seed`.
    `--seed` skips that menu and also skips the Components menu, launching
-   `components_init.exe --seed`. `--init --seed` skips the Auto Core menu,
+   `auto_core_components.exe --initialize --seed`. `--init --seed` skips the Auto Core menu,
    passes both flags to the Main configuration owners, then shows the
-   Components menu. That Main mode is passed to `auto_core_config.exe`,
-   `components_policy_config.exe`, `shutdown_config.exe`,
-   `crash_recovery_config.exe`, `startup_config.exe`, and
-   `warnings_config.exe`. It does not select
-   `components_init.exe`. After those owners succeed, no-argument, `--init`,
+   Components menu. That Main mode is passed to the `auto-core`,
+   `components-policy`, `shutdown`, `crash-recovery`, `startup`, and
+   `warnings` routes of `auto_core_settings.exe --config`. It does not select
+   component initialization. After those owners succeed, no-argument, `--init`,
    and `--init --seed` ask `1. Use defaults for components`
-   (`components_init.exe --seed`), `2. Configure components`
-   (`components_init.exe --init`), or `3. Skip components`. Blank input
-   selects defaults. Skip does not launch `components_init.exe` and is not
-   a failure. `components_init.exe --init` asks each discovered component
-   whether to use defaults, configure, or skip. `components_init.exe --seed`
+   (`auto_core_components.exe --initialize --seed`), `2. Configure components`
+   (`auto_core_components.exe --initialize`), or `3. Skip components`. Blank input
+   selects defaults. Skip does not launch `auto_core_components.exe` and is not
+   a failure. `auto_core_components.exe --initialize` asks each discovered component
+   whether to use defaults, configure, or skip. `auto_core_components.exe --initialize --seed`
    does not prompt and launches each component config with `--init --seed`,
-   which creates `logger.ini` by launching `logger_config.exe`.
-   After component initialization, `components_editor.exe --seed` and
-   `keymap_editor.exe` run. No Main configuration owner runs after
-   `components_init.exe`. A failed or cancelled required stage
+   which creates `logger.ini` by launching `logger_ac.exe --config --init --seed`.
+   After component initialization, `auto_core_components.exe --edit --seed` and
+   `auto_core_keymap.exe --seed` run. No Main configuration owner runs after
+   component initialization. A failed or cancelled required stage
    stops initialization. After the orchestrator returns, resolve the shared
    logging policy. If `logging_policy.ini` is still missing, exit `1`.
-   `auto_core_config.exe` writes `auto_core.ini`. Presence of the file means
+   `auto_core_settings.exe --config` writes `auto_core.ini`. Presence of the file means
    Auto Core is initialized. There is no `initialized` key. If a required
    step fails or the user cancels that step, and this run created
    `auto_core.ini`, the orchestrator removes the file before it exits.
@@ -56,11 +55,11 @@ process only.
 3. If `auto_core.ini` already exists, resolve the shared logging policy
    before any other startup log. A missing `logging_policy.ini` uses built-in
    defaults (`disable_all = off`, `directory = data\logs`,
-   `max_directory_mb = 100`, `retention_days = 30`, `level = debug`,
+   `max_directory_mb = 25`, `retention_days = 10`, `level = info`,
    `log_console_output = on`,
    `write_logs_to_files = on`,
    `write_logs_to_console = off`, `write_alerts_to_console = on`,
-   `component_logging_default = on`, `experimental = on`), prints
+   `component_logging_default = on`), prints
    `config/logging_policy.ini is missing; using built-in logging defaults.`,
    and does not create the file. After logging is resolved, if
    `[auto_core] version` differs from the compiled version, Main replaces
@@ -81,7 +80,7 @@ process only.
    prints to stderr and is not fatal.
 9. Create the log directory and write Main's local session log.
 10. Initialize the generic component session from `components.list` (hello on `ac.component.v1`, child process handles, and snapshot attach when `taskbar` is enabled). A missing `logger.ini` is reported here. Built-in merge defaults stay in memory and the file is not created.
-11. Load `keymap/keymap.map`. If the file is missing or unloadable, install a
+11. Load `<installation root>/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
 12. Load the sectionless `config/startup.ini`. `show_day_of_week` and
@@ -103,7 +102,17 @@ process only.
    version is the compiled constant. The same version,
    a newer installed version, and any failed request print nothing. `off`
    makes no request. The thread is joined after the message loop.
-14. Enter the thread message loop.
+14. On another background thread, run log cleanup inside this process. It uses
+   the logging directory and limits already resolved for the host. Edits to
+   `logging_policy.ini` apply after the host restarts. The pass runs retention
+   cleanup, then size cleanup. Main does not wait for that pass before the
+   message loop. After it returns, the thread waits until the next local
+   midnight, or until shutdown, and then runs cleanup again. Routine summaries
+   and an already-held cleanup mutex are `log_debug`. A directory or delete
+   failure is `log_alert` and is not fatal. Shutdown sets the wait event and
+   joins the thread before Main's shutdown record. An in-flight pass is allowed
+   to finish. The worker, not the message loop, deletes files.
+15. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
 then ordinary `TranslateMessage` / `DispatchMessage`. Exceptions in those two
@@ -135,18 +144,22 @@ plain `enter` is not a distinct mapping.
 ## Keymap
 
 `initialize_keymap()` runs after the component session and always loads
-`keymap/keymap.map`. Name lookup happens only at init: each expression is
+`<installation root>/keymap.map`. Name lookup happens only at init: each expression is
 resolved into a `std::function` and stored in `active_keymap`. The hook then
 calls `primary()` / `secondary()` with no further name lookup.
 
-`keymap_editor.exe` writes a seed `keymap.map` listing every name in `key_codes::keys` when that file is missing:
+`auto_core_keymap.exe --seed` writes a seed `keymap.map` listing every name in `key_codes::keys` when that file is missing:
 
 - `numpad_0`: `activate_function_key` / `deactivate_function_key`
 - `numpad_1`: `activate_auto_core` / `close_program`
 - All other keys: blank (`key =`, unbound)
 
-An existing `keymap.map` is never overwritten, including empty or broken
-files. A file that cannot be opened, or that has no usable
+An existing regular `keymap.map` is never overwritten, including empty or broken
+files. `--seed` creates a missing file with `CREATE_NEW`. A directory or other
+non-file at that path is an error and is not replaced. A failed write removes
+the new file instead of reporting success.
+
+A file that cannot be opened, or that has no usable
 rows (no resolved command on either side of any key), logs and installs an
 in-memory emergency map with the same two filled bindings. That emergency
 map is not written back to `keymap.map`. Runtime does not create
@@ -256,10 +269,10 @@ control pipe.
 `ac::main::components::initialize()` is the RAII session started from `main`:
 
 1. Load `components.list`. Invalid names and malformed
-   values are logged; those names are ignored or disabled. A missing file
-   is reconstructed by `components_editor.exe` at startup; if that fails,
-   Main exits. An unreadable existing file is reported and every valid
-   `*_ac.exe` beside Main is enabled. Main does not start an executable
+   values are logged; those names are ignored or disabled. A missing or
+   unreadable file is reported. Main enables every valid `*_ac.exe` beside
+   it in memory and does not create the file. It does not launch
+   `auto_core_components.exe`. Main does not start an executable
    that embeds `AC_LAUNCH_DESCRIPTOR` as a v1 child.
 2. If `taskbar` is enabled, start it and wait for hello, then attach the
    snapshot client. Snapshot failure keeps the control child.
@@ -278,13 +291,14 @@ children whose hello declares `force_allowed`. Graceful children are not
 force-terminated: Main duplicates the job handle into the living root process,
 or into a descendant opened and checked with `IsProcessInJob`, before it
 closes its own handle. Closing the last of those handles still ends any
-process left in the job. `logger_ac.exe --once --shutdown` is started outside
+process left in the job. `logger_ac.exe --run --once --shutdown` is started outside
 these jobs and is not waited on.
 
 On-demand components are not started here. An enabled name whose
 `{name}_ac.exe` embeds `AC_LAUNCH_DESCRIPTOR` is launched when its
 command runs. Dash's descriptor asks for a new console, the foreground HWND,
-and the parent PID, and does not wait. Slash's descriptor passes the command
+and the parent PID, and does not wait. The launch is
+`dash_ac.exe --run --target <hwnd> --parent-pid <pid>`. Slash's descriptor passes the command
 on the command line and waits until the process exits. See
 [dash.md](../docs/manual/components/dash.md) for the `--target` / `--parent-pid` launch line.
 

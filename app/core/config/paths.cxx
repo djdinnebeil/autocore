@@ -80,6 +80,16 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
+        app_directory() {
+        return cached_layout().app_directory;
+    }
+
+    const std::filesystem::path&
+        component_executable_directory() {
+        return cached_layout().component_executable_directory;
+    }
+
+    const std::filesystem::path&
         config_directory() {
         static const std::filesystem::path directory =
             installation_root() / "config";

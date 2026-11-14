@@ -520,12 +520,12 @@ void taskbar_runtime_commands::register_reserved_with(
     });
     registry.add("launch_taskbar_config", [] {
         const auto executable =
-            ac::paths::bin_directory() / "taskbar_config.exe";
+            ac::paths::component_executable_directory() / "taskbar_ac.exe";
         if (!ac::main::create_process_and_focus(
-                executable, {}, CREATE_NEW_CONSOLE
+                executable, L"--config", CREATE_NEW_CONSOLE
             )) {
             auto_core.log_alert(
-                "Unable to start taskbar_config.exe."
+                "Unable to start taskbar_ac.exe --config."
             );
         }
     });

@@ -175,17 +175,22 @@ menu::MenuResult run_configuration_menu() {
 
 [[nodiscard]]
 int offer_sync() {
-    const auto run_sync = cfg::prompt_on_off("Run components_editor.exe", true);
+    const auto run_sync = cfg::prompt_on_off(
+        "Run auto_core_components.exe --edit",
+        true
+    );
     if (!run_sync) {
         return 1;
     }
     if (!*run_sync) {
         return 0;
     }
-    components_policy_config.log_debug("Running components_editor.exe...");
-    if (cfg::run_config_exe("components_editor.exe") != 0) {
+    components_policy_config.log_debug(
+        "Running auto_core_components.exe --edit..."
+    );
+    if (cfg::run_config_exe("auto_core_components.exe", L"--edit") != 0) {
         components_policy_config.print(
-            "components_editor.exe did not complete successfully."
+            "auto_core_components.exe --edit did not complete successfully."
         );
         return 1;
     }
@@ -210,9 +215,8 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    components_policy_config.log_info("components_policy_config.exe started");
+int run_components_policy_config(int argc, char* argv[]) {
+    components_policy_config.log_info("Components Policy configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

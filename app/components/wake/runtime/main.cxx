@@ -11,7 +11,9 @@ import wake_logging;
 import component_protocol;
 import auto_core.core.shell;
 
-int main(const int argc, char* argv[]) {
+namespace ac::wake::runtime {
+
+int run(const int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     if (argc == 2 &&
         std::string_view {argv[1]} == "--export-keymap-commands") {
@@ -89,3 +91,5 @@ int main(const int argc, char* argv[]) {
     wake_component.log_info("program terminated");
     return 0;
 }
+
+} // namespace ac::wake::runtime

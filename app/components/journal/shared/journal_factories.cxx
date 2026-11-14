@@ -98,26 +98,47 @@ std::optional<int> prompt_for_upper_choice() {
         return std::nullopt;
     }
 
+    const auto restore_target = [&] {
+        const auto restored = ac::console::restore_focus(*target_window);
+        if (!restored) {
+            journal_component().log_alert(
+                ac::console::error_message(restored.error())
+            );
+        }
+    };
+
     journal_component().printnl("Enter number of choices: ");
-    std::string value;
-    std::getline(std::cin, value);
+    const auto value = ac::console::read_line();
+    if (!value) {
+        if (value.error() == ac::console::LineError::cancelled) {
+            journal_component().log_info("Number of choices cancelled");
+        }
+        else {
+            journal_component().log_alert(
+                "Number of choices terminated: {}",
+                ac::console::error_message(value.error())
+            );
+        }
+        restore_target();
+        return std::nullopt;
+    }
 
     int upper = 2;
-    if (!value.empty()) {
+    if (!value->empty()) {
         const auto parsed = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
+            value->data(),
+            value->data() + value->size(),
             upper
         );
         if (parsed.ec != std::errc {} ||
-            parsed.ptr != value.data() + value.size()) {
+            parsed.ptr != value->data() + value->size()) {
             upper = 2;
         }
     }
 
     upper = (std::max)(upper, 1);
     journal_component().log_info("{}", upper);
-    SetForegroundWindow(static_cast<HWND>(*target_window));
+    restore_target();
     return upper;
 }
 

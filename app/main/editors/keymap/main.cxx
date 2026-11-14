@@ -1,67 +1,81 @@
-#include "../../runtime/keyboard/keymap_map_detail.hpp"
+/**
+ * \file main.cxx
+ * \brief Process entry for auto_core_keymap.exe.
+ *
+ * No arguments open the keymap menu. `--seed` creates a missing
+ * `keymap.map`. `--build` publishes the command catalogs. The two
+ * operations are separate in-process calls.
+ */
 
 import std;
-import auto_core.core.component;
-import auto_core.core.paths;
-import auto_core.main.config_support;
-import auto_core.main.key_codes;
 import auto_core.core.shell;
+import auto_core.main.config_support;
 
-namespace cfg = ac::main::config;
+import <iostream>;
+
+int seed_keymap();
+int build_keymap_commands();
 
 namespace {
 
-ac::Component keymap_editor {"keymap_editor"};
+namespace cfg = ac::main::config;
+
+void print_usage(std::ostream& output) {
+    output << "Usage: auto_core_keymap.exe [--seed | --build | --help]\n";
+}
 
 [[nodiscard]]
-std::string mappings_seed() {
-    std::string contents =
-        "# Key binding: key = primary | secondary\n"
-        "# Example: numpad_1 = activate_auto_core | close_program\n"
-        "# Leave a binding blank to return control to the OS\n"
-        "\n"
-        "[keymap: concise]\n";
-    for (const auto& key : key_codes::keys) {
-        if (key.name == "numpad_0") {
-            contents += ac::keymap::map_file::format_line(
-                key.name,
-                "activate_function_key",
-                "deactivate_function_key"
-            );
+int run_menu() {
+    while (true) {
+        std::cout
+            << '\n'
+            << "Keymap\n"
+            << "\n"
+            << "1. Create keymap if missing\n"
+            << "2. Build command list\n"
+            << "3. Exit\n"
+            << "\n"
+            << "Choice [3]: ";
+        const auto line = cfg::read_line();
+        if (!line || line->empty() || *line == "3") {
+            return 0;
         }
-        else if (key.name == "numpad_1") {
-            contents += ac::keymap::map_file::format_line(
-                key.name,
-                "activate_auto_core",
-                "close_program"
-            );
+        if (*line == "1") {
+            return seed_keymap();
         }
-        else {
-            contents += ac::keymap::map_file::format_line(key.name, {}, {});
+        if (*line == "2") {
+            return build_keymap_commands();
         }
+        std::cout << "Enter 1, 2, or 3.\n";
     }
-    return contents;
 }
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    keymap_editor.log_info("keymap_editor.exe started");
+    if (argc < 2) {
+        return run_menu();
+    }
+    if (argc > 2) {
+        std::cerr << "Unknown argument: " << argv[2] << '\n';
+        print_usage(std::cerr);
+        return 1;
+    }
 
-    const auto path = ac::paths::keymap_file();
-    std::error_code error;
-    if (std::filesystem::exists(path, error)) {
+    const std::string_view command {argv[1]};
+    if (command == "--seed") {
+        return seed_keymap();
+    }
+    if (command == "--build") {
+        return build_keymap_commands();
+    }
+    if (command == "--help") {
+        print_usage(std::cout);
         return 0;
     }
-    if (error) {
-        keymap_editor.print("Failed to inspect {}", path.string());
-        return 1;
-    }
-    if (!cfg::write_bytes(path, mappings_seed())) {
-        keymap_editor.print("Failed to write {}.", path.string());
-        return 1;
-    }
-    keymap_editor.log_debug("Wrote {}", path.string());
-    return 0;
+
+    std::cerr << "Unknown argument: " << argv[1] << '\n';
+    print_usage(std::cerr);
+    return 1;
 }

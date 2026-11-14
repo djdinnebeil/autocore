@@ -105,11 +105,12 @@ std::optional<bool> prompt_yes_no(std::string_view question) {
 }
 
 std::optional<int> launch_process(
-    std::wstring_view executable_name,
+    std::wstring_view operation,
     std::wstring_view arguments,
     const DWORD creation_flags
 ) {
-    const auto executable_path = ac::paths::bin_directory() / executable_name;
+    const auto executable_path =
+        ac::paths::component_executable_directory() / L"spotify_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -117,7 +118,9 @@ std::optional<int> launch_process(
         return std::nullopt;
     }
 
-    std::wstring command_line = quote_argument(executable_path.wstring());
+    std::wstring command_line =
+        quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(operation);
     if (!arguments.empty()) {
         command_line += L' ';
         command_line += quote_argument(arguments);
@@ -161,10 +164,10 @@ std::optional<int> launch_process(
 }
 
 int launch_owner(
-    std::wstring_view executable_name,
+    std::wstring_view operation,
     std::wstring_view arguments
 ) {
-    const auto code = launch_process(executable_name, arguments, 0);
+    const auto code = launch_process(operation, arguments, 0);
     if (!code) {
         return 1;
     }
@@ -320,15 +323,15 @@ void report_incomplete() {
 }
 
 int seed_owned_files() {
-    if (const int database = launch_owner(L"spotify_db.exe", L"--seed");
+    if (const int database = launch_owner(L"--run", L"--seed");
         database != 0) {
         return database;
     }
-    if (const int format = launch_owner(L"spotify_formatter.exe", L"--seed");
+    if (const int format = launch_owner(L"--formatter", L"--seed");
         format != 0) {
         return format;
     }
-    return launch_owner(L"spotify_editor.exe", L"--seed");
+    return launch_owner(L"--editor", L"--seed");
 }
 
 int prompt_missing_stores() {
@@ -345,7 +348,7 @@ int prompt_missing_stores() {
             return 1;
         }
         if (*create) {
-            if (const int database = launch_owner(L"spotify_db.exe", L"--seed");
+            if (const int database = launch_owner(L"--run", L"--seed");
                 database != 0) {
                 return database;
             }
@@ -357,7 +360,7 @@ int prompt_missing_stores() {
         return 1;
     }
     if (!*format) {
-        return launch_owner(L"spotify_formatter.exe", L"--init");
+        return launch_owner(L"--formatter", L"--init");
     }
     return 0;
 }
@@ -375,7 +378,7 @@ int finish_authorization() {
         }
         if (*configure) {
             if (const int editor = launch_owner(
-                    L"spotify_editor.exe",
+                    L"--editor",
                     L"--client-id"
                 );
                 editor != 0) {
@@ -400,7 +403,7 @@ int finish_authorization() {
     }
 
     const auto oauth = launch_process(
-        L"spotify_oauth.exe",
+        L"--oauth",
         {},
         CREATE_NEW_CONSOLE
     );
@@ -432,9 +435,11 @@ int report_seeded_authorization() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::spotify_app::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    spotify_config.log_info("spotify_config.exe started");
+    spotify_config.log_info("spotify_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -510,3 +515,5 @@ int main(int argc, char* argv[]) {
         "Spotify"
     );
 }
+
+} // namespace ac::spotify_app::config

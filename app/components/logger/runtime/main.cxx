@@ -3,7 +3,6 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <shellapi.h>
 
 #pragma comment(lib, "Shell32.lib")
 
@@ -166,27 +165,26 @@ int run_hosted(ac::pipes::Pipe pipe) {
 
 } // namespace
 
-int main() {
+namespace ac::logger::runtime {
+
+int run(const int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    int argument_count = 0;
-    LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
     bool once = false;
     bool shutdown_once = false;
     bool export_keymap_commands = false;
-    if (arguments != nullptr) {
-        for (int index = 1; index < argument_count; ++index) {
-            if (ac::logger::detail::is_once_argument(arguments[index])) {
+    if (argv != nullptr) {
+        for (int index = 1; index < argc; ++index) {
+            const std::string_view argument {argv[index]};
+            if (argument == "--once") {
                 once = true;
             }
-            else if (ac::logger::detail::is_shutdown_argument(arguments[index])) {
+            else if (argument == "--shutdown") {
                 shutdown_once = true;
             }
-            else if (std::wstring_view {arguments[index]} ==
-                     L"--export-keymap-commands") {
+            else if (argument == "--export-keymap-commands") {
                 export_keymap_commands = true;
             }
         }
-        LocalFree(arguments);
     }
     if (export_keymap_commands) {
         return 0;
@@ -228,3 +226,5 @@ int main() {
 
     return run_hosted(ac::pipes::Pipe {handle});
 }
+
+} // namespace ac::logger::runtime

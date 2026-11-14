@@ -17,7 +17,7 @@ AutoCore.sln is the production solution and may be built to verify compilation. 
 - `devs/` — developing Auto Core
 - `docs/` — using and configuring Auto Core, and installed runtime behavior
 - `lib/` — canonical `auto_core.lib` and `auto_core.dll`
-- `dist/` — installation layout
+- `dist/` — installation layout. `app\` holds Main executables and shared DLLs. `components\` holds `<name>_ac.exe`
 
 Within Main and components, directories follow executable responsibility:
 `runtime/`, `config/`, `builder/`, `settings/`, and `shared/`. Main uses
@@ -32,9 +32,9 @@ Start with interfaces (`.ixx`) before implementations.
 Component communication uses `app/shared/protocols/component_protocol.ixx`.
 Component-specific protocols belong in that component's `shared/` directory.
 
-Configuration executables own configuration files. Editors own persistent operational data. Init executables orchestrate first-run setup rather than owning configuration.
+Configuration commands own configuration files. Editors own persistent operational data. Init executables orchestrate first-run setup rather than owning configuration.
 
-Runtime component executables use `<name>_ac.exe`. User-facing settings applications use `<name>_settings.exe` and `auto_core_settings.exe`. A `<name>_config.exe` remains the sole owner of one INI. Settings applications delegate to those owners and do not gain INI ownership.
+A component is one `<name>_ac.exe`. `--run` is the hosted session, `--settings` is the settings menu, and `--config` is the sole owner of `config/components/<name>.ini`. A no-argument launch opens settings when that INI exists or the existence check fails, and otherwise runs `--config --init`. Third-party components use the same commands. Main keeps `auto_core_settings.exe` for its settings menu, `auto_core_settings.exe --config` for Main configuration, and `auto_core_settings.exe --initialize` for first-run initialization.
 
 ## Documentation
 

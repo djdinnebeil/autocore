@@ -2,8 +2,8 @@
  * \file vault_mutate.ixx
  * \brief Protect a Dash secret and publish the vault.
  *
- * Compiled only into `dash_editor.exe`. Directory creation and atomic
- * replacement live here so the runtime cannot call them.
+ * Linked into `dash_ac.exe` and called only from `--editor`. Directory
+ * creation and atomic replacement live here so `--run` cannot call them.
  */
 module;
 

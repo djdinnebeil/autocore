@@ -87,7 +87,7 @@ namespace {
             const auto list_path = ac::paths::components_list_file();
             const auto runtime = ac::config::components_list::load_runtime_catalog(
                 list_path,
-                ac::paths::bin_directory()
+                ac::paths::component_executable_directory()
             );
             if (runtime.used_discovery) {
                 std::error_code exists_error;
@@ -96,16 +96,16 @@ namespace {
                 if (present && !exists_error) {
                     auto_core.log_alert(
                         "components.list is unreadable. Run "
-                        "components_editor.exe to generate a valid file. "
-                        "Discovering *_ac.exe in the binary directory; the "
+                        "auto_core_components.exe --edit to generate a valid file. "
+                        "Discovering *_ac.exe in the component directory; the "
                         "file will not be created."
                     );
                 }
                 else {
                     auto_core.log_alert(
                         "components.list is missing. Run "
-                        "components_editor.exe to generate it. Discovering "
-                        "*_ac.exe in the binary directory; the file will not "
+                        "auto_core_components.exe --edit to generate it. Discovering "
+                        "*_ac.exe in the component directory; the file will not "
                         "be created."
                     );
                 }
@@ -120,7 +120,7 @@ namespace {
     std::optional<ac::main::launch_descriptor::ParseResult> read_launch_descriptor(
         const std::string_view name
     ) {
-        const auto executable = ac::paths::bin_directory() /
+        const auto executable = ac::paths::component_executable_directory() /
             (std::string {name} + "_ac.exe");
         std::error_code exists_error;
         if (!std::filesystem::is_regular_file(executable, exists_error) ||
@@ -150,7 +150,7 @@ namespace {
         const std::string& command,
         const ac::main::launch_descriptor::Descriptor& descriptor
     ) {
-        const auto executable = ac::paths::bin_directory() /
+        const auto executable = ac::paths::component_executable_directory() /
             (component + "_ac.exe");
         std::wstring arguments;
         if (descriptor.arguments ==
@@ -168,6 +168,9 @@ namespace {
                 GetCurrentProcessId()
             );
         }
+        arguments = arguments.empty()
+            ? std::wstring {L"--run"}
+            : L"--run " + arguments;
 
         const DWORD creation_flags =
             descriptor.console ==
@@ -288,14 +291,14 @@ namespace {
             const bool present = std::filesystem::exists(path, exists_error);
             if (present && !exists_error) {
                 auto_core.log_alert(
-                    "config/shutdown.ini is malformed. Run shutdown_config.exe "
+                    "config/shutdown.ini is malformed. Run auto_core_settings.exe --config --area shutdown "
                     "to generate a valid file. Using built-in defaults; the "
                     "file will not be created."
                 );
             }
             else {
                 auto_core.log_alert(
-                    "config/shutdown.ini is missing. Run shutdown_config.exe "
+                    "config/shutdown.ini is missing. Run auto_core_settings.exe --config --area shutdown "
                     "to generate it. Using built-in defaults; the file will "
                     "not be created."
                 );
@@ -312,7 +315,7 @@ namespace {
         if (!prompt || !timeout) {
             auto_core.log_alert(
                 "config/shutdown.ini is missing an expected [shutdown] key. "
-                "Run shutdown_config.exe to repair it. Using built-in "
+                "Run auto_core_settings.exe --config --area shutdown to repair it. Using built-in "
                 "defaults for missing keys; the file will not be rewritten."
             );
         }
@@ -323,7 +326,7 @@ namespace {
         else if (prompt && *prompt != "popup") {
             auto_core.log_alert(
                 "config/shutdown.ini [shutdown] delayed_shutdown_prompt is "
-                "invalid. Run shutdown_config.exe to repair it. Using popup; "
+                "invalid. Run auto_core_settings.exe --config --area shutdown to repair it. Using popup; "
                 "the file will not be rewritten."
             );
         }
@@ -343,7 +346,7 @@ namespace {
             else {
                 auto_core.log_alert(
                     "config/shutdown.ini [shutdown] shutdown_timeout_ms is "
-                    "invalid. Run shutdown_config.exe to repair it. Using "
+                    "invalid. Run auto_core_settings.exe --config --area shutdown to repair it. Using "
                     "2000; the file will not be rewritten."
                 );
             }
@@ -421,13 +424,18 @@ namespace {
 
     [[nodiscard]]
     std::optional<OwnedProcess> start_owned_process(
-        const std::filesystem::path& executable_path
+        const std::filesystem::path& executable_path,
+        const std::wstring_view extra_arguments
     ) {
         STARTUPINFOW startup_info {};
         startup_info.cb = sizeof(startup_info);
         PROCESS_INFORMATION process_info {};
 
         std::wstring command_line = L"\"" + executable_path.wstring() + L"\"";
+        if (!extra_arguments.empty()) {
+            command_line += L' ';
+            command_line += extra_arguments;
+        }
         if (!CreateProcessW(
                 executable_path.c_str(),
                 command_line.data(),
@@ -487,7 +495,7 @@ namespace {
         const std::filesystem::path& executable
     ) {
         std::wstring command_line =
-            L"\"" + executable.wstring() + L"\" --once --shutdown";
+            L"\"" + executable.wstring() + L"\" --run --once --shutdown";
         const auto directory = executable.parent_path();
         const auto try_create = [&](const DWORD flags) {
             STARTUPINFOW startup_info {};
@@ -535,7 +543,7 @@ namespace {
         }
 
         const auto executable =
-            ac::paths::bin_directory() / protocol::executable_name(name);
+            ac::paths::component_executable_directory() / protocol::executable_name(name);
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
             auto_core.log_alert(
@@ -547,7 +555,8 @@ namespace {
             return std::nullopt;
         }
 
-        auto process = start_owned_process(executable);
+        const std::wstring_view extra_arguments = L"--run";
+        auto process = start_owned_process(executable, extra_arguments);
         if (!process) {
             auto_core.log_alert(
                 "Unable to start {}; {} is unavailable for this session.",
@@ -1596,7 +1605,7 @@ void ac::main::components::shutdown(const bool allow_recovery_prompt) {
         ac::main::components::detail::launch_shutdown_once(
             ac::logger::config::merge_logs_on_shutdown()
         )) {
-        const auto executable = ac::paths::bin_directory() /
+        const auto executable = ac::paths::component_executable_directory() /
             ac::protocol::component::executable_name("logger");
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
@@ -1768,7 +1777,7 @@ ac::main::components::Session ac::main::components::initialize() {
 
     if (ac::logger::config::ini_missing()) {
         auto_core.log_alert(
-            "config/components/logger.ini is missing. Run logger_config.exe to "
+            "config/components/logger.ini is missing. Run logger_ac.exe --config to "
             "generate it. Using built-in defaults; the file will not be "
             "created."
         );

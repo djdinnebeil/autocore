@@ -63,7 +63,7 @@ std::wstring foreground_window_title() {
 
 std::string episode_title() {
     // Allocation does not rewrite series.map. Snapshot freshness is owned by
-    // journal_series.exe.
+    // journal_ac.exe --series.
     const auto active = journal::series_map::read_active(
         journal::series_map::file_path()
     );

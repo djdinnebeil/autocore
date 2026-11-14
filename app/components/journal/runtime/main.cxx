@@ -44,7 +44,9 @@ int export_keymap_commands() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::runtime {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     if (argc == 2 &&
         std::string_view {argv[1]} == "--export-keymap-commands") {
@@ -59,7 +61,10 @@ int main(int argc, char* argv[]) {
         journal_component().log_debug("{}", database.error());
     }
     struct DatabaseServiceGuard {
-        ~DatabaseServiceGuard() { journal::db::shutdown_service(); }
+        ~DatabaseServiceGuard() {
+            join_title_actions();
+            journal::db::shutdown_service();
+        }
     } database_service_guard;
 
     {
@@ -172,3 +177,5 @@ int main(int argc, char* argv[]) {
     journal_component().log_info("program terminated");
     return 0;
 }
+
+} // namespace ac::journal_app::runtime

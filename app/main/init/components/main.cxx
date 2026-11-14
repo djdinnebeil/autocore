@@ -2,12 +2,12 @@
  * \file main.cxx
  * \brief Coordinates component configuration executables. Does not write files.
  *
- * `--init` asks each component whether to seed, configure, or skip.
- * `--seed` and `--init --seed` launch every component config with
- * `--init --seed` and do not prompt.
+ * Invoked as `auto_core_components.exe --initialize`. No further arguments
+ * ask each component whether to seed, configure, or skip. `--seed` launches
+ * every component config with `--init --seed` and does not prompt.
  */
+#include "../../editors/components/components_usage.hpp"
 #include "../../../core/component/components_list_detail.hpp"
-
 import std;
 import auto_core.core.component;
 import auto_core.core.encoding;
@@ -15,7 +15,6 @@ import auto_core.core.paths;
 import auto_core.main.config_support;
 
 import <iostream>;
-import auto_core.core.shell;
 
 namespace cfg = ac::main::config;
 namespace list = ac::config::components_list;
@@ -26,7 +25,7 @@ ac::Component components_init {"components_init"};
 
 [[nodiscard]]
 std::optional<std::vector<std::string>> discover_components() {
-    const auto bin = ac::paths::bin_directory();
+    const auto bin = ac::paths::component_executable_directory();
     std::error_code error;
     const auto iterator = std::filesystem::directory_iterator(bin, error);
     if (error) {
@@ -47,17 +46,25 @@ struct LaunchOutcome {
 };
 
 [[nodiscard]]
+std::string config_owner_executable(const std::string_view name) {
+    return std::string {name} + "_ac.exe";
+}
+
+[[nodiscard]]
 LaunchOutcome launch_config(
     const std::string_view name,
     const std::wstring_view arguments
 ) {
-    const auto helper = std::string {name} + "_config.exe";
+    const auto helper = config_owner_executable(name);
+    const std::wstring forwarded = arguments.empty()
+        ? std::wstring {L"--config"}
+        : L"--config " + std::wstring {arguments};
     std::string command = helper;
-    if (!arguments.empty()) {
+    if (!forwarded.empty()) {
         command += ' ';
-        command += ac::encoding::to_utf8(arguments);
+        command += ac::encoding::to_utf8(forwarded);
     }
-    const auto path = ac::paths::bin_directory() / helper;
+    const auto path = ac::paths::component_executable_directory() / helper;
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error || !present) {
@@ -70,7 +77,7 @@ LaunchOutcome launch_config(
     }
 
     components_init.log_debug("Launching {}", command);
-    const int code = cfg::run_config_exe(helper, std::wstring {arguments});
+    const int code = cfg::run_config_exe(helper, forwarded);
     if (code != 0) {
         components_init.print("{} exited with code {}.", helper, code);
     }
@@ -140,10 +147,10 @@ std::string prompt_title(const std::string_view name) {
 
 [[nodiscard]]
 bool config_executable_present(const std::string_view name) {
-    const auto helper = std::string {name} + "_config.exe";
+    const auto helper = config_owner_executable(name);
     std::error_code error;
     const bool present = std::filesystem::exists(
-        ac::paths::bin_directory() / helper,
+        ac::paths::component_executable_directory() / helper,
         error
     );
     return !error && present;
@@ -188,8 +195,8 @@ int prompt_each(const std::vector<std::string>& names) {
         components_init.log_debug("Discovered component: {}", name);
         if (!config_executable_present(name)) {
             components_init.print(
-                "Component config executable not found: {}_config.exe",
-                name
+                "Component config executable not found: {}",
+                config_owner_executable(name)
             );
             components_init.log_debug("Skipping component: {}", name);
             ++skipped;
@@ -267,6 +274,7 @@ std::optional<LaunchMode> parse_launch(const int argc, char* argv[]) {
             continue;
         }
         std::cerr << "Unknown argument: " << argument << '\n';
+        print_components_usage();
         return std::nullopt;
     }
     return mode;
@@ -300,16 +308,17 @@ int run_discovered(const bool interactive) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    components_init.log_info("components_init.exe started");
-
+int run_components_initialization(int argc, char* argv[]) {
     const auto launch = parse_launch(argc, argv);
     if (!launch) {
         return 1;
     }
     if (launch->seed) {
+        components_init.log_info(
+            "auto_core_components.exe --initialize --seed started"
+        );
         return run_discovered(false);
     }
+    components_init.log_info("auto_core_components.exe --initialize started");
     return run_discovered(true);
 }

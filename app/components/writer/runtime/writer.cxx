@@ -59,34 +59,6 @@ std::optional<std::vector<std::string>> load_session_prompts() {
     return prompts;
 }
 
-std::optional<std::size_t> select_numbered_entry(
-    const std::string& menu,
-    const std::size_t count,
-    const char* const kind
-) {
-    writer_component().printnl(menu);
-
-    std::string input;
-    while (std::getline(std::cin, input)) {
-        writer_component().log_info("{} selection: {}", kind, input);
-        std::size_t selection = 0;
-        const char* const first = input.data();
-        const char* const last = first + input.size();
-        const auto result = std::from_chars(first, last, selection);
-        if (result.ec == std::errc {} && result.ptr == last &&
-            selection > 0 && selection <= count) {
-            return selection - 1;
-        }
-        writer_component().printnl("Incorrect input\nEnter again: ");
-    }
-
-    writer_component().log_alert(
-        "{} selection cancelled: input closed",
-        kind
-    );
-    return std::nullopt;
-}
-
 std::optional<std::string> select_session_prompt(
     const std::vector<std::string>& prompts
 ) {
@@ -97,7 +69,7 @@ std::optional<std::string> select_session_prompt(
     }
     menu << "> ";
 
-    const auto selection = select_numbered_entry(
+    const auto selection = writer_actions::select_numbered_entry(
         menu.str(),
         prompts.size(),
         "Session prompt"
@@ -117,6 +89,8 @@ void select_and_insert_session_prompt_worker() {
         return;
     }
 
+    writer_actions::PromptFocus focus {*target_window};
+
     const auto prompts = load_session_prompts();
     if (!prompts) {
         return;
@@ -127,10 +101,23 @@ void select_and_insert_session_prompt_worker() {
     }
 
     writer_component().print(*prompt);
+    std::wstring text;
+    try {
+        text = ac::encoding::to_utf16(*prompt);
+    }
+    catch (const std::exception& exception) {
+        writer_component().log_alert(
+            "Unable to convert text for insertion: {}",
+            exception.what()
+        );
+        return;
+    }
+
     writer_component().insert_text_preserving_clipboard_text(
         *target_window,
-        ac::encoding::to_utf16(*prompt)
+        text
     );
+    focus.release();
 }
 
 const std::filesystem::path& profile_urls_file() {
@@ -225,7 +212,7 @@ std::optional<std::string> select_profile_url(
     }
     menu << "> ";
 
-    const auto selection = select_numbered_entry(
+    const auto selection = writer_actions::select_numbered_entry(
         menu.str(),
         profiles.size(),
         "Profile URL"
@@ -245,6 +232,8 @@ void select_and_insert_profile_url_worker() {
         return;
     }
 
+    writer_actions::PromptFocus focus {*target_window};
+
     const auto profiles = load_profile_urls();
     if (!profiles) {
         return;
@@ -255,14 +244,96 @@ void select_and_insert_profile_url_worker() {
     }
 
     writer_component().print(*url);
+    std::wstring text;
+    try {
+        text = ac::encoding::to_utf16(*url);
+    }
+    catch (const std::exception& exception) {
+        writer_component().log_alert(
+            "Unable to convert text for insertion: {}",
+            exception.what()
+        );
+        return;
+    }
+
     writer_component().insert_text_preserving_clipboard_text(
         *target_window,
-        ac::encoding::to_utf16(*url),
+        text,
         false
     );
+    focus.release();
 }
 
 } // namespace
+
+writer_actions::PromptFocus::~PromptFocus() noexcept {
+    if (!armed_) {
+        return;
+    }
+    armed_ = false;
+
+    const auto restored = ac::console::restore_focus(window_);
+    if (restored) {
+        return;
+    }
+
+    try {
+        writer_component().log_alert(
+            ac::console::error_message(restored.error())
+        );
+    }
+    catch (...) {}
+}
+
+std::optional<std::size_t> writer_actions::select_numbered_entry(
+    const std::string& menu,
+    const std::size_t count,
+    const char* const kind
+) {
+    writer_component().printnl(menu);
+
+    while (true) {
+        const auto input = ac::console::read_line();
+        if (!input) {
+            if (input.error() == ac::console::LineError::cancelled) {
+                writer_component().log_info(
+                    "{} selection cancelled",
+                    kind
+                );
+            }
+            else {
+                writer_component().log_alert(
+                    "{} selection terminated: {}",
+                    kind,
+                    ac::console::error_message(input.error())
+                );
+            }
+            return std::nullopt;
+        }
+
+        writer_component().log_info("{} selection: {}", kind, *input);
+
+        if (input->empty()) {
+            writer_component().log_info(
+                "{} selection cancelled: empty input",
+                kind
+            );
+            return std::nullopt;
+        }
+
+        std::size_t selection = 0;
+        const char* const first = input->data();
+        const char* const last = first + input->size();
+        const auto result = std::from_chars(first, last, selection);
+
+        if (result.ec == std::errc {} && result.ptr == last &&
+            selection > 0 && selection <= count) {
+            return selection - 1;
+        }
+
+        writer_component().printnl("Incorrect input\nEnter again: ");
+    }
+}
 
 void writer_actions::select_and_insert_session_prompt() {
     writer_component().log_info("select_and_insert_session_prompt()");

@@ -7,8 +7,9 @@
  * sentinel only if the required initialization sequence succeeds. When this
  * run creates `config/auto_core.ini`, a failed or cancelled required step
  * removes that file before exit. The Auto Core menu selects Main configuration
- * owners only. Interactive runs then ask whether to seed, configure, or
- * skip components_init.exe. The editors run after that stage.
+ * areas only. Interactive runs then ask whether to seed, configure, or
+ * skip component initialization. `auto_core_components.exe --edit --seed`
+ * runs after that stage.
  */
 import std;
 import auto_core.core.component;
@@ -175,6 +176,7 @@ int run_sequence(
     };
 
     for (const auto& step : sequence::initialization_steps) {
+        std::wstring argument_storage;
         std::wstring_view arguments;
         if (step.kind == sequence::OwnerKind::components) {
             auto launch = sequence::ComponentLaunch::seed;
@@ -195,9 +197,20 @@ int run_sequence(
             arguments = sequence::component_arguments(launch);
         }
         else {
-            arguments = sequence::arguments_for(step.kind, mode);
+            const auto mode_arguments = sequence::arguments_for(step.kind, mode);
+            if (!step.route.empty()) {
+                argument_storage = step.route;
+                if (!mode_arguments.empty()) {
+                    argument_storage += L' ';
+                    argument_storage += mode_arguments;
+                }
+                arguments = argument_storage;
+            }
+            else {
+                arguments = mode_arguments;
+            }
         }
-        if (step.executable == "auto_core_config.exe") {
+        if (step.route == L"--config --area auto-core") {
             auto_core_init.log_debug("Starting auto_core.ini creation");
         }
         const int code = run_owner(step.executable, arguments);
@@ -276,7 +289,7 @@ int establish_logging(const boot::InitMode mode) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+int run_initialization_program(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -291,7 +304,7 @@ int main(int argc, char* argv[]) {
     if (establish_logging(mode) != 0) {
         return 1;
     }
-    auto_core_init.log_info("auto_core_init.exe started");
+    auto_core_init.log_info("auto_core_settings.exe --initialize started");
     std::error_code ini_error;
     const bool ini_present = std::filesystem::exists(
         ac::paths::config_directory() / "auto_core.ini",
@@ -299,7 +312,7 @@ int main(int argc, char* argv[]) {
     );
     if (!ini_error && !ini_present) {
         auto_core_init.log_debug(
-            "config/auto_core.ini is missing. Launching auto_core_init.exe."
+            "config/auto_core.ini is missing. Running auto_core_settings.exe --initialize."
         );
     }
 

@@ -4,8 +4,11 @@
  *
  * Binary paths are derived from the directory containing the running
  * executable (`bin_directory`). Configuration and runtime-data paths are
- * derived from that directory's parent (`installation_root`). Accessors
- * compute their result once and return a reference that remains valid for
+ * derived from that directory's parent (`installation_root`). An installed
+ * Main executable in `app` finds component executables in sibling
+ * `components`. An installed component executable finds Main executables
+ * and shared DLLs in sibling `app`. The same split is `bin\app` and
+ * `bin\components`. Accessors compute their result once and return a reference that remains valid for
  * the lifetime of the process. They do not create or validate the
  * referenced filesystem object. The process current working directory is
  * never used.
@@ -44,6 +47,26 @@ export namespace ac::paths {
     [[nodiscard]]
     AC_API const std::filesystem::path&
         installation_root();
+
+    /**
+     * \brief Returns the directory that contains Main executables and shared DLLs.
+     *
+     * This is `bin_directory` unless that directory is named `components`,
+     * in which case it is `<installation root>/app`.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        app_directory();
+
+    /**
+     * \brief Returns the directory scanned and launched for `<name>_ac.exe`.
+     *
+     * This is `bin_directory` when that directory is named `components`.
+     * Otherwise it is `<installation root>/components`.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        component_executable_directory();
 
     /**
      * \brief Returns `<installation root>/config`.

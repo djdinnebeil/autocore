@@ -71,7 +71,9 @@ int export_keymap_commands() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::writer_app::runtime {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     if (argc == 2 &&
         std::string_view {argv[1]} == "--export-keymap-commands") {
@@ -181,3 +183,5 @@ int main(int argc, char* argv[]) {
     writer_component().log_info("program terminated");
     return 0;
 }
+
+} // namespace ac::writer_app::runtime

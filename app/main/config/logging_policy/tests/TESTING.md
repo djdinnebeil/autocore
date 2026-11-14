@@ -3,8 +3,8 @@
 `logging_policy_config_tests.vcxproj` covers seed precedence, `--disable`,
 canonical prompt order, preservation of an existing file, failed writes,
 the logging bootstrap prompts, and the first-run owner sequence.
-`logging_policy_config.exe` stays outside that sequence because the logging
-bootstrap launches it.
+Logging policy is established before that sequence. The bootstrap launches
+`auto_core_settings.exe --config --area logging-policy`.
 
 Build and run Release x64:
 

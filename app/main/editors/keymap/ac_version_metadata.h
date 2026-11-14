@@ -4,6 +4,6 @@
  * Optional AC_PRODUCT_NAME overrides the product string.
  * Not launch policy, component type, or a command catalog.
  */
-#define AC_FILE_DESCRIPTION "Auto Core - Keymap Editor"
-#define AC_INTERNAL_NAME "keymap_editor"
-#define AC_ORIGINAL_FILENAME "keymap_editor.exe"
+#define AC_FILE_DESCRIPTION "Auto Core - Keymap"
+#define AC_INTERNAL_NAME "auto_core_keymap"
+#define AC_ORIGINAL_FILENAME "auto_core_keymap.exe"

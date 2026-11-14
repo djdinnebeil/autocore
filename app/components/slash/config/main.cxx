@@ -143,13 +143,15 @@ namespace {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::slash::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     ac::Component slash_config {
         "slash_config",
         ac::logging::config::LoggingScope {"slash"}
     };
-    slash_config.log_info("slash_config.exe started");
+    slash_config.log_info("slash_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -166,39 +168,39 @@ int main(int argc, char* argv[]) {
     }
     namespace req = ac::config::components_request;
     req::log_config_request(slash_config, *launch);
-    const auto action = slash::config::select_action(
+    const auto action = ::slash::config::select_action(
         exists,
         launch->init,
         launch->seed
     );
     switch (action) {
-        case slash::config::Action::skip_seed:
+        case ::slash::config::Action::skip_seed:
             req::log_seed_skipped(slash_config, "config/components/slash.ini");
             return req::finish_component_initialization(slash_config, 0, "Slash");
-        case slash::config::Action::skip_initialization:
+        case ::slash::config::Action::skip_initialization:
             req::log_initialization_skipped(slash_config, "config/components/slash.ini");
             return req::finish_component_initialization(slash_config, 0, "Slash");
-        case slash::config::Action::seed:
+        case ::slash::config::Action::seed:
             req::log_writing_defaults(slash_config);
             if (!write_ini(
                     slash_config,
                     path,
-                    slash::defaults::mode_verbose,
+                    ::slash::defaults::mode_verbose,
                     true
                 )) {
                 return 1;
             }
             req::log_configuration_initialized(slash_config);
             return req::finish_component_initialization(slash_config, 0, "Slash");
-        case slash::config::Action::configure:
+        case ::slash::config::Action::configure:
             return run_configuration_menu(slash_config, path);
-        case slash::config::Action::initialize:
+        case ::slash::config::Action::initialize:
             break;
     }
 
     req::log_configuration_missing(slash_config);
     req::log_writing_defaults(slash_config);
-    if (!write_ini(slash_config, path, slash::defaults::mode_verbose, true)) {
+    if (!write_ini(slash_config, path, ::slash::defaults::mode_verbose, true)) {
         return 1;
     }
     if (launch->init) {
@@ -240,3 +242,5 @@ int main(int argc, char* argv[]) {
     req::log_configuration_initialized(slash_config);
     return 0;
 }
+
+} // namespace ac::slash::config

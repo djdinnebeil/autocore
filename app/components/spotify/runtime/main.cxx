@@ -11,6 +11,7 @@ import spotify_component;
 import spotify_client;
 import spotify_monitor;
 import spotify_db_client;
+import spotify_sqlite;
 import auto_core.core.pipes;
 import auto_core.core.shell;
 import spotify_protocol;
@@ -32,6 +33,132 @@ void end_spotify() {
 }
 
 namespace {
+
+void print_database_error(const std::string& message) {
+    spotify_component.log_alert("{}", message);
+    std::cout << message << '\n';
+}
+
+bool database_exists() {
+    std::error_code error;
+    return std::filesystem::exists(spotify::sqlite::file_path(), error) && !error;
+}
+
+void create_database() {
+    auto store = spotify::sqlite::open();
+    if (!store) {
+        print_database_error(store.error());
+        return;
+    }
+    spotify_component.log_alert("Created history.db.");
+}
+
+void select_all() {
+    auto store = spotify::sqlite::open();
+    if (!store) {
+        print_database_error(store.error());
+        return;
+    }
+    const auto rows = store->select_all();
+    if (!rows) {
+        print_database_error(rows.error());
+        return;
+    }
+    if (rows->empty()) {
+        std::cout << "No tracks yet.\n";
+        return;
+    }
+    std::cout << "id\tname\tartist\talbum\tduration\tplaycount\tcreated_at\tlast_played\n";
+    for (const auto& row : *rows) {
+        std::cout << std::format(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            row.id,
+            row.name,
+            row.artist,
+            row.album,
+            row.duration,
+            row.playcount,
+            row.created_at,
+            row.last_played
+        );
+    }
+}
+
+int run_database_seed() {
+    spotify_component.log_info("spotify_ac.exe started");
+    const auto ini_path = ac::paths::component_config_file("spotify");
+    if (!ac::ini::read(ini_path)) {
+        spotify_component.log_alert(
+            "config/components/spotify.ini is missing or unreadable. spotify_ac.exe --config owns it."
+        );
+        return 1;
+    }
+    std::error_code error;
+    const bool exists = std::filesystem::exists(spotify::sqlite::file_path(), error);
+    if (error) {
+        spotify_component.log_alert(
+            "Failed to inspect {}: {}",
+            spotify::sqlite::file_path().string(),
+            error.message()
+        );
+        return 1;
+    }
+    if (exists) {
+        spotify_component.log_debug("Seed skipped; history.db already exists");
+        return 0;
+    }
+    auto store = spotify::sqlite::open();
+    if (!store) {
+        print_database_error(store.error());
+        return 1;
+    }
+    spotify_component.log_alert("Created history.db.");
+    return 0;
+}
+
+int run_database_menu() {
+    spotify_component.log_info("spotify_ac.exe started");
+    std::cout << "Database: " << spotify::sqlite::file_path().string() << '\n';
+    while (true) {
+        const bool exists = database_exists();
+        std::cout << "\nspotify database\n";
+        if (exists) {
+            std::cout << "  1. select *\n";
+        }
+        else {
+            std::cout << "  1. Create history.db\n";
+        }
+        std::cout
+            << "  2. Exit\n"
+            << "> ";
+        std::string choice;
+        if (!std::getline(std::cin, choice)) {
+            return 0;
+        }
+        const auto first = choice.find_first_not_of(" \t");
+        const auto last = choice.find_last_not_of(" \t");
+        if (first != std::string::npos) {
+            choice = choice.substr(first, last - first + 1);
+        }
+        else {
+            choice.clear();
+        }
+        if (choice == "1") {
+            if (exists) {
+                select_all();
+            }
+            else {
+                create_database();
+            }
+        }
+        else if (choice == "2" || choice == "q" || choice == "Q") {
+            return 0;
+        }
+        else {
+            std::cout << "Unknown option.\n";
+        }
+    }
+}
 
 int export_keymap_commands() {
     try {
@@ -62,11 +189,19 @@ int export_keymap_commands() {
  *
  * \return Exit code of the process.
  */
-int main(int argc, char* argv[]) {
+namespace ac::spotify_app::runtime {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     if (argc == 2 &&
         std::string_view {argv[1]} == "--export-keymap-commands") {
         return export_keymap_commands();
+    }
+    if (argc == 2 && std::string_view {argv[1]} == "--seed") {
+        return run_database_seed();
+    }
+    if (argc == 2 && std::string_view {argv[1]} == "--database") {
+        return run_database_menu();
     }
     const auto registry = create_spotify_command_registry();
     int exit_code = 0;
@@ -174,3 +309,5 @@ int main(int argc, char* argv[]) {
 
     return exit_code;
 }
+
+} // namespace ac::spotify_app::runtime

@@ -1,6 +1,7 @@
 module;
 
 #include <sqlite3.h>
+#include <Windows.h>
 
 module journal_sqlite;
 
@@ -13,7 +14,7 @@ constexpr int busy_timeout_ms = 3000;
 constexpr int schema_version = 2;
 constexpr int maximum_padding = 16;
 constexpr std::string_view no_series_message =
-    "No journal series yet. Add one with journal_series.exe.";
+    "No journal series yet. Add one with journal_ac.exe --series.";
 
 struct ResolvedSeries {
     int id {};
@@ -131,60 +132,90 @@ std::expected<void, std::string> begin_immediate(sqlite3* database) {
     return {};
 }
 
-void rollback(sqlite3* database) {
-    std::string ignored;
-    (void)execute_sql(database, "ROLLBACK;", ignored);
-}
+class ImmediateTransaction {
+public:
+    explicit ImmediateTransaction(sqlite3* database) noexcept
+        : database_ {database} {}
 
-std::expected<void, std::string> commit(sqlite3* database) {
-    std::string error;
-    if (!execute_sql(database, "COMMIT;", error)) {
-        rollback(database);
-        return std::unexpected(error);
+    ImmediateTransaction(const ImmediateTransaction&) = delete;
+    ImmediateTransaction& operator=(const ImmediateTransaction&) = delete;
+
+    ~ImmediateTransaction() noexcept {
+        if (database_ != nullptr) {
+            sqlite3_exec(database_, "ROLLBACK;", nullptr, nullptr, nullptr);
+        }
     }
-    return {};
-}
+
+    [[nodiscard]] std::expected<void, std::string> commit() {
+        std::string error;
+        if (!execute_sql(database_, "COMMIT;", error)) {
+            return std::unexpected(error);
+        }
+        database_ = nullptr;
+        return {};
+    }
+
+private:
+    sqlite3* database_;
+};
+
+class Statement {
+public:
+    explicit Statement(sqlite3_stmt* handle) noexcept
+        : handle_ {handle} {}
+
+    Statement(const Statement&) = delete;
+    Statement& operator=(const Statement&) = delete;
+
+    ~Statement() noexcept {
+        sqlite3_finalize(handle_);
+    }
+
+    [[nodiscard]] sqlite3_stmt* get() const noexcept {
+        return handle_;
+    }
+
+private:
+    sqlite3_stmt* handle_;
+};
 
 std::expected<int, std::string> read_user_version(sqlite3* database) {
-    sqlite3_stmt* statement = nullptr;
+    sqlite3_stmt* prepared = nullptr;
     constexpr const char* sql = "PRAGMA user_version;";
-    if (sqlite3_prepare_v2(database, sql, -1, &statement, nullptr) != SQLITE_OK) {
-        sqlite3_finalize(statement);
+    if (sqlite3_prepare_v2(database, sql, -1, &prepared, nullptr) != SQLITE_OK) {
+        sqlite3_finalize(prepared);
         return std::unexpected(sqlite_error(database, "Unable to read journal schema version"));
     }
-    if (sqlite3_step(statement) != SQLITE_ROW) {
-        sqlite3_finalize(statement);
+    Statement statement {prepared};
+    if (sqlite3_step(statement.get()) != SQLITE_ROW) {
         return std::unexpected(sqlite_error(database, "Unable to read journal schema version"));
     }
-    const int version = sqlite3_column_int(statement, 0);
-    sqlite3_finalize(statement);
-    return version;
+    return sqlite3_column_int(statement.get(), 0);
 }
 
 std::expected<bool, std::string> series_has_padding(sqlite3* database) {
-    sqlite3_stmt* statement = nullptr;
+    sqlite3_stmt* prepared = nullptr;
     constexpr const char* sql = "PRAGMA table_info(series);";
-    if (sqlite3_prepare_v2(database, sql, -1, &statement, nullptr) != SQLITE_OK) {
-        sqlite3_finalize(statement);
+    if (sqlite3_prepare_v2(database, sql, -1, &prepared, nullptr) != SQLITE_OK) {
+        sqlite3_finalize(prepared);
         return std::unexpected(sqlite_error(database, "Unable to read journal schema"));
     }
+    Statement statement {prepared};
     bool found = false;
     while (true) {
-        const int step = sqlite3_step(statement);
+        const int step = sqlite3_step(statement.get());
         if (step == SQLITE_DONE) {
             break;
         }
         if (step != SQLITE_ROW) {
-            sqlite3_finalize(statement);
             return std::unexpected(sqlite_error(database, "Unable to read journal schema"));
         }
-        const unsigned char* name_text = sqlite3_column_text(statement, 1);
+        const unsigned char* name_text = sqlite3_column_text(statement.get(), 1);
         if (name_text != nullptr &&
             std::string_view {reinterpret_cast<const char*>(name_text)} == "padding") {
             found = true;
         }
     }
-    sqlite3_finalize(statement);
     return found;
 }
 
@@ -236,48 +267,45 @@ std::expected<ResolvedSeries, std::string> resolve_series(
     std::string_view series_key
 ) {
     const std::string key = trim_copy(series_key);
-    sqlite3_stmt* statement = nullptr;
+    sqlite3_stmt* prepared = nullptr;
     const char* sql = key.empty()
         ? "SELECT id, name, next_episode, padding FROM series ORDER BY id DESC LIMIT 1;"
         : "SELECT id, name, next_episode, padding FROM series WHERE name = ? LIMIT 1;";
-    if (sqlite3_prepare_v2(database, sql, -1, &statement, nullptr) != SQLITE_OK) {
-        sqlite3_finalize(statement);
+    if (sqlite3_prepare_v2(database, sql, -1, &prepared, nullptr) != SQLITE_OK) {
+        sqlite3_finalize(prepared);
         return std::unexpected(sqlite_error(database, "Unable to look up journal series"));
     }
+    Statement statement {prepared};
     if (!key.empty()) {
         if (is_reserved_name(key)) {
-            sqlite3_finalize(statement);
             return std::unexpected(std::format("Invalid journal series '{}'.", key));
         }
         sqlite3_bind_text(
-            statement,
+            statement.get(),
             1,
             key.data(),
             static_cast<int>(key.size()),
             SQLITE_TRANSIENT
         );
     }
-    const int step = sqlite3_step(statement);
+    const int step = sqlite3_step(statement.get());
     if (step == SQLITE_BUSY) {
-        sqlite3_finalize(statement);
         return std::unexpected("The journal database is busy.");
     }
     if (step != SQLITE_ROW) {
-        sqlite3_finalize(statement);
         if (key.empty()) {
             return std::unexpected(std::string {no_series_message});
         }
         return std::unexpected(std::format("Unknown journal series '{}'.", key));
     }
     ResolvedSeries resolved;
-    resolved.id = sqlite3_column_int(statement, 0);
-    const unsigned char* name_text = sqlite3_column_text(statement, 1);
+    resolved.id = sqlite3_column_int(statement.get(), 0);
+    const unsigned char* name_text = sqlite3_column_text(statement.get(), 1);
     resolved.name = name_text != nullptr
         ? reinterpret_cast<const char*>(name_text)
         : std::string {};
-    resolved.counter = sqlite3_column_int(statement, 2);
-    resolved.padding = sqlite3_column_int(statement, 3);
-    sqlite3_finalize(statement);
+    resolved.counter = sqlite3_column_int(statement.get(), 2);
+    resolved.padding = sqlite3_column_int(statement.get(), 3);
     if (resolved.name.empty()) {
         return std::unexpected(
             key.empty()
@@ -347,39 +375,78 @@ std::expected<Store, std::string> open() {
     return open_at(file_path());
 }
 
+std::expected<void, std::string> create_initial(
+    const std::string_view name,
+    const int padding
+) {
+    const auto path = file_path();
+    const auto temporary = std::filesystem::path {path.wstring() + L".new"};
+    const auto remove_quiet = [](const std::filesystem::path& target) {
+        std::error_code error;
+        std::filesystem::remove(target, error);
+    };
+    remove_quiet(temporary);
+
+    std::expected<void, std::string> added;
+    {
+        auto opened = open_at(temporary);
+        if (!opened) {
+            remove_quiet(temporary);
+            return std::unexpected(opened.error());
+        }
+        Store store = std::move(*opened);
+        added = store.add_series(name, padding);
+    }
+    if (!added) {
+        remove_quiet(temporary);
+        remove_quiet(std::filesystem::path {temporary.wstring() + L"-journal"});
+        remove_quiet(std::filesystem::path {temporary.wstring() + L"-wal"});
+        remove_quiet(std::filesystem::path {temporary.wstring() + L"-shm"});
+        return std::unexpected(added.error());
+    }
+    if (!MoveFileExW(
+            temporary.c_str(),
+            path.c_str(),
+            MOVEFILE_WRITE_THROUGH
+        )) {
+        remove_quiet(temporary);
+        return std::unexpected(std::format("Unable to create {}.", path.string()));
+    }
+    return {};
+}
+
 std::expected<std::vector<Series>, std::string> Store::list_series() {
-    sqlite3_stmt* statement = nullptr;
+    sqlite3_stmt* prepared = nullptr;
     constexpr const char* sql =
         "SELECT name, next_episode, padding FROM series ORDER BY name COLLATE NOCASE;";
-    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &statement, nullptr) !=
+    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &prepared, nullptr) !=
         SQLITE_OK) {
-        sqlite3_finalize(statement);
+        sqlite3_finalize(prepared);
         return std::unexpected(
             sqlite_error(impl_->handle, "Unable to list journal series")
         );
     }
+    Statement statement {prepared};
     std::vector<Series> series;
     while (true) {
-        const int step = sqlite3_step(statement);
+        const int step = sqlite3_step(statement.get());
         if (step == SQLITE_DONE) {
             break;
         }
         if (step != SQLITE_ROW) {
-            sqlite3_finalize(statement);
             return std::unexpected(
                 sqlite_error(impl_->handle, "Unable to list journal series")
             );
         }
         Series entry;
-        const unsigned char* name_text = sqlite3_column_text(statement, 0);
+        const unsigned char* name_text = sqlite3_column_text(statement.get(), 0);
         entry.name = name_text != nullptr
             ? reinterpret_cast<const char*>(name_text)
             : std::string {};
-        entry.next_episode = sqlite3_column_int(statement, 1);
-        entry.padding = sqlite3_column_int(statement, 2);
+        entry.next_episode = sqlite3_column_int(statement.get(), 1);
+        entry.padding = sqlite3_column_int(statement.get(), 2);
         series.push_back(std::move(entry));
     }
-    sqlite3_finalize(statement);
     return series;
 }
 
@@ -398,9 +465,9 @@ std::expected<void, std::string> Store::add_series(std::string_view name, const 
     if (!began) {
         return std::unexpected(began.error());
     }
+    ImmediateTransaction transaction {impl_->handle};
     auto existing = resolve_series(impl_->handle, trimmed);
     if (existing) {
-        rollback(impl_->handle);
         return std::unexpected(
             std::format("A journal series named '{}' already exists.", trimmed)
         );
@@ -412,34 +479,32 @@ std::expected<void, std::string> Store::add_series(std::string_view name, const 
         // The table is empty. Continue the insert inside this transaction.
     }
     else {
-        rollback(impl_->handle);
         return std::unexpected(existing.error());
     }
 
-    sqlite3_stmt* insert = nullptr;
-    constexpr const char* sql =
-        "INSERT INTO series (name, next_episode, padding) VALUES (?, 1, ?);";
-    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &insert, nullptr) != SQLITE_OK) {
-        sqlite3_finalize(insert);
-        rollback(impl_->handle);
-        return std::unexpected(sqlite_error(impl_->handle, "Unable to add journal series"));
+    {
+        sqlite3_stmt* prepared = nullptr;
+        constexpr const char* sql =
+            "INSERT INTO series (name, next_episode, padding) VALUES (?, 1, ?);";
+        if (sqlite3_prepare_v2(impl_->handle, sql, -1, &prepared, nullptr) != SQLITE_OK) {
+            sqlite3_finalize(prepared);
+            return std::unexpected(sqlite_error(impl_->handle, "Unable to add journal series"));
+        }
+        Statement statement {prepared};
+        sqlite3_bind_text(
+            statement.get(),
+            1,
+            trimmed.data(),
+            static_cast<int>(trimmed.size()),
+            SQLITE_TRANSIENT
+        );
+        sqlite3_bind_int(statement.get(), 2, padding);
+        if (sqlite3_step(statement.get()) != SQLITE_DONE) {
+            const std::string error = sqlite_error(impl_->handle, "Unable to add journal series");
+            return std::unexpected(error);
+        }
     }
-    sqlite3_bind_text(
-        insert,
-        1,
-        trimmed.data(),
-        static_cast<int>(trimmed.size()),
-        SQLITE_TRANSIENT
-    );
-    sqlite3_bind_int(insert, 2, padding);
-    if (sqlite3_step(insert) != SQLITE_DONE) {
-        const std::string error = sqlite_error(impl_->handle, "Unable to add journal series");
-        sqlite3_finalize(insert);
-        rollback(impl_->handle);
-        return std::unexpected(error);
-    }
-    sqlite3_finalize(insert);
-    return commit(impl_->handle);
+    return transaction.commit();
 }
 
 std::expected<Series, std::string> Store::find_series(std::string_view series_key) {
@@ -461,36 +526,35 @@ std::expected<Series, std::string> Store::set_counter(
     if (!began) {
         return std::unexpected(began.error());
     }
+    ImmediateTransaction transaction {impl_->handle};
     const auto resolved = resolve_series(impl_->handle, series_key);
     if (!resolved) {
-        rollback(impl_->handle);
         return std::unexpected(resolved.error());
     }
 
-    sqlite3_stmt* statement = nullptr;
-    constexpr const char* sql =
-        "UPDATE series SET next_episode = ? WHERE id = ?;";
-    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &statement, nullptr) !=
-        SQLITE_OK) {
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(
-            sqlite_error(impl_->handle, "Unable to update journal counter")
-        );
+    {
+        sqlite3_stmt* prepared = nullptr;
+        constexpr const char* sql =
+            "UPDATE series SET next_episode = ? WHERE id = ?;";
+        if (sqlite3_prepare_v2(impl_->handle, sql, -1, &prepared, nullptr) !=
+            SQLITE_OK) {
+            sqlite3_finalize(prepared);
+            return std::unexpected(
+                sqlite_error(impl_->handle, "Unable to update journal counter")
+            );
+        }
+        Statement statement {prepared};
+        sqlite3_bind_int(statement.get(), 1, counter);
+        sqlite3_bind_int(statement.get(), 2, resolved->id);
+        if (sqlite3_step(statement.get()) != SQLITE_DONE) {
+            const std::string error = sqlite_error(
+                impl_->handle,
+                "Unable to update journal counter"
+            );
+            return std::unexpected(error);
+        }
     }
-    sqlite3_bind_int(statement, 1, counter);
-    sqlite3_bind_int(statement, 2, resolved->id);
-    if (sqlite3_step(statement) != SQLITE_DONE) {
-        const std::string error = sqlite_error(
-            impl_->handle,
-            "Unable to update journal counter"
-        );
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(error);
-    }
-    sqlite3_finalize(statement);
-    auto committed = commit(impl_->handle);
+    auto committed = transaction.commit();
     if (!committed) {
         return std::unexpected(committed.error());
     }
@@ -508,36 +572,35 @@ std::expected<Series, std::string> Store::set_padding(
     if (!began) {
         return std::unexpected(began.error());
     }
+    ImmediateTransaction transaction {impl_->handle};
     const auto resolved = resolve_series(impl_->handle, series_key);
     if (!resolved) {
-        rollback(impl_->handle);
         return std::unexpected(resolved.error());
     }
 
-    sqlite3_stmt* statement = nullptr;
-    constexpr const char* sql =
-        "UPDATE series SET padding = ? WHERE id = ?;";
-    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &statement, nullptr) !=
-        SQLITE_OK) {
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(
-            sqlite_error(impl_->handle, "Unable to update journal padding")
-        );
+    {
+        sqlite3_stmt* prepared = nullptr;
+        constexpr const char* sql =
+            "UPDATE series SET padding = ? WHERE id = ?;";
+        if (sqlite3_prepare_v2(impl_->handle, sql, -1, &prepared, nullptr) !=
+            SQLITE_OK) {
+            sqlite3_finalize(prepared);
+            return std::unexpected(
+                sqlite_error(impl_->handle, "Unable to update journal padding")
+            );
+        }
+        Statement statement {prepared};
+        sqlite3_bind_int(statement.get(), 1, padding);
+        sqlite3_bind_int(statement.get(), 2, resolved->id);
+        if (sqlite3_step(statement.get()) != SQLITE_DONE) {
+            const std::string error = sqlite_error(
+                impl_->handle,
+                "Unable to update journal padding"
+            );
+            return std::unexpected(error);
+        }
     }
-    sqlite3_bind_int(statement, 1, padding);
-    sqlite3_bind_int(statement, 2, resolved->id);
-    if (sqlite3_step(statement) != SQLITE_DONE) {
-        const std::string error = sqlite_error(
-            impl_->handle,
-            "Unable to update journal padding"
-        );
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(error);
-    }
-    sqlite3_finalize(statement);
-    auto committed = commit(impl_->handle);
+    auto committed = transaction.commit();
     if (!committed) {
         return std::unexpected(committed.error());
     }
@@ -551,42 +614,40 @@ std::expected<Episode, std::string> Store::allocate_episode(
     if (!began) {
         return std::unexpected(began.error());
     }
+    ImmediateTransaction transaction {impl_->handle};
     const auto resolved = resolve_series(impl_->handle, series_key);
     if (!resolved) {
-        rollback(impl_->handle);
         return std::unexpected(resolved.error());
     }
 
-    sqlite3_stmt* statement = nullptr;
-    constexpr const char* sql =
-        "UPDATE series SET next_episode = ? WHERE id = ? AND next_episode = ?;";
-    if (sqlite3_prepare_v2(impl_->handle, sql, -1, &statement, nullptr) !=
-        SQLITE_OK) {
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(
-            sqlite_error(impl_->handle, "Unable to update journal counter")
-        );
+    {
+        sqlite3_stmt* prepared = nullptr;
+        constexpr const char* sql =
+            "UPDATE series SET next_episode = ? WHERE id = ? AND next_episode = ?;";
+        if (sqlite3_prepare_v2(impl_->handle, sql, -1, &prepared, nullptr) !=
+            SQLITE_OK) {
+            sqlite3_finalize(prepared);
+            return std::unexpected(
+                sqlite_error(impl_->handle, "Unable to update journal counter")
+            );
+        }
+        Statement statement {prepared};
+        sqlite3_bind_int(statement.get(), 1, resolved->counter + 1);
+        sqlite3_bind_int(statement.get(), 2, resolved->id);
+        sqlite3_bind_int(statement.get(), 3, resolved->counter);
+        if (sqlite3_step(statement.get()) != SQLITE_DONE) {
+            const std::string error = sqlite_error(
+                impl_->handle,
+                "Unable to update journal counter"
+            );
+            return std::unexpected(error);
+        }
     }
-    sqlite3_bind_int(statement, 1, resolved->counter + 1);
-    sqlite3_bind_int(statement, 2, resolved->id);
-    sqlite3_bind_int(statement, 3, resolved->counter);
-    if (sqlite3_step(statement) != SQLITE_DONE) {
-        const std::string error = sqlite_error(
-            impl_->handle,
-            "Unable to update journal counter"
-        );
-        sqlite3_finalize(statement);
-        rollback(impl_->handle);
-        return std::unexpected(error);
-    }
-    sqlite3_finalize(statement);
     if (sqlite3_changes(impl_->handle) != 1) {
-        rollback(impl_->handle);
         return std::unexpected("Unable to update journal counter.");
     }
 
-    auto committed = commit(impl_->handle);
+    auto committed = transaction.commit();
     if (!committed) {
         return std::unexpected(committed.error());
     }

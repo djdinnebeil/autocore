@@ -4,7 +4,7 @@
  *
  * This program is the sole writer of both files. It reads `itunes.ini`
  * and does not write it. `--seed` and `--init` require a readable INI.
- * The no-argument menu still launches `itunes_config.exe --init` when it is missing.
+ * The no-argument menu still launches `itunes_ac.exe --config --init` when it is missing.
  */
 module;
 
@@ -53,7 +53,7 @@ std::wstring quote_argument(std::wstring_view value) {
 
 int launch_config_init() {
     const auto executable_path =
-        ac::paths::bin_directory() / "itunes_config.exe";
+        ac::paths::component_executable_directory() / "itunes_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -62,7 +62,7 @@ int launch_config_init() {
     }
 
     std::wstring command_line =
-        quote_argument(executable_path.wstring()) + L" \"--init\"";
+        quote_argument(executable_path.wstring()) + L" \"--config\" \"--init\"";
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
     PROCESS_INFORMATION process_info {};
@@ -91,14 +91,14 @@ int launch_config_init() {
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
         itunes_formatter.log_alert(
-            "Unable to read the exit code from itunes_config.exe."
+            "Unable to read the exit code from itunes_ac.exe --config."
         );
         return 1;
     }
     ::CloseHandle(process_info.hProcess);
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
-        itunes_formatter.log_alert("itunes_config.exe exited {}.", code);
+        itunes_formatter.log_alert("itunes_ac.exe --config exited {}.", code);
     }
     return code;
 }
@@ -130,7 +130,7 @@ int ensure_itunes_ini(const std::filesystem::path& path) {
     }
 
     itunes_formatter.log_alert(
-        "config/components/itunes.ini is missing. Running itunes_config.exe --init."
+        "config/components/itunes.ini is missing. Running itunes_ac.exe --config --init."
     );
     if (launch_config_init() != 0) {
         itunes_formatter.log_alert(
@@ -488,7 +488,7 @@ bool itunes_ini_readable() {
         return true;
     }
     itunes_formatter.log_alert(
-        "config/components/itunes.ini is missing or unreadable. itunes_config.exe owns it."
+        "config/components/itunes.ini is missing or unreadable. itunes_ac.exe --config owns it."
     );
     return false;
 }
@@ -677,12 +677,12 @@ int run_initialization(const bool seed) {
 } // namespace
 
 export int run_itunes_formatter(int argc, char* argv[]) {
-    itunes_formatter.log_info("itunes_formatter.exe started");
+    itunes_formatter.log_info("itunes_ac.exe --formatter started");
 
     const bool seed = argc == 2 && std::string_view {argv[1]} == "--seed";
     const bool init = argc == 2 && std::string_view {argv[1]} == "--init";
     if (argc > 2 || (argc == 2 && !seed && !init)) {
-        std::cerr << "Usage: itunes_formatter.exe [--init | --seed]\n";
+        std::cerr << "Usage: itunes_ac.exe --formatter [--init | --seed]\n";
         return 1;
     }
     if (seed || init) {

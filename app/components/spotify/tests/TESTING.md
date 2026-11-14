@@ -31,14 +31,14 @@ The current baseline is 44 test cases with 209 assertions. Coverage includes:
 - unknown named commands and truncated named-command payloads;
 - song-format compile, token rendering, load fallback, and replace. The
   format tests do not read `config/components/spotify.ini`, call Spotify, or launch
-  `spotify_formatter.exe`;
+  `spotify_ac.exe --formatter`;
 - `client.id`, `devices.list`, and `tokens.map` parsing, including missing,
   empty, malformed, and valid text, plus a `tokens.map` serialization
   round-trip. Those tests do not write `tokens.map` or open `history.db`;
 - `auto_launch_oauth` parsing, compiled default `off`, and the pure launch
-  decision. Those tests do not start `spotify_oauth.exe` or contact Spotify.
+  decision. Those tests do not start `spotify_ac.exe --oauth` or contact Spotify.
   Process checks for `--seed`, `--init`, and OAuth exit codes are separate
-  from this suite. A 0 from `spotify_config.exe` means that executable
+  from this suite. A 0 from `spotify_ac.exe --config` means that executable
   finished; the log line states whether Spotify authorization was completed.
 
 Tests that require the Spotify service or installed desktop application must

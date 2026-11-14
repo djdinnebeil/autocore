@@ -10,7 +10,7 @@ import spotify_registry;
 
 TEST_CASE("Spotify registry contains every canonical command", "[spotify][registry][unit]") {
     CHECK(spotify_activation_fallback_message ==
-        "Pin or start Spotify, then run taskbar_builder.exe to generate "
+        "Pin or start Spotify, then run taskbar_ac.exe --builder to generate "
         "spotify.map.");
     std::array<int, 6> invocations {};
     auto registry = create_spotify_command_registry({

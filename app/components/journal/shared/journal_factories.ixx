@@ -4,7 +4,7 @@
  *
  * Factory types are compiled. Alias names and arguments live in
  * `<factory_name>.list` under the journal data directory.
- * `journal_builder.exe` writes those files. `journal_ac.exe` reads them.
+ * `journal_ac.exe --builder` writes those files. `journal_ac.exe` reads them.
  */
 export module journal_factories;
 

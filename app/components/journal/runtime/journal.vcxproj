@@ -57,6 +57,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\..\..\..\msbuild\AutoCore.props" />
+    <Import Project="..\..\..\..\msbuild\ComponentRuntime.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -129,7 +130,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;sqlite3.lib;libcurl.lib;cpr.lib;Shell32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
@@ -157,8 +158,8 @@
     <ClCompile Include="..\shared\journal_remote_sync.ixx" />
     <ClCompile Include="..\shared\journal_cloud_protocol.ixx" />
     <ClCompile Include="..\shared\journal_db_protocol.ixx" />
-    <ClCompile Include="..\shared\journal_db_session.ixx" />
-    <ClCompile Include="..\shared\journal_db_session.cxx" />
+    <ClCompile Include="..\db\journal_sqlite.ixx" />
+    <ClCompile Include="..\db\journal_sqlite.cxx" />
     <ClCompile Include="journal_db_client.ixx" />
     <ClCompile Include="journal_db_client.cxx" />
     <ClCompile Include="journal_cloud_client.ixx" />
@@ -176,7 +177,44 @@
     <ClCompile Include="journal_component.ixx" />
     <ClCompile Include="journal_title.ixx" />
     <ClCompile Include="journal_title.cxx" />
-    <ClCompile Include="main.cxx" />
+    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\journal_auto_select.ixx" />
+    <ClCompile Include="..\shared\journal_firebase.ixx" />
+    <ClCompile Include="..\cloud\journal_cloud_http.ixx" />
+    <ClCompile Include="..\cloud\journal_cloud_http.cxx" />
+    <ClCompile Include="..\..\..\shared\component_dispatch.ixx" />
+    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
+    <ClCompile Include="..\..\..\shared\component_settings.ixx" />
+    <ClCompile Include="..\config\main.cxx">
+      <ObjectFileName>$(IntDir)journal_config_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_config_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\builder\main.cxx">
+      <ObjectFileName>$(IntDir)journal_builder_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_builder_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\clock\main.cxx">
+      <ObjectFileName>$(IntDir)journal_clock_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_clock_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\cloud\main.cxx">
+      <ObjectFileName>$(IntDir)journal_cloud_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_cloud_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\series\main.cxx">
+      <ObjectFileName>$(IntDir)journal_series_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_series_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\settings\main.cxx">
+      <ObjectFileName>$(IntDir)journal_settings_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_settings_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="dispatch.cxx" />
+    <ClCompile Include="main.cxx">
+      <ObjectFileName>$(IntDir)journal_runtime_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)journal_runtime_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">

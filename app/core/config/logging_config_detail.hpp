@@ -35,7 +35,6 @@ namespace ac::logging::config::detail {
         std::optional<std::string_view> max_directory_mb;
         std::optional<std::string_view> retention_days;
         std::optional<std::filesystem::path> directory;
-        std::optional<std::string_view> experimental;
     };
 
     struct LoggingSettings {
@@ -51,20 +50,18 @@ namespace ac::logging::config::detail {
         std::filesystem::path directory;
         std::filesystem::path components_directory;
         std::string report;
-        bool experimental;
     };
 
     /**
      * \brief Resolves `logging_policy.ini` keys.
      *
-     * `disable_all` defaults to off. `level` defaults to debug.
+     * `disable_all` defaults to off. `level` defaults to info.
      * `log_console_output` defaults  to on. `write_logs_to_files` defaults to on.
      * `write_logs_to_console` defaults to off.
      * `write_alerts_to_console` defaults to on.
      * `component_logging_default` defaults to on.
-     * `max_directory_mb` defaults to 100. `retention_days` defaults to 30.
-     * `experimental` defaults to off.
-     * `0` is a stored purge value, not a disabled safeguard.
+     * `max_directory_mb` defaults to 25. `retention_days` defaults to 10.
+     * `0` is stored. Cleanup keeps logs named with the current local date.
      * A relative directory
      * resolves against `installation_root`. An empty directory uses
      * `default_directory`. A leftover `enabled` key is ignored.

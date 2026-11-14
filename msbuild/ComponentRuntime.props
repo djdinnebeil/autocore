@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Delay-load the shared DLLs each component executable actually imports.
+    Transitive dependencies (zlib1.dll for libcurl.dll and tag.dll,
+    civetweb.dll for server's civetweb-cpp.dll) stay in app\ and are found
+    through the search path configured by component_dll_search.cxx.
+  -->
+  <PropertyGroup>
+    <OutDir Condition="'$(ConfigurationType)'=='Application'">$(AutoCoreBinComponentsDir)</OutDir>
+    <AcComponentDelayLoadDlls>auto_core.dll</AcComponentDelayLoadDlls>
+    <AcComponentDelayLoadDlls Condition="'$(ProjectName)'=='itunes'">auto_core.dll;sqlite3.dll</AcComponentDelayLoadDlls>
+    <AcComponentDelayLoadDlls Condition="'$(ProjectName)'=='journal'">auto_core.dll;sqlite3.dll;libcurl.dll</AcComponentDelayLoadDlls>
+    <AcComponentDelayLoadDlls Condition="'$(ProjectName)'=='server'">auto_core.dll;civetweb-cpp.dll</AcComponentDelayLoadDlls>
+    <AcComponentDelayLoadDlls Condition="'$(ProjectName)'=='slash'">auto_core.dll;tag.dll</AcComponentDelayLoadDlls>
+    <AcComponentDelayLoadDlls Condition="'$(ProjectName)'=='spotify'">auto_core.dll;sqlite3.dll;libcurl.dll;civetweb.dll;civetweb-cpp.dll</AcComponentDelayLoadDlls>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <DelayLoadDLLs>$(AcComponentDelayLoadDlls)</DelayLoadDLLs>
+      <AdditionalDependencies>delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(AutoCoreRootDir)app\shared\component_dll_search.cxx">
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+  </ItemGroup>
+</Project>

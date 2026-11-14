@@ -25,6 +25,7 @@
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared">
     <Import Project="..\..\..\..\msbuild\AutoCore.props" />
+    <Import Project="..\..\..\..\msbuild\ComponentRuntime.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -50,7 +51,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>auto_core.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;UIAutomationCore.lib;Ole32.lib;OleAut32.lib;Shell32.lib;Propsys.lib;%(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
@@ -75,7 +76,29 @@
     <ClCompile Include="taskbar_commands.ixx" />
     <ClCompile Include="taskbar_commands.cxx" />
     <ClCompile Include="taskbar_logging.ixx" />
-    <ClCompile Include="main.cxx" />
+    <ClCompile Include="..\..\..\core\diagnostics\error.ixx" />
+    <ClCompile Include="..\..\..\shared\component_dispatch.ixx" />
+    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
+    <ClCompile Include="..\..\..\shared\component_settings.ixx" />
+    <ClCompile Include="..\builder\enum_windows.cxx" />
+    <ClCompile Include="..\config\main.cxx">
+      <ObjectFileName>$(IntDir)taskbar_config_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)taskbar_config_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\builder\main.cxx">
+      <ObjectFileName>$(IntDir)taskbar_builder_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)taskbar_builder_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\settings\main.cxx">
+      <ObjectFileName>$(IntDir)taskbar_settings_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)taskbar_settings_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="dispatch.cxx" />
+    <ClCompile Include="main.cxx">
+      <ObjectFileName>$(IntDir)taskbar_runtime_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)taskbar_runtime_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\resources\resource.rc">

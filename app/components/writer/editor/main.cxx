@@ -40,7 +40,7 @@ bool require_initialization() {
         return true;
     }
     writer_editor.log_alert(
-        "Writer must be initialized first. Run writer_config.exe --init."
+        "Writer must be initialized first. Run writer_ac.exe --config --init."
     );
     return false;
 }
@@ -568,10 +568,12 @@ int run_action(Action action) {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::writer_app::editor {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    writer_editor.log_info("writer_editor.exe started");
+    writer_editor.log_info("writer_ac.exe --editor started");
 
     if (const auto launch = initialization_launch(argc, argv)) {
         const auto layout = load_layout();
@@ -588,7 +590,7 @@ int main(int argc, char* argv[]) {
 
     const auto action = parse_action(argc, argv);
     if (!action) {
-        writer_editor.log_alert("Unknown writer_editor argument.");
+        writer_editor.log_alert("Unknown writer_ac.exe --editor argument.");
         return 1;
     }
     if (requires_initialization(*action) && !require_initialization()) {
@@ -596,3 +598,5 @@ int main(int argc, char* argv[]) {
     }
     return run_action(*action);
 }
+
+} // namespace ac::writer_app::editor

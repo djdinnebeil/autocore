@@ -2,12 +2,15 @@ import auto_core.core.logging.config;
 import component_settings;
 import auto_core.core.shell;
 
-int main() {
+namespace ac::dash_app::settings {
+
+int run() {
     ac::shell::set_process_app_user_model_id();
     const ac::component_settings::DelegatedAction actions[] {
         {
             .label = "Manage secrets",
-            .executable = "dash_editor.exe",
+            .executable = "dash_ac.exe",
+            .arguments = {"--editor"},
         },
     };
     return ac::component_settings::run(
@@ -16,3 +19,5 @@ int main() {
         actions
     );
 }
+
+} // namespace ac::dash_app::settings

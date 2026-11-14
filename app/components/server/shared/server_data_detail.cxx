@@ -87,7 +87,7 @@ namespace server::data {
         const std::filesystem::path& installation_root
     ) {
         const auto fallback =
-            (installation_root / "components" / "server").lexically_normal();
+            (installation_root / "data" / "server").lexically_normal();
         if (!stored) {
             return fallback;
         }

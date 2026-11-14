@@ -161,7 +161,7 @@ std::wstring quote_argument(std::wstring_view value) {
 
 int launch_writer_editor(const std::wstring_view arguments) {
     const auto executable_path =
-        ac::paths::bin_directory() / "writer_editor.exe";
+        ac::paths::component_executable_directory() / "writer_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -170,7 +170,7 @@ int launch_writer_editor(const std::wstring_view arguments) {
     }
 
     std::wstring command =
-        quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(executable_path.wstring()) + L" \"--editor\" " +
         quote_argument(arguments);
     STARTUPINFOW startup {};
     startup.cb = sizeof(startup);
@@ -312,10 +312,12 @@ void activate_own_console() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::writer_app::config {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    writer_config.log_info("writer_config.exe started");
+    writer_config.log_info("writer_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -393,3 +395,5 @@ int main(int argc, char* argv[]) {
     activate_own_console();
     return run_configuration_menu();
 }
+
+} // namespace ac::writer_app::config

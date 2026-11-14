@@ -3,7 +3,7 @@
  * \brief Resolution of the Writer directory and its application-data stores.
  *
  * `session_prompts.list`, `task_list.txt`, and the notes directory are
- * written only by `writer_editor.exe`. Seed text lives in `defaults.ixx`.
+ * written only by `writer_ac.exe --editor`. Seed text lives in `defaults.ixx`.
  * A missing notes directory is not part of the required baseline: declining
  * it during `--init` is success.
  */

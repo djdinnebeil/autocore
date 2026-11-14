@@ -22,11 +22,56 @@ namespace {
     ac::Component settings_app {"auto_core_settings"};
 
     [[nodiscard]]
-    int run_and_wait(const std::filesystem::path& executable_path) {
+    std::wstring quote_argument(const std::wstring_view value) {
+        std::wstring quoted;
+        quoted.reserve(value.size() + 2);
+        quoted.push_back(L'"');
+        quoted.append(value);
+        quoted.push_back(L'"');
+        return quoted;
+    }
+
+    [[nodiscard]]
+    std::wstring widen_utf8(const std::string_view text) {
+        if (text.empty()) {
+            return {};
+        }
+        const int size = MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            text.data(),
+            static_cast<int>(text.size()),
+            nullptr,
+            0
+        );
+        if (size <= 0) {
+            return {};
+        }
+        std::wstring wide(static_cast<std::size_t>(size), L'\0');
+        MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            text.data(),
+            static_cast<int>(text.size()),
+            wide.data(),
+            size
+        );
+        return wide;
+    }
+
+    [[nodiscard]]
+    int run_and_wait(
+        const std::filesystem::path& executable_path,
+        const std::vector<std::string>& arguments
+    ) {
         STARTUPINFOW startup_info {};
         startup_info.cb = sizeof(startup_info);
         PROCESS_INFORMATION process_info {};
-        std::wstring command_line = L"\"" + executable_path.wstring() + L"\"";
+        std::wstring command_line = quote_argument(executable_path.wstring());
+        for (const auto& argument : arguments) {
+            command_line += L' ';
+            command_line += quote_argument(widen_utf8(argument));
+        }
         if (!CreateProcessW(
                 executable_path.c_str(),
                 command_line.data(),
@@ -88,7 +133,7 @@ export int run_settings_application() {
 
     while (true) {
         const auto identities = ac::main::settings::discover_settings_executables(
-            ac::paths::bin_directory()
+            ac::paths::component_executable_directory()
         );
         const auto rows = ac::main::settings::menu_rows(identities);
         show_menu(rows);
@@ -121,6 +166,9 @@ export int run_settings_application() {
         }
 
         const auto& row = rows[static_cast<std::size_t>(value - 1)];
-        (void)run_and_wait(ac::paths::bin_directory() / row.executable);
+        (void)run_and_wait(
+            ac::paths::component_executable_directory() / row.executable,
+            row.arguments
+        );
     }
 }

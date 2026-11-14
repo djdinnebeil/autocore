@@ -12,7 +12,7 @@ Spotify Web API playback requires a Spotify Premium account.
 2. Choose an unused local port. In the application's redirect URI settings, add `http://127.0.0.1:<port>/callback`, replacing `<port>` with that port number. Use `127.0.0.1`, not `localhost`.
 3. Copy the application's client ID. Auto Core does not use the client secret.
 4. Open Auto Core Settings, choose Spotify, then use **Manage client and devices** and **Set client ID**.
-5. Return to Spotify Settings and choose **Authorize Spotify**. Enter the same port number when `spotify_oauth.exe` asks for it.
+5. Return to Spotify Settings and choose **Authorize Spotify**. Enter the same port number when `spotify_ac.exe --oauth` asks for it.
 6. Approve access in the browser. The local callback completes authorization and `tokens.map` is written in the Spotify directory.
 
 The redirect URI configured in Spotify and the URI used during authorization must match. The callback listens only on this computer.
@@ -29,7 +29,7 @@ A refresh token expires about six months after authorization. Refreshing it does
 
 | Setting | Default | Values | Description |
 | --- | --- | --- | --- |
-| `directory` | `components\spotify` | A directory path | Folder that stores Spotify data. A relative path is relative to the installation root. An absolute path is used as stored. |
+| `directory` | `data\spotify` | A directory path | Folder that stores Spotify data. A relative path is relative to the installation root. An absolute path is used as stored. |
 | `auto_launch_oauth` | `off` | `on`, `off` | Launch Spotify authorization when interactive reauthorization is required. Only `on` turns this on. |
 | `logging` | `on` | `on`, `off` | Controls logging for the Spotify component. |
 
@@ -51,7 +51,7 @@ These files live in the Spotify directory.
 | File | What it is for |
 | --- | --- |
 | `client.id` | The Spotify application client ID, as the whole file. A blank file is not authorized. |
-| `tokens.map` | Saved authorization. It is created by `spotify_oauth.exe`, not by seeding. Do not copy it to another PC. |
+| `tokens.map` | Saved authorization. It is created by `spotify_ac.exe --oauth`, not by seeding. Do not copy it to another PC. |
 | `song.format` | One template for the current track. Tokens are `{name}`, `{artist}`, `{album}`, `{duration}`, `{track_number}`, `{disc_number}`, `{release_date}`, `{explicit}`, `{id}`, `{uri}`, and `{album_type}`. The default is `[{name}] [{duration}] [{artist}] [{album}]`. |
 | `devices.list` | Playback devices, one `name = id` line each. The split is the last `=`. Names are compared without regard to letter case, and the last line for a name wins. |
 | `history.db` | Listening history: name, artist, album, duration, play count, and when the track was first and last heard. |
@@ -60,10 +60,9 @@ These files live in the Spotify directory.
 
 | Tool | What it is for |
 | --- | --- |
-| `spotify_ac.exe` | Playback, queue text, device switching, and history recording. |
-| `spotify_config.exe` | Edits `spotify.ini`. Initialization can also ask for the client ID and start authorization. |
-| `spotify_editor.exe` | Edits `client.id` and `devices.list`. |
-| `spotify_oauth.exe` | Signs in and writes `tokens.map`. |
-| `spotify_formatter.exe` | Edits `song.format`. |
-| `spotify_db.exe` | Creates a missing `history.db`. |
-| `spotify_settings.exe` | Opens the client and device editor, authorization, and song formatting. |
+| `spotify_ac.exe` | Playback, queue text, device switching, and history recording. `--seed` creates a missing `history.db`. `--database` shows the history menu. |
+| `spotify_ac.exe --config` | Edits `spotify.ini`. Initialization can also ask for the client ID and start authorization. |
+| `spotify_ac.exe --editor` | Edits `client.id` and `devices.list`. |
+| `spotify_ac.exe --oauth` | Signs in and writes `tokens.map`. |
+| `spotify_ac.exe --formatter` | Edits `song.format`. |
+| `spotify_ac.exe --settings` | Opens the client and device editor, authorization, and song formatting. |

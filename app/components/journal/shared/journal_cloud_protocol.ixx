@@ -1,9 +1,9 @@
 /**
  * \file journal_cloud_protocol.ixx
  * \brief Private `ac.journal.cloud.v1` contract between `journal_ac.exe` and
- * `journal_cloud.exe --serve`.
+ * `journal_ac.exe --cloud --serve`.
  *
- * This is not `ac.component.v1`. `journal_cloud.exe` is not a component.
+ * This is not `ac.component.v1`. `journal_ac.exe --cloud` is not a component.
  */
 export module journal_cloud_protocol;
 

@@ -33,7 +33,7 @@ namespace {
         if (!configuration) {
             auto_core.log_alert(
                 "config/crash_recovery.ini is missing or unreadable. Run "
-                "crash_recovery_config.exe to generate it. Using default "
+                "auto_core_settings.exe --config --area crash-recovery to generate it. Using default "
                 "response no; the file will not be created."
             );
             return MB_DEFBUTTON2;
@@ -45,7 +45,7 @@ namespace {
         if (!response) {
             auto_core.log_alert(
                 "config/crash_recovery.ini is missing [crash_recovery] "
-                "default_response. Run crash_recovery_config.exe to repair "
+                "default_response. Run auto_core_settings.exe --config --area crash-recovery to repair "
                 "it. Using no; the file will not be rewritten."
             );
             return MB_DEFBUTTON2;
@@ -59,7 +59,7 @@ namespace {
 
         auto_core.log_alert(
             "config/crash_recovery.ini [crash_recovery] default_response must be "
-            "'yes' or 'no'. Run crash_recovery_config.exe to repair it. "
+            "'yes' or 'no'. Run auto_core_settings.exe --config --area crash-recovery to repair it. "
             "Using no; the file will not be rewritten."
         );
         return MB_DEFBUTTON2;

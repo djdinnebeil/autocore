@@ -29,7 +29,8 @@ TEST_CASE("Startup configuration serializes settings independently", "[startup-c
 TEST_CASE("Startup configuration participates in Main initialization", "[startup-config][unit]") {
     const auto& steps = initialization::initialization_steps;
     REQUIRE(steps.size() == 9);
-    CHECK(steps[4].executable == "startup_config.exe");
+    CHECK(steps[4].executable == "auto_core_settings.exe");
+    CHECK(steps[4].route == L"--config --area startup");
     CHECK(steps[4].kind == initialization::OwnerKind::configured);
     CHECK(initialization::arguments_for(
         steps[4].kind,

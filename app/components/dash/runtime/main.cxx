@@ -312,7 +312,9 @@ int export_keymap_commands() {
 
 } // namespace
 
-int wmain(int argument_count, wchar_t* arguments[]) {
+namespace ac::dash_app::runtime {
+
+int run(int argument_count, wchar_t* arguments[]) {
     ac::shell::set_process_app_user_model_id();
     if (argument_count == 2 &&
         std::wstring_view {arguments[1]} == L"--export-keymap-commands") {
@@ -377,3 +379,5 @@ int wmain(int argument_count, wchar_t* arguments[]) {
         return 1;
     }
 }
+
+} // namespace ac::dash_app::runtime

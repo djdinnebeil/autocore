@@ -3,6 +3,10 @@
 DLL-specific deferred work is tracked in [app/core/TODO.md](../app/core/TODO.md).
 Main-specific deferred work is tracked in [app/main/runtime/TODO.md](../app/main/runtime/TODO.md).
 
+## components.list write integrity
+
+Implemented for `auto_core_components.exe` only. Updates share one persistent `<installation root>/data/auto_core/components.list.lock`. A missing `data/auto_core` directory is created before the lock file is opened. If that directory cannot be created, the update fails before the list is read or published. The exclusive byte-range lock is held across the authoritative read, modification, and publication. The lock file is not deleted, replaced, or opened with delete sharing. Prompts happen outside the lock, and the list is reread before saved answers are applied to components that are still absent. The new contents go to a `CREATE_NEW` temporary file, which is flushed and closed before `ReplaceFileW` (existing list, flags 0) or `MoveFileExW` (new list, flags 0). `REPLACEFILE_WRITE_THROUGH` is not used. Flushing does not add a power-loss guarantee. A failure before publication removes that unfinished temporary file. A publication failure keeps the prepared file, reports its path and the list path, and does not claim the original pathname is unchanged. Previous temporary files are not swept, and a damaged or empty list is not regenerated. Readers open `components.list` with delete sharing. No automatic backup or recovery framework was added.
+
 ## Prerelease documentation and product-surface follow-ups
 
 - Add an end-user Keymap reference covering supported key names, binding

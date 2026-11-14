@@ -35,8 +35,8 @@ TEST_CASE(
     "[component-settings][unit]"
 ) {
     const ac::component_settings::DelegatedAction actions[] {
-        {"OAuth", "spotify_oauth.exe"},
-        {"Database manager", "journal_db.exe"}
+        {"OAuth", "spotify_ac.exe", {"--oauth"}},
+        {"Manage series", "journal_ac.exe", {"--series"}}
     };
     const auto entries = ac::component_settings::menu_entries({
         .configuration_present = true,
@@ -49,7 +49,7 @@ TEST_CASE(
     CHECK(entries[1].kind == ac::component_settings::MenuKind::delegated);
     CHECK(entries[1].label == "OAuth");
     CHECK(entries[1].delegated_index == 0);
-    CHECK(entries[2].label == "Database manager");
+    CHECK(entries[2].label == "Manage series");
     CHECK(entries[2].delegated_index == 1);
     CHECK(entries[3].kind == ac::component_settings::MenuKind::toggle);
     CHECK(entries[3].label == "Enable");
@@ -62,8 +62,8 @@ TEST_CASE(
     "[component-settings][unit]"
 ) {
     const ac::component_settings::DelegatedAction actions[] {
-        {"Edit port and document root", "server_editor.exe"},
-        {"Create default site files", "server_builder.exe", {"--seed"}}
+        {"Edit port and document root", "server_ac.exe", {"--editor"}},
+        {"Create default site files", "server_ac.exe", {"--builder", "--seed"}}
     };
     const auto incomplete = ac::component_settings::menu_entries({
         .configuration_present = true,

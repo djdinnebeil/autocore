@@ -158,9 +158,8 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    crash_recovery_config.log_info("crash_recovery_config.exe started");
+int run_crash_recovery_config(int argc, char* argv[]) {
+    crash_recovery_config.log_info("Crash Recovery configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

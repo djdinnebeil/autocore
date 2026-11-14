@@ -15,15 +15,13 @@ TEST_CASE("Logging configuration applies explicit values", "[logging-config][uni
             .component_logging_default = "off",
             .max_directory_mb = "0",
             .retention_days = "7",
-            .directory = R"(D:\logs)",
-            .experimental = "off"
+            .directory = R"(D:\logs)"
         },
         R"(C:\default-logs)",
         R"(C:\app)"
     );
 
     CHECK(settings.disable_all);
-    CHECK_FALSE(settings.experimental);
     CHECK(settings.level == detail::LogLevel::info);
     CHECK_FALSE(settings.log_console_output);
     CHECK_FALSE(settings.write_logs_to_files);
@@ -38,7 +36,7 @@ TEST_CASE("Logging configuration applies explicit values", "[logging-config][uni
     CHECK(settings.report.empty());
 }
 
-TEST_CASE("Logging defaults keep debug level and alert console", "[logging-config][unit]") {
+TEST_CASE("Logging defaults keep info level and alert console", "[logging-config][unit]") {
     const auto settings = detail::resolve_logging(
         {},
         R"(C:\logs)",
@@ -46,18 +44,15 @@ TEST_CASE("Logging defaults keep debug level and alert console", "[logging-confi
     );
 
     CHECK_FALSE(settings.disable_all);
-    CHECK_FALSE(settings.experimental);
-    CHECK(settings.level == detail::LogLevel::debug);
+    CHECK(settings.level == detail::LogLevel::info);
     CHECK(settings.log_console_output);
     CHECK(settings.write_logs_to_files);
     CHECK_FALSE(settings.write_logs_to_console);
     CHECK(settings.write_alerts_to_console);
     CHECK(settings.component_logging_default);
-    CHECK(settings.max_directory_mb == 100);
-    CHECK(settings.retention_days == 30);
+    CHECK(settings.max_directory_mb == 25);
+    CHECK(settings.retention_days == 10);
     const auto disable_all = settings.report.find("disable_all missing or invalid");
-    const auto experimental =
-        settings.report.find("experimental missing or invalid");
     const auto max_directory_mb =
         settings.report.find("max_directory_mb missing or invalid");
     const auto retention_days =
@@ -69,7 +64,6 @@ TEST_CASE("Logging defaults keep debug level and alert console", "[logging-confi
     const auto alerts = settings.report.find("write_alerts_to_console missing or invalid");
     const auto family = settings.report.find("component_logging_default missing or invalid");
     CHECK(disable_all != std::string::npos);
-    CHECK(experimental != std::string::npos);
     CHECK(max_directory_mb != std::string::npos);
     CHECK(retention_days != std::string::npos);
     CHECK(level != std::string::npos);
@@ -85,15 +79,13 @@ TEST_CASE("Logging defaults keep debug level and alert console", "[logging-confi
     CHECK(files < console);
     CHECK(console < alerts);
     CHECK(alerts < family);
-    CHECK(family < experimental);
 }
 
 TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     const auto on = detail::resolve_logging(
         {
             .disable_all = "on",
-            .write_logs_to_files = "on",
-            .experimental = "on"
+            .write_logs_to_files = "on"
         },
         R"(C:\logs)",
         R"(C:\app)"
@@ -101,8 +93,7 @@ TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     const auto off = detail::resolve_logging(
         {
             .disable_all = "off",
-            .write_logs_to_files = "off",
-            .experimental = "off"
+            .write_logs_to_files = "off"
         },
         R"(C:\logs)",
         R"(C:\app)"
@@ -120,18 +111,15 @@ TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     const auto invalid = detail::resolve_logging(
         {
             .disable_all = "yes",
-            .write_logs_to_files = "yes",
-            .experimental = "yes"
+            .write_logs_to_files = "yes"
         },
         R"(C:\logs)",
         R"(C:\app)"
     );
 
     CHECK(on.disable_all);
-    CHECK(on.experimental);
     CHECK(on.write_logs_to_files);
     CHECK_FALSE(off.disable_all);
-    CHECK_FALSE(off.experimental);
     CHECK_FALSE(off.write_logs_to_files);
     CHECK_FALSE(truth.disable_all);
     CHECK(truth.component_logging_default);
@@ -140,11 +128,8 @@ TEST_CASE("Logging booleans accept only on and off", "[logging-config][unit]") {
     CHECK(truth.report.find("disable_all missing or invalid") !=
         std::string::npos);
     CHECK_FALSE(invalid.disable_all);
-    CHECK_FALSE(invalid.experimental);
     CHECK(invalid.write_logs_to_files);
     CHECK(invalid.report.find("disable_all missing or invalid") !=
-        std::string::npos);
-    CHECK(invalid.report.find("experimental missing or invalid") !=
         std::string::npos);
     CHECK(invalid.report.find("write_logs_to_files missing or invalid") !=
         std::string::npos);
@@ -181,7 +166,7 @@ TEST_CASE("level accepts only trace, debug, info, and alert", "[logging-config][
     CHECK(debug_level.level == detail::LogLevel::debug);
     CHECK(info_level.level == detail::LogLevel::info);
     CHECK(alert_level.level == detail::LogLevel::alert);
-    CHECK(invalid.level == detail::LogLevel::debug);
+    CHECK(invalid.level == detail::LogLevel::info);
     CHECK(invalid.report.find("level missing or invalid") !=
         std::string::npos);
 }
@@ -200,8 +185,8 @@ TEST_CASE("Storage integers accept zero and reject negatives", "[logging-config]
 
     CHECK(zero.max_directory_mb == 0);
     CHECK(zero.retention_days == 0);
-    CHECK(invalid.max_directory_mb == 100);
-    CHECK(invalid.retention_days == 30);
+    CHECK(invalid.max_directory_mb == 25);
+    CHECK(invalid.retention_days == 10);
     CHECK(invalid.report.find("max_directory_mb missing or invalid") !=
         std::string::npos);
     CHECK(invalid.report.find("retention_days missing or invalid") !=

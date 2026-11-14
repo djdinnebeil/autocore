@@ -17,12 +17,14 @@ ac::Component writer_builder {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::writer_app::builder {
+
+int run(int argc, char* argv[]) {
     (void)argv;
     ac::shell::set_process_app_user_model_id();
-    writer_builder.log_info("writer_builder.exe started");
+    writer_builder.log_info("writer_ac.exe --builder started");
     if (argc != 1) {
-        std::cerr << "Usage: writer_builder.exe\n";
+        std::cerr << "Usage: writer_ac.exe --builder\n";
         return 1;
     }
 
@@ -54,3 +56,5 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 }
+
+} // namespace ac::writer_app::builder

@@ -57,6 +57,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\..\..\..\msbuild\AutoCore.props" />
+    <Import Project="..\..\..\..\msbuild\ComponentRuntime.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -138,7 +139,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(AutoCoreSymbolsDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>auto_core.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>auto_core.lib;sqlite3.lib;Shell32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -158,6 +159,8 @@
     <ClCompile Include="..\..\..\core\system\shell.ixx" />
     <ClCompile Include="..\shared\itunes_protocol.ixx" />
     <ClCompile Include="..\shared\itunes_db_protocol.ixx" />
+    <ClCompile Include="..\db\itunes_sqlite.ixx" />
+    <ClCompile Include="..\db\itunes_sqlite.cxx" />
     <ClCompile Include="itunes_db_client.ixx" />
     <ClCompile Include="itunes_db_client.cxx" />
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
@@ -186,7 +189,27 @@
     <ClCompile Include="..\shared\song_template_detail.cxx" />
     <ClCompile Include="..\shared\library_format_detail.cxx" />
     <ClCompile Include="..\shared\itunes_metadata_detail.cxx" />
-    <ClCompile Include="main.cxx" />
+    <ClCompile Include="..\..\..\shared\component_dispatch.ixx" />
+    <ClCompile Include="..\..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\..\shared\config_menu.ixx" />
+    <ClCompile Include="..\..\..\shared\component_settings.ixx" />
+    <ClCompile Include="..\config\main.cxx">
+      <ObjectFileName>$(IntDir)itunes_config_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)itunes_config_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\formatter\main.cxx">
+      <ObjectFileName>$(IntDir)itunes_formatter_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)itunes_formatter_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\settings\main.cxx">
+      <ObjectFileName>$(IntDir)itunes_settings_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)itunes_settings_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="dispatch.cxx" />
+    <ClCompile Include="main.cxx">
+      <ObjectFileName>$(IntDir)itunes_runtime_main.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)itunes_runtime_main.module.json</ModuleDependenciesFile>
+    </ClCompile>
     <ClCompile Include="itunes_component.ixx" />
     <ClCompile Include="itunes_removal.ixx" />
     <ClCompile Include="itunes_removal.cxx" />

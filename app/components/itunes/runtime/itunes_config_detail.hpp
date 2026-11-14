@@ -17,7 +17,7 @@ namespace itunes::config::detail {
     };
 
     struct Settings {
-        std::string directory = "components/itunes";
+        std::string directory = "data/itunes";
         bool auto_start = false;
     };
 
@@ -31,7 +31,7 @@ namespace itunes::config::detail {
      *
      * A relative path joins `installation_root`. An absolute path is used
      * as-is. A missing key, an empty value, or a path that cannot be
-     * constructed uses `<installation_root>/components/itunes`. The
+     * constructed uses `<installation_root>/data/itunes`. The
      * directory is not created.
      */
     [[nodiscard]] std::filesystem::path resolve_directory(

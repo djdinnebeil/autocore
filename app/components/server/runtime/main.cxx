@@ -6,7 +6,7 @@
  * `port.id` and `document_root.id`. A relative document root resolves
  * under that directory. A missing document-root directory fails startup.
  * This process does not write those files and does not launch
- * `server_config.exe`, `server_editor.exe`, or `server_builder.exe`.
+ * `server_ac.exe --config`, `--editor`, or `--builder`.
  */
 #include "../shared/server_data_detail.hpp"
 
@@ -106,7 +106,7 @@ namespace {
             : std::nullopt;
         if (!port) {
             server_component.log_alert(
-                "Server port.id is missing or invalid. Run server_editor.exe to configure Server."
+                "Server port.id is missing or invalid. Run server_ac.exe --editor to configure Server."
             );
             return std::nullopt;
         }
@@ -117,7 +117,7 @@ namespace {
             : std::nullopt;
         if (!stored) {
             server_component.log_alert(
-                "Server document_root.id is missing or invalid. Run server_editor.exe to configure Server."
+                "Server document_root.id is missing or invalid. Run server_ac.exe --editor to configure Server."
             );
             return std::nullopt;
         }
@@ -150,7 +150,7 @@ namespace {
             }
             else {
                 server_component.log_alert(
-                    "Server document root is missing: {}. Run server_builder.exe --seed to create starter files.",
+                    "Server document root is missing: {}. Run server_ac.exe --builder --seed to create starter files.",
                     document_root.string()
                 );
             }
@@ -278,7 +278,9 @@ namespace {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::server_app::runtime {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     if (argc == 2 &&
         std::string_view {argv[1]} == "--export-keymap-commands") {
@@ -298,3 +300,5 @@ int main(int argc, char* argv[]) {
     server_component.log_info("program terminated");
     return 0;
 }
+
+} // namespace ac::server_app::runtime

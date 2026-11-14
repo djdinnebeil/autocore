@@ -6,22 +6,15 @@ Auto Core configuration files are stored in:
 config\
 ```
 
-Most settings can be changed through `app\auto_core_settings.exe`. The individual
-configuration programs are under `app\`:
+Most settings can be changed through `app\auto_core_settings.exe`. Every component, including a third-party component, uses one executable in `components\`:
 
 ```text
-app\<name>_config.exe
+components\<name>_ac.exe --config
 ```
 
-For example:
+The settings menu is `components\<name>_ac.exe` with no arguments, or `components\<name>_ac.exe --settings`. Place a new component executable in `components\`. Configuration files stay under `config\`.
 
-```text
-app\taskbar_config.exe
-app\spotify_config.exe
-app\writer_config.exe
-```
-
-Auto Core also includes configuration programs for Main settings such as logging policy, shutdown behavior, crash recovery, component policy, and warnings.
+Main settings use `app\auto_core_settings.exe --config`. With no further arguments it opens a menu; `--area <route>` opens one area directly.
 
 ## Auto Core configuration
 
@@ -29,13 +22,13 @@ The following files configure Auto Core itself:
 
 | File | Configuration program |
 | --- | --- |
-| `config\auto_core.ini` | `auto_core_config.exe` |
-| `config\components_policy.ini` | `components_policy_config.exe` |
-| `config\crash_recovery.ini` | `crash_recovery_config.exe` |
-| `config\shutdown.ini` | `shutdown_config.exe` |
-| `config\logging_policy.ini` | `logging_policy_config.exe` |
-| `config\startup.ini` | `startup_config.exe` |
-| `config\warnings.ini` | `warnings_config.exe` |
+| `config\auto_core.ini` | `auto_core_settings.exe --config --area auto-core` |
+| `config\components_policy.ini` | `auto_core_settings.exe --config --area components-policy` |
+| `config\crash_recovery.ini` | `auto_core_settings.exe --config --area crash-recovery` |
+| `config\shutdown.ini` | `auto_core_settings.exe --config --area shutdown` |
+| `config\logging_policy.ini` | `auto_core_settings.exe --config --area logging-policy` |
+| `config\startup.ini` | `auto_core_settings.exe --config --area startup` |
+| `config\warnings.ini` | `auto_core_settings.exe --config --area warnings` |
 
 The sectionless `config\startup.ini` accepts these independent switches:
 
@@ -64,23 +57,35 @@ major and minor. `check_for_updates` accepts `on` or `off` and defaults to
 line if a newer version is published. `version.txt` may use either form.
 `off` skips that request. A missing or invalid value uses the default.
 
-`logging_policy.ini` also defines the temporary `experimental` switch and the
-`retention_days` and `max_directory_mb` cleanup-policy values. `auto_core.exe`
-runs `auto_core_logging_cleanup.exe` after startup is ready. At this stage the
-utility prints the current values when `experimental = on`, records them at
-debug level when it is `off`, and exits without changing any files.
+`logging_policy.ini` defines `retention_days` and `max_directory_mb`. The
+defaults are 10 days and 25 MB. `retention_days` is an elapsed UTC period:
+a `.log` file is eligible when its last write time is strictly earlier than
+now minus that many 24-hour periods. `0` uses now as the cutoff.
+`max_directory_mb` then deletes the oldest remaining eligible files until
+the `.log` files fit. One megabyte is 1,048,576 bytes. A file named with
+today's local date, `YYYY-MM-DD_`, is kept by both steps and still counts
+toward the size. `0` for either setting keeps those named logs. If they
+alone exceed the cap, cleanup finishes and leaves the directory over the
+limit.
+
+`auto_core.exe` runs log cleanup on a background thread after startup is ready,
+then again at each local midnight. It uses the logging configuration resolved
+when the host started, so edits to `logging_policy.ini` apply after the host
+restarts. Deletion counts are `log_debug` records on the `auto_core` log.
+A directory or delete failure is `log_alert`.
 
 Use Auto Core Settings, or run the corresponding program under `app\`, to view
 or change these settings.
 
 ## Component configuration
 
-Each configurable component has its own configuration file and configuration program:
+Each configurable component has its own configuration file:
 
 ```text
 config\components\<component>.ini
-<component>_config.exe
 ```
+
+Every component writes that file with `components\<component>_ac.exe --config`.
 
 Component-specific settings are documented in the corresponding manual page:
 
@@ -105,7 +110,7 @@ The enabled component list itself is stored separately:
 components.list
 ```
 
-`app\components_editor.exe` manages `components.list`.
+`app\auto_core_components.exe` manages `components.list`.
 
 `components_policy.ini` and `components.list` serve different purposes.
 
@@ -121,7 +126,7 @@ Key bindings are stored in:
 keymap.map
 ```
 
-`app\keymap_editor.exe` creates a starter `keymap.map` when the file is
+`app\auto_core_keymap.exe --seed` creates a starter `keymap.map` when the file is
 missing. Edit an existing map as a text file. Available command names are
 listed in `keymap\keymap_commands.txt`; component-specific lists are under
 `keymap\components\`. Restart Auto Core after editing the map.

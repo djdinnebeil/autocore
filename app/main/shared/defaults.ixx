@@ -1,6 +1,6 @@
 /**
  * \file defaults.ixx
- * \brief Portable defaults for Main `_config.exe` files.
+ * \brief Portable defaults for Main configuration files.
  */
 export module auto_core.main.defaults;
 
@@ -39,29 +39,27 @@ export namespace ac::main::defaults {
         std::filesystem::path {"data"} / "logs";
     inline const std::string logging_directory_text =
         logging_directory.string();
-    constexpr std::int64_t logging_max_directory_mb = 100;
-    constexpr std::int64_t logging_retention_days = 30;
-    constexpr std::string_view logging_level = "debug";
+    constexpr std::int64_t logging_max_directory_mb = 25;
+    constexpr std::int64_t logging_retention_days = 10;
+    constexpr std::string_view logging_level = "info";
     constexpr bool logging_log_console_output = true;
     constexpr bool logging_write_logs_to_files = true;
     constexpr bool logging_write_logs_to_console = false;
     constexpr bool logging_write_alerts_to_console = true;
     constexpr bool logging_component_logging_default = true;
-    constexpr bool logging_experimental = false;
 
     constexpr std::string_view logging_ini =
         "[logging]\n"
         "disable_all = off\n"
         "directory = data\\logs\n"
-        "max_directory_mb = 100\n"
-        "retention_days = 30\n"
-        "level = debug\n"
+        "max_directory_mb = 25\n"
+        "retention_days = 10\n"
+        "level = info\n"
         "log_console_output = on\n"
         "write_logs_to_files = on\n"
         "write_logs_to_console = off\n"
         "write_alerts_to_console = on\n"
-        "component_logging_default = on\n"
-        "experimental = off\n";
+        "component_logging_default = on\n";
 
     constexpr std::uint64_t logger_merge_interval_seconds = 60;
     constexpr bool logger_merge_logs_on_shutdown = true;
@@ -155,14 +153,14 @@ export namespace ac::main::defaults {
         const bool write_logs_to_files,
         const bool write_logs_to_console,
         const bool write_alerts_to_console,
-        const bool component_logging_default,
-        const bool experimental
+        const bool component_logging_default
     ) {
         const std::string directory = stored_directory.empty()
             ? logging_directory_text
             : std::string {stored_directory};
         const std::string stored_level =
-            level == "debug" || level == "info" || level == "alert"
+            level == "trace" || level == "debug" ||
+            level == "info" || level == "alert"
                 ? std::string {level}
                 : std::string {logging_level};
         const std::int64_t stored_cap = max_directory_mb < 0
@@ -180,8 +178,7 @@ export namespace ac::main::defaults {
             write_logs_to_files == logging_write_logs_to_files &&
             write_logs_to_console == logging_write_logs_to_console &&
             write_alerts_to_console == logging_write_alerts_to_console &&
-            component_logging_default == logging_component_logging_default &&
-            experimental == logging_experimental) {
+            component_logging_default == logging_component_logging_default) {
             return std::string {logging_ini};
         }
         return std::string {
@@ -211,9 +208,6 @@ export namespace ac::main::defaults {
             "\n"
             "component_logging_default = " +
             (component_logging_default ? "on" : "off") +
-            "\n"
-            "experimental = " +
-            (experimental ? "on" : "off") +
             "\n";
     }
 

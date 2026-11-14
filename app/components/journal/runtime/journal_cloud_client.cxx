@@ -68,9 +68,9 @@ std::expected<void, std::string> start_service() {
     close_process(state);
 
     const std::filesystem::path executable =
-        ac::paths::bin_directory() / "journal_cloud.exe";
+        ac::paths::component_executable_directory() / "journal_ac.exe";
     std::wstring command =
-        quote_argument(executable.wstring()) + L" " +
+        quote_argument(executable.wstring()) + L" \"--cloud\" " +
         quote_argument(L"--serve");
 
     auto process = ac::process::create_process_with_owner(
@@ -79,7 +79,7 @@ std::expected<void, std::string> start_service() {
         executable.parent_path()
     );
     if (!process) {
-        const std::string message = "Unable to start journal_cloud.exe.";
+        const std::string message = "Unable to start journal_ac.exe --cloud --serve.";
         journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }
@@ -91,8 +91,8 @@ std::expected<void, std::string> start_service() {
     );
     if (!pipe) {
         const std::string message = process_exited(state.process)
-            ? "journal_cloud.exe exited during startup."
-            : "journal_cloud.exe did not become ready.";
+            ? "journal_ac.exe --cloud --serve exited during startup."
+            : "journal_ac.exe --cloud --serve did not become ready.";
         if (!process_exited(state.process)) {
             TerminateProcess(state.process, 1);
         }
@@ -102,7 +102,7 @@ std::expected<void, std::string> start_service() {
     }
     state.pipe = std::move(*pipe);
     if (const auto sent = ac::pipes::send_string(state.pipe, protocol_id); !sent) {
-        const std::string message = "journal_cloud.exe did not become ready.";
+        const std::string message = "journal_ac.exe --cloud --serve did not become ready.";
         if (!process_exited(state.process)) {
             TerminateProcess(state.process, 1);
         }
@@ -130,7 +130,7 @@ std::expected<void, std::string> start_service() {
         close_process(state);
         state.owns_process = false;
         state.ready = false;
-        const std::string message = "journal_cloud.exe exited during startup.";
+        const std::string message = "journal_ac.exe --cloud --serve exited during startup.";
         journal_component().log_debug("{}", message);
         return std::unexpected(message);
     }

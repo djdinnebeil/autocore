@@ -2,29 +2,31 @@
 
 Create a generic host child from **File → New → Project**. After this workflow, Main discovers the child from a list name. You do not rebuild `auto_core.exe` or `auto_core.dll`.
 
+A new component, including one built outside this repository, implements the same command contract as the built-in components. Ship one `<name>_ac.exe`. `--run` is the hosted session, `--settings` is the settings menu, and `--config` owns the INI. A no-argument launch opens settings when the INI exists or that check fails, and otherwise runs `--config --init`. The contract is in [component-commands.md](component-commands.md).
+
 This guide uses:
 
-`example` → `example_ac.exe` + `example_config.exe` → `ac_example_pipe` → `print_example`
+`example` → `example_ac.exe` → `ac_example_pipe` → `print_example`
 
 Tree (required):
 
 ```text
 app/components/example/
   runtime/  → example.vcxproj → example_ac.exe
-  config/   → example_config.vcxproj → example_config.exe
+  config/   → configuration sources compiled into example_ac.exe
+  settings/ → settings sources compiled into example_ac.exe
   shared/   → example_protocol.ixx, defaults.ixx
   Example.sln
 ```
 
 The component root holds the family solution and those folders. Optional `tests/` if
 the child has Catch2 tests. A test project joins `Example.sln` and `app/Tests.sln`.
-It does not join `app/AutoCore.sln`. Extra executables (Spotify `oauth/`, Server
-`builder/` for `server_builder.exe`) are sibling folders. Add each production `.vcxproj`
-to `Example.sln` and `app/AutoCore.sln`. Do not add a solution per executable.
+It does not join `app/AutoCore.sln`. Optional tools such as OAuth or a builder are further commands of `<name>_ac.exe`, compiled into the runtime project. Add that production `.vcxproj`
+to `Example.sln` and `app/AutoCore.sln`.
 
-Every production child defines `config/example.ini` (written only by `example_config.exe`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_alert`), uses those defaults in memory, and does **not** create the file.
+Every production child defines `config/example.ini` (written only by `example_ac.exe --config`). Typed defaults live in `shared/defaults.ixx`. If the live INI is missing or malformed, `example_ac.exe` calls `component.report_ini_unavailable()` (`log_alert`), uses those defaults in memory, and does **not** create the file. The message tells the user to run `example_ac.exe --config`.
 
-Lived example: [`app/components/server`](../app/components/server) (`runtime` / `config` / `editor` / `builder` / `settings` / `shared/defaults.ixx`).
+Lived layout: [`app/components/journal`](../app/components/journal) keeps `runtime`, `config`, `builder`, `clock`, `cloud`, `series`, and `settings` directories. Those tools run inside `journal_ac.exe`. A third-party component follows that same single-executable contract.
 
 Do not start a v1 session for a component that embeds `AC_LAUNCH_DESCRIPTOR`. Dash and Slash are the current on-demand components. Production shape is **Release | x64**. Prerequisites are in [building.md](building.md): Visual Studio 2026 (18+) / MSVC v145, Desktop development with C++, Windows 11, Windows PowerShell 5.1+ for the repo build scripts. Those are toolchain requirements, not filesystem paths to type into the project.
 
@@ -32,10 +34,9 @@ Each heading is tagged **source**, **compile**, or **runtime configuration**.
 
 ## Project creation (source)
 
-Create **two** Console App projects (C++, Windows, Console; not CMake; no precompiled header). Place each project in its responsibility directory (`runtime/`, `config/`) and add both to `Example.sln` at the component root. The production workspace is `app/AutoCore.sln`. A test project joins the family solution and `app/Tests.sln`, which builds the complete test suite.
+Create **one** Console App project (C++, Windows, Console; not CMake; no precompiled header). Place it in `runtime/` and add it to `Example.sln` at the component root. The production workspace is `app/AutoCore.sln`. A test project joins the family solution and `app/Tests.sln`, which builds the complete test suite. Configuration and settings are operations of this executable, not separate projects.
 
-1. **Runtime:** Name `example`. Location `<repo>\app\components\example\runtime`. Target Name later: `example_ac`.
-2. **Config:** Name `example_config`. Location `<repo>\app\components\example\config`. Target Name: `example_config` (unsuffixed).
+1. **Runtime:** Name `example`. Location `<repo>\app\components\example\runtime`. Target Name later: `example_ac`. Compile the configuration and settings sources into this project.
 
 Delete wizard `*.cpp` / `pch` files. Auto Core sources are `.cxx`. Add `shared/defaults.ixx` and `shared/example_protocol.ixx` (or keep using [`component_protocol.ixx`](../app/shared/protocols/component_protocol.ixx) only if this child has no extra protocol).
 
@@ -69,7 +70,7 @@ Property Manager often writes an absolute `Import Project="C:\…\msbuild\AutoCo
 
 `$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props` imports (exists-guarded) are Visual Studio defaults. Leave them. They are not Auto Core paths.
 
-After a correct import, General → Output Directory is repo `bin\` and Intermediate Directory is repo `obj\example\`.
+After a correct `AutoCore.props` import, General → Output Directory is repo `bin\app\` and Intermediate Directory is repo `obj\example\`. Importing `ComponentRuntime.props` changes the component executable Output Directory to `bin\components\`.
 
 ## Required project properties (compile)
 
@@ -182,11 +183,12 @@ ac::Component& example_component() {
     return component;
 }
 
-`example_config.exe` uses the same logging API after
-`ac::Component component {"example_config"}`. That identity is the executable's own log directory,
-`logs/components/example_config/`. `log_debug()`, `log_trace()`,
+`example_ac.exe --config` uses the same logging API after
+`ac::Component component {"example_config"}`. That identity is the configuration log directory,
+`logs/components/example_config/`. `log_trace()`, `log_debug()`,
 `log_info()`, and `log_alert()` are the diagnostic calls. `log_trace()`
-is debug severity and also requires thread logging. Interactive prompts stay on
+uses `MessageClass::trace` and is admitted only when the configured logging
+level includes trace. There is no separate thread-logging gate. Interactive prompts stay on
 `cout`. The config executable still writes `config/example.ini`; it does
 not call `report_ini_unavailable()`.
 
@@ -291,7 +293,7 @@ executable.
 
 1. Confirm **Release | x64**.
 2. Build → Build Solution.
-3. Output must be `<repo>\bin\example_ac.exe`.
+3. Output must be `<repo>\bin\components\example_ac.exe`.
 
 If the exe lands under `app\components\example\x64\Release\`, `AutoCore.props` is missing or not the relative Shared import.
 
@@ -300,19 +302,19 @@ Do not rebuild Main or the DLL for this child. `scripts/build-all.ps1` is option
 ## Enable the child (runtime configuration)
 
 Edit live `dist\config\components_policy.ini` `[settings]` if needed, list the name in `dist\components.list`, run
-`<name>_config.exe` so it sends `components_editor.exe --component <name>`,
-or run `components_editor.exe` with no arguments to full-sync discovered
+`<name>_ac.exe --settings` so it sends `auto_core_components.exe --enable <name>` or `--disable <name>`,
+or run `auto_core_components.exe --edit` to full-sync discovered
 `*_ac.exe` names that already have `config/components/<name>.ini`:
 
 ```ini
 example
 ```
 
-An on-demand component embeds `AC_LAUNCH_DESCRIPTOR` and is not also given a v1 hello session. `components_editor.exe` discovers installed `*_ac.exe` names that already have `config/components/<name>.ini`. Do not hard-code ordinary component names into `auto_core.dll`.
+An on-demand component embeds `AC_LAUNCH_DESCRIPTOR` and is not also given a v1 hello session. `auto_core_components.exe --edit` discovers installed `*_ac.exe` names that already have `config/components/<name>.ini`. Do not hard-code ordinary component names into `auto_core.dll`.
 
 ## Bind a command (runtime configuration)
 
-Edit live `dist\keymap\keymap.map`. Use the advertised name with **no** parentheses:
+Edit live `<installation root>\keymap.map`. Use the advertised name with **no** parentheses:
 
 ```ini
 numpad_3 = print_example | make_print_choice("42nd", true)
@@ -349,7 +351,7 @@ numpad_3 = print_example | make_print_choice("42nd", true)
 
 - `.vs/`, `*.user`, `*.suo`
 - `obj/`, `dist/`
-- Live `dist\config\components_policy.ini` and `dist\keymap\keymap.map`
+- Live `dist\config\components_policy.ini` and `<installation root>\keymap.map`
 - Absolute property-sheet imports
 - Per-user IDE caches
 
@@ -358,7 +360,7 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 ## Common mistakes
 
 - Leaving an absolute `C:\…\AutoCore.props` import, or **two** imports (absolute + relative).
-- Target Name `example` instead of `example_ac` (host looks for `example_ac.exe` next to `auto_core.exe`).
+- Target Name `example` instead of `example_ac` (an installed host looks for `components\example_ac.exe`).
 - `print_example()` in `keymap.map`.
 - Adding `example` to `auto_core.dll` “so Main knows it” — the host reads `components.list`, and that rebuild is not required.
 - A Project Reference / dependency from `auto_core.vcxproj` to the child.
@@ -369,8 +371,8 @@ Required-for-everyone settings belong in the `.vcxproj` or `AutoCore.props`, not
 
 ## Adding a New Auto Core Component
 
-1. **Source.** Create `app/components/<name>/runtime`, `config`, and `shared`, plus `<Name>.sln` at the component root. Write `main.cxx` that speaks `ac.component.v1`, loads `config/components/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Write `config/main.cxx` that constructs `ac::Component{"<name>_config"}` and prompts and writes the INI only. Write `settings/main.cxx` that calls `ac::component_settings::run("<name>")`.
-2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative). Set Target Name `<name>_ac` (and `<name>_config` for the helper), C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** those projects, Release | x64. Confirm `bin\<name>_ac.exe` and `bin\<name>_config.exe`.
-3. **Runtime configuration.** Run `<name>_config.exe` to generate `dist/config/components/<name>.ini`. Enable the name with `<name>_settings.exe`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/app/auto_core.exe`. Press the key.
+1. **Source.** Create `app/components/<name>/runtime` and `shared`, plus `<Name>.sln` at the component root. The executable dispatches `--run`, `--settings`, `--config`, and no arguments before any operation-specific startup. `--run` speaks `ac.component.v1`, loads `config/components/<name>.ini` or `report_ini_unavailable` + `defaults.ixx`, and advertises plain command names. Configuration constructs `ac::Component{"<name>_config"}` and writes the INI only. Settings calls `ac::component_settings::run("<name>")`, which launches `<name>_ac.exe --config`.
+2. **Compile.** Import `..\..\..\..\msbuild\AutoCore.props` once (relative), then `..\..\..\..\msbuild\ComponentRuntime.props`. That sheet compiles `app\shared\component_dll_search.cxx` and delay-loads `auto_core.dll`. If the executable imports another shared DLL, add that DLL to `AcComponentDelayLoadDlls` for the project. Set Target Name `<name>_ac`, C++ latest, scan for modules, `/MD`, link `auto_core.lib`. Add the shared `.ixx` files and `resource.rc`. Build **only** that project, Release | x64. Confirm `bin\components\<name>_ac.exe`. After `scripts\update-dist.ps1`, the installed executable is `dist\components\<name>_ac.exe`.
+3. **Runtime configuration.** Run `<name>_ac.exe --config` to generate `dist/config/components/<name>.ini`. Enable the name with `<name>_ac.exe --settings`, or append it under live `dist/components.list`. Bind advertised names in live `dist/keymap.map` with no `()`. Restart existing `dist/app/auto_core.exe`. Press the key.
 
 Auto Core knows how to host a component. It does not need to know which components exist when `auto_core.exe` is compiled.

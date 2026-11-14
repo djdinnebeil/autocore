@@ -27,6 +27,6 @@ The verbose report lists the bin contents, then separate sections for files, fol
 
 | Tool | What it is for |
 | --- | --- |
-| `slash_ac.exe` | Runs `report_and_empty_recycle_bin`. |
-| `slash_config.exe` | Edits `slash.ini`. |
-| `slash_settings.exe` | Opens Slash configuration. |
+| `slash_ac.exe --run` | Runs one Slash command. With no further argument, that command is `report_and_empty_recycle_bin`. |
+| `slash_ac.exe --config` | Edits `slash.ini`. `--config --init` and `--config --seed` initialize it. |
+| `slash_ac.exe` | Opens Slash settings. A missing INI runs `--config --init` first. `--settings` opens the same menu without that initialization. |

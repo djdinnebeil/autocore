@@ -3,7 +3,7 @@
  * \brief Pure resolution of Server directory and scalar data files.
  *
  * `port.id` and `document_root.id` have no compiled runtime substitute.
- * Seed text lives in `defaults.ixx` and is written only by `server_editor.exe`.
+ * Seed text lives in `defaults.ixx` and is written only by `server_ac.exe --editor`.
  */
 #pragma once
 
@@ -30,7 +30,7 @@ namespace server::data {
      *
      * A relative path joins `installation_root`. An absolute path is used
      * as-is. A missing, empty, or unusable value uses
-     * `<installation_root>/components/server`. The directory is not created.
+     * `<installation_root>/data/server`. The directory is not created.
      */
     [[nodiscard]] std::filesystem::path resolve_directory(
         const std::optional<std::string_view>& stored,
@@ -63,7 +63,7 @@ namespace server::data {
      *
      * An existing directory is served as-is. Starter files are not consulted.
      * A missing directory fails. Runtime does not create it and does not
-     * launch `server_builder.exe`.
+     * launch `server_ac.exe --builder`.
      */
     [[nodiscard]] DocumentRootStartup document_root_startup(
         bool directory_exists

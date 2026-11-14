@@ -19,23 +19,25 @@ bool writer_baseline_incomplete() {
 
 } // namespace
 
-int main() {
+namespace ac::writer_app::settings {
+
+int run() {
     ac::shell::set_process_app_user_model_id();
     const ac::component_settings::DelegatedAction actions[] {
         {
             .label = "Add a new task",
-            .executable = "writer_editor.exe",
-            .arguments = {"--add-task"},
+            .executable = "writer_ac.exe",
+            .arguments = {"--editor", "--add-task"},
         },
         {
             .label = "Add a new session prompt",
-            .executable = "writer_editor.exe",
-            .arguments = {"--add-session-prompt"},
+            .executable = "writer_ac.exe",
+            .arguments = {"--editor", "--add-session-prompt"},
         },
         {
             .label = "Create or open daily note",
-            .executable = "writer_editor.exe",
-            .arguments = {"--daily-note"},
+            .executable = "writer_ac.exe",
+            .arguments = {"--editor", "--daily-note"},
         },
     };
     return ac::component_settings::run(
@@ -44,3 +46,5 @@ int main() {
         writer_baseline_incomplete
     );
 }
+
+} // namespace ac::writer_app::settings

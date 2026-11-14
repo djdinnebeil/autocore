@@ -77,14 +77,6 @@ export namespace ac::logging::config {
     [[nodiscard]] AC_API bool disable_all();
 
     /**
-     * \brief Returns whether `[logging] experimental` is on.
-     *
-     * The default is on. This temporary setting controls the cleanup
-     * utility's startup report channel.
-     */
-    [[nodiscard]] AC_API bool experimental();
-
-    /**
      * \brief Returns whether `[logging] log_console_output` is on.
      *
      * The default is on. When on, `print` / `printnl` output participates
@@ -114,7 +106,7 @@ export namespace ac::logging::config {
     /**
      * \brief Returns `[logging] level`.
      *
-     * The default is `debug`. Missing or invalid values use `debug`.
+     * The default is `info`. Missing or invalid values use `info`.
      */
     [[nodiscard]] AC_API LogLevel level();
 
@@ -160,16 +152,19 @@ export namespace ac::logging::config {
     /**
      * \brief Returns `[logging] max_directory_mb`.
      *
-     * The default is 100. Missing, partial, or negative values use 100.
-     * `0` is stored as written and does not disable logging.
+     * The default is 25. Missing, partial, or negative values use 25.
+     * `0` is stored as written and does not disable logging. Cleanup
+     * keeps logs named with the current local date when the cap is 0.
      */
     [[nodiscard]] AC_API std::int64_t max_directory_mb();
 
     /**
      * \brief Returns `[logging] retention_days`.
      *
-     * The default is 30. Missing, partial, or negative values use 30.
-     * `0` is stored as written and does not disable logging.
+     * The default is 10. Missing, partial, or negative values use 10.
+     * `0` is stored as written and does not disable logging. Cleanup
+     * treats 0 as an elapsed cutoff of now and still keeps logs named
+     * with the current local date.
      */
     [[nodiscard]] AC_API std::int64_t retention_days();
 

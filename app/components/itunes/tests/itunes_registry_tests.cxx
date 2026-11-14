@@ -9,7 +9,7 @@ import itunes_registry;
 
 TEST_CASE("iTunes registry contains every canonical command", "[itunes][registry][unit]") {
     CHECK(itunes_activation_fallback_message ==
-        "Pin or start iTunes, then run taskbar_builder.exe to generate "
+        "Pin or start iTunes, then run taskbar_ac.exe --builder to generate "
         "itunes.map.");
     std::array<int, 7> invocations {};
     auto registry = create_itunes_command_registry({

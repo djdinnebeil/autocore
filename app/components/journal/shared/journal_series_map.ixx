@@ -2,7 +2,7 @@
  * \file journal_series_map.ixx
  * \brief Parse and render `series.map`.
  *
- * `journal_series.exe` is the only writer. Callers that only need the active
+ * `journal_ac.exe --series` is the only writer. Callers that only need the active
  * series use `read_active` and `choose_allocate`. Rendering does not read
  * snapshot rows back from a previous file.
  */

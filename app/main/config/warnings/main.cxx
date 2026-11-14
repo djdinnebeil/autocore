@@ -168,9 +168,8 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    warnings_config.log_info("warnings_config.exe started");
+int run_warnings_config(int argc, char* argv[]) {
+    warnings_config.log_info("Warnings configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

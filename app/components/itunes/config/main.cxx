@@ -167,10 +167,11 @@ std::wstring quote_argument(std::wstring_view value) {
 
 int launch_owner(
     ac::Component& log,
-    std::wstring_view executable_name,
+    std::wstring_view operation,
     std::wstring_view arguments
 ) {
-    const auto executable_path = ac::paths::bin_directory() / executable_name;
+    const auto executable_path =
+        ac::paths::component_executable_directory() / L"itunes_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -180,6 +181,7 @@ int launch_owner(
 
     std::wstring command_line =
         quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(operation) + L" " +
         quote_argument(arguments);
     STARTUPINFOW startup_info {};
     startup_info.cb = sizeof(startup_info);
@@ -281,22 +283,24 @@ int run_configuration_menu(
 }
 
 int launch_owned_stores(ac::Component& log, std::wstring_view formatter_mode) {
-    if (const int database = launch_owner(log, L"itunes_db.exe", L"--seed");
+    if (const int database = launch_owner(log, L"--run", L"--seed");
         database != 0) {
         return database;
     }
-    return launch_owner(log, L"itunes_formatter.exe", formatter_mode);
+    return launch_owner(log, L"--formatter", formatter_mode);
 }
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::itunes_app::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     ac::Component itunes_config {
         "itunes_config",
         ac::logging::config::LoggingScope {"itunes"}
     };
-    itunes_config.log_info("itunes_config.exe started");
+    itunes_config.log_info("itunes_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -378,3 +382,5 @@ int main(int argc, char* argv[]) {
     }
     return run_configuration_menu(itunes_config, path);
 }
+
+} // namespace ac::itunes_app::config

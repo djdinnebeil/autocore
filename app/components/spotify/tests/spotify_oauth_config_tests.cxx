@@ -19,7 +19,7 @@ TEST_CASE("Spotify auto_launch_oauth accepts on and off aliases", "[spotify][oau
 
 TEST_CASE("Compiled Spotify defaults include auto_launch_oauth", "[spotify][oauth][unit]") {
     const std::string text {spotify::defaults::ini_text};
-    CHECK(text.find("directory = components\\spotify\n") != std::string::npos);
+    CHECK(text.find("directory = data\\spotify\n") != std::string::npos);
     CHECK(text.find("auto_launch_oauth = off\n") != std::string::npos);
     CHECK(spotify::defaults::ini_for("") == text);
     CHECK(spotify::defaults::ini_for(spotify::defaults::directory, false) == text);
@@ -33,7 +33,7 @@ TEST_CASE("Compiled Spotify defaults include auto_launch_oauth", "[spotify][oaut
     CHECK(
         spotify::defaults::ini_for(spotify::defaults::directory, true) ==
         "[spotify]\n"
-        "directory = components\\spotify\n"
+        "directory = data\\spotify\n"
         "auto_launch_oauth = on\n"
         "logging = on\n"
     );

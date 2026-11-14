@@ -12,7 +12,7 @@ iTunes controls the desktop iTunes application: playback, current-track text, a 
 
 | Setting | Default | Values | Description |
 | --- | --- | --- | --- |
-| `directory` | `components/itunes` | A directory path | iTunes data directory. A relative path is relative to the installation root. An absolute path is used as stored. |
+| `directory` | `data/itunes` | A directory path | iTunes data directory. A relative path is relative to the installation root. An absolute path is used as stored. |
 | `auto_start` | `off` | `on`, `off` | Start iTunes when the iTunes component starts. |
 | `logging` | `on` | `on`, `off` | Controls logging for the iTunes component. |
 
@@ -38,7 +38,7 @@ These files live in the iTunes directory.
 | `library.format` | How clipboard library rows are formatted. `format` is either one surrounding pair, such as `[column]`, or one separator between columns, such as `column - column`. `column_count` is how many left-to-right columns to keep. The defaults are `[column]` and `4`. `column_count` must be an integer of `1` or greater. |
 | `history.db` | Listening history: track title, artist, album, duration, and when the track was heard. |
 
-`itunes_formatter.exe` edits the two format files. `itunes_db.exe` creates a missing `history.db`.
+`itunes_ac.exe --formatter` edits the two format files. `itunes_ac.exe --run --seed` creates a missing `history.db`. `itunes_ac.exe --run --database` shows the same history menu.
 
 `itunes_remove_song` removes the iTunes library entry first, then asks Windows to move the file to the Recycle Bin. If that move fails, the library deletion is not undone. Check the Recycle Bin after removal.
 
@@ -68,8 +68,7 @@ combinations are the compatibility concern.
 
 | Tool | What it is for |
 | --- | --- |
-| `itunes_ac.exe` | Playback, formatting, and history recording. |
-| `itunes_config.exe` | Edits `itunes.ini`. |
-| `itunes_formatter.exe` | Edits `song.format` and `library.format`. |
-| `itunes_db.exe` | Creates a missing `history.db`. |
-| `itunes_settings.exe` | Opens configuration and song formatting. |
+| `itunes_ac.exe` | Playback, formatting, and history recording. `--seed` creates a missing `history.db`. `--database` shows the history menu. |
+| `itunes_ac.exe --config` | Edits `itunes.ini`. |
+| `itunes_ac.exe --formatter` | Edits `song.format` and `library.format`. |
+| `itunes_ac.exe --settings` | Opens configuration and song formatting. |

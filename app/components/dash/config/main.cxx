@@ -131,7 +131,9 @@ namespace {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::dash_app::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     ac::Component dash_config {
         "dash_config",
@@ -140,7 +142,7 @@ int main(int argc, char* argv[]) {
             ac::logging::config::LoggingFallback::off
         }
     };
-    dash_config.log_info("dash_config.exe started");
+    dash_config.log_info("dash_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -199,3 +201,5 @@ int main(int argc, char* argv[]) {
     }
     return run_configuration_menu(dash_config, path);
 }
+
+} // namespace ac::dash_app::config

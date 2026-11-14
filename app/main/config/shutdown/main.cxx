@@ -178,9 +178,8 @@ int initialize_missing() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    ac::shell::set_process_app_user_model_id();
-    shutdown_config.log_info("shutdown_config.exe started");
+int run_shutdown_config(int argc, char* argv[]) {
+    shutdown_config.log_info("Shutdown configuration opened");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);

@@ -1,6 +1,6 @@
 /**
  * \file config_support.ixx
- * \brief Shared helpers for Main `_config.exe` programs.
+ * \brief Shared helpers for Main configuration.
  */
 export module auto_core.main.config_support;
 
@@ -183,11 +183,33 @@ export namespace ac::main::config {
     }
 
     [[nodiscard]]
+    inline bool is_component_executable(const std::string_view name) noexcept {
+        constexpr std::string_view suffix = "_ac.exe";
+        if (name.size() < suffix.size()) {
+            return false;
+        }
+        const auto tail = name.substr(name.size() - suffix.size());
+        for (std::size_t index = 0; index < suffix.size(); ++index) {
+            char character = tail[index];
+            if (character >= 'A' && character <= 'Z') {
+                character = static_cast<char>(character - 'A' + 'a');
+            }
+            if (character != suffix[index]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    [[nodiscard]]
     inline int run_config_exe(
         const std::string_view name,
         const std::wstring extra_arguments = {}
     ) {
-        return run_and_wait(ac::paths::bin_directory() / name, extra_arguments);
+        const auto& directory = is_component_executable(name)
+            ? ac::paths::component_executable_directory()
+            : ac::paths::app_directory();
+        return run_and_wait(directory / name, extra_arguments);
     }
 
 } // namespace ac::main::config

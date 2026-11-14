@@ -59,6 +59,7 @@
     <ClCompile Include="..\..\shared\command_registry.ixx" />
     <ClCompile Include="command_precedence_tests.cxx" />
     <ClCompile Include="components_list_tests.cxx" />
+    <ClCompile Include="components_list_lock_tests.cxx" />
     <ClCompile Include="settings_catalog_tests.cxx" />
     <ClCompile Include="logger_shutdown_tests.cxx" />
     <ClCompile Include="keymap_map_tests.cxx" />

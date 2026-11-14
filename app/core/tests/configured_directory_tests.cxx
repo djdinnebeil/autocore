@@ -18,6 +18,62 @@ TEST_CASE(
 
     CHECK(layout.bin_directory == std::filesystem::path {R"(C:\Example\Auto Core\app)"});
     CHECK(layout.installation_root == std::filesystem::path {R"(C:\Example\Auto Core)"});
+    CHECK(layout.app_directory == layout.bin_directory);
+    CHECK(layout.component_executable_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\components)"});
+}
+
+TEST_CASE(
+    "Image path under components keeps the installation root",
+    "[installation-layout][unit]"
+) {
+    const auto layout = ac::paths::detail::layout_from_image_path(
+        std::filesystem::path {R"(C:\Example\Auto Core\components\journal_ac.exe)"}
+    );
+
+    CHECK(layout.bin_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\components)"});
+    CHECK(layout.installation_root ==
+        std::filesystem::path {R"(C:\Example\Auto Core)"});
+    CHECK(layout.app_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\app)"});
+    CHECK(layout.component_executable_directory == layout.bin_directory);
+}
+
+TEST_CASE(
+    "Image path under bin app uses sibling components",
+    "[installation-layout][unit]"
+) {
+    const auto layout = ac::paths::detail::layout_from_image_path(
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\app\auto_core.exe)"}
+    );
+
+    CHECK(layout.bin_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\app)"});
+    CHECK(layout.installation_root ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin)"});
+    CHECK(layout.app_directory == layout.bin_directory);
+    CHECK(layout.component_executable_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\components)"});
+}
+
+TEST_CASE(
+    "Image path under bin components uses sibling app",
+    "[installation-layout][unit]"
+) {
+    const auto layout = ac::paths::detail::layout_from_image_path(
+        std::filesystem::path {
+            R"(C:\Example\Auto Core\bin\components\journal_ac.exe)"
+        }
+    );
+
+    CHECK(layout.bin_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\components)"});
+    CHECK(layout.installation_root ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin)"});
+    CHECK(layout.app_directory ==
+        std::filesystem::path {R"(C:\Example\Auto Core\bin\app)"});
+    CHECK(layout.component_executable_directory == layout.bin_directory);
 }
 
 TEST_CASE(

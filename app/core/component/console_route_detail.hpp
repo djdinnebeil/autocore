@@ -40,16 +40,16 @@ namespace ac::component_detail {
         const MessageClass message
     ) noexcept {
         switch (message) {
-        case MessageClass::print:
-            return "print";
+        case MessageClass::trace:
+            return "trace";
         case MessageClass::debug:
             return "debug";
         case MessageClass::info:
             return "info";
         case MessageClass::alert:
             return "alert";
-        case MessageClass::trace:
-            return "trace";
+        case MessageClass::print:
+            return "print";
         }
         return {};
     }

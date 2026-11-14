@@ -521,7 +521,7 @@ namespace {
         }
 
         const auto dbghelp_path =
-            ac::paths::bin_directory() / "dbghelp.dll";
+            ac::paths::app_directory() / "dbghelp.dll";
         cache.dbghelp = LoadLibraryExW(
             dbghelp_path.c_str(),
             nullptr,

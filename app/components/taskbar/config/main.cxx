@@ -253,7 +253,7 @@ int offer_configuration() {
 
 int launch_taskbar_builder(const std::wstring_view arguments) {
     const auto executable_path =
-        ac::paths::bin_directory() / "taskbar_builder.exe";
+        ac::paths::component_executable_directory() / "taskbar_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -261,7 +261,8 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
         return 1;
     }
 
-    std::wstring command_line = L"\"" + executable_path.wstring() + L"\"";
+    std::wstring command_line =
+        L"\"" + executable_path.wstring() + L"\" --builder";
     if (!arguments.empty()) {
         command_line += L' ';
         command_line += arguments;
@@ -312,7 +313,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
         taskbar_config.print(
-            "Unable to read the exit code from taskbar_builder.exe."
+            "Unable to read the exit code from taskbar_ac.exe --builder."
         );
         return 1;
     }
@@ -320,7 +321,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
         taskbar_config.print(
-            "Taskbar application provisioning failed. taskbar_builder.exe "
+            "Taskbar application provisioning failed. taskbar_ac.exe --builder "
             "exited {}.",
             code
         );
@@ -342,9 +343,11 @@ int offer_builder() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::taskbar_app::config {
+
+int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_config.log_info("taskbar_config.exe started");
+    taskbar_config.log_info("taskbar_ac.exe --config started");
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {
@@ -426,3 +429,5 @@ int main(int argc, char* argv[]) {
 
     return run_configuration_menu();
 }
+
+} // namespace ac::taskbar_app::config

@@ -51,18 +51,27 @@ bool scalars_incomplete() {
 
 } // namespace
 
-int main() {
+namespace ac::server_app::settings {
+
+int run() {
     ac::shell::set_process_app_user_model_id();
     const ac::component_settings::DelegatedAction actions[] {
         {
             .label = "Edit port and document root",
-            .executable = "server_editor.exe",
+            .executable = "server_ac.exe",
+            .arguments = {"--editor"},
         },
         {
             .label = "Create default site files",
-            .executable = "server_builder.exe",
-            .arguments = {"--seed"},
+            .executable = "server_ac.exe",
+            .arguments = {"--builder", "--seed"},
         },
     };
-    return ac::component_settings::run("server", actions, scalars_incomplete);
+    return ac::component_settings::run(
+        "server",
+        actions,
+        scalars_incomplete
+    );
 }
+
+} // namespace ac::server_app::settings

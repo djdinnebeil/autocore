@@ -1,6 +1,6 @@
 /**
  * \file spotify_devices.cxx
- * \brief Serves device discovery to `spotify_editor.exe`.
+ * \brief Serves device discovery to `spotify_ac.exe --editor`.
  */
 module spotify_client;
 

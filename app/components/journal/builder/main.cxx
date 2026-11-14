@@ -473,10 +473,12 @@ int run_seed() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::journal_app::builder {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    journal_builder.log_info("journal_builder.exe started");
+    journal_builder.log_info("journal_ac.exe --builder started");
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {
@@ -497,7 +499,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     if (argc > 1) {
-        std::cerr << "Usage: journal_builder.exe [--seed | --init]\n";
+        std::cerr << "Usage: journal_ac.exe --builder [--seed | --init]\n";
         return 1;
     }
 
@@ -509,3 +511,5 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 }
+
+} // namespace ac::journal_app::builder

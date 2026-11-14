@@ -141,14 +141,58 @@
     <ClCompile Include="..\..\core\system\shell.ixx" />
     <ClCompile Include="..\..\core\formatting\encoding.ixx" />
     <ClCompile Include="..\..\core\formatting\formatting.ixx" />
+    <ClCompile Include="..\..\core\diagnostics\error.ixx" />
+    <ClCompile Include="..\..\core\config\ini.ixx" />
     <ClCompile Include="..\..\core\config\logging_config.ixx" />
     <ClCompile Include="..\..\core\component\component.ixx" />
     <ClCompile Include="..\..\core\config\paths.ixx" />
+    <ClCompile Include="..\shared\defaults.ixx" />
+    <ClCompile Include="..\shared\version.ixx" />
+    <ClCompile Include="..\shared\installed_version.ixx" />
+    <ClCompile Include="..\shared\config_support.ixx" />
+    <ClCompile Include="..\..\shared\components_editor_request.ixx" />
+    <ClCompile Include="..\..\shared\config_menu.ixx" />
+    <ClCompile Include="..\config\logging_policy\logging_policy_config_detail.ixx" />
+    <ClCompile Include="..\config\components_policy\main.cxx">
+      <ObjectFileName>$(IntDir)components_policy_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)components_policy_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\crash_recovery\main.cxx">
+      <ObjectFileName>$(IntDir)crash_recovery_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)crash_recovery_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\logging_policy\main.cxx">
+      <ObjectFileName>$(IntDir)logging_policy_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)logging_policy_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\shutdown\main.cxx">
+      <ObjectFileName>$(IntDir)shutdown_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)shutdown_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\startup\main.cxx">
+      <ObjectFileName>$(IntDir)startup_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)startup_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\warnings\main.cxx">
+      <ObjectFileName>$(IntDir)warnings_config.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)warnings_config.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\config\auto_core\main.cxx">
+      <ObjectFileName>$(IntDir)configuration_program.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)configuration_program.module.json</ModuleDependenciesFile>
+    </ClCompile>
+    <ClCompile Include="..\init\auto_core\initialization_sequence.ixx" />
+    <ClCompile Include="..\init\auto_core\logging_bootstrap.ixx" />
+    <ClCompile Include="..\init\auto_core\main.cxx">
+      <ObjectFileName>$(IntDir)initialization_program.obj</ObjectFileName>
+      <ModuleDependenciesFile>$(IntDir)initialization_program.module.json</ModuleDependenciesFile>
+    </ClCompile>
     <ClCompile Include="settings_app.ixx" />
     <ClCompile Include="main.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="settings_catalog.hpp" />
+    <ClInclude Include="..\config\auto_core\config_areas.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\resources\resource.rc">

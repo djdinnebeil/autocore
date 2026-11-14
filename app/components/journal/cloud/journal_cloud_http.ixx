@@ -1,6 +1,6 @@
 /**
  * \file journal_cloud_http.ixx
- * \brief Firebase HTTP used only by `journal_cloud.exe`.
+ * \brief Firebase HTTP used only by `journal_ac.exe --cloud`.
  */
 export module journal_cloud_http;
 

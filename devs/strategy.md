@@ -36,9 +36,9 @@ A private remote is allowed for the personal clone after the next `git init`. Pu
 
 `lib/` contains the canonical `auto_core.dll` and `auto_core.lib` produced by the core DLL project. It is tracked. Product linking uses `lib/`.
 
-`bin/` contains tracked published binaries.
+`bin/app/` contains tracked Main executables and shared DLLs. `bin/components/` contains tracked `<name>_ac.exe` files.
 
-`dist/` is the gitignored assembled end-user runtime tree. `scripts/publish-dist.ps1` is the normal publisher from `bin/` to `dist/`.
+`dist/` is the gitignored assembled end-user runtime tree. `scripts/update-dist.ps1` publishes `bin/app/` to `dist/app/` and `bin/components/` to `dist/components/`.
 
 `s​​ymbols/` contains gitignored linker PDBs and remains outside `dist/`.
 
@@ -52,7 +52,7 @@ Repository and runtime paths are derived from the project or running executable.
 
 `msbuild/AutoCore.props` derives repository paths for builds.
 
-Runtime path resolution derives the binary directory from the running image and the installation root from its parent.
+Runtime path resolution derives the binary directory from the running image and the installation root from its parent. Component executables live in `<installation root>\components`. Main executables and shared DLLs live in `<installation root>\app`. `bin\app` and `bin\components` use that same split.
 
 A built `dist/` tree must run independently of the repository.
 
@@ -82,7 +82,7 @@ Main must not require compile-time knowledge of a normal component.
 
 `components.list` is the runtime enablement catalog.
 
-Once a component name is known, its runtime executable is `<name>_ac.exe` and its pipe is `ac_<name>_pipe`.
+Once a component name is known, its executable is `<name>_ac.exe` and its pipe is `ac_<name>_pipe`. Every component, including a third-party component, accepts `--run`, `--settings`, and `--config`. See [component-commands.md](component-commands.md).
 
 The v1 wire contract is fixed:
 

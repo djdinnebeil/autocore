@@ -4,16 +4,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$Builder = Join-Path $RepoRoot 'release\latest\stage\app\keymap_builder.exe'
+$Builder = Join-Path $RepoRoot 'release\latest\stage\app\auto_core_keymap.exe'
 
 try {
     if (-not (Test-Path -LiteralPath $Builder -PathType Leaf)) {
-        throw "keymap_builder.exe not found: $Builder"
+        throw "auto_core_keymap.exe not found: $Builder"
     }
 
-    & $Builder
+    & $Builder --build
     if ($LASTEXITCODE -ne 0) {
-        throw "keymap_builder.exe failed (exit $LASTEXITCODE)"
+        throw "auto_core_keymap.exe --build failed (exit $LASTEXITCODE)"
     }
 
     Write-Host 'Staged keymap catalogs to release\latest\stage\keymap.'

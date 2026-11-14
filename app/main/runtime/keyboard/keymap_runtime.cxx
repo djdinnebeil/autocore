@@ -100,27 +100,106 @@ static bool replace_text_file(
         }
     }
 
-    std::filesystem::path temporary = destination;
-    temporary += ".tmp";
-    std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-
-    if (!output) {
-        auto_core.log_info("{}", failed_create);
+    const auto directory = destination.parent_path();
+    const auto filename = destination.filename().wstring();
+    const DWORD pid = GetCurrentProcessId();
+    HANDLE handle = INVALID_HANDLE_VALUE;
+    std::filesystem::path temporary;
+    for (unsigned attempt = 0; attempt < 16; ++attempt) {
+        temporary =
+            directory /
+            (filename + L"." + std::to_wstring(pid) + L"." +
+                std::to_wstring(attempt) + L".tmp");
+        handle = CreateFileW(
+            temporary.c_str(),
+            GENERIC_WRITE,
+            0,
+            nullptr,
+            CREATE_NEW,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr
+        );
+        if (handle != INVALID_HANDLE_VALUE) {
+            break;
+        }
+        const DWORD error = GetLastError();
+        if (error != ERROR_FILE_EXISTS) {
+            auto_core.log_info(
+                "{}: {} (error {})",
+                failed_create,
+                temporary.string(),
+                error
+            );
+            return false;
+        }
+    }
+    if (handle == INVALID_HANDLE_VALUE) {
+        auto_core.log_info(
+            "{}: {}",
+            failed_create,
+            destination.string()
+        );
         return false;
     }
 
-    output.write(
-        desired.data(),
-        static_cast<std::streamsize>(desired.size())
-    );
-    output.close();
+    auto remove_temporary = [&] {
+        if (handle != INVALID_HANDLE_VALUE) {
+            CloseHandle(handle);
+            handle = INVALID_HANDLE_VALUE;
+        }
+        DeleteFileW(temporary.c_str());
+    };
 
-    if (!output) {
-        auto_core.log_info("{}", failed_write);
-        std::error_code ignored;
-        std::filesystem::remove(temporary, ignored);
+    std::size_t written_total = 0;
+    while (written_total < desired.size()) {
+        const auto chunk = static_cast<DWORD>(std::min<std::size_t>(
+            desired.size() - written_total,
+            static_cast<std::size_t>(1u << 20)
+        ));
+        DWORD written = 0;
+        if (!WriteFile(
+                handle,
+                desired.data() + written_total,
+                chunk,
+                &written,
+                nullptr
+            ) ||
+            written != chunk) {
+            const DWORD error = GetLastError();
+            auto_core.log_info(
+                "{}: {} (error {})",
+                failed_write,
+                temporary.string(),
+                error == 0 ? ERROR_WRITE_FAULT : error
+            );
+            remove_temporary();
+            return false;
+        }
+        written_total += written;
+    }
+    if (!FlushFileBuffers(handle)) {
+        const DWORD error = GetLastError();
+        auto_core.log_info(
+            "{}: {} (error {})",
+            failed_write,
+            temporary.string(),
+            error == 0 ? ERROR_WRITE_FAULT : error
+        );
+        remove_temporary();
         return false;
     }
+    if (!CloseHandle(handle)) {
+        handle = INVALID_HANDLE_VALUE;
+        auto_core.log_info(
+            "{}: {} (error {})",
+            failed_write,
+            temporary.string(),
+            GetLastError()
+        );
+        remove_temporary();
+        return false;
+    }
+    handle = INVALID_HANDLE_VALUE;
 
     if (!MoveFileExW(
         temporary.c_str(),
@@ -129,8 +208,7 @@ static bool replace_text_file(
     )) {
         const DWORD error = GetLastError();
         auto_core.log_info("{}: {}", failed_replace, error);
-        std::error_code ignored;
-        std::filesystem::remove(temporary, ignored);
+        DeleteFileW(temporary.c_str());
         return false;
     }
 
@@ -334,7 +412,7 @@ static bool set_keymap_from_file(
 
     if (!config_file) {
         auto_core.log_alert(
-            "{} is missing. Run keymap_editor.exe to generate it. "
+            "{} is missing. Run auto_core_keymap.exe --seed to generate it. "
             "Using the emergency keymap; the file will not be created.",
             ac::paths::keymap_file().string()
         );
@@ -375,7 +453,7 @@ void initialize_keymap() {
     if (!set_keymap_from_file(registry, keymap_settings())) {
         auto_core.log_alert(
             "Using the emergency keymap because keymap.map could not be "
-            "loaded. Run keymap_editor.exe if keymap.map is missing. "
+            "loaded. Run auto_core_keymap.exe --seed if keymap.map is missing. "
             "The file will not be created."
         );
         set_emergency_keymap();

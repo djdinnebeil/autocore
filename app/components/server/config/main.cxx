@@ -211,10 +211,11 @@ std::wstring quote_argument(std::wstring_view value) {
 }
 
 int launch_owner(
-    const std::wstring_view executable_name,
+    const std::wstring_view operation,
     const std::wstring_view arguments
 ) {
-    const auto executable_path = ac::paths::bin_directory() / executable_name;
+    const auto executable_path =
+        ac::paths::component_executable_directory() / L"server_ac.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -224,6 +225,7 @@ int launch_owner(
 
     std::wstring command =
         quote_argument(executable_path.wstring()) + L" " +
+        quote_argument(operation) + L" " +
         quote_argument(arguments);
     STARTUPINFOW startup {};
     startup.cb = sizeof(startup);
@@ -280,21 +282,21 @@ int launch_owner(
 }
 
 int launch_owned_seed() {
-    if (const int editor = launch_owner(L"server_editor.exe", L"--seed");
+    if (const int editor = launch_owner(L"--editor", L"--seed");
         editor != 0) {
         return editor;
     }
-    return launch_owner(L"server_builder.exe", L"--seed");
+    return launch_owner(L"--builder", L"--seed");
 }
 
 int launch_owned_init() {
-    if (const int editor = launch_owner(L"server_editor.exe", L"--init");
+    if (const int editor = launch_owner(L"--editor", L"--init");
         editor != 0) {
         return editor;
     }
     switch (prompt_default_site()) {
     case SiteChoice::yes:
-        return launch_owner(L"server_builder.exe", L"--seed");
+        return launch_owner(L"--builder", L"--seed");
     case SiteChoice::no:
         server_config.log_debug("Default site files were not requested.");
         return 0;
@@ -319,10 +321,12 @@ void activate_own_console() {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
+namespace ac::server_app::config {
+
+int run(int argc, char* argv[]) {
     std::setvbuf(stdin, nullptr, _IONBF, 0);
     ac::shell::set_process_app_user_model_id();
-    server_config.log_info("server_config.exe started");
+    server_config.log_info("server_ac.exe --config started");
 
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
@@ -400,3 +404,5 @@ int main(int argc, char* argv[]) {
     activate_own_console();
     return run_configuration_menu();
 }
+
+} // namespace ac::server_app::config

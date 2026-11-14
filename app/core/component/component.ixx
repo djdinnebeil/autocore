@@ -68,7 +68,7 @@ export namespace ac {
         /**
          * \brief Reports a missing or malformed `config/<name>.ini`.
          *
-         * Uses `log_alert`. Directs the user to `<name>_config.exe`.
+         * Uses `log_alert`. Directs the user to `<name>_ac.exe --config`.
          * States that built-in defaults are in use and the file will not be
          * created. Does not write the INI.
          *
@@ -105,7 +105,7 @@ export namespace ac {
         /**
          * \name Output convenience methods
          *
-         * `log_debug`, `log_trace`, `log_info`, and `log_alert` are
+         * `log_trace`, `log_debug`, `log_info`, and `log_alert` are
          * diagnostics. `trace` is the most detailed severity. `print` stays
          * on the console. Its file copy requires
          * `log_console_output` and the `write_logs_to_files` file gate.
@@ -114,10 +114,10 @@ export namespace ac {
          * UTF-8 overloads are provided. Formatting failures use `print`.
          * \{
          */
-        void log_debug(std::string_view message) { write(message, MessageClass::debug); }
-        void lognl_debug(std::string_view message) { write(message, MessageClass::debug, false); }
         void log_trace(std::string_view message) { write(message, MessageClass::trace); }
         void lognl_trace(std::string_view message) { write(message, MessageClass::trace, false); }
+        void log_debug(std::string_view message) { write(message, MessageClass::debug); }
+        void lognl_debug(std::string_view message) { write(message, MessageClass::debug, false); }
         void log_info(std::string_view message) { write(message, MessageClass::info); }
         void lognl_info(std::string_view message) { write(message, MessageClass::info, false); }
         void log_alert(std::string_view message) { write(message, MessageClass::alert); }
@@ -125,24 +125,16 @@ export namespace ac {
         void print(std::string_view message) { write(message, MessageClass::print); }
         void printnl(std::string_view message) { write(message, MessageClass::print, false); }
 
-        void log_debug(std::wstring_view message) { write(message, MessageClass::debug); }
-        void lognl_debug(std::wstring_view message) { write(message, MessageClass::debug, false); }
         void log_trace(std::wstring_view message) { write(message, MessageClass::trace); }
         void lognl_trace(std::wstring_view message) { write(message, MessageClass::trace, false); }
+        void log_debug(std::wstring_view message) { write(message, MessageClass::debug); }
+        void lognl_debug(std::wstring_view message) { write(message, MessageClass::debug, false); }
         void log_info(std::wstring_view message) { write(message, MessageClass::info); }
         void lognl_info(std::wstring_view message) { write(message, MessageClass::info, false); }
         void log_alert(std::wstring_view message) { write(message, MessageClass::alert); }
         void lognl_alert(std::wstring_view message) { write(message, MessageClass::alert, false); }
         void print(std::wstring_view message) { write(message, MessageClass::print); }
         void printnl(std::wstring_view message) { write(message, MessageClass::print, false); }
-
-        template<typename Character>
-            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void log_debug(Character message) { log_debug(std::basic_string_view<Character> {&message, 1}); }
-
-        template<typename Character>
-            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
-        void lognl_debug(Character message) { lognl_debug(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
@@ -154,21 +146,19 @@ export namespace ac {
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
+        void log_debug(Character message) { log_debug(std::basic_string_view<Character> {&message, 1}); }
+
+        template<typename Character>
+            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
+        void lognl_debug(Character message) { lognl_debug(std::basic_string_view<Character> {&message, 1}); }
+
+        template<typename Character>
+            requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
         void print(Character message) { print(std::basic_string_view<Character> {&message, 1}); }
 
         template<typename Character>
             requires (std::same_as<Character, char> || std::same_as<Character, wchar_t>)
         void printnl(Character message) { printnl(std::basic_string_view<Character> {&message, 1}); }
-
-        template<typename... Args>
-        void log_debug(const char* format_string, Args&&... args) {
-            write_formatted(MessageClass::debug, true, format_string, std::forward<Args>(args)...);
-        }
-
-        template<typename... Args>
-        void lognl_debug(const char* format_string, Args&&... args) {
-            write_formatted(MessageClass::debug, false, format_string, std::forward<Args>(args)...);
-        }
 
         template<typename... Args>
         void log_trace(const char* format_string, Args&&... args) {
@@ -178,6 +168,16 @@ export namespace ac {
         template<typename... Args>
         void lognl_trace(const char* format_string, Args&&... args) {
             write_formatted(MessageClass::trace, false, format_string, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        void log_debug(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::debug, true, format_string, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        void lognl_debug(const char* format_string, Args&&... args) {
+            write_formatted(MessageClass::debug, false, format_string, std::forward<Args>(args)...);
         }
 
         template<typename... Args>

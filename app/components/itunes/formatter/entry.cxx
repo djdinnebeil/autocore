@@ -1,6 +1,6 @@
 /**
  * \file entry.cxx
- * \brief Process entry for `itunes_formatter.exe`.
+ * \brief Formatter entry used by `itunes_ac.exe --formatter`.
  *
  * `main` stays outside the formatter module so the linker can find it.
  */

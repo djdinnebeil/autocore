@@ -11,11 +11,11 @@ import std;
 
 export namespace wake::defaults {
 
-    constexpr std::string_view directory = "components\\wake";
+    constexpr std::string_view directory = "data\\wake";
 
     constexpr std::string_view ini_text =
         "[wake]\n"
-        "directory = components\\wake\n"
+        "directory = data\\wake\n"
         "logging = on\n";
 
     [[nodiscard]]

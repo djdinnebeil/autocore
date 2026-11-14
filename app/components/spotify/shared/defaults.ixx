@@ -8,11 +8,11 @@ import std;
 
 export namespace spotify::defaults {
 
-    constexpr std::string_view directory = "components\\spotify";
+    constexpr std::string_view directory = "data\\spotify";
 
     constexpr std::string_view ini_text =
         "[spotify]\n"
-        "directory = components\\spotify\n"
+        "directory = data\\spotify\n"
         "auto_launch_oauth = off\n"
         "logging = on\n";
 
