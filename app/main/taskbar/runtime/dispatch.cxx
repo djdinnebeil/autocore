@@ -21,6 +21,7 @@ namespace ac::taskbar_app::config {
 
 namespace ac::taskbar_app::settings {
     int run();
+    int run_after_discovery();
 }
 
 namespace ac::taskbar_app::builder {
@@ -32,7 +33,7 @@ namespace {
 [[nodiscard]]
 int launch_config_init() {
     const auto executable_path =
-        ac::paths::component_executable_directory() / "taskbar_ac.exe";
+        ac::paths::app_directory() / "auto_core_taskbar.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -68,7 +69,7 @@ int launch_config_init() {
     DWORD exit_code = 1;
     if (!GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         CloseHandle(process_info.hProcess);
-        std::cerr << "Unable to read the exit code from taskbar_ac.exe.\n";
+        std::cerr << "Unable to read the exit code from auto_core_taskbar.exe.\n";
         return 1;
     }
     CloseHandle(process_info.hProcess);
@@ -77,23 +78,23 @@ int launch_config_init() {
 
 [[nodiscard]]
 int open_direct() {
-    const auto path = ac::paths::component_config_file("taskbar");
+    const auto path = ac::paths::taskbar_policy_file();
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error || present) {
-        return ac::taskbar_app::settings::run();
+        return ac::taskbar_app::settings::run_after_discovery();
     }
 
     const int init_code = launch_config_init();
     if (init_code != 0) {
         return init_code;
     }
-    return ac::taskbar_app::settings::run();
+    return ac::taskbar_app::settings::run_after_discovery();
 }
 
 void print_usage() {
     std::cerr
-        << "Usage: taskbar_ac.exe [--run [runtime arguments] | --settings | "
+        << "Usage: auto_core_taskbar.exe [--run [runtime arguments] | --settings | "
         << "--builder [builder arguments] | --config [config arguments]]\n";
 }
 

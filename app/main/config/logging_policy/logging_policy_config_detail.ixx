@@ -2,8 +2,9 @@
  * \file logging_policy_config_detail.ixx
  * \brief Launch selection and INI text for logging_policy.ini.
  *
- * `--disable` is the noninteractive disable-all write. `--seed` takes
- * precedence over `--init`. An existing file is preserved.
+ * `--disable` sets `disable_all = on`. An existing file changes only that
+ * key. `--seed` takes precedence over `--init` when disable is not
+ * requested. Seed and init leave an existing file unchanged.
  */
 export module logging_policy_config_detail;
 
@@ -159,7 +160,7 @@ export namespace ac::main::logging {
         const bool disable_requested = false
     ) noexcept {
         if (disable_requested) {
-            return configuration_exists ? Action::skip_disable : Action::disable;
+            return Action::disable;
         }
         if (seed_requested) {
             return configuration_exists ? Action::skip_seed : Action::seed;

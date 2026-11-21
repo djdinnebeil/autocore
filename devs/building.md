@@ -43,7 +43,7 @@ The twelve family workspaces are:
 | Server | [`app/components/server/Server.sln`](../app/components/server/Server.sln) |
 | Slash | [`app/components/slash/Slash.sln`](../app/components/slash/Slash.sln) |
 | Spotify | [`app/components/spotify/Spotify.sln`](../app/components/spotify/Spotify.sln) |
-| Taskbar | [`app/components/taskbar/Taskbar.sln`](../app/components/taskbar/Taskbar.sln) |
+| Taskbar | `auto_core_taskbar` in [`app/AutoCore.sln`](../app/AutoCore.sln), project [`app/main/taskbar/auto_core_taskbar.vcxproj`](../app/main/taskbar/auto_core_taskbar.vcxproj) |
 | Wake | [`app/components/wake/Wake.sln`](../app/components/wake/Wake.sln) |
 | Writer | [`app/components/writer/Writer.sln`](../app/components/writer/Writer.sln) |
 

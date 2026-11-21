@@ -4,6 +4,7 @@ module;
 module itunes_registry;
 import std;
 import command_registry;
+import itunes_component;
 import itunes_protocol;
 
 command_registry::Registry create_itunes_command_registry(
@@ -53,6 +54,11 @@ command_registry::Registry create_itunes_command_registry(
         std::string {itunes::commands::remove_song.name},
         std::move(actions.remove_song),
         "Deletes the current iTunes track and moves its file to the Recycle Bin."
+    );
+    registry.add(
+        "shared_command_provider",
+        [] { itunes_component.print("Shared command in iTunes"); },
+        "Shared command in iTunes"
     );
     return registry;
 }

@@ -5,6 +5,7 @@ module spotify_registry;
 
 import std;
 import command_registry;
+import spotify_component;
 import spotify_protocol;
 
 command_registry::Registry create_spotify_command_registry(
@@ -44,6 +45,11 @@ command_registry::Registry create_spotify_command_registry(
         std::string {spotify::commands::switch_player.name},
         std::move(actions.switch_player),
         "Moves Spotify playback to the next configured device."
+    );
+    registry.add(
+        "shared_command_provider",
+        [] { spotify_component.print("Shared command in Spotify"); },
+        "Shared command in Spotify"
     );
     return registry;
 }

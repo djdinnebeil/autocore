@@ -3,16 +3,20 @@
  * \brief Builds the production component keymap command catalogs.
  *
  * Called in-process by auto_core_keymap.exe. This file has no process entry.
- * A catalog line is a command name, or `name - description` when the
- * description is non-empty. The same names, without descriptions, fill the
- * final `[commands]` section of `keymap.map`.
+ * A per-provider catalog line is a command name, or `name - description`
+ * when the description is non-empty. The merged keymap catalog is
+ * `name [Provider] - description`, or `name [Provider]` when the
+ * description is empty. `[commands]` in `keymap.map` stays names only.
  */
 #include "../../runtime/keyboard/keymap_map_detail.hpp"
+#include "../../../core/taskbar/activation_catalog_description.hpp"
+#include "../../shared/provider_display_name.hpp"
 
 import std;
 import command_registry;
 
 import auto_core.core.paths;
+import auto_core.taskbar;
 
 import <Windows.h>;
 
@@ -32,7 +36,6 @@ constexpr Provider providers[] {
     {"server", L"server_ac.exe", "server.keymap_commands.txt"},
     {"slash", L"slash_ac.exe", "slash.keymap_commands.txt"},
     {"spotify", L"spotify_ac.exe", "spotify.keymap_commands.txt"},
-    {"taskbar", L"taskbar_ac.exe", "taskbar.keymap_commands.txt"},
     {"wake", L"wake_ac.exe", "wake.keymap_commands.txt"},
     {"writer", L"writer_ac.exe", "writer.keymap_commands.txt"},
 };
@@ -443,6 +446,32 @@ bool replace_catalog(
     return publish_text(destination, contents, true);
 }
 
+[[nodiscard]]
+bool replace_merged_catalog(
+    const std::filesystem::path& destination,
+    const std::map<std::string, std::string>& lines
+) {
+    std::string contents;
+    for (const auto& [name, line] : lines) {
+        (void)name;
+        contents += line;
+        contents += '\n';
+    }
+
+    std::error_code directory_error;
+    std::filesystem::create_directories(
+        destination.parent_path(),
+        directory_error
+    );
+    if (directory_error) {
+        std::cerr << "Failed to create " << destination.parent_path().string()
+                  << ": " << directory_error.message() << '\n';
+        return false;
+    }
+
+    return publish_text(destination, contents, true);
+}
+
 struct TextLine {
     std::size_t begin = 0;
     std::size_t content_end = 0;
@@ -800,37 +829,335 @@ int build_keymap_commands() {
         }
 
         const auto components = ac::paths::keymap_directory() / "components";
-        for (std::size_t index = 0; index < exports.size(); ++index) {
-            const auto destination =
-                components / providers[index].catalog_filename;
-            if (!replace_catalog(destination, exports[index].commands)) {
-                return 1;
+        std::vector<ExportedCommand> taskbar_commands;
+        std::vector<ac::taskbar::ActivationOffer> offers;
+        std::vector<ac::taskbar::ActivationOffer> shared_offers;
+        std::vector<std::string> occupied;
+        const auto add_taskbar_offer = [&](
+            std::string command,
+            std::string description,
+            std::string application,
+            const bool catalog
+        ) {
+            occupied.push_back(command);
+            const bool ordinary = !command.starts_with("activate_") ||
+                command.size() == std::string_view {"activate_"}.size();
+            if (!ordinary) {
+                offers.push_back(ac::taskbar::ActivationOffer {
+                    "taskbar",
+                    command,
+                    description,
+                    application
+                });
             }
+            else {
+                shared_offers.push_back(ac::taskbar::ActivationOffer {
+                    "taskbar",
+                    command,
+                    description,
+                    application
+                });
+            }
+            if (catalog) {
+                taskbar_commands.push_back(ExportedCommand {
+                    std::move(command),
+                    std::move(description)
+                });
+            }
+        };
+        add_taskbar_offer(
+            "activate_wordpad",
+            ac::taskbar::activation_catalog_description(
+                "activate_wordpad",
+                "wordpad",
+                {}
+            ),
+            "wordpad",
+            false
+        );
+        add_taskbar_offer(
+            "activate_powershell_in_admin",
+            ac::taskbar::activation_catalog_description(
+                "activate_powershell_in_admin",
+                "powershell_admin",
+                {}
+            ),
+            "powershell_admin",
+            false
+        );
+        occupied.emplace_back("launch_powershell");
+        occupied.emplace_back("launch_gitbash");
+        occupied.emplace_back("launch_taskbar_config");
+        occupied.emplace_back("activate_firefox_or_open_reddit");
+        occupied.emplace_back("activate");
+        for (const ac::taskbar::ConfiguredActivationBinding& binding :
+             ac::taskbar::configured_activation_bindings_from_disk()) {
+            add_taskbar_offer(
+                binding.command,
+                binding.description,
+                binding.application,
+                true
+            );
         }
 
-        std::map<std::string, std::string> combined_commands;
-        for (const CapturedExport& exported : exports) {
-            for (const ExportedCommand& command : exported.commands) {
-                const auto [existing, inserted] = combined_commands.emplace(
+        for (std::size_t index = 0; index < exports.size(); ++index) {
+            for (const ExportedCommand& command : exports[index].commands) {
+                occupied.push_back(command.name);
+                ac::taskbar::ActivationOffer offer {
+                    std::string {providers[index].name},
                     command.name,
-                    command.description
-                );
-                if (!inserted &&
-                    existing->second.empty() &&
-                    !command.description.empty()) {
-                    existing->second = command.description;
+                    command.description,
+                    {}
+                };
+                if (command.name.starts_with("activate_") &&
+                    command.name.size() > std::string_view {"activate_"}.size()) {
+                    offers.push_back(std::move(offer));
+                }
+                else {
+                    shared_offers.push_back(std::move(offer));
                 }
             }
         }
-        std::vector<ExportedCommand> combined;
+
+        ac::taskbar::ActivationMapUpdate activation =
+            ac::taskbar::update_activation_map(
+                ac::paths::activation_map_file(),
+                offers,
+                occupied
+            );
+        if (!activation.ok) {
+            std::cerr << activation.error << '\n';
+            return 1;
+        }
+        // Every configured provider exported successfully above. A disabled
+        // component is still in that list, so its commands are not pruned.
+        ac::taskbar::ActivationMapUpdate shared =
+            ac::taskbar::update_shared_command_map(
+                ac::paths::shared_commands_map_file(),
+                shared_offers,
+                occupied
+            );
+        if (!shared.ok) {
+            std::cerr << shared.error << '\n';
+            return 1;
+        }
+        ac::taskbar::reconcile_provider_aliases(
+            activation.resolution,
+            shared.resolution,
+            occupied
+        );
+        for (const std::string& report : activation.resolution.reports) {
+            std::cerr << report << '\n';
+        }
+        for (const std::string& report : shared.resolution.reports) {
+            std::cerr << report << '\n';
+        }
+        std::unordered_set<std::string> shared_names;
+        const auto collect_shared_names = [&](
+            const ac::taskbar::ActivationResolution& resolution
+        ) {
+            for (const ac::taskbar::ActivationBinding& binding :
+                 resolution.bindings) {
+                shared_names.insert(binding.command);
+            }
+        };
+        collect_shared_names(activation.resolution);
+        collect_shared_names(shared.resolution);
+
+        struct MergedCommand {
+            std::string provider;
+            std::string description;
+        };
+        std::map<std::string, MergedCommand> combined_commands;
+        std::map<std::string, std::string> unset_commands;
+        std::unordered_set<std::string> taskbar_tier;
+        const auto claim = [&](
+            const std::string& name,
+            const std::string& provider,
+            const std::string& description
+        ) {
+            if (shared_names.contains(name)) {
+                return;
+            }
+            combined_commands.emplace(
+                name,
+                MergedCommand {provider, description}
+            );
+            taskbar_tier.insert(name);
+        };
+        claim(
+            "activate_wordpad",
+            "taskbar",
+            ac::taskbar::activation_catalog_description(
+                "activate_wordpad",
+                "wordpad",
+                {}
+            )
+        );
+        claim(
+            "activate_powershell_in_admin",
+            "taskbar",
+            ac::taskbar::activation_catalog_description(
+                "activate_powershell_in_admin",
+                "powershell_admin",
+                {}
+            )
+        );
+        claim(
+            "launch_powershell",
+            "taskbar",
+            "Starts PowerShell and focuses its window."
+        );
+        claim(
+            "launch_gitbash",
+            "taskbar",
+            "Starts Git Bash in the home directory and focuses its window."
+        );
+        claim(
+            "launch_taskbar_config",
+            "taskbar",
+            "Opens the Taskbar configuration menu."
+        );
+        for (const ExportedCommand& command : taskbar_commands) {
+            claim(command.name, "taskbar", command.description);
+        }
+        for (std::size_t index = 0; index < exports.size(); ++index) {
+            for (const ExportedCommand& command : exports[index].commands) {
+                if (shared_names.contains(command.name) ||
+                    taskbar_tier.contains(command.name)) {
+                    continue;
+                }
+                const auto [existing, inserted] = combined_commands.emplace(
+                    command.name,
+                    MergedCommand {
+                        std::string {providers[index].name},
+                        command.description
+                    }
+                );
+                if (!inserted &&
+                    existing->second.description.empty() &&
+                    !command.description.empty()) {
+                    existing->second.description = command.description;
+                }
+            }
+        }
+        std::map<std::pair<std::string, std::string>, std::string>
+            published_aliases;
+        const auto publish_resolution = [&](
+            const ac::taskbar::ActivationResolution& resolution
+        ) {
+            for (const ac::taskbar::ActivationBinding& binding :
+                 resolution.bindings) {
+                if (binding.resolved) {
+                    const auto [existing, inserted] = combined_commands.emplace(
+                        binding.command,
+                        MergedCommand {binding.provider, binding.description}
+                    );
+                    if (!inserted &&
+                        existing->second.description.empty() &&
+                        !binding.description.empty()) {
+                        existing->second.description = binding.description;
+                    }
+                }
+                else if (
+                    binding.explicit_blank &&
+                    binding.offer_count >= 2 &&
+                    !combined_commands.contains(binding.command)
+                ) {
+                    unset_commands.emplace(
+                        binding.command,
+                        binding.unset_description
+                    );
+                }
+                for (const ac::taskbar::ActivationAlias& alias : binding.aliases) {
+                    const auto [existing, inserted] = combined_commands.emplace(
+                        alias.name,
+                        MergedCommand {alias.provider, alias.description}
+                    );
+                    if (inserted) {
+                        published_aliases.insert({
+                            {alias.provider, alias.command},
+                            alias.name
+                        });
+                    }
+                    else if (
+                        existing->second.description.empty() &&
+                        !alias.description.empty()
+                    ) {
+                        existing->second.description = alias.description;
+                    }
+                }
+            }
+        };
+        publish_resolution(activation.resolution);
+        publish_resolution(shared.resolution);
+        const auto catalog_with_aliases = [&](
+            const std::string& provider,
+            const std::vector<ExportedCommand>& commands
+        ) {
+            std::vector<ExportedCommand> catalog;
+            catalog.reserve(commands.size());
+            for (const ExportedCommand& command : commands) {
+                const auto alias = published_aliases.find(
+                    {provider, command.name}
+                );
+                catalog.push_back(ExportedCommand {
+                    alias == published_aliases.end()
+                        ? command.name
+                        : alias->second,
+                    command.description
+                });
+            }
+            return catalog;
+        };
+        for (std::size_t index = 0; index < exports.size(); ++index) {
+            if (!replace_catalog(
+                    components / providers[index].catalog_filename,
+                    catalog_with_aliases(
+                        std::string {providers[index].name},
+                        exports[index].commands
+                    )
+                )) {
+                return 1;
+            }
+        }
+        if (!replace_catalog(
+                components / "taskbar.keymap_commands.txt",
+                catalog_with_aliases("taskbar", taskbar_commands)
+            )) {
+            return 1;
+        }
+        std::map<std::string, std::string> merged_lines;
         std::vector<std::string> combined_names;
-        combined.reserve(combined_commands.size());
         combined_names.reserve(combined_commands.size());
-        for (const auto& [name, description] : combined_commands) {
-            combined.push_back(ExportedCommand {name, description});
+        for (const auto& [name, command] : combined_commands) {
+            merged_lines.emplace(
+                name,
+                command_registry::format_merged_catalog_line(
+                    name,
+                    ac::main::provider_display_name(command.provider),
+                    command.description
+                )
+            );
             combined_names.push_back(name);
         }
-        if (!replace_catalog(ac::paths::keymap_commands_file(), combined)) {
+        for (const auto& [name, description] : unset_commands) {
+            if (merged_lines.contains(name)) {
+                continue;
+            }
+            merged_lines.emplace(
+                name,
+                command_registry::format_merged_catalog_line(
+                    name,
+                    "Unset",
+                    description
+                )
+            );
+        }
+        if (!replace_merged_catalog(
+                ac::paths::keymap_commands_file(),
+                merged_lines
+            )) {
             return 1;
         }
         if (!update_keymap_map(combined_names)) {

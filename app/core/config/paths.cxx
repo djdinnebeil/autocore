@@ -128,9 +128,32 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
+        taskbar_policy_file() {
+        static const std::filesystem::path file =
+            config_directory() / "taskbar_policy.ini";
+        return file;
+    }
+
+    const std::filesystem::path&
         keymap_commands_file() {
         static const std::filesystem::path file =
             keymap_directory() / "keymap_commands.txt";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        activation_map_file() {
+        static const std::filesystem::path file =
+            keymap_directory() / "activate_commands.map";
+
+        return file;
+    }
+
+    const std::filesystem::path&
+        shared_commands_map_file() {
+        static const std::filesystem::path file =
+            keymap_directory() / "shared_commands.map";
 
         return file;
     }
@@ -208,13 +231,8 @@ namespace ac::paths {
 
     const std::filesystem::path&
         taskbar_directory() {
-        static const std::filesystem::path& directory = configured_directory(
-            component_config_file("taskbar"),
-            "taskbar",
-            "directory",
-            installation_root() / "taskbar"
-        );
-
+        static const std::filesystem::path directory =
+            installation_root() / "data" / "taskbar";
         return directory;
     }
 

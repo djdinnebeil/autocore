@@ -8,7 +8,7 @@ import command_registry;
 import std;
 
 export inline constexpr std::string_view word_activation_fallback_message =
-    "Pin or start Microsoft Word, then run taskbar_ac.exe --builder to generate "
+    "Pin or start Microsoft Word, then run auto_core_taskbar.exe --builder to generate "
     "word.map.";
 
 export command_registry::Registry create_journal_command_registry(

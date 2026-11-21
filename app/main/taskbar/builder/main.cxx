@@ -283,6 +283,10 @@ namespace {
         return ascii_lower(id).starts_with("microsoft.windowsnotepad");
     }
 
+    bool is_kindle_id(const std::string_view id) {
+        return ascii_lower(id).starts_with("amznkindle.amazonkindlereadingapp");
+    }
+
     bool is_edge_id(const std::string_view id) {
         const std::string lower = ascii_lower(id);
         return lower == "msedge" || lower.starts_with("msedge.");
@@ -394,6 +398,10 @@ namespace {
             matcher.process_name = L"notepad.exe";
             matcher.executable_path = std::wstring {runtime_executable_path};
         }
+        else if (is_kindle_id(application_id)) {
+            matcher.process_name = L"Kindle.exe";
+            matcher.executable_path = std::wstring {runtime_executable_path};
+        }
         else if (is_edge_id(application_id)) {
             matcher.process_name = L"msedge.exe";
         }
@@ -421,7 +429,7 @@ namespace {
         if (is_explorer_id(application_id)) return "file_explorer";
         if (is_firefox_id(application_id)) return "firefox";
         if (is_firefox_private_id(application_id)) return "firefox_private_browsing";
-        if (is_chrome_id(application_id)) return "google_chrome";
+        if (is_chrome_id(application_id)) return "chrome";
         if (is_visual_studio_code_id(application_id)) return "visual_studio_code";
         if (is_visual_studio_id(application_id)) return "visual_studio";
         if (is_zoom_identity(application_id, key)) return "zoom_workplace";
@@ -969,6 +977,12 @@ namespace {
                 "because the WindowsApps executable path can change after upgrades."
             );
         }
+        if (is_kindle_id(item.application.application_id)) {
+            taskbar_builder.print(
+                "Kindle uses ::runtime:: for [window] executable_path "
+                "because its WindowsApps executable path can change after upgrades."
+            );
+        }
         if (is_edge_id(item.application.application_id)) {
             taskbar_builder.print(
                 "Default value for Microsoft Edge fallback executable_path has "
@@ -1042,9 +1056,9 @@ namespace {
         return ensure_firefox_pair(configuration, buttons, used_keys, generated);
     }
 
-    int launch_taskbar_ac_refresh() {
+    int launch_cache_refresh() {
         const auto executable_path =
-            ac::paths::component_executable_directory() / "taskbar_ac.exe";
+            ac::paths::app_directory() / "auto_core_taskbar.exe";
         std::error_code error;
         const bool present = std::filesystem::exists(executable_path, error);
         if (error || !present) {
@@ -1082,7 +1096,7 @@ namespace {
         if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
             ::CloseHandle(process_info.hProcess);
             taskbar_builder.print(
-                "Unable to read the exit code from taskbar_ac.exe."
+                "Unable to read the exit code from auto_core_taskbar.exe."
             );
             return 1;
         }
@@ -1090,7 +1104,7 @@ namespace {
         const int code = static_cast<int>(exit_code);
         if (code != 0) {
             taskbar_builder.print(
-                "taskbar_ac.exe --refresh-cache exited {}.",
+                "auto_core_taskbar.exe --refresh-cache exited {}.",
                 code
             );
         }
@@ -1104,16 +1118,20 @@ namespace {
     }
 
     void report_application_names(
-        const std::vector<TaskbarButton>& buttons,
         const std::vector<GeneratedConfiguration>& generated,
         const bool prompt_user
     ) {
-        taskbar_builder.log_debug("Applications:");
-        if (prompt_user) std::wcout << L"\nApplications:\n\n";
-        const std::size_t count = buttons.size() < generated.size()
-            ? buttons.size() : generated.size();
-        for (std::size_t index = 0; index < count; ++index) {
-            const std::wstring name = application_display_name(generated[index]);
+        const bool any_created = std::ranges::any_of(
+            generated,
+            [](const GeneratedConfiguration& item) { return item.created; }
+        );
+        if (!any_created) return;
+
+        taskbar_builder.log_debug("Created applications:");
+        if (prompt_user) std::wcout << L"\nCreated applications:\n\n";
+        for (const GeneratedConfiguration& item : generated) {
+            if (!item.created) continue;
+            const std::wstring name = application_display_name(item);
             if (name.empty()) continue;
             taskbar_builder.log_debug(name);
             if (prompt_user) std::wcout << name << L'\n';
@@ -1170,7 +1188,7 @@ namespace {
                 << L"Created: " << created << L"\n"
                 << L"Already present: " << existing << L"\n";
         }
-        report_application_names(*buttons, generated, prompt_user);
+        report_application_names(generated, prompt_user);
         taskbar_builder.log_info("taskbar applications generated");
         return 0;
     }
@@ -1212,7 +1230,7 @@ namespace {
         }
         const ToolConfiguration configuration = default_configuration();
         if (generate_maps_with_com(configuration, true) != 0) return 1;
-        return launch_taskbar_ac_refresh();
+        return launch_cache_refresh();
     }
 }
 
@@ -1220,11 +1238,11 @@ namespace ac::taskbar_app::builder {
 
 int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_builder.log_info("taskbar_ac.exe --builder started");
+    taskbar_builder.log_info("auto_core_taskbar.exe --builder started");
     try {
         const ToolConfiguration configuration = default_configuration();
         if (argc > 2) {
-            std::cerr << "Usage: taskbar_ac.exe --builder [--seed]\n";
+            std::cerr << "Usage: auto_core_taskbar.exe --builder [--seed]\n";
             return 1;
         }
         if (argc == 2) {
@@ -1233,9 +1251,9 @@ int run(int argc, char* argv[]) {
                 if (generate_maps_with_com(configuration, false) != 0) {
                     return 1;
                 }
-                return launch_taskbar_ac_refresh();
+                return launch_cache_refresh();
             }
-            std::cerr << "Usage: taskbar_ac.exe --builder [--seed]\n";
+            std::cerr << "Usage: auto_core_taskbar.exe --builder [--seed]\n";
             return 1;
         }
 
@@ -1243,7 +1261,7 @@ int run(int argc, char* argv[]) {
     }
     catch (const std::exception& error) {
         taskbar_builder.print(
-            "taskbar_ac.exe --builder failed: {}",
+            "auto_core_taskbar.exe --builder failed: {}",
             error.what()
         );
         return 1;

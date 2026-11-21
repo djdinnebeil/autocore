@@ -59,6 +59,11 @@ command_registry::Registry create_journal_command_registry(
     registry.add(std::string {::save_and_create_new_document.name}, [] {
         start_title_action(&journal_title::save_and_create_new_document);
     }, "Saves the foreground document, opens a new one, and inserts an episode title when its window title changes.");
+    registry.add(
+        "shared_command_provider",
+        [] { journal_component().print("Shared command in Journal"); },
+        "Shared command in Journal"
+    );
     journal::factories::register_factory_commands(registry);
     journal::factories::load_alias_commands(registry);
     return registry;

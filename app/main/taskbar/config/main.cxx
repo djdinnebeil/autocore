@@ -24,17 +24,10 @@ constexpr std::string_view on_off[] {"on", "off"};
 constexpr std::string_view modes[] {"live", "cache"};
 
 constexpr std::string_view menu_title =
-    "Restart taskbar_ac.exe before directory and mode changes apply.\n"
+    "Restart auto_core_taskbar.exe before mode changes apply.\n"
     "Taskbar Configuration";
 
 const menu::Setting menu_settings[] {
-    {
-        .key = "directory",
-        .display_name = "Directory",
-        .summary = "Folder that stores Taskbar data.",
-        .default_value = taskbar::defaults::directory,
-        .directory_path = true,
-    },
     {
         .key = "mode",
         .display_name = "Mode",
@@ -47,14 +40,13 @@ const menu::Setting menu_settings[] {
     {
         .key = "logging",
         .display_name = "Logging",
-        .summary = "Controls logging for the Taskbar component.",
+        .summary = "Controls logging for Taskbar.",
         .default_value = "on",
         .choices = on_off,
     },
 };
 
 struct Settings {
-    std::string directory {std::string {taskbar::defaults::directory}};
     std::string mode {std::string {taskbar::defaults::mode}};
     bool logging = true;
 };
@@ -79,16 +71,10 @@ bool write_ini(const std::filesystem::path& path, const Settings& settings) {
         );
         return false;
     }
-    const auto contents =
-        "# directory = relative or absolute path\n" +
-        menu::with_header(
-            menu_settings,
-            taskbar::defaults::ini_for(
-                settings.directory,
-                settings.mode,
-                settings.logging
-            )
-        );
+    const auto contents = menu::with_header(
+        menu_settings,
+        taskbar::defaults::ini_for(settings.mode, settings.logging)
+    );
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output) {
         taskbar_config.print("Failed to create {}", path.string());
@@ -116,16 +102,11 @@ Settings read_settings(
     if (!document) {
         if (report) {
             taskbar_config.print(
-                "config/components/taskbar.ini is malformed. Using compiled defaults until "
+                "config/taskbar_policy.ini is malformed. Using compiled defaults until "
                 "you save new settings."
             );
         }
         return settings;
-    }
-    if (const auto directory = document->find("taskbar", "directory")) {
-        if (!directory->empty()) {
-            settings.directory = std::string {*directory};
-        }
     }
     if (const auto mode = document->find("taskbar", "mode")) {
         const auto lower = ascii_lower(*mode);
@@ -134,7 +115,7 @@ Settings read_settings(
         }
         else if (report) {
             taskbar_config.print(
-                "config/components/taskbar.ini mode is invalid. Using live."
+                "config/taskbar_policy.ini mode is invalid. Using live."
             );
         }
     }
@@ -157,7 +138,7 @@ Settings read_settings(
 
 void say_restart() {
     std::cout
-        << "Restart taskbar_ac.exe before directory and mode changes apply.\n";
+        << "Restart auto_core_taskbar.exe before mode changes apply.\n";
 }
 
 std::optional<std::string> read_console_line() {
@@ -192,14 +173,11 @@ std::optional<bool> prompt_yes(std::string_view question) {
 }
 
 std::filesystem::path ini_path() {
-    return ac::paths::component_config_file("taskbar");
+    return ac::paths::taskbar_policy_file();
 }
 
 std::string current_text(const menu::Setting& setting) {
     const auto settings = read_settings(ini_path(), false);
-    if (setting.key == "directory") {
-        return settings.directory;
-    }
     if (setting.key == "mode") {
         return settings.mode;
     }
@@ -211,10 +189,7 @@ menu::ApplyResult apply_setting(
     const std::string_view value
 ) {
     auto settings = read_settings(ini_path(), false);
-    if (setting.key == "directory") {
-        settings.directory = std::string {value};
-    }
-    else if (setting.key == "mode") {
+    if (setting.key == "mode") {
         settings.mode = std::string {value};
     }
     else {
@@ -253,7 +228,7 @@ int offer_configuration() {
 
 int launch_taskbar_builder(const std::wstring_view arguments) {
     const auto executable_path =
-        ac::paths::component_executable_directory() / "taskbar_ac.exe";
+        ac::paths::app_directory() / "auto_core_taskbar.exe";
     std::error_code error;
     const bool present = std::filesystem::exists(executable_path, error);
     if (error || !present) {
@@ -313,7 +288,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     if (!::GetExitCodeProcess(process_info.hProcess, &exit_code)) {
         ::CloseHandle(process_info.hProcess);
         taskbar_config.print(
-            "Unable to read the exit code from taskbar_ac.exe --builder."
+            "Unable to read the exit code from auto_core_taskbar.exe --builder."
         );
         return 1;
     }
@@ -321,7 +296,7 @@ int launch_taskbar_builder(const std::wstring_view arguments) {
     const int code = static_cast<int>(exit_code);
     if (code != 0) {
         taskbar_config.print(
-            "Taskbar application provisioning failed. taskbar_ac.exe --builder "
+            "Taskbar application provisioning failed. auto_core_taskbar.exe --builder "
             "exited {}.",
             code
         );
@@ -347,7 +322,7 @@ namespace ac::taskbar_app::config {
 
 int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
-    taskbar_config.log_info("taskbar_ac.exe --config started");
+    taskbar_config.log_info("auto_core_taskbar.exe --config started");
     const auto launch =
         ac::config::components_request::parse_config_launch(argc, argv);
     if (!launch) {
@@ -366,7 +341,7 @@ int run(int argc, char* argv[]) {
     req::log_config_request(taskbar_config, *launch);
     if (launch->seed) {
         if (present) {
-            req::log_seed_skipped(taskbar_config, "config/components/taskbar.ini");
+            req::log_seed_skipped(taskbar_config, "config/taskbar_policy.ini");
         }
         else {
             req::log_writing_defaults(taskbar_config);
@@ -389,7 +364,7 @@ int run(int argc, char* argv[]) {
         if (present) {
             req::log_initialization_skipped(
                 taskbar_config,
-                "config/components/taskbar.ini"
+                "config/taskbar_policy.ini"
             );
         }
         else {

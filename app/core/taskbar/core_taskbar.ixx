@@ -26,7 +26,7 @@ export namespace ac::taskbar {
 
     /** How the current process-local snapshot was produced. */
     enum class SnapshotSource : std::uint8_t {
-        /** Built from `taskbar/winkey_map.cache` without a live UI
+        /** Built from `data/taskbar/winkey_map.cache` without a live UI
             Automation pass. */
         configured,
         /** Built from a completed UI Automation discovery. */
@@ -74,6 +74,70 @@ export namespace ac::taskbar {
         std::string description;
     };
 
+    /** One disk-map activation command, the application key that runs it,
+        and its catalog description. A repeated command keeps the first
+        application key and description. */
+    struct ConfiguredActivationBinding {
+        std::string command;
+        std::string application;
+        std::string description;
+    };
+
+    /** A provider offering one `activate_<program>` command. `application`
+        is the Taskbar key used to activate. It is empty for a component. */
+    struct ActivationOffer {
+        std::string provider;
+        std::string command;
+        std::string description;
+        std::string application;
+    };
+
+    /** An explicit alias. It always runs `command` on `provider`. */
+    struct ActivationAlias {
+        std::string name;
+        std::string provider;
+        std::string command;
+        std::string description;
+        std::string application;
+    };
+
+    /** The shared command and the aliases of the providers that offered it.
+        `resolved` is false when the saved provider cannot be used.
+        `blank_selection` is true when the saved value is missing or blank.
+        `explicit_blank` is true only when a saved entry's value is empty.
+        `offer_count` is the number of providers in the current discovery.
+        `unset_description` is catalog text for an explicit blank that still
+        has two or more providers. One provider with no saved entry does not
+        produce a binding. */
+    struct ActivationBinding {
+        std::string command;
+        bool resolved {false};
+        bool blank_selection {false};
+        bool explicit_blank {false};
+        std::size_t offer_count {0};
+        std::string provider;
+        std::string description;
+        std::string unset_description;
+        std::string application;
+        std::vector<ActivationAlias> aliases;
+    };
+
+    /** Bindings and human-readable reports. Reports do not by themselves
+        reject a keymap build. */
+    struct ActivationResolution {
+        std::vector<ActivationBinding> bindings;
+        std::vector<std::string> reports;
+    };
+
+    /** Result of the keymap build's rewrite of `activate_commands.map`.
+        `ok` is false when the existing file could not be read or the new
+        text could not be published. The previous file is left in place. */
+    struct ActivationMapUpdate {
+        bool ok {false};
+        ActivationResolution resolution;
+        std::string error;
+    };
+
     /** A process-local decision produced from an immutable application route.
         A matching window count of 2 means two or more windows. Returned only
         when the application has a native Win+position mapping. */
@@ -86,16 +150,14 @@ export namespace ac::taskbar {
     /** An opaque Win32 HWND for taskbar window matching. */
     using WindowHandle = void*;
 
-    /** Starts taskbar_ac.exe's session authority and the asynchronous initial
-        calculation. Calling this more than once in the authority process is
-        harmless. */
+    /** Starts auto_core_taskbar.exe's session authority and the asynchronous
+        initial calculation. Calling this more than once in the authority
+        process is harmless. */
     /**
      * \brief Replaces `winkey_map.cache` from one live taskbar discovery.
      *
-     * Resolves the Taskbar directory through the existing configuration
-     * path. An unavailable `config/components/taskbar.ini` uses the compiled default
-     * directory. Does not start the snapshot authority or the control pipe.
-     * `mode = cache` does not select the existing cache.
+     * Uses `<installation>/data/taskbar`. Does not start the snapshot authority
+     * or the control pipe. `mode = cache` does not select the existing cache.
      *
      * \return `false` when live discovery fails or the cache file cannot be
      * replaced. A previous cache file is left in place.
@@ -114,14 +176,14 @@ export namespace ac::taskbar {
     );
 
     /** Requests one asynchronous authority-owned recalculation. Concurrent
-        requests are coalesced. This is called by taskbar_ac.exe. */
+        requests are coalesced. This is called by auto_core_taskbar.exe. */
     [[nodiscard]] AC_API bool request_refresh();
 
-    /** Stops taskbar_ac.exe's authority and all snapshot publisher threads. */
+    /** Stops auto_core_taskbar.exe's authority and all snapshot publisher threads. */
     AC_API void stop_authority() noexcept;
 
     /**
-     * \brief Connects a client process to `taskbar_ac.exe` and receives the
+     * \brief Connects a client process to `auto_core_taskbar.exe` and receives the
      * complete snapshot.
      *
      * The default timeout is five seconds. Later generations are installed
@@ -152,7 +214,7 @@ export namespace ac::taskbar {
      * \brief Returns activation command names parsed from the current
      * application maps.
      *
-     * Reads `taskbar/applications/*.map` through the same loader the
+     * Reads `data/taskbar/applications/*.map` through the same loader the
      * authority uses. Does not start the authority, refresh positions, or
      * write configuration. A missing applications directory returns an
      * empty list.
@@ -169,6 +231,92 @@ export namespace ac::taskbar {
      */
     [[nodiscard]] AC_API std::vector<ConfiguredActivationCatalogEntry>
         configured_activation_catalog_from_disk();
+
+    /**
+     * \brief Returns disk-map activation commands with the application key
+     * that runs each command.
+     *
+     * Uses the same loader and first-command rule as
+     * `configured_activation_catalog_from_disk`.
+     */
+    [[nodiscard]] AC_API std::vector<ConfiguredActivationBinding>
+        configured_activation_bindings_from_disk();
+
+    /**
+     * \brief Resolves shared activation names from `map_path` and `offers`.
+     *
+     * Does not create or rewrite the map. A missing file has no saved
+     * selections. `occupied_names` are commands that already exist; a
+     * generated alias that matches one is omitted and reported.
+     */
+    [[nodiscard]] AC_API ActivationResolution resolve_activation_commands(
+        const std::filesystem::path& map_path,
+        const std::vector<ActivationOffer>& offers,
+        const std::vector<std::string>& occupied_names
+    );
+
+    /**
+     * \brief Rewrites `activate_commands.map` from a successful provider discovery.
+     *
+     * Refreshes each generated `# Choice:` or `# Choices:` comment and
+     * preserves saved values, including a blank. `# Choice:` is used when
+     * one provider offers the command. `# Choices:` is used otherwise.
+     * A new collision defaults to `taskbar` when that provider offered the
+     * command, and is left blank otherwise. Returns the same resolution
+     * `resolve_activation_commands` would return for the updated text.
+     */
+    [[nodiscard]] AC_API ActivationMapUpdate update_activation_map(
+        const std::filesystem::path& map_path,
+        const std::vector<ActivationOffer>& offers,
+        const std::vector<std::string>& occupied_names
+    );
+
+    /**
+     * \brief Resolves ordinary shared names from `map_path` and `offers`.
+     *
+     * Does not create or rewrite the map. A missing file has no saved
+     * selections. Commands that start with `activate_` are ignored.
+     * `occupied_names` are commands that already exist; a generated alias
+     * that matches one is omitted and reported.
+     */
+    [[nodiscard]] AC_API ActivationResolution resolve_shared_commands(
+        const std::filesystem::path& map_path,
+        const std::vector<ActivationOffer>& offers,
+        const std::vector<std::string>& occupied_names
+    );
+
+    /**
+     * \brief Rewrites `shared_commands.map` from a successful provider discovery.
+     *
+     * Refreshes each generated `# Choice:` or `# Choices:` comment and
+     * preserves saved values, including a blank, while any discovered
+     * provider still registers the command. A saved command that none of
+     * them registers is removed with its generated choice comment. The
+     * caller must pass a complete successful discovery; this function does
+     * not decide whether a missing provider was disabled or failed to
+     * export. A new collision is left blank. An empty `[shared_commands]`
+     * section is kept. Returns the same resolution `resolve_shared_commands`
+     * would return for the updated text.
+     */
+    [[nodiscard]] AC_API ActivationMapUpdate update_shared_command_map(
+        const std::filesystem::path& map_path,
+        const std::vector<ActivationOffer>& offers,
+        const std::vector<std::string>& occupied_names
+    );
+
+    /**
+     * \brief Drops aliases that collide across both resolutions.
+     *
+     * The namespace starts with `occupied_names` and every command on either
+     * resolution. Activation aliases are claimed first. A later alias that
+     * matches a claimed name is removed and reported. `--build` and startup
+     * both use this order.
+     */
+    AC_API void reconcile_provider_aliases(
+        ActivationResolution& activation,
+        ActivationResolution& shared,
+        const std::vector<std::string>& occupied_names
+    );
 
     /** Returns the optional executable launched when an application has no
         matching windows and no native Win+position mapping. This performs

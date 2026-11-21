@@ -25,6 +25,8 @@ struct CatalogEntry {
     std::string name;
     std::string description;
     std::string hello_identity;
+    /** Provider id for the merged keymap catalog. Empty for hello and export. */
+    std::string provider;
 };
 
 /**
@@ -86,6 +88,27 @@ inline std::string format_catalog_line(
     return line;
 }
 
+/**
+ * \brief Formats one merged keymap catalog line.
+ *
+ * The identity is `name [provider]`. An empty description omits ` - `.
+ * `provider` is the display label, such as `Taskbar` or `Unset`.
+ */
+[[nodiscard]]
+inline std::string format_merged_catalog_line(
+    const std::string_view name,
+    const std::string_view provider,
+    const std::string_view description
+) {
+    std::string identity;
+    identity.reserve(name.size() + provider.size() + 3);
+    identity.append(name);
+    identity.append(" [");
+    identity.append(provider);
+    identity.append("]");
+    return format_catalog_line(identity, description);
+}
+
 class Registry {
 public:
     /**
@@ -100,13 +123,15 @@ public:
     void add(
         std::string name,
         Function function,
-        std::string description = {}
+        std::string description = {},
+        std::string provider = {}
     ) {
         const auto [entry, inserted] = commands_.emplace(
             std::move(name),
             CommandEntry {
                 Action {std::move(function)},
-                std::move(description)
+                std::move(description),
+                std::move(provider)
             }
         );
 
@@ -128,7 +153,8 @@ public:
         std::string name,
         Factory factory,
         std::string autocomplete_value = {},
-        std::string description = {}
+        std::string description = {},
+        std::string provider = {}
     ) {
         if (autocomplete_value.empty()) {
             autocomplete_value = name + "()";
@@ -139,7 +165,8 @@ public:
             FactoryEntry {
                 std::move(factory),
                 std::move(autocomplete_value),
-                std::move(description)
+                std::move(description),
+                std::move(provider)
             }
         );
 
@@ -208,7 +235,8 @@ public:
             entries.push_back(CatalogEntry {
                 name,
                 entry.description,
-                name
+                name,
+                entry.provider
             });
         }
 
@@ -216,7 +244,8 @@ public:
             entries.push_back(CatalogEntry {
                 name,
                 entry.description,
-                entry.autocomplete_value
+                entry.autocomplete_value,
+                entry.provider
             });
         }
 
@@ -294,12 +323,14 @@ private:
     struct CommandEntry {
         Action action;
         std::string description;
+        std::string provider;
     };
 
     struct FactoryEntry {
         Factory resolve;
         std::string autocomplete_value;
         std::string description;
+        std::string provider;
     };
 
     static std::string_view trim(std::string_view value) {

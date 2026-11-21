@@ -98,7 +98,7 @@ Main retains successful child process handles and shuts generic components down 
 
 On-demand components use the embedded `AC_LAUNCH_DESCRIPTOR` resource rather than a normal hosted v1 session.
 
-Logger, Taskbar-specific behavior, and Main-local commands may remain explicit specials.
+Logger and Main-local commands may remain explicit specials. Taskbar is a Main subsystem: `app\auto_core_taskbar.exe` owns `config\taskbar_policy.ini`, and its data directory is `<installation>\data\taskbar`.
 
 Do not introduce a controller DLL, second command catalog, component kinds, dependency graphs, runtime catalog updates, or automatic restart architecture without reopening this decision.
 

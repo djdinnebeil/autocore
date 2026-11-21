@@ -50,6 +50,7 @@ void test_commands::runtime_commands::register_with(
     registry.add(
         "encoding_test",
         &::encoding_test,
-        "Prints UTF-16 round-trip, invalid UTF-8, and Latin-1 conversion samples."
+        "Prints UTF-16 round-trip, invalid UTF-8, and Latin-1 conversion samples.",
+        "main"
     );
 }

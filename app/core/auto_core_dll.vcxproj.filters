@@ -68,6 +68,7 @@
     <ClCompile Include="system\shell.cxx"><Filter>system</Filter></ClCompile>
     <ClCompile Include="taskbar\core_taskbar.ixx"><Filter>taskbar</Filter></ClCompile>
     <ClCompile Include="taskbar\taskbar.cxx"><Filter>taskbar</Filter></ClCompile>
+    <ClCompile Include="taskbar\activation_map.cxx"><Filter>taskbar</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="component\components_catalog_detail.hpp"><Filter>component</Filter></ClInclude>

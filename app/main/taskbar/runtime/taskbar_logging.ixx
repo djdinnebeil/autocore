@@ -1,6 +1,6 @@
 /**
  * \file taskbar_logging.ixx
- * \brief Shared component logger for taskbar_ac.exe.
+ * \brief Shared logger for auto_core_taskbar.exe.
  */
 export module taskbar_logging;
 

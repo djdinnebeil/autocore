@@ -509,7 +509,7 @@ namespace {
 
     Configuration load_configuration() {
         Configuration config;
-        std::ifstream input(ac::paths::component_config_file("taskbar"));
+        std::ifstream input(ac::paths::taskbar_policy_file());
         if (input) {
             std::string section;
             std::string line;
@@ -1488,6 +1488,39 @@ namespace ac::taskbar {
             entries,
             {},
             &ConfiguredActivationCatalogEntry::command
+        );
+        return entries;
+    }
+
+    std::vector<ConfiguredActivationBinding>
+    configured_activation_bindings_from_disk() {
+        Configuration config;
+        load_taskbar_applications(config);
+        std::vector<ConfiguredActivationBinding> entries;
+        for (const auto& [application, definition] : config.applications) {
+            for (const std::string& command : definition.activation_commands) {
+                if (std::ranges::find(
+                        entries,
+                        command,
+                        &ConfiguredActivationBinding::command
+                    ) != entries.end()) {
+                    continue;
+                }
+                entries.push_back(ConfiguredActivationBinding {
+                    command,
+                    application,
+                    activation_catalog_description(
+                        command,
+                        application,
+                        definition.display_name
+                    )
+                });
+            }
+        }
+        std::ranges::sort(
+            entries,
+            {},
+            &ConfiguredActivationBinding::command
         );
         return entries;
     }

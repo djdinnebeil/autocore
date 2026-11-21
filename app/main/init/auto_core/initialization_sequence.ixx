@@ -8,7 +8,8 @@
  * components.list is seeded from INI files that component initialization
  * may already have created. That initialization stage does not write an
  * INI file.
- * logging_policy.ini is established before this sequence.
+ * A missing logging_policy.ini is seeded before this sequence. The Main
+ * menu decides whether that new policy stays enabled.
  */
 export module auto_core_initialization;
 
@@ -18,6 +19,7 @@ export namespace ac::main::init {
 
     enum class OwnerKind {
         configured,
+        taskbar,
         components,
         components_editor,
         keymap
@@ -53,13 +55,14 @@ export namespace ac::main::init {
         std::wstring_view route;
     };
 
-    inline constexpr std::array<OwnerStep, 9> initialization_steps {{
+    inline constexpr std::array<OwnerStep, 10> initialization_steps {{
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area auto-core"},
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area components-policy"},
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area shutdown"},
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area crash-recovery"},
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area startup"},
         {"auto_core_settings.exe", OwnerKind::configured, L"--config --area warnings"},
+        {"auto_core_taskbar.exe", OwnerKind::taskbar, L"--config"},
         {"auto_core_components.exe", OwnerKind::components, L""},
         {"auto_core_components.exe", OwnerKind::components_editor, L""},
         {"auto_core_keymap.exe", OwnerKind::keymap, L""}
@@ -72,6 +75,16 @@ export namespace ac::main::init {
     ) noexcept {
         switch (kind) {
         case OwnerKind::configured:
+            switch (mode) {
+            case InitializationMode::seed:
+                return L"--seed";
+            case InitializationMode::interactive:
+                return L"--init";
+            case InitializationMode::seeded_interactive:
+                return L"--init --seed";
+            }
+            return L"";
+        case OwnerKind::taskbar:
             switch (mode) {
             case InitializationMode::seed:
                 return L"--seed";

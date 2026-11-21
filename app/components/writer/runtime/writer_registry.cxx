@@ -102,17 +102,17 @@ command_registry::Registry create_writer_command_registry() {
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_session_prompt.name},
         writer_actions::select_and_insert_session_prompt,
-        "Opens a menu of session_prompts.list and inserts the chosen line."
+        "Displays prompts from session_prompts.list and inserts the selected prompt."
     );
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_text.name},
         writer_actions::select_and_insert_text,
-        "Opens a menu of text files and inserts the chosen file."
+        "Displays a menu of text files from the text directory configured in writer.ini and inserts the exact contents of the selected file into the active text field."
     );
     registry.add(
         std::string {ac::protocol::writer::select_and_insert_profile_url.name},
         writer_actions::select_and_insert_profile_url,
-        "Opens a menu of profile_urls.txt and inserts the chosen URL."
+        "Displays URLs from profile_urls.txt and inserts the selected URL."
     );
     registry.add(
         std::string {ac::protocol::writer::create_new_note_in_notepad.name},

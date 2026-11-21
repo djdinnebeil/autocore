@@ -15,13 +15,18 @@ export namespace taskbar_runtime_commands {
      * activations that join the interactive cycle session.
      * Call this before generic child catalogs.
      */
-    void register_reserved_with(command_registry::Registry& registry);
+    void register_reserved_with(
+        command_registry::Registry& registry,
+        const std::unordered_set<std::string>& shared_names
+    );
     /**
-     * Registers activation commands from Taskbar application maps. Call this
-     * after reserved Main commands and before child catalogs so Taskbar wins
-     * only those duplicate names.
+     * Registers activation commands from Taskbar application maps. Names in
+     * `shared_names` are left for the activation-map resolution.
      */
-    void register_configured_with(command_registry::Registry& registry);
+    void register_configured_with(
+        command_registry::Registry& registry,
+        const std::unordered_set<std::string>& shared_names
+    );
     /** Registers the remaining Main-owned Taskbar command surface. */
     void register_with(command_registry::Registry& registry);
 }

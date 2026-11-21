@@ -85,7 +85,7 @@ export namespace ac::console {
      * activation. If Win+number cannot focus the console, `activate()` is
      * used; this function does not return `winkey_activation_failed`. The
      * current foreground window is returned for `restore_focus()`. This is
-     * not a substitute for `taskbar_ac.exe` snapshot authority.
+     * not a substitute for `auto_core_taskbar.exe` snapshot authority.
      */
     [[nodiscard]]
     AC_API std::expected<WindowHandle, Error>

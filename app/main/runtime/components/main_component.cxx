@@ -211,16 +211,19 @@ void main_component::runtime_commands::register_with(
     registry.add(
         "close_program",
         &::close_program,
-        "Shuts down hosted components using config/shutdown.ini and exits."
+        "Shuts down Auto Core and its running components.",
+        "main"
     );
     registry.add(
         "activate_function_key",
         &::activate_function_key,
-        "Enables the function-key layer."
+        "Enables the function-key layer.",
+        "main"
     );
     registry.add(
         "deactivate_function_key",
         &::deactivate_function_key,
-        "Disables the function-key layer."
+        "Disables the function-key layer.",
+        "main"
     );
 }

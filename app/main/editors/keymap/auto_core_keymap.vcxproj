@@ -145,6 +145,7 @@
     <ClCompile Include="..\..\..\core\diagnostics\error.ixx" />
     <ClCompile Include="..\..\..\core\formatting\formatting.ixx" />
     <ClCompile Include="..\..\..\core\config\paths.ixx" />
+    <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\runtime\keyboard\key_codes.ixx" />
     <ClCompile Include="..\..\shared\config_support.ixx" />

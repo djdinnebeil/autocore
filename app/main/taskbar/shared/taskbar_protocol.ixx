@@ -1,6 +1,6 @@
 /**
  * \file taskbar_protocol.ixx
- * \brief Control protocol between Main and taskbar_ac.exe.
+ * \brief Control protocol between Main and auto_core_taskbar.exe.
  */
 export module taskbar_protocol;
 
@@ -9,7 +9,7 @@ import std;
 export namespace ac::protocol::taskbar {
 
     inline constexpr std::wstring_view pipe_name = L"ac_taskbar_pipe";
-    /** Sent by `taskbar_ac.exe` after the authority is ready. */
+    /** Sent by `auto_core_taskbar.exe` after the authority is ready. */
     inline constexpr std::string_view ready_message = "taskbar_ready";
 
     namespace commands {
@@ -27,7 +27,7 @@ export namespace ac::protocol::taskbar {
 
         /** Compiled command names that INI handlers must not replace.
             This is a reserved-name list, not a pipe-destination list.
-            `activate_auto_core` is advertised by `taskbar_ac.exe`.
+            `activate_auto_core` is advertised by `auto_core_taskbar.exe`.
             `launch_powershell` and `launch_gitbash` run in Main so the
             foreground process can focus the new window.
             `activate_wordpad` and `activate_powershell_in_admin` run in

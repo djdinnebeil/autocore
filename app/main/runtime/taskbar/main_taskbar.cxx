@@ -494,12 +494,29 @@ void launch_shell_and_focus(
 } // namespace
 
 void taskbar_runtime_commands::register_reserved_with(
-    command_registry::Registry& registry
+    command_registry::Registry& registry,
+    const std::unordered_set<std::string>& shared_names
 ) {
     namespace commands = ac::protocol::taskbar::commands;
 
-    registry.add(
-        std::string {commands::activate_wordpad},
+    const auto add_command = [&](
+        const std::string_view name,
+        command_registry::Action action,
+        std::string description
+    ) {
+        if (shared_names.contains(std::string {name})) {
+            return;
+        }
+        registry.add(
+            std::string {name},
+            std::move(action),
+            std::move(description),
+            "taskbar"
+        );
+    };
+
+    add_command(
+        commands::activate_wordpad,
         taskbar_activation_action("wordpad", commands::activate_wordpad),
         ac::taskbar::activation_catalog_description(
             commands::activate_wordpad,
@@ -507,8 +524,8 @@ void taskbar_runtime_commands::register_reserved_with(
             {}
         )
     );
-    registry.add(
-        std::string {commands::activate_powershell_in_admin},
+    add_command(
+        commands::activate_powershell_in_admin,
         taskbar_activation_action(
             "powershell_admin",
             commands::activate_powershell_in_admin
@@ -519,24 +536,24 @@ void taskbar_runtime_commands::register_reserved_with(
             {}
         )
     );
-    registry.add(std::string {commands::launch_powershell}, [] {
+    add_command(commands::launch_powershell, [] {
         launch_shell_and_focus("launch_powershell", L"powershell.exe");
     }, "Starts PowerShell and focuses its window.");
-    registry.add(std::string {commands::launch_gitbash}, [] {
+    add_command(commands::launch_gitbash, [] {
         launch_shell_and_focus(
             "launch_gitbash",
             LR"(C:\Program Files\Git\git-bash.exe)",
             L"--cd-to-home"
         );
     }, "Starts Git Bash in the home directory and focuses its window.");
-    registry.add("launch_taskbar_config", [] {
+    add_command("launch_taskbar_config", [] {
         const auto executable =
-            ac::paths::component_executable_directory() / "taskbar_ac.exe";
+            ac::paths::app_directory() / "auto_core_taskbar.exe";
         if (!ac::main::create_process_and_focus(
                 executable, L"--config", CREATE_NEW_CONSOLE
             )) {
             auto_core.log_alert(
-                "Unable to start taskbar_ac.exe --config."
+                "Unable to start auto_core_taskbar.exe --config."
             );
         }
     }, "Opens the Taskbar configuration menu.");
@@ -549,21 +566,20 @@ void taskbar_runtime_commands::register_with(
         "activate",
         &::configured_activation_action,
         "activate(\"application\")",
-        "Activates a taskbar application by its configured key."
+        "Activates a taskbar application by its configured key.",
+        "taskbar"
     );
 }
 
 void taskbar_runtime_commands::register_configured_with(
-    command_registry::Registry& registry
+    command_registry::Registry& registry,
+    const std::unordered_set<std::string>& shared_names
 ) {
-    std::unordered_map<std::string, std::string> descriptions;
-    for (const auto& entry :
-         ac::taskbar::configured_activation_catalog_from_disk()) {
-        descriptions.emplace(entry.command, entry.description);
-    }
-
     for (const auto& command :
-         ac::taskbar::configured_activation_commands()) {
+         ac::taskbar::configured_activation_bindings_from_disk()) {
+        if (shared_names.contains(command.command)) {
+            continue;
+        }
         if (registry.contains(command.command)) {
             if (command.command == "activate_auto_core") {
                 auto_core.log_info(
@@ -583,22 +599,11 @@ void taskbar_runtime_commands::register_configured_with(
             }
             continue;
         }
-        std::string description;
-        if (const auto found = descriptions.find(command.command);
-            found != descriptions.end()) {
-            description = found->second;
-        }
-        else {
-            description = ac::taskbar::activation_catalog_description(
-                command.command,
-                command.application,
-                {}
-            );
-        }
         registry.add(
             command.command,
             taskbar_activation_action(command.application, command.command),
-            std::move(description)
+            command.description,
+            "taskbar"
         );
     }
 }

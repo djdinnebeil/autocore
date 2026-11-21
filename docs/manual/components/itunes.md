@@ -20,7 +20,7 @@ iTunes controls the desktop iTunes application: playback, current-track text, a 
 
 | Command | What it does |
 | --- | --- |
-| `activate_itunes` | Fallback notice when Taskbar has no `itunes.map`; Taskbar activation takes precedence when that map exists. |
+| `activate_itunes` | Runs the provider selected in `keymap\activate_commands.map` when that name is shared. `itunes_activate` always runs iTunes. |
 | `itunes_play_pause` | Toggles play and pause. |
 | `itunes_next_song` | Skips to the next track. |
 | `itunes_stop_song` | Stops playback and inserts the current track text. |

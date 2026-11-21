@@ -63,8 +63,18 @@ export namespace ac::logging::config {
      *
      * The first call reads the file. Later calls reuse that result.
      * Call this after first-run handling and before normal startup logs.
+     * `suppress()` does not cause a reread.
      */
     AC_API void resolve();
+
+    /**
+     * \brief Stops diagnostic logging for the rest of this process.
+     *
+     * Makes `disable_all()` return true for later sink decisions. Does not
+     * reread or rewrite `logging_policy.ini`. A log written before this call
+     * still uses the cached policy.
+     */
+    AC_API void suppress();
 
     /**
      * \brief Returns whether `[logging] disable_all` is on.

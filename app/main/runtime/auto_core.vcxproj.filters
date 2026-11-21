@@ -99,10 +99,10 @@
     <ClCompile Include="taskbar\main_taskbar.ixx">
       <Filter>taskbar</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.cxx">
+    <ClCompile Include="taskbar\taskbar_firefox.cxx">
       <Filter>taskbar</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.ixx">
+    <ClCompile Include="taskbar\taskbar_firefox.ixx">
       <Filter>taskbar</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\command_registry.ixx">
@@ -111,7 +111,7 @@
     <ClCompile Include="..\..\shared\protocols\component_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\components\taskbar\shared\taskbar_protocol.ixx">
+    <ClCompile Include="..\taskbar\shared\taskbar_protocol.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="test_commands.ixx">

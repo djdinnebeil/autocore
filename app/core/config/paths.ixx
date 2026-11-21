@@ -110,11 +110,39 @@ export namespace ac::paths {
         component_config_file(std::string_view name);
 
     /**
+     * \brief Returns `<config directory>/taskbar_policy.ini`.
+     *
+     * The file is not created or validated. Taskbar data does not come
+     * from this file.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        taskbar_policy_file();
+
+    /**
      * \brief Returns `<keymap directory>/keymap_commands.txt`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&
         keymap_commands_file();
+
+    /**
+     * \brief Returns `<keymap directory>/activate_commands.map`.
+     *
+     * Cached for the process lifetime. The file is not created or validated.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        activation_map_file();
+
+    /**
+     * \brief Returns `<keymap directory>/shared_commands.map`.
+     *
+     * Cached for the process lifetime. The file is not created or validated.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        shared_commands_map_file();
 
     /**
      * \brief Returns a process-lifetime directory from an INI setting.
@@ -136,14 +164,11 @@ export namespace ac::paths {
         );
 
     /**
-     * \brief Returns the Taskbar data directory.
+     * \brief Returns `<installation root>/data/taskbar`.
      *
-     * Reads `[taskbar] directory` from `config/components/taskbar.ini`. A relative path
-     * is resolved against the installation root. An absolute path is used
-     * as-is. A missing file, missing key, or empty value keeps
-     * `<installation root>/taskbar`. The live file is not rewritten.
-     * Cached for the process lifetime. The directory is not created or
-     * validated.
+     * The path does not depend on the working directory or on
+     * `taskbar_policy.ini`. Cached for the process lifetime. The directory
+     * is not created or validated.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&

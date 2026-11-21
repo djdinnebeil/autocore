@@ -30,8 +30,8 @@ Run `components\<name>_ac.exe` with no arguments, or `components\<name>_ac.exe -
 | `config/` | Application and component configuration settings. |
 | `data/` | Logs, diagnostics, and other application data. |
 | `info/` | User documentation, including the Manual and Tutorial. |
-| `keymap/` | Reference information for available keymap commands. |
-| `taskbar/` | Data used by the Taskbar component. |
+| `keymap/` | Keymap command reference, `activate_commands.map`, and `shared_commands.map`. |
+| `data/taskbar/` | Application maps and the Win+number cache used by Taskbar. |
 | `writer/` | Data used by the Writer component. |
 | `Auto Core.lnk` | Shortcut for launching Auto Core. Recommended for taskbar pinning. |
 | `Auto Core Settings.lnk` | Shortcut for accessing the settings manager. |

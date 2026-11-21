@@ -29,6 +29,7 @@ The following files configure Auto Core itself:
 | `config\logging_policy.ini` | `auto_core_settings.exe --config --area logging-policy` |
 | `config\startup.ini` | `auto_core_settings.exe --config --area startup` |
 | `config\warnings.ini` | `auto_core_settings.exe --config --area warnings` |
+| `config\taskbar_policy.ini` | `auto_core_taskbar.exe --config` |
 
 The sectionless `config\startup.ini` accepts these independent switches:
 
@@ -77,6 +78,11 @@ A directory or delete failure is `log_alert`.
 Use Auto Core Settings, or run the corresponding program under `app\`, to view
 or change these settings.
 
+`taskbar_policy.ini` stores Taskbar `mode` and `logging`. Taskbar data is
+`<installation>\data\taskbar`. `activate_commands.map` is
+`<installation>\keymap\activate_commands.map`. Ordinary shared commands are
+`<installation>\keymap\shared_commands.map`. See the [Taskbar manual](components/taskbar.md).
+
 ## Component configuration
 
 Each configurable component has its own configuration file:
@@ -96,7 +102,6 @@ Component-specific settings are documented in the corresponding manual page:
 - [Server](components/server.md)
 - [Slash](components/slash.md)
 - [Spotify](components/spotify.md)
-- [Taskbar](components/taskbar.md)
 - [Wake](components/wake.md)
 - [Writer](components/writer.md)
 
@@ -139,8 +144,7 @@ not replaced. `auto_core_keymap.exe --build` rewrites the command catalogs
 and updates the final `[commands]` section of `keymap.map` from those command
 names. Text before that section is kept. One blank line separates that text
 from `[commands]` when the text does not already end with one. `[commands]`
-contains command names only. A catalog line is a command name, or
-`name - description` when the description is non-empty. The description is
+contains command names only. A merged catalog line is `name [Provider] - description` when the description is non-empty, or `name [Provider]` when it is empty. Component lists under `keymap\components\` stay `name - description`. The description and the provider label are
 not copied into `[commands]`.
 Available command names are listed in `keymap\keymap_commands.txt`;
 component-specific lists are under `keymap\components\`. Auto Core still

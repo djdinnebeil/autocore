@@ -79,13 +79,15 @@ Log identities stay `writer`, `writer_settings`, `writer_config`, `writer_editor
 
 | Invocation | Behavior |
 | --- | --- |
-| `taskbar_ac.exe` | If `config/components/taskbar.ini` exists, or that check fails, open the settings menu. If the file is missing, start `taskbar_ac.exe --config --init`, wait, and open settings only when that process exits 0. |
-| `taskbar_ac.exe --settings` | Open the settings menu. This does not run initialization by itself. Discovery is `taskbar_ac.exe --builder`. |
-| `taskbar_ac.exe --builder` | Discovers applications. `--seed` stays noninteractive. After maps are written it starts a separate `taskbar_ac.exe --run --refresh-cache` and waits. |
-| `taskbar_ac.exe --config` | The configuration tool. It starts `taskbar_ac.exe --builder` or `--builder --seed` as a separate process. This command exits. It does not open settings. |
-| `taskbar_ac.exe --run` | The authority when the tail is empty. `--refresh-cache` uses the cache mutex only and does not take the authority mutex or start the control pipe. `--inspect-snapshot <application>` keeps exit codes 0, 1, and 2. `--export-keymap-commands` returns 0 with no output. A missing INI stays `mode = live` and uses `<installation>/taskbar`. |
+| `auto_core_taskbar.exe` | If `config/taskbar_policy.ini` exists, or that check fails, open the settings menu. If the file is missing, start `auto_core_taskbar.exe --config --init`, wait, and open settings only when that process exits 0. |
+| `auto_core_taskbar.exe --settings` | Open the settings menu. This does not run initialization by itself. Discovery is `auto_core_taskbar.exe --builder`. |
+| `auto_core_taskbar.exe --builder` | Discovers applications. `--seed` stays noninteractive. After maps are written it starts a separate `auto_core_taskbar.exe --run --refresh-cache` and waits. |
+| `auto_core_taskbar.exe --config` | The configuration tool. It starts `auto_core_taskbar.exe --builder` or `--builder --seed` as a separate process. This command exits. It does not open settings. It owns `config/taskbar_policy.ini`. |
+| `auto_core_taskbar.exe --run` | The authority when the tail is empty. `--refresh-cache` uses the cache mutex only and does not take the authority mutex or start the control pipe. `--inspect-snapshot <application>` keeps exit codes 0, 1, and 2. `--export-keymap-commands` returns 0 with no output. A missing policy file stays `mode = live` and uses `<installation>/data/taskbar`. |
 
-Main's taskbar configuration command is `taskbar_ac.exe --config` in a new console. Log identities stay `taskbar`, `taskbar_settings`, `taskbar_config`, and `taskbar_builder`.
+Main starts `app\auto_core_taskbar.exe --run` itself. It is not a `components.list` entry. `launch_taskbar_config` starts `auto_core_taskbar.exe --config` in a new console. Log identities stay `taskbar`, `taskbar_settings`, `taskbar_config`, and `taskbar_builder`.
+
+`auto_core_keymap.exe --build` and startup resolve a shared `activate_<program>` name with the same rules. Ordinary duplicate names are resolved the same way from `keymap/shared_commands.map`, with a blank initial value and a `<provider>_<command>` alias. Alias collisions are checked against the command names and the aliases accepted by either map. `--build` is the only writer of `keymap/activate_commands.map` and `keymap/shared_commands.map`. It rebuilds that file from the successful exports and `data/taskbar/applications/*.map` when it writes `keymap/keymap_commands.txt`. A failed export leaves both maps unchanged. After every configured provider exports successfully, `shared_commands.map` drops a saved command that none of them registers and keeps the empty `[shared_commands]` section. A disabled component is still exported. `activate_commands.map` keeps a saved command that the discovery no longer offers. Startup reads the map and registers only actions it can invoke. One provider with no saved line keeps `activate_<program>` and gets no alias. A saved provider that is available runs the shared name, and each available provider is also published under its explicit alias. A saved provider that is unavailable is preserved, reported, and left unresolved. `refresh_taskbar_positions` is a hello command from the running authority and is not part of the `--build` disk catalog. WinKey dispatch stays in `auto_core.dll` after `connect()`.
 
 ## iTunes
 

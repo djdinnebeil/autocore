@@ -55,6 +55,7 @@
     <ClCompile Include="system\shell.cxx" />
     <ClCompile Include="component\text_inserter.cxx" />
     <ClCompile Include="taskbar\taskbar.cxx" />
+    <ClCompile Include="taskbar\activation_map.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="formatting\clock_formatting.hpp" />

@@ -236,7 +236,8 @@ namespace {
     }
 
     void register_launch_descriptor_commands(
-        command_registry::Registry& registry
+        command_registry::Registry& registry,
+        const std::unordered_set<std::string>& shared_names
     ) {
         const auto& parsed = loaded_catalog();
         if (!parsed.ok) {
@@ -258,6 +259,9 @@ namespace {
             }
 
             for (const auto& command : descriptor->descriptor.commands) {
+                if (shared_names.contains(command)) {
+                    continue;
+                }
                 if (registry.contains(command)) {
                     auto_core.log_alert(
                         "Skipping {} command '{}' because that name is already "
@@ -278,7 +282,8 @@ namespace {
                     },
                     std::string {
                         ac::main::launch_descriptor::catalog_description(command)
-                    }
+                    },
+                    name
                 );
             }
         }
@@ -803,7 +808,7 @@ namespace {
     void attach_taskbar_snapshot(StartedChild& child) {
         if (!ac::taskbar::connect()) {
             auto_core.log_alert(
-                "taskbar_ac.exe did not publish a snapshot; native "
+                "auto_core_taskbar.exe did not publish a snapshot; native "
                 "taskbar activation is unavailable for this session."
             );
             return;
@@ -821,10 +826,47 @@ namespace {
     }
 
     void start_taskbar() {
-        auto launched = try_launch("taskbar");
-        if (!launched) {
+        namespace protocol = ac::protocol::component;
+
+        auto pipe_result = ac::pipes::create_pipe_server(
+            protocol::pipe_name("taskbar")
+        );
+        if (!pipe_result) {
+            auto_core.log_alert(
+                "Failed to create the taskbar control pipe. Error: {}",
+                pipe_result.error().system_error
+            );
             return;
         }
+
+        const auto executable =
+            ac::paths::app_directory() / "auto_core_taskbar.exe";
+        std::error_code exists_error;
+        if (!std::filesystem::exists(executable, exists_error)) {
+            auto_core.log_alert(
+                "auto_core_taskbar.exe is missing; taskbar activation is "
+                "unavailable for this session."
+            );
+            pipe_result->reset();
+            return;
+        }
+
+        auto process = start_owned_process(executable, L"--run");
+        if (!process) {
+            auto_core.log_alert(
+                "Unable to start auto_core_taskbar.exe; taskbar activation "
+                "is unavailable for this session."
+            );
+            pipe_result->reset();
+            return;
+        }
+
+        std::optional<Launch> launched = Launch {
+            "taskbar",
+            std::move(*pipe_result),
+            process->process,
+            process->job
+        };
 
         const auto hello_bytes = wait_for_hello(
             launched->pipe,
@@ -1697,7 +1739,8 @@ void ac::main::components::invoke(
 }
 
 void ac::main::components::register_with(
-    command_registry::Registry& registry
+    command_registry::Registry& registry,
+    const std::unordered_set<std::string>& shared_names
 ) {
     std::unordered_set<std::string> preexisting;
     for (const auto& name : registry.registered_names()) {
@@ -1710,6 +1753,9 @@ void ac::main::components::register_with(
         }
         const std::string component = child->name;
         for (const auto& entry : child->catalog) {
+            if (shared_names.contains(entry.name)) {
+                continue;
+            }
             if (registry.contains(entry.name)) {
                 if (!preexisting.contains(entry.name)) {
                     auto_core.log_alert(
@@ -1735,7 +1781,8 @@ void ac::main::components::register_with(
                         };
                     },
                     entry.autocomplete,
-                    entry.description
+                    entry.description,
+                    component
                 );
             }
             else {
@@ -1744,13 +1791,85 @@ void ac::main::components::register_with(
                     [component, command = entry.name] {
                         ac::main::components::invoke(component, command);
                     },
-                    entry.description
+                    entry.description,
+                    component
                 );
             }
         }
     }
 
-    register_launch_descriptor_commands(registry);
+    register_launch_descriptor_commands(registry, shared_names);
+}
+
+std::vector<ac::main::components::AdvertisedCommand>
+ac::main::components::advertised_commands() {
+    std::vector<AdvertisedCommand> commands;
+    for (const auto& child : started_children) {
+        if (!child) {
+            continue;
+        }
+        for (const auto& entry : child->catalog) {
+            commands.push_back(AdvertisedCommand {
+                child->name,
+                entry.name,
+                entry.description
+            });
+        }
+    }
+
+    const auto& parsed = loaded_catalog();
+    if (!parsed.ok) {
+        return commands;
+    }
+    for (const auto& name : parsed.enabled) {
+        const auto descriptor = read_launch_descriptor(name);
+        if (!descriptor || !descriptor->ok) {
+            continue;
+        }
+        for (const auto& command : descriptor->descriptor.commands) {
+            commands.push_back(AdvertisedCommand {
+                name,
+                command,
+                std::string {
+                    ac::main::launch_descriptor::catalog_description(command)
+                }
+            });
+        }
+    }
+    return commands;
+}
+
+command_registry::Action ac::main::components::activation_action(
+    const std::string_view provider,
+    const std::string_view command
+) {
+    for (const auto& child : started_children) {
+        if (!child || child->name != provider) {
+            continue;
+        }
+        return [
+            component = std::string {provider},
+            expression = std::string {command}
+        ] {
+            ac::main::components::invoke(component, expression);
+        };
+    }
+
+    const auto descriptor = read_launch_descriptor(std::string {provider});
+    if (!descriptor || !descriptor->ok) {
+        return {};
+    }
+    const auto& commands = descriptor->descriptor.commands;
+    if (std::ranges::find(commands, command) == commands.end()) {
+        return {};
+    }
+    return [
+        component = std::string {provider},
+        expression = std::string {command},
+        launch = descriptor->descriptor
+    ] {
+        launch_from_descriptor(component, expression, launch);
+    };
 }
 
 ac::main::components::Session ac::main::components::initialize() {
@@ -1794,8 +1913,14 @@ ac::main::components::Session ac::main::components::initialize() {
 
     std::vector<std::string> remaining;
     remaining.reserve(parsed.enabled.size());
-    bool start_taskbar_first = false;
     for (const auto& name : parsed.enabled) {
+        if (name == "taskbar") {
+            auto_core.log_info(
+                "Ignoring components.list entry taskbar. "
+                "auto_core_taskbar.exe is a Main subsystem."
+            );
+            continue;
+        }
         if (const auto descriptor = read_launch_descriptor(name)) {
             if (!descriptor->ok) {
                 auto_core.log_alert(
@@ -1806,17 +1931,10 @@ ac::main::components::Session ac::main::components::initialize() {
             }
             continue;
         }
-        if (name == "taskbar") {
-            start_taskbar_first = true;
-        }
-        else {
-            remaining.push_back(name);
-        }
+        remaining.push_back(name);
     }
 
-    if (start_taskbar_first) {
-        start_taskbar();
-    }
+    start_taskbar();
     start_remaining(remaining);
 
     return session;

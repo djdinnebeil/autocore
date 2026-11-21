@@ -1,6 +1,8 @@
 module;
 
 #include "keymap_map_detail.hpp"
+#include "../../../core/taskbar/activation_catalog_description.hpp"
+#include "../../shared/provider_display_name.hpp"
 
 module auto_core.main.keymap.runtime;
 
@@ -19,24 +21,291 @@ import taskbar_firefox;
 
 import <Windows.h>;
 
+static bool is_activation_command(const std::string_view command) {
+    constexpr std::string_view prefix = "activate_";
+    return command.starts_with(prefix) && command.size() > prefix.size();
+}
+
+static void add_taskbar_offer(
+    std::vector<ac::taskbar::ActivationOffer>& offers,
+    std::vector<ac::taskbar::ActivationOffer>& shared_offers,
+    std::vector<std::string>& occupied,
+    std::string command,
+    std::string description,
+    std::string application
+) {
+    occupied.push_back(command);
+    auto& destination = is_activation_command(command) ? offers : shared_offers;
+    destination.push_back(ac::taskbar::ActivationOffer {
+        "taskbar",
+        std::move(command),
+        std::move(description),
+        std::move(application)
+    });
+}
+
+static command_registry::Action provider_action(
+    const ac::taskbar::ActivationAlias& alias
+) {
+    if (alias.provider == "taskbar" && !alias.application.empty()) {
+        return taskbar_activation_action(alias.application, alias.command);
+    }
+    return ac::main::components::activation_action(
+        alias.provider,
+        alias.command
+    );
+}
+
+struct UnselectedSharedCommand {
+    std::string command;
+    std::vector<std::string> aliases;
+};
+
+static std::vector<UnselectedSharedCommand>& unselected_shared_commands() {
+    static std::vector<UnselectedSharedCommand> commands;
+    return commands;
+}
+
+struct UnsetCatalogRow {
+    std::string command;
+    std::string description;
+};
+
+static std::vector<UnsetCatalogRow>& unset_catalog_rows() {
+    static std::vector<UnsetCatalogRow> rows;
+    return rows;
+}
+
+static void remember_unset_catalog(
+    const ac::taskbar::ActivationResolution& resolution
+) {
+    auto& rows = unset_catalog_rows();
+    for (const ac::taskbar::ActivationBinding& binding : resolution.bindings) {
+        if (!binding.explicit_blank || binding.offer_count < 2) {
+            continue;
+        }
+        rows.push_back(UnsetCatalogRow {
+            binding.command,
+            binding.unset_description
+        });
+    }
+}
+
+static std::unordered_set<std::string>& reported_unselected_shared() {
+    static std::unordered_set<std::string> reported;
+    return reported;
+}
+
+static void remember_unselected_shared(
+    const ac::taskbar::ActivationResolution& resolution
+) {
+    auto& commands = unselected_shared_commands();
+    commands.clear();
+    for (const ac::taskbar::ActivationBinding& binding : resolution.bindings) {
+        if (!binding.blank_selection) {
+            continue;
+        }
+        UnselectedSharedCommand entry;
+        entry.command = binding.command;
+        entry.aliases.reserve(binding.aliases.size());
+        for (const ac::taskbar::ActivationAlias& alias : binding.aliases) {
+            entry.aliases.push_back(alias.name);
+        }
+        commands.push_back(std::move(entry));
+    }
+}
+
+static void register_resolved(
+    command_registry::Registry& registry,
+    const ac::taskbar::ActivationResolution& resolution,
+    const std::string_view alias_label,
+    const std::string_view command_label,
+    const std::string_view map_name
+) {
+    for (const std::string& report : resolution.reports) {
+        auto_core.log_alert("{}", report);
+    }
+
+    for (const ac::taskbar::ActivationBinding& binding : resolution.bindings) {
+        for (const ac::taskbar::ActivationAlias& alias : binding.aliases) {
+            if (registry.contains(alias.name)) {
+                auto_core.log_alert(
+                    "{} '{}' was not registered because that command already "
+                    "exists.",
+                    alias_label,
+                    alias.name
+                );
+                continue;
+            }
+            command_registry::Action action = provider_action(alias);
+            if (!action) {
+                auto_core.log_alert(
+                    "{} '{}' was not registered because {} is unavailable.",
+                    alias_label,
+                    alias.name,
+                    alias.provider
+                );
+                continue;
+            }
+            registry.add(
+                alias.name,
+                std::move(action),
+                alias.description,
+                alias.provider
+            );
+        }
+
+        if (!binding.resolved || registry.contains(binding.command)) {
+            if (binding.resolved && registry.contains(binding.command)) {
+                auto_core.log_alert(
+                    "{} '{}' was not registered because that command already "
+                    "exists.",
+                    command_label,
+                    binding.command
+                );
+            }
+            continue;
+        }
+        const ac::taskbar::ActivationAlias selected {
+            binding.command,
+            binding.provider,
+            binding.command,
+            binding.description,
+            binding.application
+        };
+        command_registry::Action action = provider_action(selected);
+        if (!action) {
+            auto_core.log_alert(
+                "{} selects '{}' for {}, but that provider is unavailable.",
+                map_name,
+                binding.provider,
+                binding.command
+            );
+            continue;
+        }
+        registry.add(
+            binding.command,
+            std::move(action),
+            binding.description,
+            binding.provider
+        );
+    }
+}
+
 static command_registry::Registry create_runtime_command_registry() {
     command_registry::Registry registry;
+    unset_catalog_rows().clear();
+
+    std::vector<ac::taskbar::ActivationOffer> offers;
+    std::vector<ac::taskbar::ActivationOffer> shared_offers;
+    std::vector<std::string> occupied;
+    add_taskbar_offer(
+        offers,
+        shared_offers,
+        occupied,
+        "activate_wordpad",
+        ac::taskbar::activation_catalog_description(
+            "activate_wordpad",
+            "wordpad",
+            {}
+        ),
+        "wordpad"
+    );
+    add_taskbar_offer(
+        offers,
+        shared_offers,
+        occupied,
+        "activate_powershell_in_admin",
+        ac::taskbar::activation_catalog_description(
+            "activate_powershell_in_admin",
+            "powershell_admin",
+            {}
+        ),
+        "powershell_admin"
+    );
+    occupied.emplace_back("launch_powershell");
+    occupied.emplace_back("launch_gitbash");
+    occupied.emplace_back("launch_taskbar_config");
+    occupied.emplace_back("activate_firefox_or_open_reddit");
+    occupied.emplace_back("activate");
+
+    for (const ac::taskbar::ConfiguredActivationBinding& binding :
+         ac::taskbar::configured_activation_bindings_from_disk()) {
+        add_taskbar_offer(
+            offers,
+            shared_offers,
+            occupied,
+            binding.command,
+            binding.description,
+            binding.application
+        );
+    }
+    for (const ac::main::components::AdvertisedCommand& command :
+         ac::main::components::advertised_commands()) {
+        occupied.push_back(command.name);
+        ac::taskbar::ActivationOffer offer {
+            command.provider,
+            command.name,
+            command.description,
+            {}
+        };
+        if (is_activation_command(command.name)) {
+            offers.push_back(std::move(offer));
+        }
+        else {
+            shared_offers.push_back(std::move(offer));
+        }
+    }
+
+    ac::taskbar::ActivationResolution resolution =
+        ac::taskbar::resolve_activation_commands(
+            ac::paths::activation_map_file(),
+            offers,
+            occupied
+        );
+    ac::taskbar::ActivationResolution shared =
+        ac::taskbar::resolve_shared_commands(
+            ac::paths::shared_commands_map_file(),
+            shared_offers,
+            occupied
+        );
+    ac::taskbar::reconcile_provider_aliases(resolution, shared, occupied);
+    remember_unselected_shared(shared);
+    remember_unset_catalog(resolution);
+    remember_unset_catalog(shared);
+    std::unordered_set<std::string> shared_names;
+    for (const ac::taskbar::ActivationBinding& binding : resolution.bindings) {
+        shared_names.insert(binding.command);
+    }
+    for (const ac::taskbar::ActivationBinding& binding : shared.bindings) {
+        shared_names.insert(binding.command);
+    }
 
     test_commands::runtime_commands::register_with(registry);
     main_component::runtime_commands::register_with(registry);
-    taskbar_runtime_commands::register_reserved_with(registry);
-    // Configuration-defined Taskbar activation commands bind before child
-    // catalogs. Reserved Main commands above remain authoritative because
-    // Taskbar skips names that are already registered. A child command with
-    // the same name therefore remains only a fallback when no application
-    // map supplied that command.
-    taskbar_runtime_commands::register_configured_with(registry);
-    ac::main::components::register_with(registry);
+    taskbar_runtime_commands::register_reserved_with(registry, shared_names);
+    taskbar_runtime_commands::register_configured_with(registry, shared_names);
+    ac::main::components::register_with(registry, shared_names);
+    register_resolved(
+        registry,
+        resolution,
+        "activation alias",
+        "shared activation command",
+        "activate_commands.map"
+    );
+    register_resolved(
+        registry,
+        shared,
+        "shared command alias",
+        "shared command",
+        "shared_commands.map"
+    );
     taskbar_runtime_commands::register_with(registry);
     registry.add(
         "activate_firefox_or_open_reddit",
         &activate_firefox_or_open_reddit,
-        "Opens Reddit when Firefox is in front; otherwise activates Firefox."
+        "Opens Reddit when Firefox is in front; otherwise activates Firefox.",
+        "taskbar"
     );
 
     return registry;
@@ -59,16 +328,41 @@ static KeymapSettings keymap_settings() {
 static std::string catalog_contents(
     const command_registry::Registry& registry
 ) {
-    const std::vector<std::string> lines = registry.catalog_lines();
+    std::map<std::string, std::string> lines;
+    for (const command_registry::CatalogEntry& entry : registry.catalog_entries()) {
+        lines.emplace(
+            entry.name,
+            command_registry::format_merged_catalog_line(
+                entry.name,
+                ac::main::provider_display_name(entry.provider),
+                entry.description
+            )
+        );
+    }
+    for (const UnsetCatalogRow& row : unset_catalog_rows()) {
+        if (lines.contains(row.command)) {
+            continue;
+        }
+        lines.emplace(
+            row.command,
+            command_registry::format_merged_catalog_line(
+                row.command,
+                "Unset",
+                row.description
+            )
+        );
+    }
 
     std::size_t required_size = lines.size();
-    for (const std::string& line : lines) {
+    for (const auto& [name, line] : lines) {
+        (void)name;
         required_size += line.size();
     }
 
     std::string contents;
     contents.reserve(required_size);
-    for (const std::string& line : lines) {
+    for (const auto& [name, line] : lines) {
+        (void)name;
         contents += line;
         contents += '\n';
     }
@@ -277,6 +571,46 @@ static command_registry::Action no_op_action() {
     return [] {};
 }
 
+static std::string_view command_token(std::string_view expression) {
+    const auto arguments = expression.find('(');
+    if (arguments != std::string_view::npos) {
+        expression = expression.substr(0, arguments);
+    }
+    while (!expression.empty() &&
+           std::isspace(static_cast<unsigned char>(expression.front()))) {
+        expression.remove_prefix(1);
+    }
+    while (!expression.empty() &&
+           std::isspace(static_cast<unsigned char>(expression.back()))) {
+        expression.remove_suffix(1);
+    }
+    return expression;
+}
+
+static void report_unselected_shared(const UnselectedSharedCommand& entry) {
+    if (!reported_unselected_shared().insert(entry.command).second) {
+        return;
+    }
+    std::string aliases;
+    if (entry.aliases.empty()) {
+        aliases = "none";
+    }
+    else {
+        for (std::size_t index = 0; index < entry.aliases.size(); ++index) {
+            if (index != 0) {
+                aliases += ", ";
+            }
+            aliases += entry.aliases[index];
+        }
+    }
+    auto_core.log_alert(
+        "shared_commands.map has no provider selected for {}. "
+        "Available aliases: {}.",
+        entry.command,
+        aliases
+    );
+}
+
 static command_registry::Action incorrect_value_action(
     std::string display_name,
     std::string expression
@@ -299,6 +633,15 @@ static SideBind bind_side(
     std::string_view display_name
 ) {
     if (expression.empty()) {
+        return { no_op_action(), false };
+    }
+
+    const std::string_view token = command_token(expression);
+    for (const UnselectedSharedCommand& entry : unselected_shared_commands()) {
+        if (entry.command != token) {
+            continue;
+        }
+        report_unselected_shared(entry);
         return { no_op_action(), false };
     }
 

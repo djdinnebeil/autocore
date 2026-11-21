@@ -99,7 +99,7 @@ namespace {
             if (cached) {
                 taskbar_component().log_info(
                     "Using cached taskbar positions from "
-                    "taskbar/winkey_map.cache. Native Win+N mappings were not "
+                    "data/taskbar/winkey_map.cache. Native Win+N mappings were not "
                     "verified against the live taskbar."
                 );
             }
@@ -215,7 +215,7 @@ int run(const int argument_count, char* arguments[]) {
     auto registry = create_taskbar_command_registry();
     if (argument_count == 2 &&
         std::string_view {arguments[1]} == "--refresh-cache") {
-        const auto ini_path = ac::paths::component_config_file("taskbar");
+        const auto ini_path = ac::paths::taskbar_policy_file();
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =
@@ -289,10 +289,10 @@ int run(const int argument_count, char* arguments[]) {
         return 0;
     }
 
-    taskbar_component().log_info("taskbar_ac.exe started");
+    taskbar_component().log_info("auto_core_taskbar.exe started");
 
     {
-        const auto ini_path = ac::paths::component_config_file("taskbar");
+        const auto ini_path = ac::paths::taskbar_policy_file();
         if (!ac::ini::read(ini_path)) {
             std::error_code exists_error;
             const bool present =

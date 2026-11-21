@@ -12,17 +12,28 @@ process only.
 1. Wait for any previous `auto_core.exe` to exit (`Local\AutoCore.main`
    mutex, held until this process ends).
 2. If `config/auto_core.ini` is missing, the installation is new. Launch
-   `auto_core_settings.exe --initialize` and wait. Before its Auto Core menu, it establishes
-   `config/logging_policy.ini` with console I/O only. No-argument and `--init` ask
-   `Enable logging? [Y/n]:`. No runs `auto_core_settings.exe --config --area logging-policy --disable`, which
-   writes the compiled logging file with `disable_all = on`. Yes asks
-   `1. Use defaults` or `2. Configure`, which run the `logging-policy` route with `--seed`
-   or `--init`. `--seed` runs `auto_core_settings.exe --config --area logging-policy --seed`
-   and does not prompt. `--init --seed` asks only the enable question.
-   An existing `logging_policy.ini` is preserved. `auto_core_settings.exe --initialize` does not
-   write the file. After logging is resolved, its menu is `Auto Core` with
-   `1. Use defaults` and `2. Configure`. Use defaults propagates `--seed`.
-   Configure propagates `--init` and does not attach `--seed`.
+   `auto_core_settings.exe --initialize` and wait. Before its Auto Core menu, a missing
+   `config/logging_policy.ini` is seeded with logging enabled and `retention_days = 10`.
+   An existing file is left unchanged and resolved as saved. When this run creates
+   the file, `Logging configuration initialized.` is printed with the same console
+   status as the other Main configuration lines, immediately before
+   `Runtime configuration initialized.`. On interactive Use defaults that print
+   follows option 1. The initializer then logs
+   `Auto Core initialization` when that policy allows it. `--seed` does not prompt.
+   No-argument and `--init` show `Auto Core Configuration` with
+   `1. Use defaults` and `2. Configure`. Use defaults propagates `--seed` and does not
+   ask about logging. Configure propagates `--init` and does not attach `--seed`.
+   When this run created `logging_policy.ini`, Configure asks
+   `Enable Auto Core logging? [Y/n]:` before the other Main settings. Blank or Yes
+   leaves logging enabled. No runs
+   `auto_core_settings.exe --config --area logging-policy --disable`, which sets
+   `disable_all = on` and leaves `retention_days` and every other stored setting
+   unchanged. The policy command writes no log records when that update succeeds.
+   The initializer then logs `Auto Core logging has been disabled.` from its cached
+   enabled policy and suppresses further logging in that process. If the update fails,
+   initialization prints a console error and keeps logging enabled.
+   `auto_core_settings.exe --initialize` does not write the file itself.
+   `--init --seed` does not ask about logging.
    `--seed` skips that menu and also skips the Components menu, launching
    `auto_core_components.exe --initialize --seed`. `--init --seed` skips the Auto Core menu,
    passes both flags to the Main configuration owners, then shows the
@@ -180,10 +191,10 @@ another section follows it, or when a binding line is inside it, and leaves
 the file unchanged. A failed read, or a file containing a NUL byte, is also
 left unchanged. Catalog publication and the map update are separate. A later
 failure does not roll back a file already replaced. `[commands]` is command
-names only. Each `.txt` catalog line is a command name, or `name - description` when
-that command has a description. A blank description is omitted, including
+names only. Each per-provider catalog line is a command name, or `name - description` when
+that command has a description. The merged `keymap/keymap_commands.txt` line is `name [Provider] - description`, or `name [Provider]` when the description is empty. A blank description is omitted, including
 its separator. Main's startup rewrite of `keymap/keymap_commands.txt`
-publishes those lines from the live registry.
+publishes those lines from the commands it registered.
 
 A file that cannot be opened, or that has no usable
 rows (no resolved command on either side of any key), logs and installs an

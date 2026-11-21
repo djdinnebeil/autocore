@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../../core/component/components_list_detail.hpp"
+#include "../shared/provider_display_name.hpp"
 
 #include <filesystem>
 #include <string>
@@ -25,18 +26,13 @@ namespace ac::main::settings {
         std::string label;
         std::string executable;
         std::vector<std::string> arguments {};
+        /** When true, `executable` is resolved under the app directory. */
+        bool in_app_directory {false};
     };
 
     [[nodiscard]]
     inline std::string component_display_name(const std::string_view identity) {
-        if (identity == "itunes") {
-            return "iTunes";
-        }
-        std::string name {identity};
-        if (!name.empty() && name.front() >= 'a' && name.front() <= 'z') {
-            name.front() = static_cast<char>(name.front() - 'a' + 'A');
-        }
-        return name;
+        return provider_display_name(identity);
     }
 
     [[nodiscard]]
@@ -63,6 +59,12 @@ namespace ac::main::settings {
             "Modify Auto Core settings",
             "auto_core_settings.exe",
             {"--config"}
+        });
+        rows.push_back({
+            "Modify Taskbar settings",
+            "auto_core_taskbar.exe",
+            {"--settings"},
+            true
         });
         for (const auto& identity : identities) {
             rows.push_back({

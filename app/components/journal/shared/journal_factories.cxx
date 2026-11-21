@@ -35,7 +35,7 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .filename = "make_print_choice.list",
         .autocomplete = R"(make_print_choice("", false))",
         .catalog_description =
-            "A Journal factory function that creates a numbered print-choice command.",
+            "Journal factory function. Bind directly in keymap.map as make_print_choice(\"Name\", starting_range) or create an alias in make_print_choice.list.",
     },
     {
         .id = FactoryId::insert_text,
@@ -44,7 +44,7 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .filename = "print_and_insert_into_journal.list",
         .autocomplete = R"(print_and_insert_into_journal(""))",
         .catalog_description =
-            "A Journal factory function that creates a command which prints and inserts fixed text.",
+            "Journal factory function. Bind directly in keymap.map as print_and_insert_into_journal(\"Text\") or create an alias in print_and_insert_into_journal.list.",
     },
     {
         .id = FactoryId::roll_dice,
@@ -53,7 +53,7 @@ constexpr FactoryDescriptor factory_descriptors[] {
         .filename = "roll_dice.list",
         .autocomplete = "roll_dice(1, 6)",
         .catalog_description =
-            "A Journal factory function that creates a command which rolls dice and inserts the result.",
+            "Journal factory function. Bind directly in keymap.map as roll_dice(number_of_dice, number_of_sides) or create an alias in roll_dice.list.",
     },
 };
 
@@ -909,25 +909,13 @@ std::string describe_print_choice(const PrintChoiceArguments& choice) {
     );
 }
 
-bool ends_with_sentence_punctuation(const std::string_view text) {
-    if (text.empty()) {
-        return false;
-    }
-    const char last = text.back();
-    return last == '.' || last == '!' || last == '?';
-}
-
 std::string describe_insert_text(const InsertTextArguments& insert) {
     const std::string text =
         command_registry::normalize_catalog_description(insert.text);
     if (text.empty()) {
         return {};
     }
-    std::string description = "Prints and inserts \"" + text + "\"";
-    if (!ends_with_sentence_punctuation(text)) {
-        description.push_back('.');
-    }
-    return description;
+    return "Inserts the string \"" + text + "\" into the active textbox.";
 }
 
 std::string describe_dice(const DiceArguments& rolled) {

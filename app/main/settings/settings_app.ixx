@@ -166,9 +166,9 @@ export int run_settings_application() {
         }
 
         const auto& row = rows[static_cast<std::size_t>(value - 1)];
-        (void)run_and_wait(
-            ac::paths::component_executable_directory() / row.executable,
-            row.arguments
-        );
+        const auto directory = row.in_app_directory
+            ? ac::paths::app_directory()
+            : ac::paths::component_executable_directory();
+        (void)run_and_wait(directory / row.executable, row.arguments);
     }
 }

@@ -181,7 +181,7 @@ namespace ac::config::components_list {
             }
 
             const auto name = filename.substr(0, filename.size() - 7);
-            if (!is_valid_component_name(name)) {
+            if (!is_valid_component_name(name) || name == "taskbar") {
                 continue;
             }
             record_unique(names, name);

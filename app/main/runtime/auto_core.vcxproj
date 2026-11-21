@@ -172,7 +172,7 @@
     <ClCompile Include="..\..\core\system\process.ixx" />
     <ClCompile Include="..\..\core\system\shell.ixx" />
     <ClCompile Include="..\..\shared\protocols\component_protocol.ixx" />
-    <ClCompile Include="..\..\components\taskbar\shared\taskbar_protocol.ixx" />
+    <ClCompile Include="..\taskbar\shared\taskbar_protocol.ixx" />
     <ClCompile Include="..\..\core\system\thread.ixx" />
     <ClCompile Include="..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="test_commands.ixx" />
@@ -187,7 +187,7 @@
     <ClCompile Include="keyboard\key_codes.ixx" />
     <ClCompile Include="keyboard\keyboard_input.ixx" />
     <ClCompile Include="taskbar\main_taskbar.ixx" />
-    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.ixx" />
+    <ClCompile Include="taskbar\taskbar_firefox.ixx" />
     <ClCompile Include="lifecycle\program_ready.ixx" />
     <ClCompile Include="lifecycle\version_check.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
@@ -204,7 +204,7 @@
     <ClCompile Include="components\main_component.cxx" />
     <ClCompile Include="keyboard\keyboard_input.cxx" />
     <ClCompile Include="taskbar\main_taskbar.cxx" />
-    <ClCompile Include="..\..\components\taskbar\runtime\taskbar_firefox.cxx" />
+    <ClCompile Include="taskbar\taskbar_firefox.cxx" />
     <ClCompile Include="lifecycle\program_ready.cxx" />
     <ClCompile Include="lifecycle\version_check.cxx" />
     <ClCompile Include="..\utilities\logging_cleanup\logging_cleanup.ixx" />

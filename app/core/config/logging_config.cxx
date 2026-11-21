@@ -160,6 +160,8 @@ namespace ac::logging::config {
             return value;
         }
 
+        std::atomic_bool logging_suppressed {false};
+
         struct FamilyCache {
             std::mutex mutex;
             std::vector<std::pair<std::string, bool>> entries;
@@ -182,7 +184,9 @@ namespace ac::logging::config {
         bool read_family_logging(const LoggingScope& scope) {
             const auto ini_path = scope.name == "auto_core"
                 ? ac::paths::config_directory() / "auto_core.ini"
-                : ac::paths::component_config_file(scope.name);
+                : scope.name == "taskbar"
+                    ? ac::paths::taskbar_policy_file()
+                    : ac::paths::component_config_file(scope.name);
             const auto document = ac::ini::read(ini_path);
             std::optional<std::string> owned;
             std::optional<std::string_view> logging;
@@ -204,8 +208,13 @@ namespace ac::logging::config {
         (void)shared_data();
     }
 
+    void suppress() {
+        logging_suppressed.store(true, std::memory_order_relaxed);
+    }
+
     bool disable_all() {
-        return shared_data().disable_all;
+        return logging_suppressed.load(std::memory_order_relaxed) ||
+            shared_data().disable_all;
     }
 
     bool log_console_output() {
@@ -233,7 +242,7 @@ namespace ac::logging::config {
     }
 
     bool component_logging_enabled(const LoggingScope& scope) {
-        if (shared_data().disable_all) {
+        if (disable_all()) {
             return false;
         }
 

@@ -2,13 +2,15 @@
  * \file main.cxx
  * \brief First-run orchestration for Auto Core. Does not write configuration files.
  *
- * logging_policy.ini is established before any normal logging call.
- * `auto_core.ini` is created during initialization and retained as the
- * sentinel only if the required initialization sequence succeeds. When this
- * run creates `config/auto_core.ini`, a failed or cancelled required step
- * removes that file before exit. The Auto Core menu selects Main configuration
- * areas only. Interactive runs then ask whether to seed, configure, or
- * skip component initialization. `auto_core_components.exe --edit --seed`
+ * A missing logging_policy.ini is seeded enabled before any normal logging
+ * call. An existing policy is resolved and left unchanged. The Auto Core
+ * menu then selects Main configuration. Configure asks whether to keep
+ * logging only when this run created the policy. `auto_core.ini` is created
+ * during initialization and retained as the sentinel only if the required
+ * initialization sequence succeeds. When this run creates
+ * `config/auto_core.ini`, a failed or cancelled required step removes that
+ * file before exit. Interactive runs then ask whether to seed, configure,
+ * or skip component initialization. `auto_core_components.exe --edit --seed`
  * runs after that stage.
  */
 import std;
@@ -161,8 +163,15 @@ std::optional<sequence::ComponentLaunch> prompt_components() {
 [[nodiscard]]
 int run_sequence(
     const sequence::InitializationMode mode,
-    const bool prompt_for_components
+    const bool prompt_for_components,
+    const bool report_logging_initialized
 ) {
+    if (report_logging_initialized) {
+        ac::config::components_request::report_configuration_initialized(
+            auto_core_init,
+            "Logging"
+        );
+    }
     auto_core_init.log_debug(
         "Initialization mode selected: {}",
         mode_name(mode)
@@ -260,30 +269,66 @@ int launch_logging_config(const std::wstring_view arguments) {
 }
 
 [[nodiscard]]
-int establish_logging(const boot::InitMode mode) {
-    const auto selection = boot::select_logging_config(
-        mode,
-        logging_ini_exists(),
-        std::cin,
-        std::cout
-    );
-    if (selection.cancelled) {
-        return 1;
-    }
-    const auto outcome = boot::run_logging_config(
-        selection.arguments,
-        [](const boot::ConfigArguments arguments) {
-            return launch_logging_config(boot::config_arguments(arguments));
-        },
-        [] { return logging_ini_exists(); },
-        [] { ac::logging::config::resolve(); }
-    );
-    if (outcome.code != 0 || !outcome.logging_started) {
-        if (!logging_ini_exists()) {
-            std::cerr << "config/logging_policy.ini was not created.\n";
+std::optional<bool> prompt_auto_core_logging() {
+    while (true) {
+        std::cout << "Enable Auto Core logging? [Y/n]: ";
+        std::cout.flush();
+        const auto line = cfg::read_line();
+        if (!line) {
+            return std::nullopt;
         }
-        return 1;
+        if (line->empty() || *line == "y" || *line == "Y") {
+            return true;
+        }
+        if (*line == "n" || *line == "N") {
+            return false;
+        }
+        std::cout << "Enter Y or N.\n";
     }
+}
+
+/**
+ * Persists disable_all, then records the final log line from the cached
+ * enabled policy and stops further logging in this process. A failed update
+ * leaves that cache enabled.
+ */
+void disable_auto_core_logging() {
+    const int code = launch_logging_config(
+        boot::config_arguments(boot::ConfigArguments::disable)
+    );
+    if (code != 0) {
+        std::cerr
+            << "Failed to update config/logging_policy.ini. "
+            << "Logging remains enabled.\n";
+        return;
+    }
+    auto_core_init.log_info("Auto Core logging has been disabled.");
+    ac::logging::config::suppress();
+}
+
+[[nodiscard]]
+int establish_logging(bool& created_policy) {
+    created_policy = !logging_ini_exists();
+    if (created_policy) {
+        const auto outcome = boot::run_logging_config(
+            boot::ConfigArguments::seed,
+            [](const boot::ConfigArguments arguments) {
+                return launch_logging_config(boot::config_arguments(arguments));
+            },
+            [] { return logging_ini_exists(); },
+            [] { ac::logging::config::resolve(); }
+        );
+        if (outcome.code != 0 || !outcome.logging_started) {
+            if (!logging_ini_exists()) {
+                std::cerr << "config/logging_policy.ini was not created.\n";
+            }
+            return 1;
+        }
+    }
+    else {
+        ac::logging::config::resolve();
+    }
+    auto_core_init.log_info("Auto Core initialization");
     return 0;
 }
 
@@ -301,7 +346,8 @@ int run_initialization_program(int argc, char* argv[]) {
     if (mode != boot::InitMode::seed) {
         std::cout << "Auto Core Initialization\n";
     }
-    if (establish_logging(mode) != 0) {
+    bool created_policy = false;
+    if (establish_logging(created_policy) != 0) {
         return 1;
     }
     auto_core_init.log_info("auto_core_settings.exe --initialize started");
@@ -317,12 +363,17 @@ int run_initialization_program(int argc, char* argv[]) {
     }
 
     if (mode == boot::InitMode::seed) {
-        return run_sequence(sequence::InitializationMode::seed, false);
+        return run_sequence(
+            sequence::InitializationMode::seed,
+            false,
+            created_policy
+        );
     }
     if (mode == boot::InitMode::interactive_seed) {
         return run_sequence(
             sequence::InitializationMode::seeded_interactive,
-            true
+            true,
+            created_policy
         );
     }
 
@@ -333,10 +384,27 @@ int run_initialization_program(int argc, char* argv[]) {
             return 1;
         }
         if (line->empty() || *line == "1") {
-            return run_sequence(sequence::InitializationMode::seed, true);
+            return run_sequence(
+                sequence::InitializationMode::seed,
+                true,
+                created_policy
+            );
         }
         if (*line == "2") {
-            return run_sequence(sequence::InitializationMode::interactive, true);
+            if (created_policy) {
+                const auto enabled = prompt_auto_core_logging();
+                if (!enabled) {
+                    return 1;
+                }
+                if (!*enabled) {
+                    disable_auto_core_logging();
+                }
+            }
+            return run_sequence(
+                sequence::InitializationMode::interactive,
+                true,
+                created_policy
+            );
         }
         std::cout << "Enter 1 or 2.\n";
     }

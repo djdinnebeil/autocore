@@ -8,6 +8,7 @@ import components_editor_request;
 import config_menu;
 import logging_policy_config_detail;
 
+import <fstream>;
 import <iostream>;
 import auto_core.core.shell;
 
@@ -261,6 +262,182 @@ int initialize_missing() {
     return result.ok ? 0 : 1;
 }
 
+[[nodiscard]]
+std::string_view trim_view(const std::string_view value) {
+    const auto first = value.find_first_not_of(" \t");
+    if (first == std::string_view::npos) {
+        return {};
+    }
+    const auto last = value.find_last_not_of(" \t");
+    return value.substr(first, last - first + 1);
+}
+
+[[nodiscard]]
+bool read_file_bytes(
+    const std::filesystem::path& path,
+    std::string& text
+) {
+    std::ifstream input(path, std::ios::binary);
+    if (!input) {
+        return false;
+    }
+    text.assign(
+        std::istreambuf_iterator<char> {input},
+        std::istreambuf_iterator<char> {}
+    );
+    return !input.bad();
+}
+
+[[nodiscard]]
+bool logging_settings_preserved(
+    const ac::ini::Document& before,
+    const ac::ini::Document& after
+) {
+    for (const auto& [key, value] : before.settings("logging")) {
+        if (key == "disable_all") {
+            continue;
+        }
+        const auto current = after.find("logging", key);
+        if (!current || *current != value) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Changes only `[logging] disable_all` to `on`.
+ * Every other line is copied unchanged.
+ */
+[[nodiscard]]
+std::string with_disable_all_on(const std::string& text) {
+    std::string updated;
+    updated.reserve(text.size() + 32);
+    bool in_logging = false;
+    bool replaced = false;
+    std::size_t insert_at = std::string::npos;
+    std::string insert_newline = "\n";
+
+    std::size_t cursor = 0;
+    while (cursor < text.size()) {
+        const auto break_at = text.find_first_of("\r\n", cursor);
+        const auto line_end =
+            break_at == std::string::npos ? text.size() : break_at;
+        const std::string_view line {
+            text.data() + cursor,
+            line_end - cursor
+        };
+        std::string_view ending;
+        auto next = line_end;
+        if (break_at != std::string::npos) {
+            if (text[break_at] == '\r' &&
+                break_at + 1 < text.size() &&
+                text[break_at + 1] == '\n') {
+                ending = std::string_view {text.data() + break_at, 2};
+                next = break_at + 2;
+            }
+            else {
+                ending = std::string_view {text.data() + break_at, 1};
+                next = break_at + 1;
+            }
+        }
+
+        const auto trimmed = trim_view(line);
+        const bool comment =
+            trimmed.starts_with('#') || trimmed.starts_with(';');
+        const bool section = !comment &&
+            trimmed.size() >= 2 &&
+            trimmed.front() == '[' &&
+            trimmed.back() == ']';
+        if (section) {
+            const auto name = trim_view(trimmed.substr(1, trimmed.size() - 2));
+            in_logging = name == "logging";
+            updated.append(line);
+            updated.append(ending);
+            if (in_logging) {
+                insert_at = updated.size();
+                insert_newline = ending.empty()
+                    ? std::string {"\n"}
+                    : std::string {ending};
+            }
+        }
+        else if (
+            in_logging &&
+            !comment &&
+            line.find('=') != std::string_view::npos &&
+            trim_view(line.substr(0, line.find('='))) == "disable_all"
+        ) {
+            replaced = true;
+            const auto equals = line.find('=');
+            auto value_start = equals + 1;
+            while (value_start < line.size() &&
+                (line[value_start] == ' ' || line[value_start] == '\t')) {
+                ++value_start;
+            }
+            updated.append(line.substr(0, value_start));
+            updated.append("on");
+            updated.append(ending);
+        }
+        else {
+            updated.append(line);
+            updated.append(ending);
+        }
+        cursor = next;
+    }
+
+    if (!replaced) {
+        const auto inserted = std::string {"disable_all = on"} + insert_newline;
+        if (insert_at == std::string::npos) {
+            if (!updated.empty() && updated.back() != '\n') {
+                updated.push_back('\n');
+            }
+            updated.append("[logging]\n");
+            updated.append(inserted);
+        }
+        else {
+            updated.insert(insert_at, inserted);
+        }
+    }
+    return updated;
+}
+
+[[nodiscard]]
+bool disable_all_is_on() {
+    const auto document = ac::ini::read(ini_path());
+    if (!document) {
+        return false;
+    }
+    const auto value = document->find("logging", "disable_all");
+    return value && *value == "on";
+}
+
+/**
+ * Sets `disable_all = on` in an existing policy and checks the result.
+ * Other logging settings must still parse to their previous values.
+ * This function does not log.
+ */
+[[nodiscard]]
+bool disable_existing_policy() {
+    const auto path = ini_path();
+    const auto before = ac::ini::read(path);
+    std::string text;
+    if (!before || !read_file_bytes(path, text)) {
+        std::cerr << "Failed to read " << path.string() << ".\n";
+        return false;
+    }
+    if (!cfg::write_bytes(path, with_disable_all_on(text))) {
+        std::cerr << "Failed to write " << path.string() << ".\n";
+        return false;
+    }
+    const auto after = ac::ini::read(path);
+    if (!after || !disable_all_is_on() ||
+        !logging_settings_preserved(*before, *after)) {
+        std::cerr << "Failed to write " << path.string() << ".\n";
+        return false;
+    }
+    return true;
+}
+
 } // namespace
 
 int run_logging_policy_config(int argc, char* argv[]) {
@@ -299,12 +476,13 @@ int run_logging_policy_config(int argc, char* argv[]) {
         disable_requested
     );
     if (action == logging::Action::disable) {
-        if (!write_values(logging::disabled_defaults())) {
+        if (present) {
+            return disable_existing_policy() ? 0 : 1;
+        }
+        if (!write_values(logging::disabled_defaults()) || !disable_all_is_on()) {
             std::cerr << "Failed to write " << ini_path().string() << ".\n";
             return 1;
         }
-        logging_policy_config.log_info("Logging Policy configuration opened");
-        req::log_configuration_initialized(logging_policy_config);
         return 0;
     }
     if (action == logging::Action::seed) {
@@ -340,12 +518,6 @@ int run_logging_policy_config(int argc, char* argv[]) {
     req::log_config_request(logging_policy_config, *launch);
     if (launch->seed) {
         req::log_seed_skipped(logging_policy_config, "config/logging_policy.ini");
-        return 0;
-    }
-    if (disable_requested) {
-        logging_policy_config.log_debug(
-            "Disable skipped; config/logging_policy.ini already exists"
-        );
         return 0;
     }
     if (launch->init) {

@@ -42,7 +42,33 @@ export namespace ac::main::components {
      * Main-local names must already be registered so they win collisions.
      * On-demand commands come from `AC_LAUNCH_DESCRIPTOR` in the executable.
      */
-    void register_with(command_registry::Registry& registry);
+    void register_with(
+        command_registry::Registry& registry,
+        const std::unordered_set<std::string>& shared_names
+    );
+
+    /** A command a started component or launch descriptor can run. */
+    struct AdvertisedCommand {
+        std::string provider;
+        std::string name;
+        std::string description;
+    };
+
+    /**
+     * \brief Lists commands from started children and enabled launch
+     *        descriptors. A component that failed to start is absent.
+     */
+    [[nodiscard]] std::vector<AdvertisedCommand> advertised_commands();
+
+    /**
+     * \brief Returns the action for a provider command this process can
+     *        invoke. Empty when that provider is not running and has no
+     *        launch descriptor.
+     */
+    [[nodiscard]] command_registry::Action activation_action(
+        std::string_view provider,
+        std::string_view command
+    );
 
     /**
      * \brief Forwards `expression` to a started child on its control pipe.

@@ -1,6 +1,6 @@
 /**
  * \file taskbar_commands.ixx
- * \brief Rebuildable command registry owned by taskbar_ac.exe.
+ * \brief Rebuildable command registry owned by auto_core_taskbar.exe.
  */
 export module taskbar_commands;
 

@@ -50,7 +50,7 @@ When `config/auto_core.ini` is missing, Auto Core launches `auto_core_settings.e
 Common follow-up tasks:
 
 - **Keymap:** Edit `dist/keymap.map`. `auto_core_keymap.exe` with no arguments seeds a missing map, builds the command lists, and opens a menu to rebuild or exit. `--seed` does not overwrite an existing map. `--build` updates the final `[commands]` section with command names.
-- **Taskbar:** Run `taskbar_ac.exe --builder` when pinned applications or executable paths differ. See the [Taskbar manual](docs/manual/components/taskbar.md).
+- **Taskbar:** Run `app\auto_core_taskbar.exe --builder` when pinned applications or executable paths differ. See the [Taskbar manual](docs/manual/components/taskbar.md).
 - **Component settings:** Run `<name>_ac.exe --config` to create or update `config/components/<name>.ini`. A third-party component uses the same command.
 - **Spotify:** Authorize separately with `spotify_ac.exe --oauth`. See the [Spotify manual](docs/manual/components/spotify.md).
 - **Local server:** Restart `server_ac.exe` after changing its configuration, port, or document root.
@@ -76,7 +76,7 @@ The main application registers the Windows low-level keyboard hook, passes confi
 | Logger | Combine component logs into a main log | `logger_ac.exe` |
 | iTunes | Playback control through COM automation | `itunes_ac.exe` |
 | Spotify | Web API playback control and listening history | `spotify_ac.exe` |
-| Taskbar | Native taskbar activation and mappings | `taskbar_ac.exe` |
+| Taskbar | Native taskbar activation and mappings | `auto_core_taskbar.exe` |
 | Server | Loopback HTTP local-file server | `server_ac.exe` |
 | Writer | Text insertion, notes, timestamps, and task lists | `writer_ac.exe` |
 | Slash | Recycle-bin utility | `slash_ac.exe` |
