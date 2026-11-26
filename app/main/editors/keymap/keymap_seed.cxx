@@ -9,7 +9,7 @@ import <Windows.h>;
 
 namespace {
 
-ac::Component keymap_editor {"keymap_editor"};
+ac::Component keymap_editor {"keymap_editor", "auto_core"};
 
 [[nodiscard]]
 std::string mappings_seed() {

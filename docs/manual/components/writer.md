@@ -32,6 +32,7 @@ Writer directory does not affect an absolute `notes_subdirectory`.
 | `print_date_iso_with_timestamp` | Inserts `YYYY-MM-DD - HH:MM`. |
 | `print_date_iso_with_timestamp_w` | Inserts the same date and time with an en dash. |
 | `add_brackets_around_clipboard` | Inserts the clipboard text inside `[` and `]`. |
+| `activate_excel` | Resolves through `keymap\activate_commands.map`. `writer_activate_excel` invokes Writer directly. `taskbar_excel` activates Excel through the Taskbar helper when `excel.map` exists. |
 | `insert_<filename>` | Inserts one file from `text`. `writer_ac.exe --builder` creates these names. |
 
 `Hello World.txt` becomes `insert_hello_world`. The command reads that file when it runs and pastes the bytes unchanged, including line breaks. An empty file inserts nothing. `select_and_insert_text` is unchanged.

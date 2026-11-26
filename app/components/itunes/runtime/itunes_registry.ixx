@@ -6,10 +6,6 @@ export module itunes_registry;
 import std;
 import command_registry;
 
-export inline constexpr std::string_view itunes_activation_fallback_message =
-    "Pin or start iTunes, then run auto_core_taskbar.exe --builder to generate "
-    "itunes.map.";
-
 export struct itunes_command_actions {
     command_registry::Action activate_itunes;
     command_registry::Action print_songs;

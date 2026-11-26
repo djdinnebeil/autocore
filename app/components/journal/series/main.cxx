@@ -17,7 +17,8 @@ namespace {
 
 ac::Component journal_series {
     "journal_series",
-    ac::logging::config::LoggingScope {"journal"}
+    ac::logging::config::LoggingScope {"journal"},
+    ac::SharedLog {"journal"}
 };
 
 std::optional<journal::sqlite::Store> series_connection;

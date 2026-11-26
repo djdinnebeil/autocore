@@ -51,23 +51,6 @@ namespace ac::keyboard {
             return false;
         }
 
-        void send_single_key(const BYTE vk_code) {
-            INPUT inputs[2] = {};
-
-            inputs[0].type = INPUT_KEYBOARD;
-            inputs[0].ki.wVk = vk_code;
-
-            inputs[1].type = INPUT_KEYBOARD;
-            inputs[1].ki.wVk = vk_code;
-            inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-
-            send_keyboard_inputs(
-                inputs,
-                ARRAYSIZE(inputs),
-                "single key"
-            );
-        }
-
     }
 
     bool send_winkey(const int position) {
@@ -100,46 +83,33 @@ namespace ac::keyboard {
         return send_winkey(position == 10 ? 0 : position);
     }
 
-    void send_number_to_winkey(const int position) {
-        if (position < 0 || position > 9) {
-            ac::error::log(
-                "Invalid taskbar position: {}. Expected 0 through 9.\n",
-                position
-            );
-            return;
-        }
-        send_single_key(static_cast<BYTE>('0' + position));
-    }
-
-    void send_taskbar_position_while_win_held(
-        const std::uint8_t position
-    ) {
-        if (position < 1 || position > 10) {
-            ac::error::log(
-                "Invalid logical taskbar position: {}. Expected 1 through 10.\n",
-                position
-            );
-            return;
-        }
-
-        send_number_to_winkey(position == 10 ? 0 : position);
-    }
-
-    bool press_and_hold_winkey() {
-        INPUT input = {};
+    bool press_winkey() {
+        INPUT input {};
         input.type = INPUT_KEYBOARD;
         input.ki.wVk = VK_RWIN;
-
-        return send_keyboard_inputs(&input, 1, "Windows-key press");
+        return send_keyboard_inputs(&input, 1, "Win key press");
     }
 
     bool release_winkey() {
-        INPUT input = {};
+        INPUT input {};
         input.type = INPUT_KEYBOARD;
         input.ki.wVk = VK_RWIN;
         input.ki.dwFlags = KEYEVENTF_KEYUP;
+        return send_keyboard_inputs(&input, 1, "Win key release");
+    }
 
-        return send_keyboard_inputs(&input, 1, "Windows-key release");
+    bool tap_taskbar_digit(const std::uint8_t digit) {
+        if (digit > 9) {
+            ac::error::log(
+                "Invalid taskbar digit: {}. Expected 0 through 9.\n",
+                digit
+            );
+            return false;
+        }
+        const std::array<BYTE, 1> key {
+            static_cast<BYTE>('0' + digit)
+        };
+        return send_key_combination(key);
     }
 
     bool send_linebreak() {

@@ -38,6 +38,7 @@ inline constexpr Command print_date_iso_with_timestamp_w {
 inline constexpr Command add_brackets_around_clipboard {
     "add_brackets_around_clipboard"
 };
+inline constexpr Command activate_excel {"activate_excel"};
 inline constexpr std::array commands {
     select_and_insert_session_prompt,
     select_and_insert_text,
@@ -50,6 +51,7 @@ inline constexpr std::array commands {
     print_date_iso_with_timestamp,
     print_date_iso_with_timestamp_w,
     add_brackets_around_clipboard,
+    activate_excel,
 };
 
 } // namespace ac::protocol::writer

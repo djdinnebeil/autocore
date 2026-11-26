@@ -28,7 +28,8 @@ namespace ac {
     public:
         explicit Impl(const std::string_view component_name)
             : session_start(ac::clock::get_local_datetime()),
-              name(component_name) {
+              name(component_name),
+              log_name(component_name) {
         }
 
         Impl(
@@ -37,11 +38,33 @@ namespace ac {
         )
             : session_start(ac::clock::get_local_datetime()),
               name(component_name),
+              log_name(component_name),
+              scope(OwnedScope {std::string {scope.name}, scope.fallback}) {
+        }
+
+        Impl(
+            const std::string_view component_name,
+            const std::string_view shared_log_name
+        )
+            : session_start(ac::clock::get_local_datetime()),
+              name(component_name),
+              log_name(shared_log_name) {
+        }
+
+        Impl(
+            const std::string_view component_name,
+            const ac::logging::config::LoggingScope scope,
+            const SharedLog shared_log
+        )
+            : session_start(ac::clock::get_local_datetime()),
+              name(component_name),
+              log_name(shared_log.name),
               scope(OwnedScope {std::string {scope.name}, scope.fallback}) {
         }
 
         const ac::clock::DateTime session_start;
         std::string name;
+        std::string log_name;
         std::optional<OwnedScope> scope;
         std::mutex routing_mutex;
         std::unique_ptr<ac::component_detail::ComponentLogger> component_logger;
@@ -74,8 +97,9 @@ namespace ac {
             }
             component_logger = std::make_unique<ac::component_detail::ComponentLogger>(
                 name,
-                ac::logging::config::components_directory() / name,
-                session_start
+                ac::logging::config::components_directory() / log_name,
+                session_start,
+                log_name
             );
         }
 
@@ -157,6 +181,21 @@ namespace ac {
         const ac::logging::config::LoggingScope scope
     )
         : impl_(std::make_unique<Impl>(name, scope)) {
+    }
+
+    Component::Component(
+        const std::string_view name,
+        const std::string_view log_directory_name
+    )
+        : impl_(std::make_unique<Impl>(name, log_directory_name)) {
+    }
+
+    Component::Component(
+        const std::string_view name,
+        const ac::logging::config::LoggingScope scope,
+        const SharedLog shared_log
+    )
+        : impl_(std::make_unique<Impl>(name, scope, shared_log)) {
     }
 
     Component::~Component() noexcept = default;

@@ -21,7 +21,7 @@ namespace list = ac::config::components_list;
 
 namespace {
 
-ac::Component components_init {"components_init"};
+ac::Component components_init {"components_init", "auto_core"};
 
 [[nodiscard]]
 std::optional<std::vector<std::string>> discover_components() {

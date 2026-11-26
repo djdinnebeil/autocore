@@ -27,7 +27,7 @@ namespace publish = ac::components_list_publish;
 
 namespace {
 
-ac::Component components_editor {"components_editor"};
+ac::Component components_editor {"components_editor", "auto_core"};
 
 [[nodiscard]]
 std::filesystem::path ini_path() {

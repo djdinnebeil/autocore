@@ -309,7 +309,7 @@ namespace ac::paths {
     const std::filesystem::path&
         error_log_directory() {
         static const std::filesystem::path directory =
-            installation_root() / "errors";
+            installation_root() / "data" / "errors";
 
         return directory;
     }

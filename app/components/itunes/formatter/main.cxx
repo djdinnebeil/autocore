@@ -30,7 +30,8 @@ namespace {
 
 ac::Component itunes_formatter {
     "itunes_formatter",
-    ac::logging::config::LoggingScope {"itunes"}
+    ac::logging::config::LoggingScope {"itunes"},
+    ac::SharedLog {"itunes"}
 };
 
 std::string_view trim(std::string_view value) {

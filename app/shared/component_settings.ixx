@@ -50,11 +50,21 @@ export namespace ac::component_settings {
         DWORD creation_flags {0};
     };
 
+    /**
+     * \brief One in-process action inserted after delegated launches and
+     *        before Enable/Disable. `invoke` runs on the menu thread.
+     */
+    struct LocalAction {
+        std::string label;
+        void (*invoke)() = nullptr;
+    };
+
     enum class MenuKind {
         initialize,
         configure,
         complete_initialization,
         delegated,
+        local,
         toggle,
         exit
     };
@@ -74,6 +84,7 @@ export namespace ac::component_settings {
          */
         bool initialization_incomplete {false};
         std::span<const DelegatedAction> delegated {};
+        std::span<const LocalAction> local {};
     };
 
     /**
@@ -104,6 +115,14 @@ export namespace ac::component_settings {
             entries.push_back({
                 MenuKind::delegated,
                 model.delegated[index].label,
+                index
+            });
+        }
+
+        for (std::size_t index = 0; index < model.local.size(); ++index) {
+            entries.push_back({
+                MenuKind::local,
+                model.local[index].label,
                 index
             });
         }
@@ -171,7 +190,8 @@ export namespace ac::component_settings {
         std::string_view name,
         std::span<const DelegatedAction> delegated = {},
         BaselineProbe baseline_incomplete = nullptr,
-        const ConfigLaunch& config_launch = {}
+        const ConfigLaunch& config_launch = {},
+        std::span<const LocalAction> local = {}
     );
 
     [[nodiscard]]
@@ -180,7 +200,8 @@ export namespace ac::component_settings {
         ac::logging::config::LoggingFallback fallback,
         std::span<const DelegatedAction> delegated = {},
         BaselineProbe baseline_incomplete = nullptr,
-        const ConfigLaunch& config_launch = {}
+        const ConfigLaunch& config_launch = {},
+        std::span<const LocalAction> local = {}
     );
 
 } // namespace ac::component_settings
@@ -338,14 +359,16 @@ namespace ac::component_settings {
         const std::string_view name,
         const std::span<const DelegatedAction> delegated,
         const BaselineProbe baseline_incomplete,
-        const ConfigLaunch& config_launch
+        const ConfigLaunch& config_launch,
+        const std::span<const LocalAction> local
     ) {
         return run(
             name,
             ac::logging::config::LoggingFallback::global_default,
             delegated,
             baseline_incomplete,
-            config_launch
+            config_launch,
+            local
         );
     }
 
@@ -355,7 +378,8 @@ namespace ac::component_settings {
         const ac::logging::config::LoggingFallback fallback,
         const std::span<const DelegatedAction> delegated,
         const BaselineProbe baseline_incomplete,
-        const ConfigLaunch& config_launch
+        const ConfigLaunch& config_launch,
+        const std::span<const LocalAction> local
     ) {
         if (!request::is_valid_component_name(name)) {
             std::cerr << "Invalid component name: " << name << '\n';
@@ -364,7 +388,8 @@ namespace ac::component_settings {
 
         ac::Component settings {
             std::string {name} + "_settings",
-            ac::logging::config::LoggingScope {name, fallback}
+            ac::logging::config::LoggingScope {name, fallback},
+            ac::SharedLog {name}
         };
         ConfigLaunch launch = config_launch;
         if (launch.executable.empty()) {
@@ -393,7 +418,8 @@ namespace ac::component_settings {
                 .configuration_present = configuration,
                 .enabled = state.enablement == list::ListedEnablement::enabled,
                 .initialization_incomplete = incomplete,
-                .delegated = delegated
+                .delegated = delegated,
+                .local = local
             });
 
             settings.log_alert("{}", name);
@@ -448,6 +474,13 @@ namespace ac::component_settings {
                         action.arguments,
                         action.creation_flags
                     );
+                    break;
+                }
+                case MenuKind::local: {
+                    const LocalAction& action = local[entry.delegated_index];
+                    if (action.invoke != nullptr) {
+                        action.invoke();
+                    }
                     break;
                 }
                 case MenuKind::toggle: {

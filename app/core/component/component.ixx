@@ -15,6 +15,17 @@ import auto_core.core.logging.config;
 
 export namespace ac {
     /**
+     * \brief Names the daily log shared by every area of one component.
+     *
+     * `name` is both the directory under `components/` and the filename
+     * stem `{date}_<name>.log`. The component's own name stays the source
+     * area and is written on each record when it differs from `name`.
+     */
+    struct SharedLog {
+        std::string_view name;
+    };
+
+    /**
      * \brief Classifies one component message before policy filtering.
      *
      * `trace`, `debug`, `info`, and `alert` are diagnostic severities.
@@ -56,6 +67,33 @@ export namespace ac {
         AC_API Component(
             std::string_view name,
             ac::logging::config::LoggingScope scope
+        );
+
+        /**
+         * \brief Starts a named session that appends to a shared log.
+         *
+         * `log_directory_name` selects both
+         * `components/<log_directory_name>/` and
+         * `{date}_<log_directory_name>.log`. `name` stays the session
+         * identity and is written on every record. Logging scope is
+         * unchanged from the single-argument constructor.
+         */
+        AC_API Component(
+            std::string_view name,
+            std::string_view log_directory_name
+        );
+
+        /**
+         * \brief Starts a scoped session that appends to a shared daily log.
+         *
+         * `log.name` selects both `components/<log.name>/` and
+         * `{date}_<log.name>.log`. `name` stays the source area. `scope`
+         * selects the family INI and fallback.
+         */
+        AC_API Component(
+            std::string_view name,
+            ac::logging::config::LoggingScope scope,
+            SharedLog log
         );
         /** \brief Closes the local component logs. */
         AC_API ~Component() noexcept;

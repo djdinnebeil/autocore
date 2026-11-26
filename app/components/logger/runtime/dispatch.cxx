@@ -21,6 +21,7 @@ namespace ac::logger::config {
 
 namespace ac::logger::settings {
     int run();
+    int run_after_refresh();
 }
 
 namespace {
@@ -78,14 +79,14 @@ int open_direct() {
     const bool present = std::filesystem::exists(path, error);
     // A failed existence check matches settings: treat the INI as present.
     if (error || present) {
-        return ac::logger::settings::run();
+        return ac::logger::settings::run_after_refresh();
     }
 
     const int init_code = launch_config_init();
     if (init_code != 0) {
         return init_code;
     }
-    return ac::logger::settings::run();
+    return ac::logger::settings::run_after_refresh();
 }
 
 } // namespace

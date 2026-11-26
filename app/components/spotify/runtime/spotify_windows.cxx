@@ -5,7 +5,6 @@
 module spotify_client;
 
 import std;
-import auto_core.core.keyboard;
 import auto_core.taskbar;
 import auto_core.core.thread;
 import spotify_component;
@@ -49,12 +48,7 @@ BOOL CALLBACK enum_spotify_premium_window(HWND hwnd, LPARAM lParam) {
  * \brief Activates the Spotify window.
  */
 void Spotify::activate() {
-    if (ac::taskbar::try_activate_native("spotify")) {
-        return;
-    }
-    spotify_component.log_alert(
-        "Spotify is not present in the native taskbar snapshot."
-    );
+    ac::taskbar::activate_application("spotify", "activate_spotify");
 }
 /**
  * \brief Checks if the Spotify application is open.

@@ -18,7 +18,9 @@ command_registry::Registry create_itunes_command_registry(
             "activate_itunes",
             "itunes",
             {}
-        )
+        ),
+        {},
+        "itunes"
     );
     registry.add(
         std::string {itunes::commands::print_songs.name},

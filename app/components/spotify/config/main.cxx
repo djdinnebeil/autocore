@@ -19,7 +19,8 @@ namespace {
 
 ac::Component spotify_config {
     "spotify_config",
-    ac::logging::config::LoggingScope {"spotify"}
+    ac::logging::config::LoggingScope {"spotify"},
+    ac::SharedLog {"spotify"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

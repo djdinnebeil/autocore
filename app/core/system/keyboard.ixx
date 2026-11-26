@@ -4,13 +4,10 @@
  *
  * Win+digit chords use the right Windows key (`VK_RWIN`). Digit positions
  * are 0 through 9; logical taskbar positions are 1 through 10, where 10
- * sends Win+0. A hold session has no timeout; interactive cycling state
- * lives in Main, not in this DLL.
+ * sends Win+0.
  *
  * Invalid arguments and `SendInput` failures are reported through
- * `ac::error`. Hold, release, and held-Win digit helpers stay `void`: a
- * failed send is logged and the caller still owns pairing press with
- * release.
+ * `ac::error`.
  */
 module;
 
@@ -38,40 +35,22 @@ export namespace ac::keyboard {
         std::uint8_t position
     );
     /**
-     * \brief Presses and releases a number key while Win remains held.
-     * \param number A number from 0 through 9.
-     *
-     * This is intended for use between `press_and_hold_winkey()` and
-     * `release_winkey()`. Invalid numbers and `SendInput` failures are
-     * reported through `ac::error`.
+     * \brief Presses the right Windows key and leaves it down.
+     * \return `false` when `SendInput` does not accept the event.
      */
-    AC_API void send_number_to_winkey(int number);
+    AC_API [[nodiscard]] bool press_winkey();
     /**
-     * \brief Sends a logical taskbar position while Win remains held.
-     * \param position A position from 1 through 10. Position 10 sends key 0.
-     */
-    AC_API void send_taskbar_position_while_win_held(
-        std::uint8_t position
-    );
-    /**
-     * \brief Sends a Windows-key press without a matching release.
-     *
-     * The caller owns the hold session. There is no timeout. Pair every
-     * press with `release_winkey()`, including when `SendInput` fails and
-     * is reported through `ac::error`. Interactive cycling state lives in
-     * Main, not in this DLL.
-     * \return `true` when Windows accepts the generated key-down event.
-     */
-    AC_API [[nodiscard]] bool press_and_hold_winkey();
-    /**
-     * \brief Sends a Windows-key release for a hold started by
-     * `press_and_hold_winkey()`.
-     *
-     * A failed `SendInput` is reported through `ac::error`. The caller
-     * still owns the hold session.
-     * \return `true` when Windows accepts the generated key-up event.
+     * \brief Releases the right Windows key pressed by `press_winkey`.
+     * \return `false` when `SendInput` does not accept the event.
      */
     AC_API [[nodiscard]] bool release_winkey();
+    /**
+     * \brief Taps a taskbar digit without pressing or releasing Win.
+     * \param digit A digit from 0 through 9. Digit 0 is the slot 10 key.
+     * \return `false` when the digit is outside 0 through 9 or `SendInput`
+     * does not accept both events.
+     */
+    AC_API [[nodiscard]] bool tap_taskbar_digit(std::uint8_t digit);
     /**
      * \brief Sends Shift+Enter to insert a linebreak without submitting
      * common chat-style text fields.

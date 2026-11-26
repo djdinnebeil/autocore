@@ -19,7 +19,8 @@ namespace {
 
 ac::Component writer_config {
     "writer_config",
-    ac::logging::config::LoggingScope {"writer"}
+    ac::logging::config::LoggingScope {"writer"},
+    ac::SharedLog {"writer"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

@@ -7,10 +7,6 @@ export module spotify_registry;
 import std;
 import command_registry;
 
-export inline constexpr std::string_view spotify_activation_fallback_message =
-    "Pin or start Spotify, then run auto_core_taskbar.exe --builder to generate "
-    "spotify.map.";
-
 export struct spotify_command_actions {
     command_registry::Action activate_spotify;
     command_registry::Action get_queue;

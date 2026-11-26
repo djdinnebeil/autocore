@@ -22,7 +22,7 @@ export namespace ac::shell {
      * \brief Assigns `Djdinn.AutoCore` to the current process.
      *
      * Calls `SetCurrentProcessExplicitAppUserModelID`. A failed call is
-     * written to stderr and `errors/errors.log`. Startup continues either way.
+     * written to stderr and `data/errors/errors.log`. Startup continues either way.
      */
     AC_API void set_process_app_user_model_id() noexcept;
 }

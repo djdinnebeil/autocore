@@ -12,7 +12,8 @@ namespace {
 
 ac::Component journal_builder {
     "journal_builder",
-    ac::logging::config::LoggingScope {"journal"}
+    ac::logging::config::LoggingScope {"journal"},
+    ac::SharedLog {"journal"}
 };
 
 std::string_view trim(std::string_view value) {

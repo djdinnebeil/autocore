@@ -5,6 +5,7 @@ module journal_commands;
 
 import std;
 import auto_core.core.thread;
+import auto_core.taskbar;
 import command_registry;
 import journal_clock;
 import journal_component;
@@ -46,7 +47,9 @@ command_registry::Registry create_journal_command_registry(
     registry.add(
         "activate_word",
         std::move(activate_word),
-        ac::taskbar::activation_catalog_description("activate_word", "word", {})
+        ac::taskbar::activation_catalog_description("activate_word", "word", {}),
+        {},
+        "word"
     );
     registry.add(
         std::string {::print_extended_timestamp.name},
@@ -84,6 +87,7 @@ void join_title_actions() {
 
 command_registry::Registry create_journal_command_registry() {
     return create_journal_command_registry([] {
-        journal_component().print(word_activation_fallback_message);
+        journal_component().log_trace("activate_word()");
+        ac::taskbar::activate_application("word", "activate_word");
     });
 }

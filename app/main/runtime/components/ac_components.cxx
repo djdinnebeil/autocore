@@ -1812,7 +1812,8 @@ ac::main::components::advertised_commands() {
             commands.push_back(AdvertisedCommand {
                 child->name,
                 entry.name,
-                entry.description
+                entry.description,
+                entry.application
             });
         }
     }

@@ -16,7 +16,7 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component warnings_config {"warnings_config"};
+ac::Component warnings_config {"warnings_config", "auto_core"};
 
 constexpr std::string_view on_off[] {"on", "off"};
 

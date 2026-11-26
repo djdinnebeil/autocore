@@ -12,7 +12,8 @@ namespace {
 
 ac::Component taskbar_settings {
     "taskbar_settings",
-    ac::logging::config::LoggingScope {"taskbar"}
+    ac::logging::config::LoggingScope {"taskbar"},
+    ac::SharedLog {"taskbar"}
 };
 
 [[nodiscard]]

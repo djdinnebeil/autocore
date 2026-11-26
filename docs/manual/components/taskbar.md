@@ -1,6 +1,6 @@
 # Taskbar
 
-Taskbar is a Main subsystem. Its executable is `app\auto_core_taskbar.exe`. It binds keymap commands to programs on the primary Windows taskbar. Positions 1 through 10 use Win+1 through Win+9 and Win+0, including the native thumbnail flyout. A program outside those positions is switched, minimized, restored, or cycled directly, without that flyout. Which windows cycle depends on the map's window match, so the set can differ from native Win+number. A program with no live position is matched by its window and can be started from a fallback executable.
+Taskbar is a Main subsystem. Its executable is `app\auto_core_taskbar.exe`. It binds keymap commands to programs on the primary Windows taskbar. A one-shot map in positions 1 through 10 sends Win+1 through Win+9 and Win+0, including the native thumbnail flyout. A cycle map in one of those positions, with two or more matching windows, holds Win and taps that slot digit on each repeat of the shortcut that started it. The digit 0 on the keyboard selects the highlighted window. A cycle map with no cache slot walks a fixed list of matching windows and skips any that close. A program with no cache slot and one window is matched by its window and can be started from a fallback executable.
 
 Restart `auto_core_taskbar.exe` before a new `mode` applies. Taskbar data is always `<installation>\data\taskbar`.
 
@@ -20,26 +20,20 @@ Restart `auto_core_taskbar.exe` before a new `mode` applies. Taskbar data is alw
 | Command | What it does |
 | --- | --- |
 | `activate("name")` | Activates the taskbar program with that key. |
-| `activate_<program>` | Activates the program named in that application's map. When more than one provider offers the name, `keymap\activate_commands.map` selects who runs the shared name. `taskbar_activate_<program>` always runs Taskbar. |
-| `activate_auto_core` | Brings Auto Core forward. |
+| `taskbar_<program>` | Activates the program named in `<program>.map` through the Taskbar helper. The application key stays `<program>`. |
+| `activate_<program>` | Shared component command. `keymap\activate_commands.map` selects the provider. Each current provider also has a direct alias: `<provider>_activate` when the provider name matches `<program>`, otherwise `<provider>_activate_<program>`. |
+| `activate_auto_core` | Brings Auto Core forward through the compiled Taskbar handler. Provider `auto_core` offers it whether or not `auto_core.map` exists. `taskbar_auto_core` is the separate map-backed command. |
 | `refresh_taskbar_positions` | Discovers the current Win+1 through Win+0 mappings and reports when they are updated. |
-| `launch_powershell` | Starts PowerShell and focuses it. |
-| `activate_powershell_in_admin` | Activates the configured `powershell_admin` program. |
-| `activate_wordpad` | Activates the configured `wordpad` program. |
-| `launch_gitbash` | Starts Git Bash and focuses it. |
-| `launch_taskbar_config` | Opens Taskbar configuration. |
 | `refresh_firefox` | If Firefox is in front, opens Reddit. Otherwise activates the configured `firefox` program. |
 | `start_reddit_new_tab` | Opens `https://www.reddit.com` in Firefox. |
 
-A mapped command sends Win+digit through `auto_core.dll` in the process that already connected to the snapshot. That press does not start another executable. An application with a map and no slot uses Main's direct activation path: focus, restore, minimize, cycle, or the fallback executable.
+`ac::taskbar::activate_application` reads the application map and `winkey_map.cache` on each call. A one-shot map with a cache slot sends Win+digit and releases that chord in the same send. A cycle map with a slot and at least two matching windows holds Win and taps the slot digit; repeating the same shortcut taps it again, and the keyboard 0 key releases Win to select the highlight. Slot 10 uses a synthetic 0 for that tap, which is not the selection key. A cycle map with no slot keeps the window order from the first press. A `::runtime::` window path with no cache slot asks the user to pin the program and refresh positions.
 
 ## Catalogs
 
-`auto_core_keymap.exe --build` and startup resolve a shared `activate_<program>` name with the same rules. `--build` sees successful provider exports and the application maps. Startup sees the providers whose actions it can invoke: the application maps, started component catalogs, and enabled launch descriptors. A component that exported successfully and then failed to start is reported at startup, and its action is not registered.
+`auto_core_keymap.exe --build` rewrites `keymap\activate_commands.map` from component `activate_<program>` offers and the built-in `activate_auto_core` offer from provider `auto_core`. Taskbar publishes `taskbar_<program>` on the ordinary command path. Startup applies the same provider rules in memory and does not write the map. One current provider runs the shared name even when the saved row is missing or stale. Several providers keep a saved provider that is still offered and otherwise leave the shared name unresolved. Every current provider gets its direct alias.
 
-One provider and no saved line keeps that provider's `activate_<program>` command, with no alias. A saved provider that is available runs the shared name, and each available provider also gets an explicit alias. A saved provider that is unavailable is left in the file, reported, and does not run the shared name. The aliases of the providers that are available are still published.
-
-`keymap\activate_commands.map` is written only by `auto_core_keymap.exe --build`, alongside `keymap\keymap_commands.txt`. A failed export leaves the map unchanged. A successful rebuild refreshes each choice comment from the providers that offer the command and preserves the saved value, including a blank. One provider uses `# Choice:`. Any other count uses `# Choices:`, with providers separated by ` | `. A new collision defaults to `taskbar` when Taskbar offers the command. Otherwise the value is left blank. Startup reads the map and does not create or repair it.
+`# Choices:` lists the providers discovered by that build. One provider is selected. A saved `taskbar` or `<key>.map` value is stale: one remaining provider replaces it, and several providers make it blank. A command with no current provider is removed. Setup still opens when a map file is missing. It does not write `taskbar` back into the activation map.
 
 `refresh_taskbar_positions` is advertised by the running authority. `--build` does not launch that process, so the name is absent unless a map or another provider exports it. Slots stay in the snapshot. `winkey_map.cache` is the cache that snapshot can publish.
 
@@ -52,7 +46,7 @@ These files live in `<installation>\data\taskbar`.
 | `applications\<program>.map` | One program definition. `[commands] activate` is the keymap name. `[window]` matches an open window. `[fallback] executable_path` starts the program when it is not open. `[activation] multi_window` is `cycle` or `one-shot`. |
 | `winkey_map.cache` | The current Win+1 through Win+0 positions. `live` mode replaces it. `cache` mode reads it. |
 
-`keymap\activate_commands.map` is the provider chosen for each shared `activate_<program>` command. Section `[activation_map]`. `auto_core_keymap.exe --build` is the only writer.
+`keymap\activate_commands.map` is the provider chosen for each shared `activate_<program>` command. Section `[activation_map]`. `auto_core_keymap.exe --build` rewrites it. Startup reads it and does not write it. One provider is `# Choices: <provider>` and `<command> = <provider>`.
 
 `app\auto_core_taskbar.exe --builder` creates a missing map. It does not replace an existing one. Run it again after pinned programs change. Windows Notepad is written as `notepad.map` with the packaged Notepad fallback. Microsoft Edge is written as `microsoft_edge.map`.
 
@@ -63,5 +57,6 @@ These files live in `<installation>\data\taskbar`.
 | `auto_core_taskbar.exe --run` | Keeps the position cache and handles `activate_auto_core` and `refresh_taskbar_positions`. Main starts this once per session. |
 | `auto_core_taskbar.exe --config` | Edits `taskbar_policy.ini`. |
 | `auto_core_taskbar.exe --builder` | Discovers pinned programs and writes missing maps, then runs `auto_core_taskbar.exe --run --refresh-cache`. |
+| `auto_core_taskbar.exe --setup-application <key>` | Asks you to pin that program, waits for a key, then runs the noninteractive `--builder --seed` path and cache refresh. The console stays open until another keypress. For Excel the prompt names Excel. |
 | `auto_core_taskbar.exe` | Prints `Discovering taskbar applications`, then runs `--builder` once before the menu. Exit 0 prints `Taskbar application discovery complete.` A failed discovery still opens the menu. A failed `--config --init` returns that exit code. |
 | `auto_core_taskbar.exe --settings` | Opens configuration and discovery. |

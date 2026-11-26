@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <conio.h>
 #include <cstdio>
 #include <cwchar>
 #include <filesystem>
@@ -31,6 +32,7 @@ import auto_core.core.component;
 import auto_core.core.logging.config;
 import auto_core.core.paths;
 import auto_core.core.shell;
+import auto_core.taskbar;
 
 using Microsoft::WRL::ComPtr;
 using taskbar_windows::ApplicationConfiguration;
@@ -48,7 +50,8 @@ using taskbar_windows::trim;
 
 ac::Component taskbar_builder {
     "taskbar_builder",
-    ac::logging::config::LoggingScope {"taskbar"}
+    ac::logging::config::LoggingScope {"taskbar"},
+    ac::SharedLog {"taskbar"}
 };
 
 namespace {
@@ -445,7 +448,7 @@ namespace {
     }
 
     std::string activate_commands_for_key(const std::string& key) {
-        return "activate_" + key;
+        return "taskbar_" + key;
     }
 
     bool is_packaged_application_id(const std::string_view application_id) {
@@ -1232,9 +1235,125 @@ namespace {
         if (generate_maps_with_com(configuration, true) != 0) return 1;
         return launch_cache_refresh();
     }
+
+    bool application_key_token(const std::string_view key) {
+        if (key.empty()) return false;
+        const auto first = static_cast<unsigned char>(key.front());
+        if (!std::isalpha(first)) return false;
+        return std::ranges::all_of(key, [](const char character) {
+            const auto value = static_cast<unsigned char>(character);
+            return std::isalnum(value) || character == '_';
+        });
+    }
+
+    std::string setup_display_name(const std::string_view key) {
+        if (key == "excel") return "Excel";
+        return std::string {key};
+    }
+
+    enum class MapCheck {
+        missing,
+        read_failure,
+        parse_failure,
+        usable
+    };
+
+    MapCheck check_application_map(const std::string_view key) {
+        const auto path = ac::paths::taskbar_applications_directory() /
+            (std::string {key} + ".map");
+        std::error_code error;
+        const bool present = std::filesystem::exists(path, error);
+        if (error) return MapCheck::read_failure;
+        if (!present) return MapCheck::missing;
+        {
+            std::ifstream input(path);
+            if (!input) return MapCheck::read_failure;
+        }
+        const auto document = taskbar_windows::read_taskbar_document(path);
+        if (!document) return MapCheck::read_failure;
+        std::string resolved {key};
+        const auto file_key = document->find("application", "key");
+        if (!file_key.empty()) resolved = ascii_lower(file_key);
+        return resolved == key ? MapCheck::usable : MapCheck::parse_failure;
+    }
+
+    void wait_for_key() {
+        (void)_getch();
+    }
+
+    int run_setup_application(const std::string_view key) {
+        if (!application_key_token(key)) {
+            std::cerr
+                << "Usage: auto_core_taskbar.exe --setup-application "
+                << "<application_key>\n";
+            return 1;
+        }
+
+        std::cout
+            << "Start or pin " << setup_display_name(key)
+            << " to the taskbar, then press any key to continue."
+            << std::endl;
+        wait_for_key();
+
+        const ToolConfiguration configuration = default_configuration();
+        const int built = generate_maps_with_com(configuration, false);
+        int cache = 0;
+        if (built == 0) {
+            cache = launch_cache_refresh();
+            if (cache != 0) {
+                std::cout << "winkey_map.cache was not refreshed." << std::endl;
+            }
+        }
+
+        switch (check_application_map(key)) {
+        case MapCheck::usable:
+            std::cout
+                << key << ".map is ready. Retry the shortcut."
+                << std::endl;
+            break;
+        case MapCheck::missing:
+            std::cout
+                << key << ".map was not created."
+                << std::endl;
+            break;
+        case MapCheck::read_failure:
+            std::cout
+                << "Unable to read " << key << ".map."
+                << std::endl;
+            break;
+        case MapCheck::parse_failure:
+            std::cout
+                << "Unable to parse " << key << ".map."
+                << std::endl;
+            break;
+        }
+
+        std::cout << "Press any key to close." << std::endl;
+        wait_for_key();
+        if (built != 0) return built;
+        return cache;
+    }
 }
 
 namespace ac::taskbar_app::builder {
+
+int setup_application(const std::string_view key) {
+    ac::shell::set_process_app_user_model_id();
+    taskbar_builder.log_info(
+        "auto_core_taskbar.exe --setup-application {} started",
+        key
+    );
+    try {
+        return run_setup_application(key);
+    }
+    catch (const std::exception& error) {
+        taskbar_builder.print(
+            "auto_core_taskbar.exe --setup-application failed: {}",
+            error.what()
+        );
+        return 1;
+    }
+}
 
 int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();

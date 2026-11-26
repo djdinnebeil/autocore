@@ -149,7 +149,8 @@ int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     ac::Component slash_config {
         "slash_config",
-        ac::logging::config::LoggingScope {"slash"}
+        ac::logging::config::LoggingScope {"slash"},
+        ac::SharedLog {"slash"}
     };
     slash_config.log_info("slash_ac.exe --config started");
 

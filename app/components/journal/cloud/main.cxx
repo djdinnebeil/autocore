@@ -16,7 +16,8 @@ namespace {
 
 ac::Component journal_cloud {
     "journal_cloud",
-    ac::logging::config::LoggingScope {"journal"}
+    ac::logging::config::LoggingScope {"journal"},
+    ac::SharedLog {"journal"}
 };
 
 constexpr std::wstring_view serve_mutex_name = L"Local\\AutoCoreJournalCloudServe";

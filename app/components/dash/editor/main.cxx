@@ -170,7 +170,8 @@ int run() {
             ac::logging::config::LoggingScope {
                 "dash",
                 ac::logging::config::LoggingFallback::off
-            }
+            },
+            ac::SharedLog {"dash"}
         };
         dash_editor.log_info("dash_ac.exe --editor started");
 

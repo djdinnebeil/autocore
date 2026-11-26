@@ -24,7 +24,8 @@ namespace {
 
 ac::Component spotify_formatter {
     "spotify_formatter",
-    ac::logging::config::LoggingScope {"spotify"}
+    ac::logging::config::LoggingScope {"spotify"},
+    ac::SharedLog {"spotify"}
 };
 
 std::string_view trim(std::string_view value) {

@@ -3,9 +3,9 @@
  * \brief Provides best-effort error reporting to a log file and stderr.
  *
  * Messages are always written to `std::cerr`. The module also attempts to
- * append timestamped records to `errors/errors.log` beneath the executable
- * directory. Failures while creating or writing the file are suppressed so
- * error reporting can continue through stderr.
+ * append timestamped records to `data/errors/errors.log` beneath the
+ * installation root. Failures while creating or writing the file are
+ * suppressed so error reporting can continue through stderr.
  */
 module;
 
@@ -23,12 +23,12 @@ export namespace ac::error {
      *
      * The message is written verbatim to `std::cerr` followed by a newline.
      * A record in `[YYYY-MM-DD HH:MM:SS.mmm] message` form is also appended to
-     * `errors/errors.log` when the file is available. The timestamp is local
+     * `data/errors/errors.log` when the file is available. The timestamp is local
      * wall clock (`GetLocalTime`), not `auto_core.core.clock`, so error logs
      * do not use extended-day hours. If file logging fails, stderr is
      * prefixed with `[error log unavailable] `.
      *
-     * This function creates the `errors` directory when necessary.
+     * This function creates the `data/errors` directory when necessary.
      * Filesystem and file-stream failures are suppressed.
      *
      * \param message The message to report.

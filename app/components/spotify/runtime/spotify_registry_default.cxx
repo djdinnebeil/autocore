@@ -1,5 +1,6 @@
 module spotify_registry;
 
+import auto_core.taskbar;
 import spotify_client;
 import spotify_component;
 import spotify_monitor;
@@ -7,7 +8,8 @@ import spotify_monitor;
 command_registry::Registry create_spotify_command_registry() {
     return create_spotify_command_registry({
         .activate_spotify = [] {
-            spotify_component.print(spotify_activation_fallback_message);
+            spotify_component.log_trace("activate_spotify()");
+            ac::taskbar::activate_application("spotify", "activate_spotify");
         },
         .get_queue = &spotify_get_queue,
         .print_songs = &spotify_print_songs,

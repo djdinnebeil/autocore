@@ -12,7 +12,8 @@ namespace {
 
 ac::Component writer_builder {
     "writer_builder",
-    ac::logging::config::LoggingScope {"writer"}
+    ac::logging::config::LoggingScope {"writer"},
+    ac::SharedLog {"writer"}
 };
 
 } // namespace

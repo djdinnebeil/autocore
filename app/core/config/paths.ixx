@@ -223,7 +223,7 @@ export namespace ac::paths {
         log_directory();
 
     /**
-     * \brief Returns `<installation root>/errors`.
+     * \brief Returns `<installation root>/data/errors`.
      */
     [[nodiscard]]
     AC_API const std::filesystem::path&

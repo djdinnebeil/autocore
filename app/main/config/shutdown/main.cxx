@@ -16,7 +16,7 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component shutdown_config {"shutdown_config"};
+ac::Component shutdown_config {"shutdown_config", "auto_core"};
 
 constexpr std::string_view prompt_values[] {"popup", "console"};
 

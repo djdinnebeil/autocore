@@ -18,7 +18,10 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component logging_policy_config {"logging_policy_config"};
+ac::Component logging_policy_config {
+    "logging_policy_config",
+    "auto_core"
+};
 
 using LoggingValues = logging::Values;
 

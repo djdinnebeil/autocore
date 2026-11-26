@@ -16,7 +16,7 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component startup_config {"startup_config"};
+ac::Component startup_config {"startup_config", "auto_core"};
 
 constexpr std::string_view on_off[] {"on", "off"};
 

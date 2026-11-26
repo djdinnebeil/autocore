@@ -13,7 +13,8 @@ namespace {
 
 ac::Component journal_clock {
     "journal_clock",
-    ac::logging::config::LoggingScope {"journal"}
+    ac::logging::config::LoggingScope {"journal"},
+    ac::SharedLog {"journal"}
 };
 
 constexpr journal::extended_hours::ExtendedHours recommended_hours {0, true};

@@ -76,7 +76,7 @@ TEST_CASE(
         keymap / "keymap_commands.txt"
     );
     CHECK(ac::paths::log_directory() == root / "data" / "logs");
-    CHECK(ac::paths::error_log_directory() == root / "errors");
+    CHECK(ac::paths::error_log_directory() == root / "data" / "errors");
 }
 
 TEST_CASE(

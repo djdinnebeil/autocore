@@ -21,7 +21,7 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component auto_core_config {"auto_core_config"};
+ac::Component auto_core_config {"auto_core_config", "auto_core"};
 
 constexpr std::string_view on_off[] {"on", "off"};
 constexpr std::string_view version_value[] {ac::version::auto_core_version};

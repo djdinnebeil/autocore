@@ -52,6 +52,8 @@ export namespace ac::main::components {
         std::string provider;
         std::string name;
         std::string description;
+        /** Declared Taskbar application key. Empty when the command has none. */
+        std::string application;
     };
 
     /**

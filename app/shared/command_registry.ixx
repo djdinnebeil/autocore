@@ -27,7 +27,31 @@ struct CatalogEntry {
     std::string hello_identity;
     /** Provider id for the merged keymap catalog. Empty for hello and export. */
     std::string provider;
+    /** Taskbar application key declared by this command. Empty when it has none. */
+    std::string application;
 };
+
+/**
+ * \brief Catalog identity for hello and keymap export.
+ *
+ * A declared application key is `name @key`. The key is not part of the
+ * command name. An empty key leaves the name unchanged.
+ */
+[[nodiscard]]
+inline std::string catalog_wire_identity(
+    const std::string_view name,
+    const std::string_view application
+) {
+    if (application.empty()) {
+        return std::string {name};
+    }
+    std::string identity;
+    identity.reserve(name.size() + application.size() + 2);
+    identity.append(name);
+    identity.append(" @");
+    identity.append(application);
+    return identity;
+}
 
 /**
  * \brief Turns line breaks into spaces and trims the description.
@@ -124,14 +148,16 @@ public:
         std::string name,
         Function function,
         std::string description = {},
-        std::string provider = {}
+        std::string provider = {},
+        std::string application = {}
     ) {
         const auto [entry, inserted] = commands_.emplace(
             std::move(name),
             CommandEntry {
                 Action {std::move(function)},
                 std::move(description),
-                std::move(provider)
+                std::move(provider),
+                std::move(application)
             }
         );
 
@@ -236,7 +262,8 @@ public:
                 name,
                 entry.description,
                 name,
-                entry.provider
+                entry.provider,
+                entry.application
             });
         }
 
@@ -259,7 +286,10 @@ public:
         std::vector<std::string> lines;
         lines.reserve(entries.size());
         for (const CatalogEntry& entry : entries) {
-            lines.push_back(format_catalog_line(entry.name, entry.description));
+            lines.push_back(format_catalog_line(
+                catalog_wire_identity(entry.name, entry.application),
+                entry.description
+            ));
         }
         return lines;
     }
@@ -275,8 +305,11 @@ public:
         std::vector<std::string> lines;
         lines.reserve(entries.size());
         for (const CatalogEntry& entry : entries) {
+            const std::string identity = entry.application.empty()
+                ? entry.hello_identity
+                : catalog_wire_identity(entry.name, entry.application);
             lines.push_back(format_catalog_line(
-                entry.hello_identity,
+                identity,
                 entry.description
             ));
         }
@@ -324,6 +357,7 @@ private:
         Action action;
         std::string description;
         std::string provider;
+        std::string application;
     };
 
     struct FactoryEntry {

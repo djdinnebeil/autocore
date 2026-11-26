@@ -1,24 +1,14 @@
 /**
  * \file main_taskbar.ixx
- * \brief Owns Main's interactive taskbar cycling session and commands.
+ * \brief Owns Main's Taskbar commands.
  */
 export module auto_core.main.taskbar;
 
 export import command_registry;
 export import auto_core.taskbar;
 import std;
-import <Windows.h>;
 
 export namespace taskbar_runtime_commands {
-    /**
-     * Registers Taskbar commands that run in Main: foreground launches and
-     * activations that join the interactive cycle session.
-     * Call this before generic child catalogs.
-     */
-    void register_reserved_with(
-        command_registry::Registry& registry,
-        const std::unordered_set<std::string>& shared_names
-    );
     /**
      * Registers activation commands from Taskbar application maps. Names in
      * `shared_names` are left for the activation-map resolution.
@@ -36,40 +26,3 @@ export command_registry::Action taskbar_activation_action(
     std::string_view application,
     std::string_view command = {}
 );
-
-export class MainTaskbarState {
-public:
-    /** Last dispatched key; compared in `switch_windows` to advance vs end a cycle. */
-    int switch_keycode {};
-
-    /** `true` while an interactive Win-held cycling session is active. */
-    [[nodiscard]] bool cycle_active() const noexcept;
-
-    /** Same key advances the cycle; any other key ends it. */
-    void switch_windows(int keycode);
-    /** Cancels the current cycle, releasing Win only for a native session. */
-    void end_cycle_session();
-    /** Native Win+position activate or native cycle. `false` falls through to emulate. */
-    [[nodiscard]] bool try_activate_configured(std::string_view name);
-    /** Native first, then emulate (launch / restore / minimize / cycle). */
-    void activate_configured(std::string_view name);
-
-private:
-    ac::taskbar::Position switch_position {};
-    bool switch_set {false};
-    /** `true` when the cycle is Main-emulated rather than native Win+position. */
-    bool emulated_cycle {false};
-    std::string cycle_application;
-    std::vector<ac::taskbar::WindowHandle> cycle_windows;
-    std::size_t cycle_index {};
-
-    void emulate_configured(std::string_view name);
-    void begin_emulated_cycle(
-        std::string_view name,
-        std::vector<ac::taskbar::WindowHandle> windows
-    );
-    void advance_emulated_cycle();
-};
-
-/** Single Main-owned cycling and activation instance. */
-export MainTaskbarState taskbar;

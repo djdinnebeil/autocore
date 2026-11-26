@@ -12,25 +12,31 @@ namespace ac::component_detail {
     /**
      * \brief Owns the synchronized daily log for one component.
      *
-     * The file is named `<date>_<component>.log` under the supplied
-     * directory (`components/<name>/` from `ac::Component`). Construction
-     * opens the file and appends a session header. Each `write` checks the
-     * supplied event date and may roll the open file. File failures are
-     * reported through `auto_core.core.error`; later writes no-op until a
-     * roll retries the open.
+     * The file is named `<date>_<file>.log` under the supplied directory.
+     * The file name defaults to the component name. `ac::Component`
+     * supplies `components/<name>/` unless the caller selected a shared
+     * daily log. A shared file keeps the component
+     * name on every record. An unfinished line stays in memory until its
+     * newline. Construction opens the daily file and writes a session
+     * header. Each `write` checks the supplied event date and may roll the
+     * open file. Writers of one resolved path share
+     * `Local\AutoCore.component.log.<path>`. File failures are reported
+     * through `auto_core.core.error`; later writes retry the open.
      */
     class ComponentLogger {
     public:
         /**
          * \brief Opens the component's session log.
-         * \param component_name The name used in records and the filename.
+         * \param component_name The name used in records and, by default, the filename.
          * \param directory The directory that owns the log file.
          * \param session_start The stable start time for this session.
+         * \param file_name The filename stem. Empty uses `component_name`.
          */
         ComponentLogger(
             std::string_view component_name,
             std::filesystem::path directory,
-            const ac::clock::DateTime& session_start
+            const ac::clock::DateTime& session_start,
+            std::string_view file_name = {}
         );
         ~ComponentLogger() noexcept;
 
@@ -44,8 +50,8 @@ namespace ac::component_detail {
          *
          * Compares the local calendar date with the open file and rolls when
          * they differ. `event_type` is written after the timestamp whenever
-         * the message opens a persisted line. Records ending in a newline are
-         * flushed immediately.
+         * the message opens a persisted line. A finished line is one
+         * `WriteFile`. Records ending in a newline are flushed immediately.
          */
         void write(
             std::string_view timestamp,
@@ -56,7 +62,11 @@ namespace ac::component_detail {
         );
         /** \brief Rolls the log file when the local calendar date changed. */
         void update_file();
-        /** \brief Flushes the current file when it is open. */
+        /**
+         * \brief Flushes bytes already written to the current file.
+         *
+         * An unfinished line remains in memory and is not published.
+         */
         void flush();
 
     private:

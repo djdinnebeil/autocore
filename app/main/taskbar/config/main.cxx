@@ -17,7 +17,8 @@ namespace {
 
 ac::Component taskbar_config {
     "taskbar_config",
-    ac::logging::config::LoggingScope {"taskbar"}
+    ac::logging::config::LoggingScope {"taskbar"},
+    ac::SharedLog {"taskbar"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

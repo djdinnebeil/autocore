@@ -32,7 +32,7 @@ namespace sequence = ac::main::init;
 
 namespace {
 
-ac::Component auto_core_init {"auto_core_init"};
+ac::Component auto_core_init {"auto_core_init", "auto_core"};
 
 [[nodiscard]]
 int run_owner(

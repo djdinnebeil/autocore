@@ -19,7 +19,7 @@ import auto_core.core.shell;
 
 namespace {
 
-    ac::Component settings_app {"auto_core_settings"};
+    ac::Component settings_app {"auto_core_settings", "auto_core"};
 
     [[nodiscard]]
     std::wstring quote_argument(const std::wstring_view value) {

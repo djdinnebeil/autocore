@@ -121,7 +121,7 @@ namespace {
                 : std::string_view {slot.display_name};
 
             if (slot.applications.empty()) {
-                taskbar_component().log_alert(
+                taskbar_component().log_info(
                     "Taskbar position {} ({}): '{}' with application ID '{}' "
                     "has no matching application configuration; Winkey "
                     "mapping not set.",
@@ -244,8 +244,6 @@ int run(const int argument_count, char* arguments[]) {
         const auto decision =
             ac::taskbar::prepare_native_activation(application);
         const auto windows = ac::taskbar::matching_windows(application);
-        const bool compiled_default =
-            application == "wordpad" || application == "powershell_admin";
         if (decision) {
             std::cout << std::format(
                 "application={} position={} matching_windows={} cycle={}\n",
@@ -255,10 +253,7 @@ int run(const int argument_count, char* arguments[]) {
                 decision->should_cycle
             );
         }
-        else if (
-            ac::taskbar::application_is_configured(application) ||
-            compiled_default
-        ) {
+        else if (ac::taskbar::application_is_configured(application)) {
             const bool cycle =
                 ac::taskbar::configured_multi_window_cycle(application) &&
                 windows.size() >= 2;

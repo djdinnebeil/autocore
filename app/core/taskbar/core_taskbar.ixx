@@ -108,7 +108,9 @@ export namespace ac::taskbar {
         `offer_count` is the number of providers in the current discovery.
         `unset_description` is catalog text for an explicit blank that still
         has two or more providers. One provider with no saved entry does not
-        produce a binding. */
+        produce a binding. `provider` is the selected provider when
+        `resolved` is true. When a non-blank saved value matches no offer,
+        `resolved` stays false and `provider` is that saved value. */
     struct ActivationBinding {
         std::string command;
         bool resolved {false};
@@ -246,8 +248,11 @@ export namespace ac::taskbar {
      * \brief Resolves shared activation names from `map_path` and `offers`.
      *
      * Does not create or rewrite the map. A missing file has no saved
-     * selections. `occupied_names` are commands that already exist; a
-     * generated alias that matches one is omitted and reported.
+     * selections. One activation provider resolves in memory even when the
+     * saved row is missing or stale. Several providers keep a saved value
+     * that is still offered and otherwise leave the command unresolved.
+     * `occupied_names` are commands that already exist; a generated alias
+     * that matches one is omitted and reported.
      */
     [[nodiscard]] AC_API ActivationResolution resolve_activation_commands(
         const std::filesystem::path& map_path,
@@ -258,17 +263,80 @@ export namespace ac::taskbar {
     /**
      * \brief Rewrites `activate_commands.map` from a successful provider discovery.
      *
-     * Refreshes each generated `# Choice:` or `# Choices:` comment and
-     * preserves saved values, including a blank. `# Choice:` is used when
-     * one provider offers the command. `# Choices:` is used otherwise.
-     * A new collision defaults to `taskbar` when that provider offered the
-     * command, and is left blank otherwise. Returns the same resolution
-     * `resolve_activation_commands` would return for the updated text.
+     * Rewrites each generated choice comment as `# Choices:` and the current
+     * providers. One provider is selected, including when the saved value
+     * was blank, `taskbar`, or `<key>.map`. Several providers keep a saved
+     * value only when that provider is still offered. Any other saved value
+     * becomes blank. A command with no current provider is removed.
+     * Provider `auto_core` for `activate_auto_core` is an ordinary activation
+     * provider. Taskbar application commands are not activation providers.
+     * Rows are ordered by the smallest current provider id, then command
+     * name. Changing or clearing a selection does not move a row.
+     * Returns the same resolution `resolve_activation_commands` would return
+     * for the updated text.
      */
     [[nodiscard]] AC_API ActivationMapUpdate update_activation_map(
         const std::filesystem::path& map_path,
         const std::vector<ActivationOffer>& offers,
         const std::vector<std::string>& occupied_names
+    );
+
+    /**
+     * \brief Exclusive guard for `data/auto_core/keymap_build.lock`.
+     *
+     * The lock file is created on first acquire and is not deleted. The
+     * byte-range lock is released when the guard is destroyed. `wait` blocks
+     * until the lock is free. Otherwise a held lock returns `busy`.
+     */
+    class AC_API KeymapBuildLock {
+    public:
+        enum class Status {
+            acquired,
+            busy,
+            failed
+        };
+
+        KeymapBuildLock() = default;
+        KeymapBuildLock(const KeymapBuildLock&) = delete;
+        KeymapBuildLock& operator=(const KeymapBuildLock&) = delete;
+        ~KeymapBuildLock();
+
+        [[nodiscard]] Status acquire(std::string& error, bool wait = false);
+
+    private:
+        void release() noexcept;
+
+        void* handle_ {nullptr};
+        bool locked_ {false};
+    };
+
+    /** Result of a targeted `activate_commands.map` edit. */
+    struct ActivationEntryUpdate {
+        bool ok {false};
+        bool busy {false};
+        std::string error;
+    };
+
+    /**
+     * \brief Does not modify `activate_commands.map`.
+     *
+     * Pending `<key>.map` rows are no longer recorded. A missing application
+     * map still opens setup from `activate_application`.
+     */
+    [[nodiscard]] AC_API ActivationEntryUpdate note_missing_application_map(
+        std::string_view command,
+        std::string_view key
+    );
+
+    /**
+     * \brief Does not modify `activate_commands.map`.
+     *
+     * A pending `<key>.map` value is not promoted to `taskbar`. Rebuild
+     * treats that value as a stale selection.
+     */
+    [[nodiscard]] AC_API ActivationEntryUpdate promote_ready_application_map(
+        std::string_view key,
+        const std::vector<std::string>& offered_commands
     );
 
     /**
@@ -318,18 +386,6 @@ export namespace ac::taskbar {
         const std::vector<std::string>& occupied_names
     );
 
-    /** Returns the optional executable launched when an application has no
-        matching windows and no native Win+position mapping. This performs
-        no file I/O or IPC. */
-    [[nodiscard]] AC_API std::optional<std::wstring>
-        configured_fallback_executable_path(std::string_view application);
-
-    /** Returns the configured `[window] executable_path`, including the
-        `::runtime::` sentinel. Empty when the application is absent.
-        This performs no file I/O or IPC. */
-    [[nodiscard]] AC_API std::optional<std::wstring>
-        configured_window_executable_path(std::string_view application);
-
     /** Returns whether the application has a process-local snapshot route,
         including applications with no native Win+position mapping. */
     [[nodiscard]] AC_API bool application_is_configured(
@@ -365,18 +421,6 @@ export namespace ac::taskbar {
     /** Sends a one-shot shortcut for an already resolved logical position. */
     [[nodiscard]] AC_API bool activate_native_position(Position position);
 
-    /** Holds Win and sends the first logical position for a Main-owned
-        interactive cycling session. No cycling state is retained by DLL. */
-    [[nodiscard]] AC_API bool begin_native_cycle(Position position);
-
-    /** Sends another logical position while Main's cycling session holds
-        Win. No cycling state is retained by the DLL. */
-    [[nodiscard]] AC_API bool advance_native_cycle(Position position);
-
-    /** Releases Win for Main's current cycling session. Returns whether the
-        generated key-up event was accepted. */
-    [[nodiscard]] AC_API bool end_native_cycle() noexcept;
-
     /** Returns metadata for the process-local immutable snapshot. */
     [[nodiscard]] AC_API SnapshotInfo snapshot_info() noexcept;
 
@@ -385,4 +429,46 @@ export namespace ac::taskbar {
         inspection output, not the activation hot path. */
     [[nodiscard]] AC_API std::vector<TaskbarSlotInfo>
         first_ten_taskbar_slots();
+
+    /**
+     * \brief Activates one application from its map and the WinKey cache.
+     *
+     * Reads `data/taskbar/applications/<application_key>.map` and
+     * `winkey_map.cache` on every call. A missing map records `command` as
+     * pending when that name is not empty, then starts
+     * `auto_core_taskbar.exe --setup-application` and returns. A one-shot
+     * map sends Win+position when the cache has a slot. With no slot, a
+     * `::runtime::` window path reports that runtime resolution is
+     * unimplemented. A cycle map with a slot and at least two matching
+     * windows holds Win and taps that slot digit. A cycle map with no slot
+     * walks a stable window list. Does not use the process-local snapshot.
+     */
+    AC_API void activate_application(
+        std::string_view application_key,
+        std::string_view command = {}
+    );
+
+    /** Records the shortcut Main is dispatching, so a cycle started by a
+        component alias can recognize a repeat of that same shortcut. */
+    AC_API void note_cycle_shortcut(std::uint32_t key_code) noexcept;
+
+    /** A shared cycle session is active in this Windows session. */
+    [[nodiscard]] AC_API bool cycle_session_active() noexcept;
+
+    /** The shortcut that started the active session, or 0 when none is
+        recorded. */
+    [[nodiscard]] AC_API std::uint32_t cycle_initiating_key() noexcept;
+
+    /** The active session is holding Win for a taskbar thumbnail cycle. */
+    [[nodiscard]] AC_API bool cycle_uses_native_winkey() noexcept;
+
+    /** Taps the held slot digit, or focuses the next surviving window. */
+    AC_API bool continue_cycle();
+
+    /** Releases a held Win key so the highlighted taskbar window is
+        selected, then ends the session. */
+    AC_API void select_cycle();
+
+    /** Releases a held Win key and ends the session. */
+    AC_API void cancel_cycle();
 }

@@ -26,6 +26,7 @@ namespace ac::taskbar_app::settings {
 
 namespace ac::taskbar_app::builder {
     int run(int argc, char* argv[]);
+    int setup_application(std::string_view key);
 }
 
 namespace {
@@ -95,7 +96,9 @@ int open_direct() {
 void print_usage() {
     std::cerr
         << "Usage: auto_core_taskbar.exe [--run [runtime arguments] | --settings | "
-        << "--builder [builder arguments] | --config [config arguments]]\n";
+        << "--builder [builder arguments] | "
+        << "--setup-application <application_key> | "
+        << "--config [config arguments]]\n";
 }
 
 } // namespace
@@ -113,6 +116,15 @@ int main(int argc, char* argv[]) {
             static_cast<int>(arguments.size()),
             arguments.data()
         );
+    }
+
+    if (argc > 1 && argv != nullptr && argv[1] != nullptr &&
+        std::string_view {argv[1]} == "--setup-application") {
+        if (argc != 3 || argv[2] == nullptr) {
+            print_usage();
+            return 1;
+        }
+        return ac::taskbar_app::builder::setup_application(argv[2]);
     }
 
     auto command = ac::component_dispatch::parse(argc, argv);

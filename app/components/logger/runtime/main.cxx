@@ -9,6 +9,7 @@
 import std;
 import auto_core.core.component;
 import auto_core.core.error;
+import auto_core.core.clock;
 import auto_core.core.logging.config;
 import logger_merge_config;
 import auto_core.core.paths;
@@ -166,6 +167,27 @@ int run_hosted(ac::pipes::Pipe pipe) {
 } // namespace
 
 namespace ac::logger::runtime {
+
+void refresh_main_log() {
+    ac::Component reporter {
+        "logger_settings",
+        ac::logging::config::LoggingScope {"logger"},
+        ac::SharedLog {"logger"}
+    };
+    const auto result = ac::logger::detail::merge_once(
+        ac::logging::config::directory(),
+        ac::clock::get_date_iso()
+    );
+    if (result.ok) {
+        reporter.log_alert("Main log file updated.");
+        return;
+    }
+    if (result.message.empty()) {
+        reporter.log_alert("Unable to update the Main log.");
+        return;
+    }
+    reporter.log_alert(std::string_view {result.message});
+}
 
 int run(const int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();

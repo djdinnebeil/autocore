@@ -15,20 +15,28 @@ namespace ac::component_detail {
         const std::string_view timestamp,
         const std::string_view event_type,
         const std::string_view message,
-        const bool newline
+        const bool newline,
+        const std::string_view area = {}
     ) {
         if (!stream.good()) {
             return false;
         }
 
+        const auto start_line = [&] {
+            stream << '[' << timestamp << "] ";
+            if (!area.empty()) {
+                stream << '[' << area << "] ";
+            }
+            if (!event_type.empty()) {
+                stream << '[' << event_type << "] ";
+            }
+            line_open = true;
+        };
+
         std::size_t offset = 0;
         while (offset < message.size()) {
             if (!line_open) {
-                stream << '[' << timestamp << "] ";
-                if (!event_type.empty()) {
-                    stream << '[' << event_type << "] ";
-                }
-                line_open = true;
+                start_line();
             }
 
             const std::size_t end = message.find('\n', offset);
@@ -44,11 +52,7 @@ namespace ac::component_detail {
         }
 
         if (message.empty() && !line_open) {
-            stream << '[' << timestamp << "] ";
-            if (!event_type.empty()) {
-                stream << '[' << event_type << "] ";
-            }
-            line_open = true;
+            start_line();
         }
 
         if (newline && line_open) {

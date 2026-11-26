@@ -166,6 +166,7 @@
     <ClCompile Include="..\..\..\shared\protocols\component_protocol.ixx" />
     <ClCompile Include="..\..\..\shared\command_registry.ixx" />
     <ClCompile Include="..\..\..\core\system\thread.ixx" />
+    <ClCompile Include="..\..\..\core\taskbar\core_taskbar.ixx" />
     <ClCompile Include="itunes_runtime.ixx" />
     <ClCompile Include="itunes_runtime.cxx" />
     <ClCompile Include="itunes_client.ixx" />

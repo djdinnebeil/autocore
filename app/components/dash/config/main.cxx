@@ -140,7 +140,8 @@ int run(int argc, char* argv[]) {
         ac::logging::config::LoggingScope {
             "dash",
             ac::logging::config::LoggingFallback::off
-        }
+        },
+        ac::SharedLog {"dash"}
     };
     dash_config.log_info("dash_ac.exe --config started");
 

@@ -26,7 +26,8 @@ namespace {
 
 ac::Component server_builder {
     "server_builder",
-    ac::logging::config::LoggingScope {"server"}
+    ac::logging::config::LoggingScope {"server"},
+    ac::SharedLog {"server"}
 };
 
 std::string_view trim(std::string_view value) {

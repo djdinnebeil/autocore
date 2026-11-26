@@ -181,9 +181,8 @@ export namespace ac::logging::config {
     /**
      * \brief Returns `<log directory>/components`.
      *
-     * Each `ac::Component` writes `{date}_{name}.log` under
-     * `components/<name>/` when file logging is enabled. Cached for the
-     * process lifetime.
+     * Each component's areas append to `components/<component>/{date}_<component>.log`
+     * when file logging is enabled. Cached for the process lifetime.
      */
     [[nodiscard]] AC_API const std::filesystem::path& components_directory();
 

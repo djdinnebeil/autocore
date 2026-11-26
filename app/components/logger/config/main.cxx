@@ -20,7 +20,8 @@ namespace {
 
 ac::Component logger_config {
     "logger_config",
-    ac::logging::config::LoggingScope {"logger"}
+    ac::logging::config::LoggingScope {"logger"},
+    ac::SharedLog {"logger"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

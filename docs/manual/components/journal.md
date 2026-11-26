@@ -21,7 +21,7 @@ Journal inserts episode titles, timestamps, saved text, dice rolls, and numbered
 
 | Command | What it does |
 | --- | --- |
-| `activate_word` | Runs the provider selected in `keymap\activate_commands.map` when that name is shared. `journal_activate_word` always runs Journal. |
+| `activate_word` | Resolves through `keymap\activate_commands.map`. `journal_activate_word` invokes Journal directly. `taskbar_word` activates Word through the Taskbar helper when `word.map` exists. |
 | `print_episode_title` | Inserts the next episode title for the active series, then sends Ctrl+S. |
 | `save_file_and_create_new_file` | Sends Ctrl+S, then Ctrl+N. If the window title changes, it inserts the next episode title. |
 | `print_extended_timestamp` | Inserts the Journal clock time. |

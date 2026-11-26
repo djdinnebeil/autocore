@@ -43,7 +43,8 @@ const menu::Setting menu_settings[] {
 
 ac::Component wake_config {
     "wake_config",
-    ac::logging::config::LoggingScope {"wake"}
+    ac::logging::config::LoggingScope {"wake"},
+    ac::SharedLog {"wake"}
 };
 
 [[nodiscard]]

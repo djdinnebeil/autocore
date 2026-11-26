@@ -15,8 +15,10 @@ module;
 module auto_core.taskbar;
 
 import std;
+import auto_core.core.component;
 import auto_core.core.error;
 import auto_core.core.keyboard;
+import auto_core.core.logging.config;
 import auto_core.core.paths;
 
 using Microsoft::WRL::ComPtr;
@@ -163,7 +165,9 @@ namespace {
         const std::string& key,
         std::vector<std::string>& commands
     ) {
-        add_unique_command(commands, "activate_" + key);
+        const std::string legacy = "activate_" + key;
+        std::erase(commands, legacy);
+        add_unique_command(commands, "taskbar_" + key);
     }
 
     std::string to_utf8(const std::wstring_view value) {
@@ -1298,14 +1302,671 @@ namespace {
         return static_cast<std::uint8_t>(context.windows.size());
     }
 
-    WindowMatcher compiled_default_matcher(const std::string_view application) {
-        if (application == "wordpad") {
-            return WindowMatcher {.process_name = L"wordpad.exe"};
+    ac::Component& taskbar_activation_log() {
+        static ac::Component component {
+            "taskbar",
+            ac::logging::config::LoggingScope {"taskbar"}
+        };
+        return component;
+    }
+
+    bool application_key_token(const std::string_view key) {
+        if (key.empty()) return false;
+        const auto first = static_cast<unsigned char>(key.front());
+        if (!std::isalpha(first)) return false;
+        return std::ranges::all_of(key, [](const char character) {
+            const auto value = static_cast<unsigned char>(character);
+            return std::isalnum(value) || character == '_';
+        });
+    }
+
+    bool is_root_foreground(const HWND window) noexcept {
+        const HWND foreground = GetForegroundWindow();
+        if (foreground == nullptr || window == nullptr) return false;
+        if (foreground == window) return true;
+        return GetAncestor(foreground, GA_ROOT) == window;
+    }
+
+    void focus_matched_window(const HWND window) {
+        if (window == nullptr) return;
+        if (IsIconic(window)) ShowWindow(window, SW_RESTORE);
+        const DWORD current_thread = GetCurrentThreadId();
+        const DWORD window_thread = GetWindowThreadProcessId(window, nullptr);
+        const bool attached = window_thread != 0 &&
+            window_thread != current_thread &&
+            AttachThreadInput(current_thread, window_thread, TRUE);
+        SetForegroundWindow(window);
+        if (attached) {
+            AttachThreadInput(current_thread, window_thread, FALSE);
         }
-        if (application == "powershell_admin") {
-            return WindowMatcher {.process_name = L"powershell.exe"};
+    }
+
+    void launch_setup_application(const std::string_view key) {
+        const auto executable =
+            ac::paths::app_directory() / "auto_core_taskbar.exe";
+        std::error_code error;
+        if (!std::filesystem::exists(executable, error) || error) {
+            ac::error::log(
+                "auto_core_taskbar.exe is missing; application setup was not "
+                "started.\n"
+            );
+            return;
+        }
+        std::wstring command = L"\"";
+        command += executable.wstring();
+        command += L"\" --setup-application ";
+        command.append(key.begin(), key.end());
+        STARTUPINFOW startup {};
+        startup.cb = sizeof(startup);
+        PROCESS_INFORMATION process {};
+        if (!CreateProcessW(
+                executable.c_str(),
+                command.data(),
+                nullptr,
+                nullptr,
+                FALSE,
+                CREATE_NEW_CONSOLE,
+                nullptr,
+                executable.parent_path().c_str(),
+                &startup,
+                &process)) {
+            ac::error::log(
+                "Unable to start auto_core_taskbar.exe --setup-application.\n"
+            );
+            return;
+        }
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+    }
+
+    void launch_mapped_fallback(
+        const std::string_view name,
+        const std::wstring& executable,
+        const WindowMatcher& matcher
+    ) {
+        constexpr std::wstring_view disabled = L"[]";
+        if (executable.empty()) {
+            ac::error::log(std::format(
+                "Winkey mapping not set for '{}' and no executable fallback "
+                "is configured.\n",
+                name
+            ));
+            return;
+        }
+        if (executable == disabled) {
+            ac::error::log(std::format(
+                "No fallback executable is configured for '{}'.\n",
+                name
+            ));
+            return;
+        }
+        taskbar_activation_log().log_trace(
+            "{}: ShellExecuteW {}",
+            name,
+            to_utf8(executable)
+        );
+        const auto launched = reinterpret_cast<std::intptr_t>(ShellExecuteW(
+            nullptr,
+            L"open",
+            executable.c_str(),
+            nullptr,
+            nullptr,
+            SW_SHOWNORMAL
+        ));
+        if (launched <= 32) {
+            ac::error::log(std::format(
+                "Unable to launch fallback for '{}'.\n",
+                name
+            ));
+            return;
+        }
+        const auto deadline =
+            std::chrono::steady_clock::now() + std::chrono::seconds {5};
+        while (std::chrono::steady_clock::now() < deadline) {
+            const auto windows = matching_window_list(matcher);
+            if (!windows.empty()) {
+                focus_matched_window(windows.front());
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds {50});
+        }
+    }
+
+    constexpr std::uint32_t cycle_window_capacity = 48;
+
+    struct CycleShared {
+        uint32_t sequence {0};
+        uint32_t active {0};
+        uint32_t native {0};
+        uint32_t owns_win {0};
+        uint32_t digit {0};
+        uint32_t initiating_vk {0};
+        uint32_t pending_vk {0};
+        uint32_t window_count {0};
+        uint32_t next_index {0};
+        uint64_t windows[cycle_window_capacity] {};
+        char application[64] {};
+    };
+
+    CycleShared* cycle_shared() {
+        static CycleShared* shared = []() -> CycleShared* {
+            const HANDLE mapping = CreateFileMappingW(
+                INVALID_HANDLE_VALUE,
+                nullptr,
+                PAGE_READWRITE,
+                0,
+                sizeof(CycleShared),
+                L"Local\\AutoCore.TaskbarCycle"
+            );
+            if (mapping == nullptr) {
+                return nullptr;
+            }
+            return static_cast<CycleShared*>(MapViewOfFile(
+                mapping,
+                FILE_MAP_ALL_ACCESS,
+                0,
+                0,
+                sizeof(CycleShared)
+            ));
+        }();
+        return shared;
+    }
+
+    class CycleLock {
+    public:
+        CycleLock() {
+            mutex = CreateMutexW(
+                nullptr,
+                FALSE,
+                L"Local\\AutoCore.TaskbarCycle.Mutex"
+            );
+            if (mutex != nullptr) {
+                WaitForSingleObject(mutex, INFINITE);
+            }
+        }
+
+        ~CycleLock() {
+            if (mutex == nullptr) {
+                return;
+            }
+            ReleaseMutex(mutex);
+            CloseHandle(mutex);
+        }
+
+        CycleLock(const CycleLock&) = delete;
+        CycleLock& operator=(const CycleLock&) = delete;
+
+    private:
+        HANDLE mutex {nullptr};
+    };
+
+    void begin_cycle_write(CycleShared& shared) {
+        InterlockedIncrement(reinterpret_cast<volatile LONG*>(
+            &shared.sequence
+        ));
+    }
+
+    void end_cycle_write(CycleShared& shared) {
+        InterlockedIncrement(reinterpret_cast<volatile LONG*>(
+            &shared.sequence
+        ));
+    }
+
+    uint32_t read_cycle_field(const volatile uint32_t& field) {
+        return static_cast<uint32_t>(InterlockedCompareExchange(
+            reinterpret_cast<volatile LONG*>(
+                const_cast<volatile uint32_t*>(&field)
+            ),
+            0,
+            0
+        ));
+    }
+
+    struct CycleHookView {
+        bool active {false};
+        bool native {false};
+        uint32_t initiating_vk {0};
+    };
+
+    CycleHookView read_cycle_hook_view() {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return {};
+        }
+        for (int attempt = 0; attempt < 8; ++attempt) {
+            const uint32_t first = read_cycle_field(shared->sequence);
+            if ((first & 1U) != 0) {
+                continue;
+            }
+            CycleHookView view {
+                .active = read_cycle_field(shared->active) != 0,
+                .native = read_cycle_field(shared->native) != 0,
+                .initiating_vk = read_cycle_field(shared->initiating_vk)
+            };
+            const uint32_t second = read_cycle_field(shared->sequence);
+            if (first == second) {
+                return view;
+            }
         }
         return {};
+    }
+
+    void clear_cycle_fields(CycleShared& shared) {
+        shared.active = 0;
+        shared.native = 0;
+        shared.digit = 0;
+        shared.initiating_vk = 0;
+        shared.window_count = 0;
+        shared.next_index = 0;
+        shared.application[0] = '\0';
+    }
+
+    bool release_owned_win(CycleShared& shared) {
+        if (shared.owns_win == 0) {
+            return true;
+        }
+        if (!ac::keyboard::release_winkey()) {
+            return false;
+        }
+        shared.owns_win = 0;
+        return true;
+    }
+
+    bool same_cycle_application(
+        const CycleShared& shared,
+        const std::string_view key
+    ) {
+        return key == std::string_view {shared.application};
+    }
+
+    void store_cycle_application(
+        CycleShared& shared,
+        const std::string_view key
+    ) {
+        const std::size_t count = (std::min)(
+            key.size(),
+            sizeof(shared.application) - 1
+        );
+        for (std::size_t index = 0; index < count; ++index) {
+            shared.application[index] = key[index];
+        }
+        shared.application[count] = '\0';
+    }
+
+    std::uint8_t slot_digit(const std::uint8_t position) {
+        return position == 10 ? 0 : position;
+    }
+
+    bool tap_native_digit(const std::uint8_t digit) {
+        if (ac::keyboard::tap_taskbar_digit(digit)) {
+            return true;
+        }
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return false;
+        }
+        CycleLock lock;
+        begin_cycle_write(*shared);
+        clear_cycle_fields(*shared);
+        const bool released = release_owned_win(*shared);
+        end_cycle_write(*shared);
+        if (!released) {
+            taskbar_activation_log().log_alert(
+                "Unable to release Win after a taskbar digit failed."
+            );
+        }
+        return false;
+    }
+
+    bool begin_native_cycle(
+        const std::string_view key,
+        const std::uint8_t position
+    ) {
+        const std::uint8_t digit = slot_digit(position);
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            ac::error::log(
+                "Unable to store the taskbar cycle session.\n"
+            );
+            return false;
+        }
+
+        bool continue_existing = false;
+        {
+            CycleLock lock;
+            begin_cycle_write(*shared);
+            continue_existing = shared->active != 0 &&
+                shared->native != 0 &&
+                shared->owns_win != 0 &&
+                shared->digit == digit &&
+                same_cycle_application(*shared, key);
+            if (!continue_existing) {
+                if (!release_owned_win(*shared)) {
+                    end_cycle_write(*shared);
+                    taskbar_activation_log().log_alert(
+                        "Unable to release Win before starting {}.",
+                        key
+                    );
+                    return false;
+                }
+                clear_cycle_fields(*shared);
+                shared->active = 1;
+                shared->native = 1;
+                shared->digit = digit;
+                shared->initiating_vk = shared->pending_vk;
+                store_cycle_application(*shared, key);
+            }
+            end_cycle_write(*shared);
+        }
+
+        if (continue_existing) {
+            return tap_native_digit(digit);
+        }
+
+        if (!ac::keyboard::press_winkey()) {
+            CycleLock lock;
+            begin_cycle_write(*shared);
+            clear_cycle_fields(*shared);
+            end_cycle_write(*shared);
+            return false;
+        }
+
+        {
+            CycleLock lock;
+            begin_cycle_write(*shared);
+            shared->owns_win = 1;
+            end_cycle_write(*shared);
+        }
+
+        if (!tap_native_digit(digit)) {
+            return false;
+        }
+        if (digit == 0) {
+            taskbar_activation_log().log_trace(
+                "{}: held Win and tapped 0 (slot 10)",
+                key
+            );
+        }
+        else {
+            taskbar_activation_log().log_trace(
+                "{}: held Win and tapped {}",
+                key,
+                digit
+            );
+        }
+        return true;
+    }
+
+    bool advance_direct_cycle() {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return false;
+        }
+        HWND target = nullptr;
+        std::string name;
+        {
+            CycleLock lock;
+            if (shared->active == 0 || shared->native != 0) {
+                return false;
+            }
+            begin_cycle_write(*shared);
+            const uint32_t count = shared->window_count;
+            if (count == 0) {
+                clear_cycle_fields(*shared);
+                end_cycle_write(*shared);
+                return false;
+            }
+            const uint32_t start = shared->next_index % count;
+            bool found = false;
+            for (uint32_t step = 0; step < count; ++step) {
+                const uint32_t index = (start + step) % count;
+                const HWND window = reinterpret_cast<HWND>(
+                    static_cast<std::uintptr_t>(shared->windows[index])
+                );
+                if (!IsWindow(window)) {
+                    continue;
+                }
+                shared->next_index = (index + 1) % count;
+                target = window;
+                name = shared->application;
+                found = true;
+                break;
+            }
+            if (!found) {
+                clear_cycle_fields(*shared);
+                end_cycle_write(*shared);
+                return false;
+            }
+            end_cycle_write(*shared);
+        }
+        taskbar_activation_log().log_trace(
+            "{}: focused the next matching window",
+            name
+        );
+        focus_matched_window(target);
+        return true;
+    }
+
+    bool begin_direct_cycle(
+        const std::string_view key,
+        const std::vector<HWND>& windows
+    ) {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            ac::error::log(
+                "Unable to store the taskbar cycle session.\n"
+            );
+            return false;
+        }
+
+        bool continue_existing = false;
+        HWND first = nullptr;
+        std::size_t focus_start = 0;
+        std::size_t focus_total = 0;
+        {
+            CycleLock lock;
+            if (shared->active != 0 &&
+                shared->native == 0 &&
+                same_cycle_application(*shared, key) &&
+                shared->window_count > 0) {
+                // Continue the stored order. Rebuilding it from the
+                // foreground would swap the next window after each focus.
+                continue_existing = true;
+            }
+            else {
+                if (!release_owned_win(*shared)) {
+                    taskbar_activation_log().log_alert(
+                        "Unable to release Win before starting {}.",
+                        key
+                    );
+                    return false;
+                }
+                std::size_t start = 0;
+                const HWND foreground = GetForegroundWindow();
+                const HWND root = foreground == nullptr
+                    ? nullptr
+                    : GetAncestor(foreground, GA_ROOT);
+                const std::size_t stored = (std::min)(
+                    windows.size(),
+                    static_cast<std::size_t>(cycle_window_capacity)
+                );
+                for (std::size_t index = 0; index < stored; ++index) {
+                    if (windows[index] == foreground ||
+                        windows[index] == root) {
+                        start = (index + 1) % stored;
+                        break;
+                    }
+                }
+                begin_cycle_write(*shared);
+                clear_cycle_fields(*shared);
+                shared->active = 1;
+                shared->native = 0;
+                shared->initiating_vk = shared->pending_vk;
+                shared->window_count = static_cast<uint32_t>(stored);
+                shared->next_index = static_cast<uint32_t>(
+                    (start + 1) % stored
+                );
+                for (std::size_t index = 0; index < stored; ++index) {
+                    shared->windows[index] = static_cast<uint64_t>(
+                        reinterpret_cast<std::uintptr_t>(windows[index])
+                    );
+                }
+                store_cycle_application(*shared, key);
+                end_cycle_write(*shared);
+                first = windows[start];
+                focus_start = start;
+                focus_total = stored;
+            }
+        }
+        if (continue_existing) {
+            return advance_direct_cycle();
+        }
+        if (first != nullptr) {
+            taskbar_activation_log().log_trace(
+                "{}: focused matching window {} of {}",
+                key,
+                focus_start + 1,
+                focus_total
+            );
+            focus_matched_window(first);
+            return true;
+        }
+        return false;
+    }
+
+    void cancel_cycle_session() {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return;
+        }
+        bool owns_win = false;
+        {
+            CycleLock lock;
+            if (shared->active == 0 && shared->owns_win == 0) {
+                return;
+            }
+            begin_cycle_write(*shared);
+            owns_win = shared->owns_win != 0;
+            clear_cycle_fields(*shared);
+            end_cycle_write(*shared);
+        }
+        if (!owns_win) {
+            return;
+        }
+        if (ac::keyboard::release_winkey()) {
+            CycleLock lock;
+            begin_cycle_write(*shared);
+            shared->owns_win = 0;
+            end_cycle_write(*shared);
+            return;
+        }
+        taskbar_activation_log().log_alert(
+            "Unable to release the held Win key."
+        );
+    }
+
+    bool continue_cycle_session() {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return false;
+        }
+        bool native = false;
+        bool owns_win = false;
+        std::uint8_t digit = 0;
+        std::string name;
+        {
+            CycleLock lock;
+            if (shared->active == 0) {
+                return false;
+            }
+            native = shared->native != 0;
+            owns_win = shared->owns_win != 0;
+            digit = static_cast<std::uint8_t>(shared->digit);
+            name = shared->application;
+        }
+        if (!native) {
+            return advance_direct_cycle();
+        }
+        if (!owns_win) {
+            if (!ac::keyboard::press_winkey()) {
+                cancel_cycle_session();
+                return false;
+            }
+            CycleLock lock;
+            begin_cycle_write(*shared);
+            shared->owns_win = 1;
+            end_cycle_write(*shared);
+        }
+        if (!tap_native_digit(digit)) {
+            return false;
+        }
+        taskbar_activation_log().log_trace(
+            "{}: tapped {}",
+            name,
+            digit
+        );
+        return true;
+    }
+
+    void activate_without_slot(
+        const std::string_view name,
+        const ApplicationConfiguration& definition
+    ) {
+        if (definition.window_matcher.executable_path == L"::runtime::") {
+            const std::string label = definition.display_name.empty()
+                ? std::string {name}
+                : definition.display_name;
+            taskbar_activation_log().log_alert(
+                "{} activation requires runtime executable-path resolution, "
+                "which has not been implemented. Pin {} if it is not pinned, "
+                "move it to taskbar positions 1 through 10, refresh "
+                "positions, and retry. While Taskbar is running, run "
+                "refresh_taskbar_positions. If Taskbar is not running, run "
+                "auto_core_taskbar.exe --run --refresh-cache.",
+                label,
+                label
+            );
+            return;
+        }
+        const auto windows = matching_window_list(definition.window_matcher);
+        if (windows.empty()) {
+            launch_mapped_fallback(
+                name,
+                definition.fallback_executable_path,
+                definition.window_matcher
+            );
+            return;
+        }
+        if (windows.size() == 1) {
+            const HWND window = windows.front();
+            if (IsIconic(window)) {
+                taskbar_activation_log().log_trace(
+                    "{}: restored the window",
+                    name
+                );
+                focus_matched_window(window);
+                return;
+            }
+            if (is_root_foreground(window)) {
+                taskbar_activation_log().log_trace(
+                    "{}: minimized the window",
+                    name
+                );
+                ShowWindow(window, SW_MINIMIZE);
+                return;
+            }
+            taskbar_activation_log().log_trace(
+                "{}: focused the window",
+                name
+            );
+            focus_matched_window(window);
+            return;
+        }
+        taskbar_activation_log().log_trace(
+            "{}: focused the window",
+            name
+        );
+        focus_matched_window(windows.front());
     }
 }
 
@@ -1535,31 +2196,6 @@ namespace ac::taskbar {
         return names;
     }
 
-    std::optional<std::wstring> configured_fallback_executable_path(
-        const std::string_view application
-    ) {
-        const auto snapshot = local_snapshot.load();
-        if (!snapshot) return std::nullopt;
-        const auto found = snapshot->fallback_executable_paths.find(
-            normalized_application_key(std::string {application})
-        );
-        return found == snapshot->fallback_executable_paths.end()
-            ? std::nullopt
-            : std::optional<std::wstring> {found->second};
-    }
-
-    std::optional<std::wstring> configured_window_executable_path(
-        const std::string_view application
-    ) {
-        const auto snapshot = local_snapshot.load();
-        if (!snapshot) return std::nullopt;
-        const auto found = snapshot->applications.find(
-            normalized_application_key(std::string {application})
-        );
-        if (found == snapshot->applications.end()) return std::nullopt;
-        return found->second.window_matcher.executable_path;
-    }
-
     bool application_is_configured(const std::string_view application) {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return false;
@@ -1590,9 +2226,7 @@ namespace ac::taskbar {
                 matcher = found->second.window_matcher;
             }
         }
-        if (!matcher.configured()) {
-            matcher = compiled_default_matcher(key);
-        }
+        if (!matcher.configured()) return {};
         const auto windows = matching_window_list(matcher);
         std::vector<WindowHandle> result;
         result.reserve(windows.size());
@@ -1639,23 +2273,6 @@ namespace ac::taskbar {
             ac::keyboard::send_taskbar_position(position.value);
     }
 
-    bool begin_native_cycle(const Position position) {
-        if (!position.valid()) return false;
-        if (!ac::keyboard::press_and_hold_winkey()) return false;
-        ac::keyboard::send_taskbar_position_while_win_held(position.value);
-        return true;
-    }
-
-    bool advance_native_cycle(const Position position) {
-        if (!position.valid()) return false;
-        ac::keyboard::send_taskbar_position_while_win_held(position.value);
-        return true;
-    }
-
-    bool end_native_cycle() noexcept {
-        return ac::keyboard::release_winkey();
-    }
-
     SnapshotInfo snapshot_info() noexcept {
         const auto snapshot = local_snapshot.load();
         if (!snapshot) return {};
@@ -1696,5 +2313,144 @@ namespace ac::taskbar {
             return slot.position.value;
         });
         return result;
+    }
+
+    void activate_application(
+        const std::string_view application_key,
+        const std::string_view command
+    ) {
+        const std::string key = normalized_application_key(
+            std::string {application_key}
+        );
+        if (!application_key_token(key)) {
+            ac::error::log(
+                "Application key is not a single filename token.\n"
+            );
+            return;
+        }
+
+        const auto path = ac::paths::taskbar_applications_directory() /
+            (key + ".map");
+        std::error_code error;
+        const bool present = std::filesystem::exists(path, error);
+        if (error) {
+            ac::error::log(std::format(
+                "Unable to read {}.\n",
+                path.string()
+            ));
+            return;
+        }
+        if (!present) {
+            launch_setup_application(key);
+            return;
+        }
+        {
+            std::ifstream input(path);
+            if (!input) {
+                ac::error::log(std::format(
+                    "Unable to read {}.\n",
+                    path.string()
+                ));
+                return;
+            }
+        }
+
+        Configuration config;
+        load_taskbar_application(config, path);
+        const auto found = config.applications.find(key);
+        if (found == config.applications.end()) {
+            ac::error::log(std::format(
+                "Unable to parse {} for '{}'.\n",
+                path.string(),
+                key
+            ));
+            return;
+        }
+
+        load_positions_cache(config);
+        const auto slot = config.fallback_positions.find(key);
+        const bool has_slot =
+            slot != config.fallback_positions.end() && slot->second.valid();
+        if (found->second.multi_window == MultiWindowBehavior::cycle) {
+            const auto windows = matching_window_list(
+                found->second.window_matcher
+            );
+            if (windows.size() >= 2) {
+                if (has_slot) {
+                    begin_native_cycle(key, slot->second.value);
+                }
+                else {
+                    begin_direct_cycle(key, windows);
+                }
+                return;
+            }
+        }
+        cancel_cycle_session();
+        if (has_slot) {
+            if (!ac::keyboard::send_taskbar_position(slot->second.value)) {
+                ac::error::log(std::format(
+                    "Unable to send the WinKey shortcut for '{}'.\n",
+                    key
+                ));
+                return;
+            }
+            if (slot->second.value == 10) {
+                taskbar_activation_log().log_trace(
+                    "{}: sent Win+0 (slot 10)",
+                    key
+                );
+            }
+            else {
+                taskbar_activation_log().log_trace(
+                    "{}: sent Win+{}",
+                    key,
+                    slot->second.value
+                );
+            }
+            return;
+        }
+        activate_without_slot(key, found->second);
+    }
+
+    void note_cycle_shortcut(const std::uint32_t key_code) noexcept {
+        CycleShared* shared = cycle_shared();
+        if (shared == nullptr) {
+            return;
+        }
+        InterlockedExchange(
+            reinterpret_cast<volatile LONG*>(&shared->pending_vk),
+            static_cast<LONG>(key_code)
+        );
+    }
+
+    bool cycle_session_active() noexcept {
+        return read_cycle_hook_view().active;
+    }
+
+    std::uint32_t cycle_initiating_key() noexcept {
+        return read_cycle_hook_view().initiating_vk;
+    }
+
+    bool cycle_uses_native_winkey() noexcept {
+        const CycleHookView view = read_cycle_hook_view();
+        return view.active && view.native;
+    }
+
+    bool continue_cycle() {
+        return continue_cycle_session();
+    }
+
+    void select_cycle() {
+        const bool native = cycle_uses_native_winkey();
+        cancel_cycle_session();
+        if (native) {
+            taskbar_activation_log().log_trace(
+                "Released Win to select the highlighted taskbar window"
+            );
+        }
+    }
+
+    void cancel_cycle() {
+        cancel_cycle_session();
     }
 }

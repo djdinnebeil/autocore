@@ -15,29 +15,14 @@ export namespace ac::protocol::taskbar {
     namespace commands {
         inline constexpr std::string_view activate_auto_core =
             "activate_auto_core";
-        inline constexpr std::string_view launch_powershell =
-            "launch_powershell";
-        inline constexpr std::string_view activate_powershell_in_admin =
-            "activate_powershell_in_admin";
-        inline constexpr std::string_view activate_wordpad =
-            "activate_wordpad";
-        inline constexpr std::string_view launch_gitbash = "launch_gitbash";
         inline constexpr std::string_view refresh_taskbar_positions =
             "refresh_taskbar_positions";
 
         /** Compiled command names that INI handlers must not replace.
             This is a reserved-name list, not a pipe-destination list.
-            `activate_auto_core` is advertised by `auto_core_taskbar.exe`.
-            `launch_powershell` and `launch_gitbash` run in Main so the
-            foreground process can focus the new window.
-            `activate_wordpad` and `activate_powershell_in_admin` run in
-            Main because unmapped icons join Main's interactive cycle. */
+            `activate_auto_core` is advertised by `auto_core_taskbar.exe`. */
         inline constexpr std::array authority {
-            activate_auto_core,
-            launch_powershell,
-            activate_powershell_in_admin,
-            activate_wordpad,
-            launch_gitbash
+            activate_auto_core
         };
     }
 

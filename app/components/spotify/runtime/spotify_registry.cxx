@@ -19,7 +19,9 @@ command_registry::Registry create_spotify_command_registry(
             "activate_spotify",
             "spotify",
             {}
-        )
+        ),
+        {},
+        "spotify"
     );
     registry.add(
         std::string {spotify::commands::get_queue.name},

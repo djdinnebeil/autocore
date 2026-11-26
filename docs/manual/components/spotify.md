@@ -37,7 +37,7 @@ A refresh token expires about six months after authorization. Refreshing it does
 
 | Command | What it does |
 | --- | --- |
-| `activate_spotify` | Runs the provider selected in `keymap\activate_commands.map` when that name is shared. `spotify_activate` always runs Spotify. |
+| `activate_spotify` | Resolves through `keymap\activate_commands.map`. `spotify_activate` invokes Spotify directly. `taskbar_spotify` activates Spotify through the Taskbar helper when `spotify.map` exists. |
 | `spotify_play_pause` | Toggles play and pause. |
 | `spotify_next_song` | Skips to the next track. |
 | `spotify_print_songs` | Inserts the tracks heard since the last time this command ran, including the current track. |

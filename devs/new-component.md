@@ -184,8 +184,9 @@ ac::Component& example_component() {
 }
 
 `example_ac.exe --config` uses the same logging API after
-`ac::Component component {"example_config"}`. That identity is the configuration log directory,
-`logs/components/example_config/`. `log_trace()`, `log_debug()`,
+`ac::Component component {"example_config", ac::logging::config::LoggingScope {"example"}, ac::SharedLog {"example"}}`.
+That session appends to `logs/components/example/{date}_example.log` and records the area `example_config`.
+`log_trace()`, `log_debug()`,
 `log_info()`, and `log_alert()` are the diagnostic calls. `log_trace()`
 uses `MessageClass::trace` and is admitted only when the configured logging
 level includes trace. There is no separate thread-logging gate. Interactive prompts stay on

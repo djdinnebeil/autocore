@@ -8,7 +8,7 @@ module taskbar_firefox;
 
 import std;
 import auto_core.main.application;
-import auto_core.main.taskbar;
+import auto_core.taskbar;
 
 bool is_firefox_window_class(const std::wstring_view class_name) {
     return class_name == L"MozillaWindowClass" ||
@@ -60,7 +60,7 @@ void open_reddit_in_firefox_new_tab() {
 }
 
 void activate_firefox() {
-    taskbar.activate_configured("firefox");
+    ac::taskbar::activate_application("firefox");
 }
 
 void activate_firefox_or_open_reddit() {

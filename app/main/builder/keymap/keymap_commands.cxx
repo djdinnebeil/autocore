@@ -9,8 +9,9 @@
  * description is empty. `[commands]` in `keymap.map` stays names only.
  */
 #include "../../runtime/keyboard/keymap_map_detail.hpp"
-#include "../../../core/taskbar/activation_catalog_description.hpp"
+#include "../../runtime/taskbar/activate_factory.hpp"
 #include "../../shared/provider_display_name.hpp"
+#include "../../../core/taskbar/activation_catalog_description.hpp"
 
 import std;
 import command_registry;
@@ -43,11 +44,27 @@ constexpr Provider providers[] {
 struct ExportedCommand {
     std::string name;
     std::string description;
+    std::string application;
 };
 
 struct CapturedExport {
     std::vector<ExportedCommand> commands;
 };
+
+[[nodiscard]]
+bool is_application_key(const std::string_view key) {
+    if (key.empty()) {
+        return false;
+    }
+    const auto first = static_cast<unsigned char>(key.front());
+    if (!std::isalpha(first)) {
+        return false;
+    }
+    return std::ranges::all_of(key, [](const char character) {
+        const auto value = static_cast<unsigned char>(character);
+        return value == '_' || std::isalnum(value);
+    });
+}
 
 [[nodiscard]]
 bool is_command_name(const std::string_view name) {
@@ -88,13 +105,21 @@ std::optional<std::vector<ExportedCommand>> parse_export(
             line.remove_suffix(1);
         }
         const auto split = line.find(separator);
-        const std::string_view name = split == std::string_view::npos
+        const std::string_view identity = split == std::string_view::npos
             ? line
             : line.substr(0, split);
         const std::string_view description = split == std::string_view::npos
             ? std::string_view {}
             : line.substr(split + separator.size());
-        if (name.empty() || !is_command_name(name)) {
+        const auto marker = identity.find(" @");
+        const std::string_view name = marker == std::string_view::npos
+            ? identity
+            : identity.substr(0, marker);
+        const std::string_view application = marker == std::string_view::npos
+            ? std::string_view {}
+            : identity.substr(marker + 2);
+        if (name.empty() || !is_command_name(name) ||
+            (marker != std::string_view::npos && !is_application_key(application))) {
             failure = name.empty()
                 ? "export contained an empty line"
                 : "export contained an invalid command name";
@@ -102,7 +127,8 @@ std::optional<std::vector<ExportedCommand>> parse_export(
         }
         commands.push_back(ExportedCommand {
             std::string {name},
-            std::string {description}
+            std::string {description},
+            std::string {application}
         });
         if (newline == std::string_view::npos) {
             break;
@@ -705,114 +731,17 @@ bool update_keymap_map(const std::vector<std::string>& names) {
     return publish_text(path, updated, true);
 }
 
-/**
- * \brief Exclusive build guard for this installation.
- *
- * The lock file is `<installation root>/data/auto_core/keymap_build.lock`.
- * A byte-range lock is visible to every Windows session that can open that
- * path and is released when this process exits. It is not a catalog
- * transaction.
- */
-class BuildLock {
-public:
-    enum class Result {
-        acquired,
-        busy,
-        failed
-    };
-
-    BuildLock() = default;
-    BuildLock(const BuildLock&) = delete;
-    BuildLock& operator=(const BuildLock&) = delete;
-
-    ~BuildLock() {
-        release();
-    }
-
-    [[nodiscard]]
-    Result acquire(const std::filesystem::path& lock_path, std::string& error) {
-        handle_ = CreateFileW(
-            lock_path.c_str(),
-            GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            nullptr,
-            OPEN_ALWAYS,
-            FILE_ATTRIBUTE_NORMAL,
-            nullptr
-        );
-        if (handle_ == INVALID_HANDLE_VALUE) {
-            error =
-                "Failed to open " + lock_path.string() +
-                " (error " + std::to_string(GetLastError()) + ").";
-            return Result::failed;
-        }
-
-        OVERLAPPED overlapped {};
-        if (!LockFileEx(
-                handle_,
-                LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY,
-                0,
-                1,
-                0,
-                &overlapped
-            )) {
-            const DWORD lock_error = GetLastError();
-            CloseHandle(handle_);
-            handle_ = INVALID_HANDLE_VALUE;
-            if (lock_error == ERROR_LOCK_VIOLATION) {
-                return Result::busy;
-            }
-            error =
-                "Failed to lock " + lock_path.string() +
-                " (error " + std::to_string(lock_error) + ").";
-            return Result::failed;
-        }
-        locked_ = true;
-        return Result::acquired;
-    }
-
-private:
-    void release() noexcept {
-        if (locked_ && handle_ != INVALID_HANDLE_VALUE) {
-            OVERLAPPED overlapped {};
-            UnlockFileEx(handle_, 0, 1, 0, &overlapped);
-            locked_ = false;
-        }
-        if (handle_ != INVALID_HANDLE_VALUE) {
-            CloseHandle(handle_);
-            handle_ = INVALID_HANDLE_VALUE;
-        }
-    }
-
-    HANDLE handle_ {INVALID_HANDLE_VALUE};
-    bool locked_ {false};
-};
-
 } // namespace
 
 int build_keymap_commands() {
-    const auto lock_path =
-        ac::paths::installation_root() / "data" / "auto_core" /
-        "keymap_build.lock";
-    std::error_code directory_error;
-    std::filesystem::create_directories(
-        lock_path.parent_path(),
-        directory_error
-    );
-    if (directory_error) {
-        std::cerr << "Failed to create " << lock_path.parent_path().string()
-                  << ": " << directory_error.message() << '\n';
-        return 1;
-    }
-
-    BuildLock build_lock;
+    ac::taskbar::KeymapBuildLock build_lock;
     std::string lock_error;
-    const auto lock = build_lock.acquire(lock_path, lock_error);
-    if (lock == BuildLock::Result::busy) {
+    const auto lock = build_lock.acquire(lock_error);
+    if (lock == ac::taskbar::KeymapBuildLock::Status::busy) {
         std::cerr << "A keymap command build is already running.\n";
         return 1;
     }
-    if (lock != BuildLock::Result::acquired) {
+    if (lock != ac::taskbar::KeymapBuildLock::Status::acquired) {
         std::cerr << lock_error << '\n';
         return 1;
     }
@@ -840,24 +769,12 @@ int build_keymap_commands() {
             const bool catalog
         ) {
             occupied.push_back(command);
-            const bool ordinary = !command.starts_with("activate_") ||
-                command.size() == std::string_view {"activate_"}.size();
-            if (!ordinary) {
-                offers.push_back(ac::taskbar::ActivationOffer {
-                    "taskbar",
-                    command,
-                    description,
-                    application
-                });
-            }
-            else {
-                shared_offers.push_back(ac::taskbar::ActivationOffer {
-                    "taskbar",
-                    command,
-                    description,
-                    application
-                });
-            }
+            shared_offers.push_back(ac::taskbar::ActivationOffer {
+                "taskbar",
+                command,
+                description,
+                application
+            });
             if (catalog) {
                 taskbar_commands.push_back(ExportedCommand {
                     std::move(command),
@@ -865,31 +782,8 @@ int build_keymap_commands() {
                 });
             }
         };
-        add_taskbar_offer(
-            "activate_wordpad",
-            ac::taskbar::activation_catalog_description(
-                "activate_wordpad",
-                "wordpad",
-                {}
-            ),
-            "wordpad",
-            false
-        );
-        add_taskbar_offer(
-            "activate_powershell_in_admin",
-            ac::taskbar::activation_catalog_description(
-                "activate_powershell_in_admin",
-                "powershell_admin",
-                {}
-            ),
-            "powershell_admin",
-            false
-        );
-        occupied.emplace_back("launch_powershell");
-        occupied.emplace_back("launch_gitbash");
-        occupied.emplace_back("launch_taskbar_config");
         occupied.emplace_back("activate_firefox_or_open_reddit");
-        occupied.emplace_back("activate");
+        occupied.emplace_back(ac::main::activate_factory_name);
         for (const ac::taskbar::ConfiguredActivationBinding& binding :
              ac::taskbar::configured_activation_bindings_from_disk()) {
             add_taskbar_offer(
@@ -899,6 +793,17 @@ int build_keymap_commands() {
                 true
             );
         }
+        occupied.emplace_back("activate_auto_core");
+        offers.push_back(ac::taskbar::ActivationOffer {
+            "auto_core",
+            "activate_auto_core",
+            ac::taskbar::activation_catalog_description(
+                "activate_auto_core",
+                "auto_core",
+                {}
+            ),
+            {}
+        });
 
         for (std::size_t index = 0; index < exports.size(); ++index) {
             for (const ExportedCommand& command : exports[index].commands) {
@@ -907,7 +812,7 @@ int build_keymap_commands() {
                     std::string {providers[index].name},
                     command.name,
                     command.description,
-                    {}
+                    command.application
                 };
                 if (command.name.starts_with("activate_") &&
                     command.name.size() > std::string_view {"activate_"}.size()) {
@@ -985,39 +890,6 @@ int build_keymap_commands() {
             );
             taskbar_tier.insert(name);
         };
-        claim(
-            "activate_wordpad",
-            "taskbar",
-            ac::taskbar::activation_catalog_description(
-                "activate_wordpad",
-                "wordpad",
-                {}
-            )
-        );
-        claim(
-            "activate_powershell_in_admin",
-            "taskbar",
-            ac::taskbar::activation_catalog_description(
-                "activate_powershell_in_admin",
-                "powershell_admin",
-                {}
-            )
-        );
-        claim(
-            "launch_powershell",
-            "taskbar",
-            "Starts PowerShell and focuses its window."
-        );
-        claim(
-            "launch_gitbash",
-            "taskbar",
-            "Starts Git Bash in the home directory and focuses its window."
-        );
-        claim(
-            "launch_taskbar_config",
-            "taskbar",
-            "Opens the Taskbar configuration menu."
-        );
         for (const ExportedCommand& command : taskbar_commands) {
             claim(command.name, "taskbar", command.description);
         }
@@ -1154,6 +1026,16 @@ int build_keymap_commands() {
                 )
             );
         }
+        merged_lines.insert_or_assign(
+            std::string {ac::main::activate_factory_name},
+            command_registry::format_merged_catalog_line(
+                ac::main::activate_factory_name,
+                ac::main::provider_display_name(
+                    ac::main::activate_factory_provider
+                ),
+                ac::main::activate_factory_description
+            )
+        );
         if (!replace_merged_catalog(
                 ac::paths::keymap_commands_file(),
                 merged_lines

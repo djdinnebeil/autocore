@@ -2,9 +2,15 @@ module writer_commands;
 
 import std;
 import auto_core.core.encoding;
+import auto_core.taskbar;
 import writer_component;
 import writer_protocol;
 import writer_text_commands;
+
+void activate_excel() {
+    writer_component().log_trace("activate_excel()");
+    ac::taskbar::activate_application("excel", "activate_excel");
+}
 
 namespace {
 
@@ -159,6 +165,13 @@ command_registry::Registry create_writer_command_registry() {
         },
         writer_actions::add_brackets_around_clipboard,
         "Inserts the clipboard text wrapped in square brackets."
+    );
+    registry.add(
+        std::string {ac::protocol::writer::activate_excel.name},
+        activate_excel,
+        "Activates Excel from excel.map. Starts setup when that map is missing.",
+        {},
+        "excel"
     );
     register_text_commands(registry);
     return registry;

@@ -18,7 +18,10 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component components_policy_config {"components_policy_config"};
+ac::Component components_policy_config {
+    "components_policy_config",
+    "auto_core"
+};
 
 constexpr std::string_view new_component_values[] {"prompt", "on", "off"};
 constexpr std::string_view on_off[] {"on", "off"};

@@ -9,7 +9,8 @@ import auto_core.core.shell;
 
 ac::Component spotify_oauth_log {
     "spotify_oauth",
-    ac::logging::config::LoggingScope {"spotify"}
+    ac::logging::config::LoggingScope {"spotify"},
+    ac::SharedLog {"spotify"}
 };
 
 BOOL WINAPI oauth_console_control(DWORD event) {

@@ -19,7 +19,8 @@ namespace {
 
 ac::Component journal_config {
     "journal_config",
-    ac::logging::config::LoggingScope {"journal"}
+    ac::logging::config::LoggingScope {"journal"},
+    ac::SharedLog {"journal"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

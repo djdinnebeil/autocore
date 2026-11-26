@@ -1,8 +1,9 @@
 module;
 
 #include "keymap_map_detail.hpp"
-#include "../../../core/taskbar/activation_catalog_description.hpp"
+#include "../taskbar/activate_factory.hpp"
 #include "../../shared/provider_display_name.hpp"
+#include "../../../core/taskbar/activation_catalog_description.hpp"
 
 module auto_core.main.keymap.runtime;
 
@@ -27,7 +28,6 @@ static bool is_activation_command(const std::string_view command) {
 }
 
 static void add_taskbar_offer(
-    std::vector<ac::taskbar::ActivationOffer>& offers,
     std::vector<ac::taskbar::ActivationOffer>& shared_offers,
     std::vector<std::string>& occupied,
     std::string command,
@@ -35,8 +35,7 @@ static void add_taskbar_offer(
     std::string application
 ) {
     occupied.push_back(command);
-    auto& destination = is_activation_command(command) ? offers : shared_offers;
-    destination.push_back(ac::taskbar::ActivationOffer {
+    shared_offers.push_back(ac::taskbar::ActivationOffer {
         "taskbar",
         std::move(command),
         std::move(description),
@@ -47,6 +46,12 @@ static void add_taskbar_offer(
 static command_registry::Action provider_action(
     const ac::taskbar::ActivationAlias& alias
 ) {
+    if (alias.provider == "auto_core" &&
+        alias.command == "activate_auto_core") {
+        return [] {
+            ac::main::components::invoke("taskbar", "activate_auto_core");
+        };
+    }
     if (alias.provider == "taskbar" && !alias.application.empty()) {
         return taskbar_activation_action(alias.application, alias.command);
     }
@@ -94,6 +99,37 @@ static void remember_unset_catalog(
 static std::unordered_set<std::string>& reported_unselected_shared() {
     static std::unordered_set<std::string> reported;
     return reported;
+}
+
+struct UnresolvedActivation {
+    bool blank {false};
+    std::string provider;
+};
+
+static std::unordered_map<std::string, UnresolvedActivation>&
+unresolved_activations() {
+    static std::unordered_map<std::string, UnresolvedActivation> commands;
+    return commands;
+}
+
+static void remember_unresolved_activations(
+    const ac::taskbar::ActivationResolution& resolution,
+    const command_registry::Registry& registry
+) {
+    auto& commands = unresolved_activations();
+    commands.clear();
+    for (const ac::taskbar::ActivationBinding& binding : resolution.bindings) {
+        if (registry.contains(binding.command)) {
+            continue;
+        }
+        commands.insert_or_assign(
+            binding.command,
+            UnresolvedActivation {
+                binding.blank_selection,
+                binding.blank_selection ? std::string {} : binding.provider
+            }
+        );
+    }
 }
 
 static void remember_unselected_shared(
@@ -199,40 +235,12 @@ static command_registry::Registry create_runtime_command_registry() {
     std::vector<ac::taskbar::ActivationOffer> offers;
     std::vector<ac::taskbar::ActivationOffer> shared_offers;
     std::vector<std::string> occupied;
-    add_taskbar_offer(
-        offers,
-        shared_offers,
-        occupied,
-        "activate_wordpad",
-        ac::taskbar::activation_catalog_description(
-            "activate_wordpad",
-            "wordpad",
-            {}
-        ),
-        "wordpad"
-    );
-    add_taskbar_offer(
-        offers,
-        shared_offers,
-        occupied,
-        "activate_powershell_in_admin",
-        ac::taskbar::activation_catalog_description(
-            "activate_powershell_in_admin",
-            "powershell_admin",
-            {}
-        ),
-        "powershell_admin"
-    );
-    occupied.emplace_back("launch_powershell");
-    occupied.emplace_back("launch_gitbash");
-    occupied.emplace_back("launch_taskbar_config");
     occupied.emplace_back("activate_firefox_or_open_reddit");
-    occupied.emplace_back("activate");
+    occupied.emplace_back(ac::main::activate_factory_name);
 
     for (const ac::taskbar::ConfiguredActivationBinding& binding :
          ac::taskbar::configured_activation_bindings_from_disk()) {
         add_taskbar_offer(
-            offers,
             shared_offers,
             occupied,
             binding.command,
@@ -240,6 +248,17 @@ static command_registry::Registry create_runtime_command_registry() {
             binding.application
         );
     }
+    occupied.emplace_back("activate_auto_core");
+    offers.push_back(ac::taskbar::ActivationOffer {
+        "auto_core",
+        "activate_auto_core",
+        ac::taskbar::activation_catalog_description(
+            "activate_auto_core",
+            "auto_core",
+            {}
+        ),
+        {}
+    });
     for (const ac::main::components::AdvertisedCommand& command :
          ac::main::components::advertised_commands()) {
         occupied.push_back(command.name);
@@ -247,7 +266,7 @@ static command_registry::Registry create_runtime_command_registry() {
             command.provider,
             command.name,
             command.description,
-            {}
+            command.application
         };
         if (is_activation_command(command.name)) {
             offers.push_back(std::move(offer));
@@ -283,7 +302,6 @@ static command_registry::Registry create_runtime_command_registry() {
 
     test_commands::runtime_commands::register_with(registry);
     main_component::runtime_commands::register_with(registry);
-    taskbar_runtime_commands::register_reserved_with(registry, shared_names);
     taskbar_runtime_commands::register_configured_with(registry, shared_names);
     ac::main::components::register_with(registry, shared_names);
     register_resolved(
@@ -293,6 +311,7 @@ static command_registry::Registry create_runtime_command_registry() {
         "shared activation command",
         "activate_commands.map"
     );
+    remember_unresolved_activations(resolution, registry);
     register_resolved(
         registry,
         shared,
@@ -622,6 +641,42 @@ static command_registry::Action incorrect_value_action(
     };
 }
 
+static void report_blank_activation(const std::string_view command) {
+    auto_core.log_alert(
+        "No provider selected for {}. Set a provider in "
+        "keymap\\activate_commands.map, then restart Auto Core.",
+        command
+    );
+}
+
+static void report_unavailable_activation(
+    const std::string_view command,
+    const std::string_view provider
+) {
+    auto_core.log_alert(
+        "The provider \"{}\" selected for {} is unavailable. "
+        "Check the provider choices in keymap\\activate_commands.map, "
+        "then restart Auto Core.",
+        provider,
+        command
+    );
+}
+
+static command_registry::Action blank_activation_action(std::string command) {
+    return [command = std::move(command)] {
+        report_blank_activation(command);
+    };
+}
+
+static command_registry::Action unavailable_activation_action(
+    std::string command,
+    std::string provider
+) {
+    return [command = std::move(command), provider = std::move(provider)] {
+        report_unavailable_activation(command, provider);
+    };
+}
+
 struct SideBind {
     command_registry::Action action;
     bool resolved = false;
@@ -643,6 +698,18 @@ static SideBind bind_side(
         }
         report_unselected_shared(entry);
         return { no_op_action(), false };
+    }
+
+    const auto& activations = unresolved_activations();
+    const auto activation = activations.find(std::string {token});
+    if (activation != activations.end()) {
+        command_registry::Action action = activation->second.blank
+            ? blank_activation_action(activation->first)
+            : unavailable_activation_action(
+                activation->first,
+                activation->second.provider
+            );
+        return { std::move(action), false };
     }
 
     command_registry::Action action = registry.resolve(expression);

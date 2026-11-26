@@ -8,8 +8,10 @@
  * string, or `shutdown` with no payload. Do not reuse or renumber request IDs.
  *
  * A catalog line is a command name, or a factory expression `name(...)`.
- * An optional description follows that complete identity: ` - description`.
- * The description may contain further hyphens. It is not part of the name.
+ * A command that declares a Taskbar application key is `name @key`. The key
+ * is not part of the command name. An optional description follows that
+ * complete identity: ` - description`. The description may contain further
+ * hyphens. It is not part of the name or the key.
  */
 export module component_protocol;
 
@@ -63,6 +65,8 @@ export namespace ac::protocol::component {
         bool accepts_arguments {};
         std::string autocomplete;
         std::string description;
+        /** Declared Taskbar application key. Empty when the command has none. */
+        std::string application;
     };
 
     struct Hello {
@@ -131,6 +135,47 @@ export namespace ac::protocol::component {
     }
 
     [[nodiscard]]
+    inline bool is_application_key(const std::string_view key) noexcept {
+        if (key.empty()) {
+            return false;
+        }
+        const auto first = static_cast<unsigned char>(key.front());
+        if (!std::isalpha(first)) {
+            return false;
+        }
+        return std::ranges::all_of(key, [](const char character) {
+            const auto value = static_cast<unsigned char>(character);
+            return std::isalnum(value) || character == '_';
+        });
+    }
+
+    /**
+     * \brief Splits `name` or `name @key`.
+     *
+     * The command name and the application key stay separate. A missing key
+     * is empty. An `@` without a valid key is rejected.
+     */
+    [[nodiscard]]
+    inline std::optional<std::pair<std::string, std::string>>
+    parse_command_identity(const std::string_view identity) {
+        const auto marker = identity.find(" @");
+        const std::string_view name = marker == std::string_view::npos
+            ? identity
+            : trim_hello_line(identity.substr(0, marker));
+        if (!is_command_name(name)) {
+            return std::nullopt;
+        }
+        if (marker == std::string_view::npos) {
+            return std::pair {std::string {name}, std::string {}};
+        }
+        const auto key = trim_hello_line(identity.substr(marker + 2));
+        if (!is_application_key(key)) {
+            return std::nullopt;
+        }
+        return std::pair {std::string {name}, std::string {key}};
+    }
+
+    [[nodiscard]]
     inline std::optional<CatalogEntry> parse_catalog_line(
         const std::string_view line
     ) {
@@ -185,10 +230,11 @@ export namespace ac::protocol::component {
         }
 
         const auto separator = trimmed.find(catalog_description_separator);
-        const auto name = separator == std::string_view::npos
+        const auto identity = separator == std::string_view::npos
             ? trimmed
             : trim_hello_line(trimmed.substr(0, separator));
-        if (!is_command_name(name)) {
+        const auto parsed = parse_command_identity(identity);
+        if (!parsed) {
             return std::nullopt;
         }
 
@@ -200,10 +246,11 @@ export namespace ac::protocol::component {
         }
 
         return CatalogEntry {
-            std::string {name},
+            parsed->first,
             false,
-            std::string {name},
-            std::move(description)
+            parsed->first,
+            std::move(description),
+            parsed->second
         };
     }
 

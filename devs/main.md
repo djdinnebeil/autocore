@@ -145,8 +145,8 @@ selects the primary action; `activate_function_key` clears it so the next
 binding uses `secondary`. After a secondary action, `primary` is restored
 except when the key is numpad 0.
 
-While an interactive taskbar cycle is active (`taskbar.cycle_active()`), posted
-keys go to `MainTaskbarState::switch_windows` instead of the keymap.
+Posted keys run the matching keymap binding. Taskbar activation does not
+keep a cycle session in Main.
 
 Numpad Enter is normalized to `key_codes::numpad_enter` (`0x100`) using
 `LLKHF_EXTENDED`. `keymap.map` names are resolved by `key_codes::resolve`;
@@ -225,7 +225,18 @@ Core's: the hook calls `CallNextHookEx`, so Windows and the focused app still
 see the physical key. A key with at least one filled side is in the map and
 eats the keystroke (`return 1`); an empty side is a no-op. Unknown command
 expressions print `numpad 2 is set to an incorrect value: …` at load and
-again on press of that side. Unknown keys and malformed lines are logged and
+again on press of that side. A side whose command is an unresolved
+`activate_commands.map` selection does not print that diagnostic at load or
+on press. Its action still runs on press, and the side does not count as a
+usable entry. A blank selection prints `No provider selected for <command>.
+Set a provider in keymap\activate_commands.map, then restart Auto Core.` An
+invalid or unavailable provider prints `The provider "<value>" selected for
+<command> is unavailable. Check the provider choices in
+keymap\activate_commands.map, then restart Auto Core.` The command name and
+saved value come from the activation resolver. Pending `<key>.map` entries
+still open setup. A command the resolver did not leave unresolved still uses
+the incorrect-value diagnostic. Resolver startup reports are unchanged.
+Unknown keys and malformed lines are logged and
 skipped. Zero usable rows (no resolved command), or a file that cannot be
 opened, uses the emergency map. Unset messages are not printed after
 emergency fallback.

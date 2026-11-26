@@ -298,7 +298,8 @@ int run(int argc, char* argv[]) {
     ac::shell::set_process_app_user_model_id();
     ac::Component itunes_config {
         "itunes_config",
-        ac::logging::config::LoggingScope {"itunes"}
+        ac::logging::config::LoggingScope {"itunes"},
+        ac::SharedLog {"itunes"}
     };
     itunes_config.log_info("itunes_ac.exe --config started");
 

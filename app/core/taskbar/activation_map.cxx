@@ -2,9 +2,11 @@
  * \file activation_map.cxx
  * \brief Selects the provider for a shared keymap command.
  *
- * auto_core_keymap.exe --build is the only writer. Startup reads the files.
- * `activate_commands.map` keeps `activate_<program>`. `shared_commands.map`
- * keeps every other duplicated command.
+ * auto_core_keymap.exe --build rewrites both maps after a successful
+ * discovery. Startup reads activate_commands.map and does not write it.
+ * One activation provider resolves in memory even when the saved row is
+ * missing or stale. `activate_commands.map` keeps `activate_<program>`.
+ * `shared_commands.map` keeps every other duplicated command.
  */
 module;
 
@@ -15,12 +17,15 @@ module;
 module auto_core.taskbar;
 
 import std;
+import auto_core.core.paths;
 
 namespace {
 
 constexpr std::string_view activation_prefix = "activate_";
 constexpr std::string_view choice_prefix = "# Choice:";
 constexpr std::string_view choices_prefix = "# Choices:";
+constexpr std::string_view needs_initialization_comment =
+    "# Needs initialization";
 
 struct ProviderOffer {
     std::string provider;
@@ -49,6 +54,12 @@ struct MapPolicy {
     bool report_unselected {true};
     /** Drop a saved command when this discovery contains no provider for it. */
     bool prune_unoffered {false};
+    /** Write a row for one provider and select that provider. */
+    bool record_single_provider {false};
+    /** Activation rows use `# Choices:` for every provider count. */
+    bool plural_choices {false};
+    /** Write activation rows by smallest provider id, then command name. */
+    bool order_by_provider {false};
     bool (*accepts)(std::string_view command) {nullptr};
     std::optional<std::string> (*alias_for)(
         std::string_view provider,
@@ -174,6 +185,29 @@ std::string join_lines(
 }
 
 [[nodiscard]]
+std::string plural_choices_comment(
+    const std::vector<ProviderOffer>& providers
+) {
+    std::vector<std::string> ids;
+    ids.reserve(providers.size());
+    for (const ProviderOffer& provider : providers) {
+        ids.push_back(provider.provider);
+    }
+    std::ranges::sort(ids);
+    std::string line {choices_prefix};
+    if (!ids.empty()) {
+        line += ' ';
+    }
+    for (std::size_t index = 0; index < ids.size(); ++index) {
+        if (index != 0) {
+            line += " | ";
+        }
+        line += ids[index];
+    }
+    return line;
+}
+
+[[nodiscard]]
 std::string choices_comment(const std::vector<ProviderOffer>& providers) {
     std::vector<std::string> ids;
     ids.reserve(providers.size());
@@ -197,11 +231,35 @@ std::string choices_comment(const std::vector<ProviderOffer>& providers) {
 }
 
 [[nodiscard]]
-std::string default_provider(const std::vector<ProviderOffer>& providers) {
-    for (const ProviderOffer& provider : providers) {
-        if (provider.provider == "taskbar") {
-            return "taskbar";
-        }
+std::string activation_initial_value(
+    const std::vector<ProviderOffer>& providers
+) {
+    if (providers.size() == 1) {
+        return providers.front().provider;
+    }
+    return {};
+}
+
+[[nodiscard]]
+bool offers_provider(
+    const std::vector<ProviderOffer>& providers,
+    const std::string_view provider
+) {
+    return std::ranges::any_of(providers, [&](const ProviderOffer& offer) {
+        return offer.provider == provider;
+    });
+}
+
+[[nodiscard]]
+std::string activation_selection_value(
+    const std::vector<ProviderOffer>& providers,
+    const std::string& saved
+) {
+    if (providers.size() == 1) {
+        return providers.front().provider;
+    }
+    if (offers_provider(providers, saved)) {
+        return saved;
     }
     return {};
 }
@@ -258,13 +316,11 @@ std::optional<std::string> alias_name(
     const std::string_view provider,
     const std::string_view command
 ) {
-    if (provider.empty() || !is_activation_command(command)) {
+    if (provider.empty() || provider == "taskbar" ||
+        !is_activation_command(command)) {
         return std::nullopt;
     }
     const auto program = command.substr(activation_prefix.size());
-    if (provider == "taskbar") {
-        return "taskbar_activate_" + std::string {program};
-    }
     if (provider == program) {
         return std::string {provider} + "_activate";
     }
@@ -341,10 +397,13 @@ MapPolicy activation_policy() {
         false,
         false,
         true,
-        false,
+        true,
+        true,
+        true,
+        true,
         &is_activation_command,
         &alias_name,
-        &default_provider
+        &activation_initial_value
     };
 }
 
@@ -359,6 +418,9 @@ MapPolicy shared_policy() {
         true,
         false,
         true,
+        false,
+        false,
+        false,
         &is_ordinary_command,
         &ordinary_alias_name,
         &blank_value
@@ -494,6 +556,130 @@ std::map<std::string, std::string> saved_selections(
 }
 
 [[nodiscard]]
+std::string ascii_lower_copy(const std::string_view value) {
+    std::string result {value};
+    std::ranges::transform(result, result.begin(), [](const unsigned char character) {
+        return static_cast<char>(std::tolower(character));
+    });
+    return result;
+}
+
+enum class DeclaredKeyKind {
+    none,
+    agreed,
+    conflict
+};
+
+struct DeclaredKey {
+    DeclaredKeyKind kind {DeclaredKeyKind::none};
+    std::string key;
+    std::vector<std::string> keys;
+};
+
+[[nodiscard]]
+DeclaredKey declared_component_key(const std::vector<ProviderOffer>& providers) {
+    std::vector<std::string> keys;
+    for (const ProviderOffer& provider : providers) {
+        if (provider.provider == "taskbar" || provider.application.empty()) {
+            continue;
+        }
+        const std::string key = ascii_lower_copy(provider.application);
+        if (std::ranges::find(keys, key) == keys.end()) {
+            keys.push_back(key);
+        }
+    }
+    std::ranges::sort(keys);
+    if (keys.empty()) {
+        return {};
+    }
+    if (keys.size() > 1) {
+        return DeclaredKey {DeclaredKeyKind::conflict, {}, std::move(keys)};
+    }
+    return DeclaredKey {DeclaredKeyKind::agreed, keys.front(), std::move(keys)};
+}
+
+[[nodiscard]]
+std::string pending_value_for(const std::string_view key) {
+    std::string value {key};
+    value += ".map";
+    return value;
+}
+
+[[nodiscard]]
+bool application_map_missing(const std::string_view key) {
+    const auto path = ac::paths::taskbar_applications_directory() /
+        (std::string {key} + ".map");
+    std::error_code error;
+    const bool present = std::filesystem::exists(path, error);
+    if (error) {
+        return false;
+    }
+    return !present;
+}
+
+[[nodiscard]]
+std::string dependency_comment(
+    const std::vector<ProviderOffer>& providers,
+    const std::string& value,
+    const bool plural_choices
+) {
+    if (!plural_choices) {
+        const DeclaredKey declared = declared_component_key(providers);
+        if (declared.kind == DeclaredKeyKind::agreed &&
+            value == pending_value_for(declared.key)) {
+            return std::string {needs_initialization_comment};
+        }
+    }
+    if (plural_choices) {
+        return plural_choices_comment(providers);
+    }
+    return choices_comment(providers);
+}
+
+[[nodiscard]]
+std::string conflict_report(
+    const std::string& command,
+    const std::vector<std::string>& keys
+) {
+    std::string report = command;
+    report += " declares conflicting application keys";
+    for (std::size_t index = 0; index < keys.size(); ++index) {
+        report += index == 0 ? " '" : " and '";
+        report += keys[index];
+        report += "'";
+    }
+    report += ".";
+    return report;
+}
+
+[[nodiscard]]
+std::string dependency_value(
+    const std::vector<ProviderOffer>& providers,
+    const std::string& saved
+) {
+    const DeclaredKey declared = declared_component_key(providers);
+    if (declared.kind != DeclaredKeyKind::agreed) {
+        return saved;
+    }
+    const std::string pending = pending_value_for(declared.key);
+    if (application_map_missing(declared.key)) {
+        return saved.empty() ? saved : pending;
+    }
+    return saved;
+}
+
+[[nodiscard]]
+std::string smallest_provider_id(const std::vector<ProviderOffer>& providers) {
+    std::string key;
+    for (const ProviderOffer& provider : providers) {
+        if (key.empty() || provider.provider < key) {
+            key = provider.provider;
+        }
+    }
+    return key;
+}
+
+[[nodiscard]]
 std::string render_map(
     const std::string& existing,
     const std::map<std::string, std::vector<ProviderOffer>>& grouped,
@@ -539,11 +725,25 @@ std::string render_map(
     }
 
     std::vector<std::string> added;
+    std::map<std::string, std::string> added_values;
     for (const auto& [command, providers] : grouped) {
-        if (providers.size() < 2 || values.contains(command)) {
+        if (!policy.record_single_provider) {
+            const DeclaredKey declared = declared_component_key(providers);
+            if (declared.kind == DeclaredKeyKind::agreed &&
+                application_map_missing(declared.key) &&
+                !values.contains(command)) {
+                added.push_back(command);
+                added_values.emplace(command, pending_value_for(declared.key));
+                continue;
+            }
+        }
+        const bool single =
+            policy.record_single_provider && providers.size() == 1;
+        if ((!single && providers.size() < 2) || values.contains(command)) {
             continue;
         }
         added.push_back(command);
+        added_values.emplace(command, policy.initial_value(providers));
     }
 
     std::vector<std::string> retained;
@@ -615,17 +815,66 @@ std::string render_map(
         first_block = false;
         const auto found = grouped.find(command);
         const std::vector<ProviderOffer> empty;
-        output.push_back(choices_comment(
-            found == grouped.end() ? empty : found->second
+        const std::vector<ProviderOffer>& providers =
+            found == grouped.end() ? empty : found->second;
+        output.push_back(dependency_comment(
+            providers,
+            value,
+            policy.plural_choices
         ));
         output.push_back(command + " = " + value);
     };
 
+    struct WrittenCommand {
+        std::string command;
+        bool added {false};
+    };
+    std::vector<WrittenCommand> commands;
+    commands.reserve(retained.size() + added.size());
     for (const std::string& command : retained) {
-        emit_assignment(command, values.at(command));
+        commands.push_back(WrittenCommand {command, false});
     }
     for (const std::string& command : added) {
-        emit_assignment(command, policy.initial_value(grouped.at(command)));
+        commands.push_back(WrittenCommand {command, true});
+    }
+    if (policy.order_by_provider) {
+        const auto provider_key = [&](const std::string& command) {
+            const auto found = grouped.find(command);
+            if (found == grouped.end()) {
+                return std::string {};
+            }
+            return smallest_provider_id(found->second);
+        };
+        std::ranges::sort(
+            commands,
+            [&](const WrittenCommand& left, const WrittenCommand& right) {
+                const std::string left_key = provider_key(left.command);
+                const std::string right_key = provider_key(right.command);
+                if (left_key != right_key) {
+                    return left_key < right_key;
+                }
+                return left.command < right.command;
+            }
+        );
+    }
+
+    for (const WrittenCommand& row : commands) {
+        if (row.added) {
+            emit_assignment(row.command, added_values.at(row.command));
+            continue;
+        }
+        const auto found = grouped.find(row.command);
+        const std::vector<ProviderOffer> empty;
+        const std::vector<ProviderOffer>& providers =
+            found == grouped.end() ? empty : found->second;
+        std::string value = values.at(row.command);
+        if (policy.record_single_provider) {
+            value = activation_selection_value(providers, value);
+        }
+        else {
+            value = dependency_value(providers, value);
+        }
+        emit_assignment(row.command, value);
     }
     if (section) {
         for (std::size_t index = section_end; index < lines.size(); ++index) {
@@ -687,7 +936,21 @@ ac::taskbar::ActivationResolution resolve_selections(
                 : grouped_providers->second;
         const auto saved = selections.find(command);
         const bool has_saved = saved != selections.end();
-        if (providers.size() == 1 && !has_saved) {
+        const DeclaredKey declared = declared_component_key(providers);
+        if (declared.kind == DeclaredKeyKind::conflict) {
+            resolution.reports.push_back(
+                conflict_report(command, declared.keys)
+            );
+        }
+        const bool explicit_blank = has_saved && saved->second.empty();
+        if (!policy.record_single_provider &&
+            declared.kind == DeclaredKeyKind::agreed &&
+            application_map_missing(declared.key) &&
+            !explicit_blank) {
+            continue;
+        }
+        if (!policy.record_single_provider &&
+            providers.size() == 1 && !has_saved) {
             continue;
         }
         if (providers.empty() && !has_saved) {
@@ -722,7 +985,14 @@ ac::taskbar::ActivationResolution resolve_selections(
         std::ranges::sort(binding.aliases, {}, &ac::taskbar::ActivationAlias::name);
         binding.offer_count = providers.size();
 
-        if (!has_saved || saved->second.empty()) {
+        if (policy.record_single_provider && providers.size() == 1) {
+            const ProviderOffer& provider = providers.front();
+            binding.resolved = true;
+            binding.provider = provider.provider;
+            binding.description = provider.description;
+            binding.application = provider.application;
+        }
+        else if (!has_saved || saved->second.empty()) {
             binding.blank_selection = true;
             binding.explicit_blank = has_saved && saved->second.empty();
             if (binding.explicit_blank && binding.offer_count >= 2) {
@@ -743,6 +1013,7 @@ ac::taskbar::ActivationResolution resolve_selections(
             binding.application = provider->application;
         }
         else {
+            binding.provider = saved->second;
             resolution.reports.push_back(
                 std::string {policy.file_label} + " selects '" + saved->second +
                 "' for " + command + ", but that provider is unavailable."
@@ -902,6 +1173,259 @@ void claim_aliases(
     }
 }
 
+[[nodiscard]]
+bool is_managed_activation_comment(const std::string_view text) {
+    const auto value = trim(text);
+    return value == needs_initialization_comment ||
+        is_generated_choice_comment(value);
+}
+
+[[nodiscard]]
+bool catalog_names_command(
+    const std::filesystem::path& path,
+    const std::string_view provider,
+    const std::string& command
+) {
+    std::ifstream input {path};
+    if (!input) {
+        return false;
+    }
+    const auto alias = alias_name(provider, command);
+    std::string line;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        const auto split = line.find(" - ");
+        const auto name = trim(
+            split == std::string::npos ? std::string_view {line}
+                                        : std::string_view {line}.substr(0, split)
+        );
+        if (name == command || (alias && name == *alias)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+[[nodiscard]]
+std::vector<ProviderOffer> promotion_providers(const std::string& command) {
+    std::vector<ProviderOffer> providers;
+    providers.push_back(ProviderOffer {"taskbar", {}, {}});
+    const auto directory = ac::paths::keymap_directory() / "components";
+    std::error_code error;
+    if (!std::filesystem::exists(directory, error) || error) {
+        return providers;
+    }
+    std::filesystem::directory_iterator iterator {directory, error};
+    while (!error && iterator != std::filesystem::directory_iterator {}) {
+        const bool regular = iterator->is_regular_file(error);
+        if (!error && regular) {
+            const std::string filename = iterator->path().filename().string();
+            constexpr std::string_view suffix = ".keymap_commands.txt";
+            if (filename.ends_with(suffix)) {
+                const std::string provider = filename.substr(
+                    0,
+                    filename.size() - suffix.size()
+                );
+                if (!provider.empty() &&
+                    provider != "taskbar" &&
+                    catalog_names_command(iterator->path(), provider, command)) {
+                    providers.push_back(ProviderOffer {provider, {}, {}});
+                }
+            }
+        }
+        iterator.increment(error);
+    }
+    return providers;
+}
+
+struct EntryReplacement {
+    std::string value;
+    std::string comment;
+};
+
+/**
+ * \brief Replaces or appends activation assignments without rewriting
+ *        unrelated lines.
+ */
+[[nodiscard]]
+std::optional<std::string> rewrite_activation_entries(
+    const std::string& existing,
+    const std::map<std::string, EntryReplacement>& replacements,
+    const bool append_missing
+) {
+    if (replacements.empty()) {
+        return std::nullopt;
+    }
+    const std::string newline =
+        existing.find("\r\n") == std::string::npos ? "\n" : "\r\n";
+    const bool trailing_newline =
+        existing.empty() || existing.back() == '\n';
+    auto lines = split_lines(existing);
+    std::optional<std::size_t> section;
+    for (std::size_t index = 0; index < lines.size(); ++index) {
+        if (is_named_section(lines[index].text, "activation_map")) {
+            section = index;
+            break;
+        }
+    }
+
+    bool changed = false;
+    std::vector<std::string> missing;
+    if (section) {
+        std::size_t section_end = lines.size();
+        for (std::size_t index = *section + 1; index < lines.size(); ++index) {
+            if (is_section_header(lines[index].text)) {
+                section_end = index;
+                break;
+            }
+        }
+        std::vector<std::size_t> assignments;
+        for (std::size_t index = *section + 1; index < section_end; ++index) {
+            const auto assignment = assignment_of(lines[index].text);
+            if (!assignment || !replacements.contains(assignment->first)) {
+                continue;
+            }
+            assignments.push_back(index);
+        }
+        std::map<std::string, bool> seen;
+        for (auto cursor = assignments.rbegin(); cursor != assignments.rend(); ++cursor) {
+            const auto assignment = assignment_of(lines[*cursor].text);
+            seen[assignment->first] = true;
+            const EntryReplacement& replacement = replacements.at(assignment->first);
+            if (assignment->second == replacement.value) {
+                std::size_t comment_at = *cursor;
+                while (comment_at > *section + 1 &&
+                       trim(lines[comment_at - 1].text).empty()) {
+                    --comment_at;
+                }
+                if (comment_at > *section &&
+                    is_managed_activation_comment(lines[comment_at - 1].text) &&
+                    trim(lines[comment_at - 1].text) == replacement.comment) {
+                    continue;
+                }
+            }
+            changed = true;
+            std::size_t comment_at = *cursor;
+            while (comment_at > *section + 1 &&
+                   trim(lines[comment_at - 1].text).empty()) {
+                --comment_at;
+            }
+            if (comment_at > *section &&
+                is_managed_activation_comment(lines[comment_at - 1].text)) {
+                lines[comment_at - 1].text = replacement.comment;
+                lines[*cursor].text =
+                    assignment->first + " = " + replacement.value;
+            }
+            else {
+                lines.insert(
+                    lines.begin() + static_cast<std::ptrdiff_t>(*cursor),
+                    TextLine {replacement.comment}
+                );
+                lines[*cursor + 1].text =
+                    assignment->first + " = " + replacement.value;
+            }
+        }
+        for (const auto& [command, replacement] : replacements) {
+            (void)replacement;
+            if (!seen.contains(command)) {
+                missing.push_back(command);
+            }
+        }
+        if (append_missing && !missing.empty()) {
+            changed = true;
+            section_end = lines.size();
+            for (std::size_t index = *section + 1; index < lines.size(); ++index) {
+                if (is_section_header(lines[index].text)) {
+                    section_end = index;
+                    break;
+                }
+            }
+            std::size_t insert_at = section_end;
+            for (const std::string& command : missing) {
+                const EntryReplacement& replacement = replacements.at(command);
+                if (insert_at > *section + 1 &&
+                    !trim(lines[insert_at - 1].text).empty()) {
+                    lines.insert(
+                        lines.begin() + static_cast<std::ptrdiff_t>(insert_at),
+                        TextLine {}
+                    );
+                    ++insert_at;
+                }
+                lines.insert(
+                    lines.begin() + static_cast<std::ptrdiff_t>(insert_at),
+                    TextLine {replacement.comment}
+                );
+                ++insert_at;
+                lines.insert(
+                    lines.begin() + static_cast<std::ptrdiff_t>(insert_at),
+                    TextLine {command + " = " + replacement.value}
+                );
+                ++insert_at;
+            }
+        }
+    }
+    else if (append_missing) {
+        changed = true;
+        std::vector<std::string> output;
+        for (const TextLine& line : lines) {
+            output.push_back(line.text);
+        }
+        if (existing.empty()) {
+            append_preamble(output, activation_preamble);
+        }
+        else if (!output.empty() && !trim(output.back()).empty()) {
+            output.emplace_back();
+        }
+        output.emplace_back("[activation_map]");
+        bool first = true;
+        for (const auto& [command, replacement] : replacements) {
+            if (!first) {
+                output.emplace_back();
+            }
+            first = false;
+            output.push_back(replacement.comment);
+            output.push_back(command + " = " + replacement.value);
+        }
+        return join_lines(output, newline, true);
+    }
+
+    if (!changed) {
+        return std::nullopt;
+    }
+    std::vector<std::string> output;
+    output.reserve(lines.size());
+    for (const TextLine& line : lines) {
+        output.push_back(line.text);
+    }
+    return join_lines(
+        output,
+        newline,
+        trailing_newline || existing.empty()
+    );
+}
+
+[[nodiscard]]
+bool is_pending_command(const std::string_view command) {
+    return is_activation_command(command);
+}
+
+[[nodiscard]]
+bool is_pending_key(const std::string_view key) {
+    if (key.empty()) {
+        return false;
+    }
+    const auto first = static_cast<unsigned char>(key.front());
+    if (!std::isalpha(first)) {
+        return false;
+    }
+    return std::ranges::all_of(key, [](const char character) {
+        const auto value = static_cast<unsigned char>(character);
+        return std::isalnum(value) || character == '_';
+    });
+}
+
 } // namespace
 
 ac::taskbar::ActivationResolution ac::taskbar::resolve_activation_commands(
@@ -953,4 +1477,91 @@ void ac::taskbar::reconcile_provider_aliases(
     }
     claim_aliases(activation, claimed, "activation alias");
     claim_aliases(shared, claimed, "shared command alias");
+}
+
+ac::taskbar::KeymapBuildLock::~KeymapBuildLock() {
+    release();
+}
+
+void ac::taskbar::KeymapBuildLock::release() noexcept {
+    if (handle_ == nullptr) {
+        return;
+    }
+    const HANDLE handle = static_cast<HANDLE>(handle_);
+    if (locked_) {
+        OVERLAPPED overlapped {};
+        UnlockFileEx(handle, 0, 1, 0, &overlapped);
+        locked_ = false;
+    }
+    CloseHandle(handle);
+    handle_ = nullptr;
+}
+
+ac::taskbar::KeymapBuildLock::Status ac::taskbar::KeymapBuildLock::acquire(
+    std::string& error,
+    const bool wait
+) {
+    release();
+    const auto lock_path = ac::paths::installation_root() /
+        "data" / "auto_core" / "keymap_build.lock";
+    std::error_code directory_error;
+    std::filesystem::create_directories(
+        lock_path.parent_path(),
+        directory_error
+    );
+    if (directory_error) {
+        error = "Failed to create " + lock_path.parent_path().string() +
+            ": " + directory_error.message() + ".";
+        return Status::failed;
+    }
+
+    const HANDLE handle = CreateFileW(
+        lock_path.c_str(),
+        GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
+    if (handle == INVALID_HANDLE_VALUE) {
+        error = "Failed to open " + lock_path.string() + " (error " +
+            std::to_string(GetLastError()) + ").";
+        return Status::failed;
+    }
+
+    OVERLAPPED overlapped {};
+    const DWORD flags = LOCKFILE_EXCLUSIVE_LOCK |
+        (wait ? DWORD {0} : LOCKFILE_FAIL_IMMEDIATELY);
+    if (!LockFileEx(handle, flags, 0, 1, 0, &overlapped)) {
+        const DWORD lock_error = GetLastError();
+        CloseHandle(handle);
+        if (lock_error == ERROR_LOCK_VIOLATION) {
+            return Status::busy;
+        }
+        error = "Failed to lock " + lock_path.string() + " (error " +
+            std::to_string(lock_error) + ").";
+        return Status::failed;
+    }
+    handle_ = handle;
+    locked_ = true;
+    return Status::acquired;
+}
+
+ac::taskbar::ActivationEntryUpdate ac::taskbar::note_missing_application_map(
+    const std::string_view,
+    const std::string_view
+) {
+    ActivationEntryUpdate update;
+    update.ok = true;
+    return update;
+}
+
+ac::taskbar::ActivationEntryUpdate ac::taskbar::promote_ready_application_map(
+    const std::string_view,
+    const std::vector<std::string>&
+) {
+    ActivationEntryUpdate update;
+    update.ok = true;
+    return update;
 }

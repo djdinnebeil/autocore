@@ -14,7 +14,8 @@ namespace {
 
 ac::Component spotify_editor {
     "spotify_editor",
-    ac::logging::config::LoggingScope {"spotify"}
+    ac::logging::config::LoggingScope {"spotify"},
+    ac::SharedLog {"spotify"}
 };
 
 std::string_view trim(std::string_view value) {

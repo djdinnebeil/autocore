@@ -16,7 +16,10 @@ namespace menu = ac::config_menu;
 
 namespace {
 
-ac::Component crash_recovery_config {"crash_recovery_config"};
+ac::Component crash_recovery_config {
+    "crash_recovery_config",
+    "auto_core"
+};
 
 constexpr std::string_view yes_no[] {"yes", "no"};
 constexpr std::string_view on_off[] {"on", "off"};

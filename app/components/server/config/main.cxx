@@ -18,7 +18,8 @@ namespace {
 
 ac::Component server_config {
     "server_config",
-    ac::logging::config::LoggingScope {"server"}
+    ac::logging::config::LoggingScope {"server"},
+    ac::SharedLog {"server"}
 };
 
 constexpr std::string_view on_off[] {"on", "off"};

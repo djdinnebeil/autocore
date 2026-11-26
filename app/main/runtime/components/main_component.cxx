@@ -7,7 +7,7 @@ import auto_core.core.logging.config;
 import <Windows.h>;
 
 import auto_core.main.components;
-import auto_core.main.taskbar;
+import auto_core.taskbar;
 
 ac::Component auto_core {
     "auto_core",
@@ -134,8 +134,8 @@ namespace {
 
 void close_program_impl(const bool allow_recovery_prompt) {
     auto_core.log_info("close_program()");
+    ac::taskbar::cancel_cycle();
     ac::main::program_closing = true;
-    taskbar.end_cycle_session();
     if (ac::main::keyboard_hook != NULL) {
         UnhookWindowsHookEx(ac::main::keyboard_hook);
         ac::main::keyboard_hook = NULL;

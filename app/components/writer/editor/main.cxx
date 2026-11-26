@@ -17,7 +17,8 @@ namespace {
 
 ac::Component writer_editor {
     "writer_editor",
-    ac::logging::config::LoggingScope {"writer"}
+    ac::logging::config::LoggingScope {"writer"},
+    ac::SharedLog {"writer"}
 };
 
 std::string_view trim(std::string_view value) {
