@@ -41,6 +41,9 @@ std::filesystem::path list_path() {
 
 [[nodiscard]]
 std::filesystem::path component_ini_path(const std::string_view name) {
+    if (name == list::writer_name) {
+        return ac::paths::writer_config_file();
+    }
     return ac::paths::component_config_file(name);
 }
 
@@ -138,10 +141,30 @@ std::optional<catalog::Document> load_document() {
 }
 
 [[nodiscard]]
-std::vector<std::string> discovered_names() {
-    return list::discover_ac_executables(
+bool is_log_merger(const std::string_view name) noexcept {
+    return name == list::log_merger_name;
+}
+
+/**
+ * \brief `*_ac.exe` names, plus `log_merger` when it can be offered or is saved.
+ *
+ * The helper offers a new line. A saved line stays in this vector when the
+ * helper is missing, so `remove_missing_components` does not drop it.
+ */
+[[nodiscard]]
+std::vector<std::string> sync_names(const catalog::Document& document) {
+    auto names = list::discover_ac_executables(
         ac::paths::component_executable_directory()
     );
+    const bool saved = catalog::listed(document, list::log_merger_name);
+    const bool offer = list::log_merger_helper_present(
+        ac::paths::app_directory()
+    );
+    if (saved || offer) {
+        list::record_unique(names, list::log_merger_name);
+    }
+    list::record_writer_if_present(names, ac::paths::app_directory());
+    return names;
 }
 
 [[nodiscard]]
@@ -157,8 +180,8 @@ std::vector<std::string> names_needing_prompt(
     }
     for (const auto& name : names) {
         if (catalog::listed(document, name) ||
-            !component_ini_exists(name) ||
-            saved.contains(name)) {
+            saved.contains(name) ||
+            (!is_log_merger(name) && !component_ini_exists(name))) {
             continue;
         }
         prompts.push_back(name);
@@ -173,7 +196,8 @@ bool apply_new_names(
     const std::map<std::string, bool>& saved
 ) {
     for (const auto& name : names) {
-        if (catalog::listed(document, name) || !component_ini_exists(name)) {
+        if (catalog::listed(document, name) ||
+            (!is_log_merger(name) && !component_ini_exists(name))) {
             continue;
         }
         bool enabled = false;
@@ -248,7 +272,7 @@ int synchronize_list(const bool seed) {
             if (!document) {
                 return 1;
             }
-            const auto names = discovered_names();
+            const auto names = sync_names(*document);
             prompts = names_needing_prompt(*document, names, saved);
             if (prompts.empty()) {
                 catalog::remove_missing(*document, names);
@@ -282,11 +306,27 @@ int set_explicit_state(const std::string_view name, const bool enabled) {
         );
         return 1;
     }
-    if (!component_ini_exists(name)) {
-        components_editor.print(
-            "config/components/{}.ini is missing. components.list was not modified.",
-            name
-        );
+    if (is_log_merger(name)) {
+        if (enabled &&
+            !list::log_merger_helper_present(ac::paths::app_directory())) {
+            components_editor.print(
+                "auto_core_logger.exe is missing. components.list was not modified."
+            );
+            return 1;
+        }
+    }
+    else if (!component_ini_exists(name)) {
+        if (name == list::writer_name) {
+            components_editor.print(
+                "config/writer.ini is missing. components.list was not modified."
+            );
+        }
+        else {
+            components_editor.print(
+                "config/components/{}.ini is missing. components.list was not modified.",
+                name
+            );
+        }
         return 1;
     }
 

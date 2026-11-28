@@ -75,6 +75,16 @@ when the host started, so edits to `logging_policy.ini` apply after the host
 restarts. Deletion counts are `log_debug` records on the `auto_core` log.
 A directory or delete failure is `log_alert`.
 
+The same file's `[log_merge]` section sets `merge_interval_seconds` (default
+`5`; `0` turns the timer off) and `merge_logs_on_shutdown` (default `on`).
+Auto Core Settings edits both sections. `components.list` entry `log_merger`
+is the master switch for both automatic paths. Off skips them and leaves these
+values saved. On lets each key control its own path. A missing `log_merger`
+line leaves automatic merging on. `auto_core.exe` performs the periodic merge
+in-process and does not start that worker when `log_merger` is off.
+`auto_core_logger.exe --refresh` updates today's Main log, and `--merge`
+merges every date, in either list state.
+
 Use Auto Core Settings, or run the corresponding program under `app\`, to view
 or change these settings.
 

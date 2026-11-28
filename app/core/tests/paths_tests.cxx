@@ -101,7 +101,7 @@ TEST_CASE(
     CHECK_FALSE(std::filesystem::exists(app / "config", error));
 
     const auto components = root / "components";
-    CHECK(std::filesystem::is_regular_file(components / "logger_ac.exe", error));
+    CHECK_FALSE(std::filesystem::is_regular_file(components / "logger_ac.exe", error));
     CHECK_FALSE(std::filesystem::is_regular_file(components / "auto_core.dll", error));
     bool component_executable_in_app = false;
     std::error_code scan_error;

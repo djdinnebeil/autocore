@@ -135,6 +135,13 @@ namespace ac::paths {
     }
 
     const std::filesystem::path&
+        writer_config_file() {
+        static const std::filesystem::path file =
+            config_directory() / "writer.ini";
+        return file;
+    }
+
+    const std::filesystem::path&
         keymap_commands_file() {
         static const std::filesystem::path file =
             keymap_directory() / "keymap_commands.txt";
@@ -247,7 +254,7 @@ namespace ac::paths {
     const std::filesystem::path&
         writer_directory() {
         static const std::filesystem::path& directory = configured_directory(
-            component_config_file("writer"),
+            writer_config_file(),
             "writer",
             "directory",
             installation_root() / "writer"
@@ -263,7 +270,7 @@ namespace ac::paths {
                 writer_directory() / "notes";
 
             const auto document = ac::ini::read(
-                component_config_file("writer")
+                writer_config_file()
             );
             if (!document) {
                 return fallback;

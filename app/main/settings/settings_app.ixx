@@ -133,7 +133,8 @@ export int run_settings_application() {
 
     while (true) {
         const auto identities = ac::main::settings::discover_settings_executables(
-            ac::paths::component_executable_directory()
+            ac::paths::component_executable_directory(),
+            ac::paths::app_directory()
         );
         const auto rows = ac::main::settings::menu_rows(identities);
         show_menu(rows);

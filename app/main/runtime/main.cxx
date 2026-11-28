@@ -22,7 +22,8 @@ import auto_core.main.installed_version;
 import auto_core.main.program_ready;
 import auto_core.main.shutdown_events;
 import auto_core.main.version_check;
-import auto_core.utility.logging_cleanup;
+import auto_core.main.logging_cleanup_worker;
+import auto_core.main.log_merge_worker;
 
 namespace {
     constexpr wchar_t instance_mutex_name[] = L"Local\\AutoCore.main";
@@ -78,135 +79,6 @@ namespace {
             ac::paths::config_directory() / "auto_core.ini",
             error
         );
-    }
-
-    /**
-     * Milliseconds from now until the next local calendar midnight.
-     * Falls back to 24 hours when the conversion fails.
-     */
-    [[nodiscard]]
-    DWORD milliseconds_until_next_local_midnight() {
-        constexpr DWORD fallback = 24u * 60u * 60u * 1000u;
-        SYSTEMTIME local {};
-        GetLocalTime(&local);
-        local.wHour = 0;
-        local.wMinute = 0;
-        local.wSecond = 0;
-        local.wMilliseconds = 0;
-
-        constexpr int days_in_month[] {
-            0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-        };
-        if (local.wMonth < 1 || local.wMonth > 12) {
-            return fallback;
-        }
-        const bool leap =
-            (local.wYear % 4 == 0 && local.wYear % 100 != 0) ||
-            (local.wYear % 400 == 0);
-        int length = days_in_month[local.wMonth];
-        if (local.wMonth == 2 && leap) {
-            length = 29;
-        }
-        if (local.wDay < length) {
-            ++local.wDay;
-        }
-        else if (local.wMonth < 12) {
-            local.wDay = 1;
-            ++local.wMonth;
-        }
-        else {
-            local.wDay = 1;
-            local.wMonth = 1;
-            ++local.wYear;
-        }
-
-        SYSTEMTIME utc {};
-        if (!TzSpecificLocalTimeToSystemTime(nullptr, &local, &utc)) {
-            return fallback;
-        }
-        FILETIME next_file_time {};
-        if (!SystemTimeToFileTime(&utc, &next_file_time)) {
-            return fallback;
-        }
-        FILETIME now_file_time {};
-        GetSystemTimeAsFileTime(&now_file_time);
-
-        ULARGE_INTEGER next {};
-        next.LowPart = next_file_time.dwLowDateTime;
-        next.HighPart = next_file_time.dwHighDateTime;
-        ULARGE_INTEGER now {};
-        now.LowPart = now_file_time.dwLowDateTime;
-        now.HighPart = now_file_time.dwHighDateTime;
-        if (next.QuadPart <= now.QuadPart) {
-            return 1000;
-        }
-        const auto milliseconds =
-            (next.QuadPart - now.QuadPart) / 10000ULL;
-        if (milliseconds == 0) {
-            return 1;
-        }
-        if (milliseconds > fallback) {
-            return fallback;
-        }
-        return static_cast<DWORD>(milliseconds);
-    }
-
-    void log_cleanup_summary(const ac::logging_cleanup::Summary& summary) {
-        if (!summary.available) {
-            return;
-        }
-        const int total = summary.retention_deleted + summary.size_deleted;
-        if (summary.dry_run) {
-            auto_core.log_debug(
-                "Dry run. Log cleanup deleted {} file(s) by retention, {} by size, {} total. Projected retention deletions: {}. Projected size deletions: {}.",
-                summary.retention_deleted,
-                summary.size_deleted,
-                total,
-                summary.projected_retention,
-                summary.projected_size
-            );
-        }
-        else {
-            auto_core.log_debug(
-                "Log cleanup deleted {} file(s) by retention, {} by size, {} total.",
-                summary.retention_deleted,
-                summary.size_deleted,
-                total
-            );
-        }
-        if (!summary.blocked_by_today) {
-            return;
-        }
-        if (summary.dry_run) {
-            auto_core.log_debug(
-                "Dry run. Log cleanup deleted {} file(s). Projected retention deletions: {}. Projected size deletions: {}. Remaining size would be {} bytes. Today's protected logs prevented reaching the size limit.",
-                total,
-                summary.projected_retention,
-                summary.projected_size,
-                summary.remaining_bytes
-            );
-            return;
-        }
-        auto_core.log_debug(
-            "Log cleanup deleted {} file(s). Remaining size is {} bytes. Today's protected logs prevented reaching the size limit.",
-            total,
-            summary.remaining_bytes
-        );
-    }
-
-    void log_cleanup_result(const ac::logging_cleanup::Result& result) {
-        log_cleanup_summary(result.summary);
-        switch (result.status) {
-        case ac::logging_cleanup::Status::finished:
-            return;
-        case ac::logging_cleanup::Status::busy:
-            auto_core.log_debug("{}", result.detail);
-            return;
-        case ac::logging_cleanup::Status::failed:
-        case ac::logging_cleanup::Status::incomplete:
-            auto_core.log_alert("{}", result.detail);
-            return;
-        }
     }
 
     [[nodiscard]]
@@ -367,59 +239,21 @@ int main() {
     announce_program_ready();
 
     std::jthread version_check_thread = start_version_check();
-    const HANDLE cleanup_stop = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-    std::jthread logging_cleanup_thread {[cleanup_stop] {
-        try {
-            for (;;) {
-                try {
-                    log_cleanup_result(ac::logging_cleanup::run(
-                        {.dry_run = false}
-                    ));
-                }
-                catch (const std::exception& exception) {
-                    auto_core.log_alert(
-                        "Log cleanup failed: {}",
-                        exception.what()
-                    );
-                }
-                catch (...) {
-                    auto_core.log_alert("Log cleanup failed.");
-                }
-                if (cleanup_stop == nullptr) {
-                    break;
-                }
-                const DWORD wait = WaitForSingleObject(
-                    cleanup_stop,
-                    milliseconds_until_next_local_midnight()
-                );
-                if (wait != WAIT_TIMEOUT) {
-                    break;
-                }
-            }
-        }
-        catch (const std::exception& exception) {
-            auto_core.log_alert(
-                "Log cleanup failed: {}",
-                exception.what()
-            );
-        }
-        catch (...) {
-            auto_core.log_alert("Log cleanup failed.");
-        }
-    }};
+    auto cleanup = start_logging_cleanup();
+    auto merge = start_periodic_merge(
+        ac::main::components::automatic_log_merge_enabled()
+    );
 
     run_message_loop();
-    if (cleanup_stop != nullptr) {
-        SetEvent(cleanup_stop);
-    }
-    logging_cleanup_thread.join();
-    if (cleanup_stop != nullptr) {
-        CloseHandle(cleanup_stop);
-    }
+    cleanup.request_stop();
+    cleanup.join();
+    merge.request_stop();
+    merge.join();
     if (version_check_thread.joinable()) {
         version_check_thread.join();
     }
     shutdown_logging();
+    finish_component_shutdown();
 
     return 0;
 }

@@ -120,6 +120,15 @@ export namespace ac::paths {
         taskbar_policy_file();
 
     /**
+     * \brief Returns `<config directory>/writer.ini`.
+     *
+     * The file is not created or validated.
+     */
+    [[nodiscard]]
+    AC_API const std::filesystem::path&
+        writer_config_file();
+
+    /**
      * \brief Returns `<keymap directory>/keymap_commands.txt`.
      */
     [[nodiscard]]
@@ -187,7 +196,7 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer data directory.
      *
-     * Reads `[writer] directory` from `config/components/writer.ini`. A relative path
+     * Reads `[writer] directory` from `config/writer.ini`. A relative path
      * is resolved against the installation root. An absolute path is used
      * as-is. A missing file, missing key, or empty value keeps
      * `<installation root>/writer`. The live file is not rewritten.
@@ -201,7 +210,7 @@ export namespace ac::paths {
     /**
      * \brief Returns the Writer notes directory.
      *
-     * Reads `[writer] notes_subdirectory` from `config/components/writer.ini`. A
+     * Reads `[writer] notes_subdirectory` from `config/writer.ini`. A
      * relative value, with no root-name and no root-directory, is resolved
      * against `writer_directory()`. An absolute path, including a UNC path,
      * is used directly and is not appended to `writer_directory()`. A missing

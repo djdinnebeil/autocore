@@ -256,9 +256,28 @@ namespace ac::component_settings {
             const std::vector<std::string>& arguments,
             const DWORD creation_flags = 0
         ) {
-            const auto executable_path =
-                ac::paths::component_executable_directory() /
-                    std::string {executable};
+            const bool component_executable = [&] {
+                constexpr std::string_view suffix = "_ac.exe";
+                if (executable.size() < suffix.size()) {
+                    return false;
+                }
+                const auto tail = executable.substr(executable.size() - suffix.size());
+                for (std::size_t index = 0; index < suffix.size(); ++index) {
+                    char character = tail[index];
+                    if (character >= 'A' && character <= 'Z') {
+                        character = static_cast<char>(character - 'A' + 'a');
+                    }
+                    if (character != suffix[index]) {
+                        return false;
+                    }
+                }
+                return true;
+            }();
+            const auto executable_path = (
+                component_executable
+                    ? ac::paths::component_executable_directory()
+                    : ac::paths::app_directory()
+            ) / std::string {executable};
             std::error_code error;
             const bool present = std::filesystem::exists(executable_path, error);
             if (error || !present) {
@@ -315,7 +334,9 @@ namespace ac::component_settings {
             const std::string_view name,
             std::string& error
         ) {
-            const auto path = ac::paths::component_config_file(name);
+            const auto path = name == "writer"
+                ? ac::paths::writer_config_file()
+                : ac::paths::component_config_file(name);
             std::error_code code;
             const bool present = std::filesystem::exists(path, code);
             if (code) {

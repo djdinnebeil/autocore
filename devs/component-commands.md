@@ -6,14 +6,12 @@ Every component, including a third-party component, selects an operation from an
 
 | Invocation | Behavior |
 | --- | --- |
-| `logger_ac.exe` | If `config/components/logger.ini` exists, or that check fails, update today's Main log and then open the settings menu. If the file is missing, start `logger_ac.exe --config --init`, wait, and update and open settings only when that process exits 0. A non-zero initialization exit code is returned as-is and does not update the log. Success prints `Main log file updated.` before the menu, including when no new records were appended. Failure prints the merge error and still opens the menu. |
-| `logger_ac.exe --settings` | Open the settings menu, including Initialize when the INI is absent and `Update Main log`. This does not run initialization or the startup update. `Update Main log` runs the same today's update, prints `Main log file updated.` or the merge error, and returns to the menu. |
-| `logger_ac.exe --config` | The configuration tool. `--init`, `--initialize`, `--seed`, both flags, and no further arguments keep their previous meanings. This command exits. It does not open settings. |
-| `logger_ac.exe --run` | The previous runtime. Further arguments are forwarded unchanged: `--once`, `--shutdown` (a label only), and `--export-keymap-commands`. A bare `--run` connects to `ac_logger_pipe` when Main created it, and otherwise performs one merge. A missing INI still uses the built-in merge interval and does not create the file. |
+| `auto_core_logger.exe --refresh` | Update today's Main log and exit. Success prints `Main log file updated.`, including when no new records were appended. Failure prints the merge error. |
+| `auto_core_logger.exe --merge` | Merge every date and exit. `--shutdown` only labels that launch. Main starts `--merge --shutdown` after the other component writers stop when startup `log_merger` is on and `merge_logs_on_shutdown` is on. |
 
-The operation is only the first argument. `--once` without `--run` is rejected. An unknown first argument prints a usage line and exits 1.
+`--refresh` and `--merge` are the only operations. `--shutdown` is accepted only with `--merge`. Any other argument prints a usage line and exits 1.
 
-Settings and configuration keep their log identities, `logger_settings` and `logger_config`. The runtime identity remains `logger`.
+Merge diagnostics use the `auto_core_logger` area on the shared `auto_core` log. `logging_policy.ini` `[log_merge]` is edited by `auto_core_settings.exe --config --area logging-policy`. `components.list` entry `log_merger` is the master switch for both automatic paths. `--refresh` and `--merge` do not read that entry.
 
 ## Dash
 
@@ -66,12 +64,12 @@ Log identities stay `server`, `server_settings`, `server_config`, `server_editor
 
 | Invocation | Behavior |
 | --- | --- |
-| `writer_ac.exe` | If `config/components/writer.ini` exists, or that check fails, open the settings menu. If the file is missing, start `writer_ac.exe --config --init`, wait, and open settings only when that process exits 0. |
-| `writer_ac.exe --settings` | Open the settings menu. This does not run initialization by itself. Delegated actions are `writer_ac.exe --editor --add-task`, `--editor --add-session-prompt`, and `--editor --daily-note`. The baseline probe still checks `session_prompts.list` and `task_list.txt`. |
-| `writer_ac.exe --editor` | The editor. `--init`, `--seed`, `--add-task`, `--add-session-prompt`, and `--daily-note` keep their previous meanings. A no-argument editor that needs initialization tells the user to run `writer_ac.exe --config --init`. |
-| `writer_ac.exe --builder` | Rebuilds the text catalog. Any further argument prints usage and exits 1. |
-| `writer_ac.exe --config` | The configuration tool. It starts `writer_ac.exe --editor --seed` or `--editor --init` as a separate process. This command exits. It does not open settings. |
-| `writer_ac.exe --run` | The hosted session. `--export-keymap-commands` returns 0 with no output. A missing INI uses `<installation>/writer` and `<writer>/notes` and is not created. The daily-note action starts a separate `writer_ac.exe --editor --daily-note` and waits. Notepad still goes through `auto_core_shell_launcher.exe`. |
+| `auto_core_writer.exe` | If `config/writer.ini` exists, or that check fails, open the settings menu. If the file is missing, start `auto_core_writer.exe --config --init`, wait, and open settings only when that process exits 0. |
+| `auto_core_writer.exe --settings` | Open the settings menu. This does not run initialization by itself. Delegated actions are `auto_core_writer.exe --editor --add-task`, `--editor --add-session-prompt`, and `--editor --daily-note`. The baseline probe still checks `session_prompts.list` and `task_list.txt`. |
+| `auto_core_writer.exe --editor` | The editor. `--init`, `--seed`, `--add-task`, `--add-session-prompt`, and `--daily-note` keep their previous meanings. A no-argument editor that needs initialization tells the user to run `auto_core_writer.exe --config --init`. |
+| `auto_core_writer.exe --builder` | Rebuilds the text catalog. Any further argument prints usage and exits 1. |
+| `auto_core_writer.exe --config` | The configuration tool. It starts `auto_core_writer.exe --editor --seed` or `--editor --init` as a separate process. This command exits. It does not open settings. |
+| `auto_core_writer.exe --run` | The hosted session. `--export-keymap-commands` returns 0 with no output. A missing INI uses `<installation>/writer` and `<writer>/notes` and is not created. The daily-note action starts a separate `auto_core_writer.exe --editor --daily-note` and waits. Notepad still goes through `auto_core_shell_launcher.exe`. |
 
 Log identities stay `writer`, `writer_settings`, `writer_config`, `writer_editor`, and `writer_builder`.
 
@@ -140,7 +138,7 @@ Every discovered component receives these arguments. A third-party `<name>_ac.ex
 - `auto_core_keymap.exe --build` passes `--run --export-keymap-commands`.
 - A launch descriptor is `{name}_ac.exe --run` plus the descriptor arguments. Slash's registered command name stays `report_and_empty_recycle_bin`. Dash still receives `--target` and `--parent-pid`.
 
-`components.list` is still built from installed `*_ac.exe` names that already have `config/components/<name>.ini`. That discovery is unchanged.
+`components.list` is built from installed `*_ac.exe` names that already have `config/components/<name>.ini`, plus `log_merger` when `app\auto_core_logger.exe` is present or that name is already saved. `log_merger` has no component INI. `--edit` keeps a saved `log_merger` line when the helper is missing, including when `remove_missing_components` is on. `--disable log_merger` updates an existing list without the helper. `--enable log_merger` requires the helper. Initialization and settings discovery stay `*_ac.exe` only. `log_merger` does not start a hosted process. A `logger` line still has no effect.
 
 ## Third-party components
 

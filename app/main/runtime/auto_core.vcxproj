@@ -162,7 +162,8 @@
     <ClCompile Include="..\..\core\config\core_config.ixx" />
     <ClCompile Include="..\..\core\config\ini.ixx" />
     <ClCompile Include="..\..\core\config\logging_config.ixx" />
-    <ClCompile Include="..\..\components\logger\shared\logger_merge_config.ixx" />
+    <ClCompile Include="..\utilities\log_merger\log_merge.ixx" />
+    <ClCompile Include="..\utilities\log_merger\log_merge.cxx" />
     <ClCompile Include="..\..\core\formatting\encoding.ixx" />
     <ClCompile Include="..\..\core\diagnostics\error.ixx" />
     <ClCompile Include="..\..\core\formatting\formatting.ixx" />
@@ -190,6 +191,8 @@
     <ClCompile Include="taskbar\taskbar_firefox.ixx" />
     <ClCompile Include="lifecycle\program_ready.ixx" />
     <ClCompile Include="lifecycle\version_check.ixx" />
+    <ClCompile Include="lifecycle\logging_cleanup_worker.ixx" />
+    <ClCompile Include="lifecycle\log_merge_worker.ixx" />
     <ClCompile Include="..\shared\defaults.ixx" />
     <ClCompile Include="..\shared\version.ixx" />
     <ClCompile Include="..\shared\installed_version.ixx" />
@@ -207,6 +210,8 @@
     <ClCompile Include="taskbar\taskbar_firefox.cxx" />
     <ClCompile Include="lifecycle\program_ready.cxx" />
     <ClCompile Include="lifecycle\version_check.cxx" />
+    <ClCompile Include="lifecycle\logging_cleanup_worker.cxx" />
+    <ClCompile Include="lifecycle\log_merge_worker.cxx" />
     <ClCompile Include="..\utilities\logging_cleanup\logging_cleanup.ixx" />
     <ClCompile Include="..\utilities\logging_cleanup\logging_cleanup.cxx" />
   </ItemGroup>

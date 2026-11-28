@@ -52,6 +52,16 @@ namespace ac::config::components_list {
         unavailable
     };
 
+    /** List name for `app\auto_core_logger.exe`. It is not a hosted component. */
+    inline constexpr std::string_view log_merger_name = "log_merger";
+    inline constexpr std::wstring_view log_merger_executable_filename =
+        L"auto_core_logger.exe";
+
+    /** List name supplied only by `app\auto_core_writer.exe`. */
+    inline constexpr std::string_view writer_name = "writer";
+    inline constexpr std::wstring_view writer_executable_filename =
+        L"auto_core_writer.exe";
+
     /**
      * \brief Classifies one name from an already loaded parse.
      *
@@ -99,6 +109,57 @@ namespace ac::config::components_list {
         return false;
     }
 
+    /**
+     * \brief Whether discovery may offer a new `log_merger` line.
+     *
+     * A saved line is kept without this file. Periodic merging runs in Main.
+     */
+    [[nodiscard]]
+    inline bool log_merger_helper_present(
+        const std::filesystem::path& app_directory
+    ) {
+        std::error_code error;
+        const bool present = std::filesystem::is_regular_file(
+            app_directory / log_merger_executable_filename,
+            error
+        );
+        return !error && present;
+    }
+
+    /**
+     * \brief Whether `app\auto_core_writer.exe` can supply the `writer` key.
+     *
+     * `writer_ac.exe` is not a source for that key.
+     */
+    [[nodiscard]]
+    inline bool writer_executable_present(
+        const std::filesystem::path& app_directory
+    ) {
+        std::error_code error;
+        const bool present = std::filesystem::is_regular_file(
+            app_directory / writer_executable_filename,
+            error
+        );
+        return !error && present;
+    }
+
+    /**
+     * \brief Automatic merge switch from an already loaded list parse.
+     *
+     * A missing name, a missing list, or an unreadable list stays on.
+     * Blank or `on` is on. `off` and a malformed value are off.
+     */
+    [[nodiscard]]
+    inline bool automatic_log_merge_from_list(
+        const ParseResult& result
+    ) noexcept {
+        if (!result.ok || !name_is_listed(result, log_merger_name)) {
+            return true;
+        }
+        return std::ranges::find(result.enabled, log_merger_name) !=
+            result.enabled.end();
+    }
+
     [[nodiscard]]
     inline std::string_view trim_list_line(const std::string_view value) noexcept {
         const auto first = value.find_first_not_of(" \t\r");
@@ -119,6 +180,15 @@ namespace ac::config::components_list {
             }
         }
         names.emplace_back(name);
+    }
+
+    inline void record_writer_if_present(
+        std::vector<std::string>& names,
+        const std::filesystem::path& app_directory
+    ) {
+        if (writer_executable_present(app_directory)) {
+            record_unique(names, writer_name);
+        }
     }
 
     [[nodiscard]]
@@ -181,7 +251,10 @@ namespace ac::config::components_list {
             }
 
             const auto name = filename.substr(0, filename.size() - 7);
-            if (!is_valid_component_name(name) || name == "taskbar") {
+            if (!is_valid_component_name(name) ||
+                name == "taskbar" ||
+                name == "logger" ||
+                name == writer_name) {
                 continue;
             }
             record_unique(names, name);
@@ -360,7 +433,8 @@ namespace ac::config::components_list {
     [[nodiscard]]
     inline RuntimeCatalog load_runtime_catalog(
         const std::filesystem::path& list_path,
-        const std::filesystem::path& bin_directory
+        const std::filesystem::path& bin_directory,
+        const std::filesystem::path& app_directory = {}
     ) {
         RuntimeCatalog catalog;
         catalog.result = load(list_path);
@@ -370,9 +444,11 @@ namespace ac::config::components_list {
 
         catalog.io_error = catalog.result.error;
         catalog.used_discovery = true;
-        catalog.result = catalog_from_names(
-            discover_ac_executables(bin_directory)
-        );
+        auto names = discover_ac_executables(bin_directory);
+        if (!app_directory.empty()) {
+            record_writer_if_present(names, app_directory);
+        }
+        catalog.result = catalog_from_names(names);
         return catalog;
     }
 

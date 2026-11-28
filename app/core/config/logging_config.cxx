@@ -186,7 +186,9 @@ namespace ac::logging::config {
                 ? ac::paths::config_directory() / "auto_core.ini"
                 : scope.name == "taskbar"
                     ? ac::paths::taskbar_policy_file()
-                    : ac::paths::component_config_file(scope.name);
+                    : scope.name == "writer"
+                        ? ac::paths::writer_config_file()
+                        : ac::paths::component_config_file(scope.name);
             const auto document = ac::ini::read(ini_path);
             std::optional<std::string> owned;
             std::optional<std::string_view> logging;

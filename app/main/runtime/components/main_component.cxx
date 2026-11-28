@@ -127,21 +127,36 @@ bool ac::main::create_process_and_focus(
 /**
  * \brief Closes the program.
  *
- * Hides and detaches the console, stops running child components, unhooks
- * the keyboard hook, and posts a quit message to the main thread.
+ * Unhooks the keyboard hook and posts a quit message. Component writers are
+ * drained after the message loop, once log workers have been joined.
  */
 namespace {
 
-void close_program_impl(const bool allow_recovery_prompt) {
+bool allow_recovery_prompt = true;
+
+void close_program_impl(const bool allow_prompt) {
     auto_core.log_info("close_program()");
     ac::taskbar::cancel_cycle();
     ac::main::program_closing = true;
+    allow_recovery_prompt = allow_prompt;
     if (ac::main::keyboard_hook != NULL) {
         UnhookWindowsHookEx(ac::main::keyboard_hook);
         ac::main::keyboard_hook = NULL;
     }
+    PostThreadMessage(ac::main::main_thread_id, WM_QUIT, 0, 0);
+}
+
+[[nodiscard]]
+bool recovery_allowed() {
+    return allow_recovery_prompt;
+}
+
+} // namespace
+
+void finish_component_shutdown() {
+    const bool allow_prompt = recovery_allowed();
     const bool keep_console_visible =
-        allow_recovery_prompt &&
+        allow_prompt &&
         ac::main::components::console_shutdown_prompt_enabled();
     if (!keep_console_visible) {
         if (const HWND console = GetConsoleWindow(); console != nullptr) {
@@ -149,16 +164,13 @@ void close_program_impl(const bool allow_recovery_prompt) {
         }
         (void)FreeConsole();
     }
-    ac::main::components::shutdown(allow_recovery_prompt);
+    ac::main::components::shutdown(allow_prompt);
     if (keep_console_visible) {
         if (const HWND console = GetConsoleWindow(); console != nullptr) {
             ShowWindow(console, SW_HIDE);
         }
         (void)FreeConsole();
     }
-    PostThreadMessage(ac::main::main_thread_id, WM_QUIT, 0, 0);
-}
-
 }
 
 void close_program() {

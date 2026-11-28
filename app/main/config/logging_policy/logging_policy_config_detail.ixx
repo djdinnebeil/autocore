@@ -42,6 +42,8 @@ export namespace ac::main::logging {
         bool component_logging_default {
             defaults::logging_component_logging_default
         };
+        std::uint64_t merge_interval_seconds {5};
+        bool merge_logs_on_shutdown {true};
     };
 
     struct CommitResult {
@@ -151,6 +153,27 @@ export namespace ac::main::logging {
             .default_value = "on",
             .choices = on_off,
         },
+        {
+            .key = "merge_interval_seconds",
+            .display_name = "Merge interval",
+            .summary =
+                "Seconds between Main log merges when log_merger is on. "
+                "0 turns the periodic merge off. The shutdown merge is a "
+                "separate setting.",
+            .default_value = "5",
+            .constraint =
+                "Enter a non-negative integer. 0 disables periodic merging.",
+            .numeric_prompt = "Enter an integer",
+        },
+        {
+            .key = "merge_logs_on_shutdown",
+            .display_name = "Merge logs on shutdown",
+            .summary =
+                "After other components stop, run one more merge when "
+                "log_merger is on. This is independent of the interval.",
+            .default_value = "on",
+            .choices = on_off,
+        },
     };
 
     [[nodiscard]] Action select_action(
@@ -184,20 +207,30 @@ export namespace ac::main::logging {
     }
 
     [[nodiscard]] std::string ini_text(const Values& values) {
-        auto text = ac::config_menu::with_header(
-            menu_settings,
-            defaults::ini_for_logging(
-                values.disable_all,
-                values.directory,
-                values.max_directory_mb,
-                values.retention_days,
-                values.level,
-                values.log_console_output,
-                values.write_logs_to_files,
-                values.write_logs_to_console,
-                values.write_alerts_to_console,
-                values.component_logging_default
-            )
+        std::size_t logging_settings = 0;
+        for (const auto& setting : menu_settings) {
+            if (setting.key == "merge_interval_seconds") {
+                break;
+            }
+            ++logging_settings;
+        }
+        auto header = ac::config_menu::reference_header(
+            std::span {menu_settings, logging_settings}
+        );
+        if (header.ends_with("\n\n")) {
+            header.pop_back();
+        }
+        auto text = header + defaults::ini_for_logging(
+            values.disable_all,
+            values.directory,
+            values.max_directory_mb,
+            values.retention_days,
+            values.level,
+            values.log_console_output,
+            values.write_logs_to_files,
+            values.write_logs_to_console,
+            values.write_alerts_to_console,
+            values.component_logging_default
         );
         constexpr std::string_view disable_all =
             "# disable_all = on | off\n";
@@ -210,6 +243,22 @@ export namespace ac::main::logging {
         if (text.starts_with(disable_all)) {
             text.insert(disable_all.size(), directory_notes);
         }
+        if (text.empty() || text.back() != '\n') {
+            text.push_back('\n');
+        }
+        text.push_back('\n');
+        text +=
+            "# merge_interval_seconds = a positive integer in seconds. "
+            "0 disables periodic merging. Applies when components.list "
+            "enables log_merger.\n"
+            "# merge_logs_on_shutdown = on | off. Applies independently of "
+            "the periodic merge interval, and only when log_merger is on.\n"
+            "[log_merge]\n"
+            "merge_interval_seconds = ";
+        text += std::to_string(values.merge_interval_seconds);
+        text += "\nmerge_logs_on_shutdown = ";
+        text += values.merge_logs_on_shutdown ? "on" : "off";
+        text += "\n";
         return text;
     }
 

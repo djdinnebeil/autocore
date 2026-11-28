@@ -2,7 +2,9 @@
  * \file main.cxx
  * \brief Coordinates component configuration executables. Does not write files.
  *
- * Invoked as `auto_core_components.exe --initialize`. No further arguments
+ * Invoked as `auto_core_components.exe --initialize`. Writer is configured
+ * by auto_core_writer.exe --config in the Main group and is not discovered
+ * here. No further arguments
  * ask each component whether to seed, configure, or skip. `--seed` launches
  * every component config with `--init --seed` and does not prompt.
  */
@@ -47,7 +49,19 @@ struct LaunchOutcome {
 
 [[nodiscard]]
 std::string config_owner_executable(const std::string_view name) {
+    if (name == list::writer_name) {
+        return "auto_core_writer.exe";
+    }
     return std::string {name} + "_ac.exe";
+}
+
+[[nodiscard]]
+std::filesystem::path config_owner_path(const std::string_view name) {
+    const auto helper = config_owner_executable(name);
+    const auto& directory = cfg::is_component_executable(helper)
+        ? ac::paths::component_executable_directory()
+        : ac::paths::app_directory();
+    return directory / helper;
 }
 
 [[nodiscard]]
@@ -64,7 +78,7 @@ LaunchOutcome launch_config(
         command += ' ';
         command += ac::encoding::to_utf8(forwarded);
     }
-    const auto path = ac::paths::component_executable_directory() / helper;
+    const auto path = config_owner_path(name);
     std::error_code error;
     const bool present = std::filesystem::exists(path, error);
     if (error || !present) {
@@ -147,10 +161,9 @@ std::string prompt_title(const std::string_view name) {
 
 [[nodiscard]]
 bool config_executable_present(const std::string_view name) {
-    const auto helper = config_owner_executable(name);
     std::error_code error;
     const bool present = std::filesystem::exists(
-        ac::paths::component_executable_directory() / helper,
+        config_owner_path(name),
         error
     );
     return !error && present;

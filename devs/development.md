@@ -18,7 +18,7 @@ The C++23 module catalog is [modules.md](modules.md).
 | `slash/shared/slash_protocol.ixx` | Slash recycle-bin command names. |
 | `spotify/shared/spotify_protocol.ixx` | Spotify command names used by `spotify_ac.exe`. |
 | `taskbar/shared/taskbar_protocol.ixx` | Reserved Main-local taskbar command names. |
-| `writer/shared/writer_protocol.ixx` | Writer command names used by `writer_ac.exe`. |
+| `writer/shared/writer_protocol.ixx` | Writer command names used by `auto_core_writer.exe`. |
 
 ## Registering runtime commands
 
@@ -34,13 +34,13 @@ A public clone should not contain another person's keymap, journal print-choice 
 
 - `data/journal/<factory_name>.list` — `journal_ac.exe --builder --seed` writes a missing starter alias file from [`journal_factories.ixx`](../app/components/journal/shared/journal_factories.ixx). An existing file is left unchanged. `journal_ac.exe --config --init` and `--seed` launch that owner, then `journal_ac.exe --cloud`, `journal_ac.exe --clock`, and `journal_ac.exe --series`, each for its own missing file. `journal_ac.exe --series` also creates a missing `series.db`.
 - `keymap.map` — `auto_core_keymap.exe --seed` writes a seed (`numpad_0` / `numpad_1` filled, every other `key_codes` name blank) followed by a blank line and an empty `[commands]` section. `--build` creates that file only when it does not exist, using the short numpad and media template, a blank line, and `[commands]` filled from the command names
-- `components.list` — `auto_core_components.exe --edit --seed` creates it from installed `*_ac.exe` names that already have `config/components/<name>.ini`
+- `components.list` — `auto_core_components.exe --edit --seed` creates it from installed `*_ac.exe` names that already have `config/components/<name>.ini`, and adds `log_merger` when `app\auto_core_logger.exe` is present. A later `--edit` keeps a saved `log_merger` line if that executable is missing
 - `config/*.ini` — Main host INIs are written only by `auto_core_settings.exe --config` from [`app/main/shared/defaults.ixx`](../app/main/shared/defaults.ixx). A component `<name>.ini` is written only by `<name>_ac.exe --config` from that child's `shared/defaults.ixx`
 - `dist/data/server/` — default Server data directory. `server_ac.exe --config --init` and `--seed` write a missing `config/components/server.ini`, then launch `server_ac.exe --editor` for missing `port.id` and `document_root.id` and `server_ac.exe --builder --seed` for missing `index.html` and `styles.css`. `--seed` always requests the starter site. `--init` asks first. An existing file is left unchanged. The builder reads `document_root.id` and writes only under a relative document root from [`default_site.ixx`](../app/components/server/shared/default_site.ixx)
 
 `--seed` leaves an existing `keymap.map` unchanged. `--build` updates only its final `[commands]` name list, keeps one blank line before that section, and leaves the preceding text in place when that update is accepted. A no-argument `auto_core_keymap.exe` seeds a missing map, runs that build once, then offers rebuild or exit. An existing `components.list` or Journal `<factory_name>.list` file is left unchanged. `*.local.ini` / `*.local.ixx` are gitignored and are not loaded.
 
-Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe`. `writer_ac.exe --builder` replaces `<writer directory>/insert_text.list` from `text/*.txt`. `writer_ac.exe` loads those `insert_*` names at startup. Restart Writer after a catalog change; editing a text file does not require a rebuild. `auto_core_keymap.exe --build` publishes both keymap command lists and fills `keymap.map` `[commands]` from the command names only. A merged catalog line is `name [Provider] - description`, or `name [Provider]` when the description is empty. Per-provider lists stay `name - description`. The description is not copied into `[commands]`. Do not commit the live alias file. Per-program `.map` definitions live in `<installation>\data\taskbar\applications` (portable default gitignored `dist/data/taskbar/applications/`). `auto_core_taskbar.exe --builder` creates a missing `.map` and does not overwrite an existing one. `auto_core_taskbar.exe --config` writes only `config/taskbar_policy.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `auto_core_taskbar.exe --run --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
+Alias lines are `name = factory(arguments)`. `journal_ac.exe` loads those aliases into its hello catalog at startup. Restart Journal after a change; a new alias does not require a rebuild. A new factory requires a registry entry and a rebuild of `journal_ac.exe`. `auto_core_writer.exe --builder` replaces `<writer directory>/insert_text.list` from `text/*.txt`. `auto_core_writer.exe` loads those `insert_*` names at startup. Restart Writer after a catalog change; editing a text file does not require a rebuild. `auto_core_keymap.exe --build` publishes both keymap command lists and fills `keymap.map` `[commands]` from the command names only. A merged catalog line is `name [Provider] - description`, or `name [Provider]` when the description is empty. Per-provider lists stay `name - description`. The description is not copied into `[commands]`. Do not commit the live alias file. Per-program `.map` definitions live in `<installation>\data\taskbar\applications` (portable default gitignored `dist/data/taskbar/applications/`). `auto_core_taskbar.exe --builder` creates a missing `.map` and does not overwrite an existing one. `auto_core_taskbar.exe --config` writes only `config/taskbar_policy.ini`. `--init` and `--seed` then launch the builder; `--seed` is noninteractive. After map generation succeeds, the builder launches `auto_core_taskbar.exe --run --refresh-cache`, which replaces `winkey_map.cache`. That cache is not missing-only. A keymap catalog failure does not skip the refresh. Version 1 `.map` syntax is section/key.
 
 ## Main process session
 
@@ -55,7 +55,8 @@ and starts each enabled generic child:
 2. Start every other enabled hosted name: create `ac_{name}_pipe` and
    launch `{name}_ac.exe --run` without waiting. Then wait for those
    `ac.component.v2` hellos in parallel (5s window). A name whose executable
-   embeds `AC_LAUNCH_DESCRIPTOR` is not started. A missing exe, bad
+   embeds `AC_LAUNCH_DESCRIPTOR` is not started. `log_merger` and `logger`
+   are not hosted. A missing exe, bad
    hello, or timeout disables only that child.
 3. `initialize_keymap()` then registers advertised catalog names from
    started children, plus commands from each enabled executable's
@@ -84,8 +85,8 @@ existing child) are in [new-component.md](new-component.md).
 Put the project at `app/components/<name>/`. Import
 `..\..\..\msbuild\AutoCore.props` once (relative). Target name is
 `<name>_ac` for short children (`dash_ac`, `example_ac`, `itunes_ac`,
-`journal_ac`, `logger_ac`, `server_ac`, `slash_ac`,
-`spotify_ac`, `wake_ac`, `writer_ac`). Leave `auto_core` unsuffixed. Taskbar is `auto_core_taskbar` under `app/main/taskbar`, not a component target. A component does not get a separate `<name>_config` or `<name>_settings` target.
+`journal_ac`, `server_ac`, `slash_ac`,
+`spotify_ac`, `wake_ac`). Leave `auto_core` unsuffixed. Taskbar is `auto_core_taskbar` under `app/main/taskbar`, and Writer is `auto_core_writer` under `app/main/writer`. Neither is a component target. A component does not get a separate `<name>_config` or `<name>_settings` target.
 
 Enable a v1 child in live `dist/components.list` (`name` or `name on`).
 Advertise

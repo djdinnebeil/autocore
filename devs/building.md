@@ -30,7 +30,7 @@ A `.sln` is a workspace. A `.vcxproj` is one EXE, DLL, or test executable. A dir
 
 [`app/Tests.sln`](../app/Tests.sln) builds the complete test suite. A Release x64 build of that solution builds every test project and `auto_core_dll`. Build one suite by selecting its project, or by invoking its `.vcxproj` with MSBuild.
 
-The twelve family workspaces are:
+The eleven family workspaces are:
 
 | Workspace | Solution |
 | --- | --- |
@@ -39,13 +39,12 @@ The twelve family workspaces are:
 | Dash | [`app/components/dash/Dash.sln`](../app/components/dash/Dash.sln) |
 | iTunes | [`app/components/itunes/iTunes.sln`](../app/components/itunes/iTunes.sln) |
 | Journal | [`app/components/journal/Journal.sln`](../app/components/journal/Journal.sln) |
-| Logger | [`app/components/logger/Logger.sln`](../app/components/logger/Logger.sln) |
 | Server | [`app/components/server/Server.sln`](../app/components/server/Server.sln) |
 | Slash | [`app/components/slash/Slash.sln`](../app/components/slash/Slash.sln) |
 | Spotify | [`app/components/spotify/Spotify.sln`](../app/components/spotify/Spotify.sln) |
 | Taskbar | `auto_core_taskbar` in [`app/AutoCore.sln`](../app/AutoCore.sln), project [`app/main/taskbar/auto_core_taskbar.vcxproj`](../app/main/taskbar/auto_core_taskbar.vcxproj) |
 | Wake | [`app/components/wake/Wake.sln`](../app/components/wake/Wake.sln) |
-| Writer | [`app/components/writer/Writer.sln`](../app/components/writer/Writer.sln) |
+| Writer | [`app/main/writer/Writer.sln`](../app/main/writer/Writer.sln) |
 
 Component hosted executables live in `runtime/`. Other responsibility directories (`config`, `settings`, `db`, `editor`, `builder`, `formatter`, `oauth`, `clock`, `cloud`, `series`, `shared`, `tests`) stay beside it. `db/` is the SQLite module compiled into `journal_ac.exe`. `--run` and `--series` use that same in-process store. To work on iTunes history, open `iTunes.sln` and build `itunes`, or run MSBuild on `app\components\itunes\runtime\itunes.vcxproj`.
 
@@ -59,9 +58,9 @@ Production tests:
 | Journal | [`app/components/journal/tests/journal_tests.vcxproj`](../app/components/journal/tests/journal_tests.vcxproj) |
 | Server | [`app/components/server/tests/server_tests.vcxproj`](../app/components/server/tests/server_tests.vcxproj) |
 | Spotify | [`app/components/spotify/tests/spotify_tests.vcxproj`](../app/components/spotify/tests/spotify_tests.vcxproj) |
-| Writer | [`app/components/writer/tests/writer_tests.vcxproj`](../app/components/writer/tests/writer_tests.vcxproj) |
+| Writer | [`app/main/writer/tests/writer_tests.vcxproj`](../app/main/writer/tests/writer_tests.vcxproj) |
 
-iTunes, Spotify, Journal, Server, and Writer test notes: [`app/components/itunes/tests/TESTING.md`](../app/components/itunes/tests/TESTING.md), [`app/components/spotify/tests/TESTING.md`](../app/components/spotify/tests/TESTING.md), [`app/components/journal/tests/TESTING.md`](../app/components/journal/tests/TESTING.md), [`app/components/server/tests/TESTING.md`](../app/components/server/tests/TESTING.md), [`app/components/writer/tests/TESTING.md`](../app/components/writer/tests/TESTING.md). From the repository root, Release x64, [`app/Tests.sln`](../app/Tests.sln) builds the complete suite. `build-all.ps1` builds [`app/AutoCore.sln`](../app/AutoCore.sln) and does not build tests. Test `OutDir` is `obj\<project>\`. To build one suite:
+iTunes, Spotify, Journal, Server, and Writer test notes: [`app/components/itunes/tests/TESTING.md`](../app/components/itunes/tests/TESTING.md), [`app/components/spotify/tests/TESTING.md`](../app/components/spotify/tests/TESTING.md), [`app/components/journal/tests/TESTING.md`](../app/components/journal/tests/TESTING.md), [`app/components/server/tests/TESTING.md`](../app/components/server/tests/TESTING.md), [`app/main/writer/tests/TESTING.md`](../app/main/writer/tests/TESTING.md). From the repository root, Release x64, [`app/Tests.sln`](../app/Tests.sln) builds the complete suite. `build-all.ps1` builds [`app/AutoCore.sln`](../app/AutoCore.sln) and does not build tests. Test `OutDir` is `obj\<project>\`. To build one suite:
 
 ```powershell
 msbuild app\core\tests\auto_core_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
@@ -82,13 +81,13 @@ msbuild app\components\journal\tests\journal_tests.vcxproj /m /p:Configuration=R
 msbuild app\components\server\tests\server_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 .\obj\server_tests\server_tests.exe "[server][unit]"
 
-msbuild app\components\writer\tests\writer_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
+msbuild app\main\writer\tests\writer_tests.vcxproj /m /p:Configuration=Release /p:Platform=x64
 .\obj\writer_tests\writer_tests.exe "[writer][unit]"
 ```
 
 ## MSBuild order
 
-From the repository root, Release x64, run [`scripts/build-all.ps1`](../scripts/build-all.ps1). It builds [`app/AutoCore.sln`](../app/AutoCore.sln). That default build is the shipped DLL and executables. It does not enumerate test projects. Build the complete test suite with [`app/Tests.sln`](../app/Tests.sln). [`scripts/build-all-components.ps1`](../scripts/build-all-components.ps1) builds the twelve family solutions in order, Core first. Build the DLL before any executable that links `auto_core.lib`, or use the tracked `lib/auto_core.lib`. The linker searches `lib/`.
+From the repository root, Release x64, run [`scripts/build-all.ps1`](../scripts/build-all.ps1). It builds [`app/AutoCore.sln`](../app/AutoCore.sln). That default build is the shipped DLL and executables. It does not enumerate test projects. Build the complete test suite with [`app/Tests.sln`](../app/Tests.sln). [`scripts/build-all-components.ps1`](../scripts/build-all-components.ps1) builds the eleven family solutions in order, Core first. Build the DLL before any executable that links `auto_core.lib`, or use the tracked `lib/auto_core.lib`. The linker searches `lib/`.
 
 ## Output directories
 

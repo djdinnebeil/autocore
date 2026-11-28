@@ -33,12 +33,11 @@ constexpr Provider providers[] {
     {"dash", L"dash_ac.exe", "dash.keymap_commands.txt"},
     {"itunes", L"itunes_ac.exe", "itunes.keymap_commands.txt"},
     {"journal", L"journal_ac.exe", "journal.keymap_commands.txt"},
-    {"logger", L"logger_ac.exe", "logger.keymap_commands.txt"},
     {"server", L"server_ac.exe", "server.keymap_commands.txt"},
     {"slash", L"slash_ac.exe", "slash.keymap_commands.txt"},
     {"spotify", L"spotify_ac.exe", "spotify.keymap_commands.txt"},
     {"wake", L"wake_ac.exe", "wake.keymap_commands.txt"},
-    {"writer", L"writer_ac.exe", "writer.keymap_commands.txt"},
+    {"writer", L"auto_core_writer.exe", "writer.keymap_commands.txt"},
 };
 
 struct ExportedCommand {
@@ -248,8 +247,9 @@ std::optional<std::string> capture_stdout(
 
 [[nodiscard]]
 std::optional<CapturedExport> export_provider(const Provider& provider) {
-    const std::filesystem::path executable =
-        ac::paths::component_executable_directory() / provider.executable;
+    const std::filesystem::path executable = provider.name == "writer"
+        ? ac::paths::app_directory() / provider.executable
+        : ac::paths::component_executable_directory() / provider.executable;
     std::error_code exists_error;
     if (!std::filesystem::is_regular_file(executable, exists_error) ||
         exists_error) {

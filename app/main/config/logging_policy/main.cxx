@@ -131,6 +131,21 @@ LoggingValues current_values() {
             values.component_logging_default = parsed;
         }
     }
+    if (const auto interval = document->find(
+            "log_merge", "merge_interval_seconds"
+        )) {
+        if (const auto parsed = parse_non_negative(*interval)) {
+            values.merge_interval_seconds = static_cast<std::uint64_t>(*parsed);
+        }
+    }
+    if (const auto shutdown_merge = document->find(
+            "log_merge", "merge_logs_on_shutdown"
+        )) {
+        bool parsed = values.merge_logs_on_shutdown;
+        if (parse_on_off(*shutdown_merge, parsed)) {
+            values.merge_logs_on_shutdown = parsed;
+        }
+    }
     return values;
 }
 
@@ -173,6 +188,12 @@ std::string current_text(const menu::Setting& setting) {
     }
     if (setting.key == "write_alerts_to_console") {
         return on_off(values.write_alerts_to_console);
+    }
+    if (setting.key == "merge_interval_seconds") {
+        return std::to_string(values.merge_interval_seconds);
+    }
+    if (setting.key == "merge_logs_on_shutdown") {
+        return on_off(values.merge_logs_on_shutdown);
     }
     return on_off(values.component_logging_default);
 }
@@ -222,6 +243,16 @@ menu::ApplyResult apply_setting(
     }
     else if (setting.key == "component_logging_default") {
         values.component_logging_default = value == "on";
+    }
+    else if (setting.key == "merge_interval_seconds") {
+        const auto parsed = parse_non_negative(value);
+        if (!parsed) {
+            return menu::ApplyResult::invalid;
+        }
+        values.merge_interval_seconds = static_cast<std::uint64_t>(*parsed);
+    }
+    else if (setting.key == "merge_logs_on_shutdown") {
+        values.merge_logs_on_shutdown = value == "on";
     }
     if (!write_values(values)) {
         logging_policy_config.print("Failed to write {}.", ini_path().string());

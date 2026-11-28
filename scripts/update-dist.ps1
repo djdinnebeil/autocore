@@ -76,6 +76,17 @@ try {
         throw "No executables or DLLs found in $AppSource"
     }
 
+    foreach ($Retired in @(
+            (Join-Path $ComponentsSource 'logger_ac.exe'),
+            (Join-Path $ComponentsDestination 'logger_ac.exe'),
+            (Join-Path $ComponentsSource 'writer_ac.exe'),
+            (Join-Path $ComponentsDestination 'writer_ac.exe')
+        )) {
+        if (Test-Path -LiteralPath $Retired) {
+            Remove-Item -LiteralPath $Retired -Force
+        }
+    }
+
     $ComponentFiles = @(
         Get-ChildItem -LiteralPath $ComponentsSource -File |
             Where-Object { Test-ComponentExecutableName $_.Name }

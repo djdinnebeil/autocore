@@ -210,10 +210,13 @@ namespace ac {
 
     void Component::report_ini_unavailable(const bool malformed) {
         const auto& component_name = impl_->name;
-        const auto file =
-            std::string {"config/components/"} + component_name + ".ini";
-        const auto exe =
-            std::string {component_name} + "_ac.exe --config";
+        const bool writer = component_name == "writer";
+        const auto file = writer
+            ? std::string {"config/writer.ini"}
+            : std::string {"config/components/"} + component_name + ".ini";
+        const auto exe = writer
+            ? std::string {"auto_core_writer.exe --config"}
+            : std::string {component_name} + "_ac.exe --config";
         if (malformed) {
             log_alert(
                 "{} is malformed. Run {} to generate a valid file. "

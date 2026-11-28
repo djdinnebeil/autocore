@@ -45,9 +45,14 @@ namespace ac::main::settings {
 
     [[nodiscard]]
     inline std::vector<std::string> discover_settings_executables(
-        const std::filesystem::path& directory
+        const std::filesystem::path& directory,
+        const std::filesystem::path& app_directory = {}
     ) {
-        return list::discover_ac_executables(directory);
+        auto names = list::discover_ac_executables(directory);
+        if (!app_directory.empty()) {
+            list::record_writer_if_present(names, app_directory);
+        }
+        return names;
     }
 
     [[nodiscard]]
@@ -67,6 +72,15 @@ namespace ac::main::settings {
             true
         });
         for (const auto& identity : identities) {
+            if (identity == list::writer_name) {
+                rows.push_back({
+                    component_row_label(identity),
+                    "auto_core_writer.exe",
+                    {"--settings"},
+                    true
+                });
+                continue;
+            }
             rows.push_back({
                 component_row_label(identity),
                 identity + "_ac.exe",

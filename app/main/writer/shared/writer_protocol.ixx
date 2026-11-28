@@ -1,0 +1,57 @@
+/**
+ * \file writer_protocol.ixx
+ * \brief Writer command names used by `auto_core_writer.exe`.
+ */
+export module writer_protocol;
+
+import std;
+
+export namespace ac::protocol::writer {
+
+/** A keymap command name forwarded as an invoke payload. */
+struct Command {
+    std::string_view name;
+};
+
+inline constexpr Command select_and_insert_session_prompt {
+    "select_and_insert_session_prompt"
+};
+inline constexpr Command select_and_insert_text {
+    "select_and_insert_text"
+};
+inline constexpr Command select_and_insert_profile_url {
+    "select_and_insert_profile_url"
+};
+inline constexpr Command create_new_note_in_notepad {
+    "create_new_note_in_notepad"
+};
+inline constexpr Command launch_task_list {"launch_task_list"};
+inline constexpr Command print_timestamp {"print_timestamp"};
+inline constexpr Command print_date_iso {"print_date_iso"};
+inline constexpr Command print_date_compact {"print_date_compact"};
+inline constexpr Command print_date_iso_with_timestamp {
+    "print_date_iso_with_timestamp"
+};
+inline constexpr Command print_date_iso_with_timestamp_w {
+    "print_date_iso_with_timestamp_w"
+};
+inline constexpr Command add_brackets_around_clipboard {
+    "add_brackets_around_clipboard"
+};
+inline constexpr Command activate_excel {"activate_excel"};
+inline constexpr std::array commands {
+    select_and_insert_session_prompt,
+    select_and_insert_text,
+    select_and_insert_profile_url,
+    create_new_note_in_notepad,
+    launch_task_list,
+    print_timestamp,
+    print_date_iso,
+    print_date_compact,
+    print_date_iso_with_timestamp,
+    print_date_iso_with_timestamp_w,
+    add_brackets_around_clipboard,
+    activate_excel,
+};
+
+} // namespace ac::protocol::writer

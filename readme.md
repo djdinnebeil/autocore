@@ -73,12 +73,12 @@ The main application registers the Windows low-level keyboard hook, passes confi
 | --- | --- | --- |
 | Dash | Protected local secret insertion using current-user DPAPI and a Windows Hello access check | `dash_ac.exe` |
 | Journal | Journal titles, entries, and series workflows | `journal_ac.exe` |
-| Logger | Combine component logs into a main log | `logger_ac.exe` |
+| Logger | Combine component logs into a main log | `auto_core.exe`, `auto_core_logger.exe` |
 | iTunes | Playback control through COM automation | `itunes_ac.exe` |
 | Spotify | Web API playback control and listening history | `spotify_ac.exe` |
 | Taskbar | Native taskbar activation and mappings | `auto_core_taskbar.exe` |
 | Server | Loopback HTTP local-file server | `server_ac.exe` |
-| Writer | Text insertion, notes, timestamps, and task lists | `writer_ac.exe` |
+| Writer | Text insertion, notes, timestamps, and task lists | `auto_core_writer.exe` |
 | Slash | Recycle-bin utility | `slash_ac.exe` |
 | Wake | System-resume logging | `wake_ac.exe` |
 

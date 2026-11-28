@@ -94,6 +94,20 @@ Summaries are `log_debug` records on the `auto_core` component, so
 `[logging] level` must be `trace` or `debug` for them to be written. Directory
 and delete failures are `log_alert`.
 
+`[log_merge]` follows `[logging]` in the same file.
+
+| Key | Type | Allowed | Default | Invalid or missing |
+| --- | --- | --- | --- | --- |
+| `merge_interval_seconds` | integer | non-negative | `5` | uses `5` when the section or key is missing or invalid. `0` disables the periodic merge. An explicit value, including `0` and `60`, is kept when the file is rewritten |
+| `merge_logs_on_shutdown` | bool | `on`, `off` | `on` | uses `on`. Independent of the interval. Both keys apply only when `components.list` enables `log_merger` |
+
+`auto_core_settings.exe --config --area logging-policy` writes both sections.
+It does not write `log_merger`. Periodic merging runs in `auto_core.exe` when
+that list entry is on, blank, or absent. Off skips the periodic worker and the
+detached shutdown merge and leaves these values saved. `auto_core_logger.exe --refresh` and
+`--merge` perform on-demand merges in either list state. Bytes written after a pass snapshots its
+inputs are published on a later pass.
+
 ### `config/warnings.ini`
 
 Writer `auto_core_settings.exe --config --area warnings`. Section `[warnings]`.

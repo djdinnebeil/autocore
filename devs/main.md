@@ -39,16 +39,23 @@ process only.
    passes both flags to the Main configuration owners, then shows the
    Components menu. That Main mode is passed to the `auto-core`,
    `components-policy`, `shutdown`, `crash-recovery`, `startup`, and
-   `warnings` routes of `auto_core_settings.exe --config`. It does not select
+   `warnings` routes of `auto_core_settings.exe --config`. The same mode is then
+   passed to `auto_core_taskbar.exe --config` and `auto_core_writer.exe --config`.
+   Use defaults passes `--seed`. Configure passes `--init`. `--init --seed` passes
+   both. Those tools print `Taskbar initialized.` and then `Writer initialized.`
+   before the Components menu. It does not select
    component initialization. After those owners succeed, no-argument, `--init`,
    and `--init --seed` ask `1. Use defaults for components`
    (`auto_core_components.exe --initialize --seed`), `2. Configure components`
    (`auto_core_components.exe --initialize`), or `3. Skip components`. Blank input
    selects defaults. Skip does not launch `auto_core_components.exe` and is not
-   a failure. `auto_core_components.exe --initialize` asks each discovered component
+   a failure. Taskbar and Writer have already run, so Skip still initializes or
+   configures them. `auto_core_components.exe --initialize` asks each discovered component
    whether to use defaults, configure, or skip. `auto_core_components.exe --initialize --seed`
    does not prompt and launches each component config with `--init --seed`,
-   which creates `logger.ini` by launching `logger_ac.exe --config --init --seed`.
+   which creates each component INI by launching `<name>_ac.exe --config --init --seed`.
+   Writer is not in that pass. Its INI is `config/writer.ini`, written earlier by
+   `auto_core_writer.exe --config`.
    After component initialization, `auto_core_components.exe --edit --seed` and
    `auto_core_keymap.exe --seed` run. No Main configuration owner runs after
    component initialization. A failed or cancelled required stage
@@ -90,7 +97,7 @@ process only.
    shutdown listeners. Hook install is not checked. Shutdown-listener failure
    prints to stderr and is not fatal.
 9. Create the log directory and write Main's local session log.
-10. Initialize the generic component session from `components.list` (hello on `ac.component.v2`, child process handles, and snapshot attach when `taskbar` is enabled). A missing `logger.ini` is reported here. Built-in merge defaults stay in memory and the file is not created.
+10. Initialize the generic component session from `components.list` (hello on `ac.component.v2`, child process handles, and snapshot attach when `taskbar` is enabled). A `logger` entry is ignored. `log_merger` does not start a process. Its on/off state is resolved with this catalog load. A missing `log_merger` line, or a missing or unreadable list, leaves automatic merging on. Merge policy values come from `[log_merge]` in `logging_policy.ini`.
 11. Load `<installation root>/keymap.map`. If the file is missing or unloadable, install a
    two-key emergency map in memory and report the gap. Runtime does not write
    `keymap.map`.
@@ -113,16 +120,24 @@ process only.
    version is the compiled constant. The same version,
    a newer installed version, and any failed request print nothing. `off`
    makes no request. The thread is joined after the message loop.
-14. On another background thread, run log cleanup inside this process. It uses
-   the logging directory and limits already resolved for the host. Edits to
-   `logging_policy.ini` apply after the host restarts. The pass runs retention
-   cleanup, then size cleanup. Main does not wait for that pass before the
-   message loop. After it returns, the thread waits until the next local
-   midnight, or until shutdown, and then runs cleanup again. Routine summaries
-   and an already-held cleanup mutex are `log_debug`. A directory or delete
-   failure is `log_alert` and is not fatal. Shutdown sets the wait event and
-   joins the thread before Main's shutdown record. An in-flight pass is allowed
-   to finish. The worker, not the message loop, deletes files.
+14. On background threads, run log cleanup and, when `log_merger` was on at
+   startup, the periodic log merge inside this process. `log_merger` off does
+   not start that worker. `request_stop` and `join` are safe on the idle
+   worker. Cleanup uses the logging directory and limits already
+   resolved for the host. The merge interval and shutdown flag come from
+   `[log_merge]` in the same resolved `logging_policy.ini` and apply only
+   while `log_merger` is on. Edits to the list or the policy apply after
+   the host restarts. Interval `0` waits for shutdown and does not merge.
+   Cleanup runs retention, then size. Main does not wait for the first pass
+   before the message loop. After it returns, the thread waits until the next
+   local midnight, or until shutdown, and then runs cleanup again. A positive
+   interval merges once, then again after each interval. The merge mutex wait
+   is interruptible. An in-flight cleanup or merge is allowed to finish.
+   Routine cleanup summaries and an already-held cleanup mutex are
+   `log_debug`. A directory or delete failure is `log_alert` and is not fatal.
+   Merge diagnostics use the `auto_core_logger` area on the `auto_core` log.
+   Shutdown joins the cleanup worker and the merge worker, including an idle
+   merge worker, before Main's shutdown record.
 15. Enter the thread message loop.
 
 The message loop handles a posted shutdown request, then a posted key event,
@@ -341,8 +356,11 @@ children whose hello declares `force_allowed`. Graceful children are not
 force-terminated: Main duplicates the job handle into the living root process,
 or into a descendant opened and checked with `IsProcessInJob`, before it
 closes its own handle. Closing the last of those handles still ends any
-process left in the job. `logger_ac.exe --run --once --shutdown` is started outside
-these jobs and is not waited on.
+process left in the job. After those writers have stopped, and when the startup `log_merger` state is
+on and `merge_logs_on_shutdown` is on, `auto_core_logger.exe --merge --shutdown`
+is started outside these jobs and is not waited on. `log_merger` off skips
+that launch and does not change the saved policy. A `logger` line in
+`components.list` does not start a process. `log_merger` does not either.
 
 On-demand components are not started here. An enabled name whose
 `{name}_ac.exe` embeds `AC_LAUNCH_DESCRIPTOR` is launched when its

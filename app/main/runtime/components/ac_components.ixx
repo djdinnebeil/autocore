@@ -23,6 +23,15 @@ export namespace ac::main::components {
     [[nodiscard]] Session initialize();
 
     /**
+     * \brief `log_merger` state resolved with the component catalog.
+     *
+     * The same value gates the periodic worker and the detached shutdown
+     * merge. A missing entry stays on. The running process does not reread
+     * the list.
+     */
+    [[nodiscard]] bool automatic_log_merge_enabled();
+
+    /**
      * \brief Stops successfully started generic components.
      *
      * Safe to call more than once. Failed or disabled children are skipped.

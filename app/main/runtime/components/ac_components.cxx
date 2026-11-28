@@ -24,7 +24,7 @@ import std;
 import auto_core.core.encoding;
 import auto_core.core.ini;
 import auto_core.core.logging.config;
-import logger_merge_config;
+import auto_core.utility.log_merge;
 import auto_core.core.paths;
 import auto_core.core.pipes;
 import auto_core.core.process;
@@ -80,6 +80,7 @@ namespace {
     bool shutdown_complete {true};
     ac::config::components_list::ParseResult catalog;
     bool catalog_loaded {false};
+    bool automatic_log_merge {true};
 
     [[nodiscard]]
     const ac::config::components_list::ParseResult& loaded_catalog() {
@@ -87,7 +88,8 @@ namespace {
             const auto list_path = ac::paths::components_list_file();
             const auto runtime = ac::config::components_list::load_runtime_catalog(
                 list_path,
-                ac::paths::component_executable_directory()
+                ac::paths::component_executable_directory(),
+                ac::paths::app_directory()
             );
             if (runtime.used_discovery) {
                 std::error_code exists_error;
@@ -111,17 +113,30 @@ namespace {
                 }
             }
             catalog = runtime.result;
+            automatic_log_merge =
+                ac::config::components_list::automatic_log_merge_from_list(
+                    catalog
+                );
             catalog_loaded = true;
         }
         return catalog;
     }
 
     [[nodiscard]]
+    std::filesystem::path hosted_executable(const std::string_view name) {
+        namespace list = ac::config::components_list;
+        if (name == list::writer_name) {
+            return ac::paths::app_directory() / list::writer_executable_filename;
+        }
+        return ac::paths::component_executable_directory() /
+            (std::string {name} + "_ac.exe");
+    }
+
+    [[nodiscard]]
     std::optional<ac::main::launch_descriptor::ParseResult> read_launch_descriptor(
         const std::string_view name
     ) {
-        const auto executable = ac::paths::component_executable_directory() /
-            (std::string {name} + "_ac.exe");
+        const auto executable = hosted_executable(name);
         std::error_code exists_error;
         if (!std::filesystem::is_regular_file(executable, exists_error) ||
             exists_error) {
@@ -150,8 +165,7 @@ namespace {
         const std::string& command,
         const ac::main::launch_descriptor::Descriptor& descriptor
     ) {
-        const auto executable = ac::paths::component_executable_directory() /
-            (component + "_ac.exe");
+        const auto executable = hosted_executable(component);
         std::wstring arguments;
         if (descriptor.arguments ==
             ac::main::launch_descriptor::Descriptor::Arguments::command) {
@@ -503,7 +517,7 @@ namespace {
         const std::filesystem::path& executable
     ) {
         std::wstring command_line =
-            L"\"" + executable.wstring() + L"\" --run --once --shutdown";
+            L"\"" + executable.wstring() + L"\" --merge --shutdown";
         const auto directory = executable.parent_path();
         const auto try_create = [&](const DWORD flags) {
             STARTUPINFOW startup_info {};
@@ -550,8 +564,7 @@ namespace {
             return std::nullopt;
         }
 
-        const auto executable =
-            ac::paths::component_executable_directory() / protocol::executable_name(name);
+        const auto executable = hosted_executable(name);
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
             auto_core.log_alert(
@@ -886,6 +899,10 @@ namespace {
         inflight.reserve(names.size());
 
         for (const auto& name : names) {
+            if (name == "logger" ||
+                name == ac::config::components_list::log_merger_name) {
+                continue;
+            }
             auto launched = try_launch(name);
             if (!launched) {
                 continue;
@@ -1647,11 +1664,12 @@ void ac::main::components::shutdown(const bool allow_recovery_prompt) {
         logger_child->process != INVALID_HANDLE_VALUE &&
         WaitForSingleObject(logger_child->process, 0) != WAIT_OBJECT_0;
     if (!logger_still_running &&
+        automatic_log_merge &&
         ac::main::components::detail::launch_shutdown_once(
-            ac::logger::config::merge_logs_on_shutdown()
+            ac::log_merge::merge_logs_on_shutdown()
         )) {
-        const auto executable = ac::paths::component_executable_directory() /
-            ac::protocol::component::executable_name("logger");
+        const auto executable =
+            ac::paths::app_directory() / L"auto_core_logger.exe";
         std::error_code exists_error;
         if (!std::filesystem::exists(executable, exists_error)) {
             auto_core.log_alert(
@@ -1668,7 +1686,7 @@ void ac::main::components::shutdown(const bool allow_recovery_prompt) {
         }
         else {
             auto_core.log_info(
-                "Started logger_ac.exe --once for the shutdown merge."
+                "Started auto_core_logger.exe --merge --shutdown for the final merge."
             );
         }
     }
@@ -1873,6 +1891,11 @@ command_registry::Action ac::main::components::activation_action(
     };
 }
 
+bool ac::main::components::automatic_log_merge_enabled() {
+    (void)loaded_catalog();
+    return automatic_log_merge;
+}
+
 ac::main::components::Session ac::main::components::initialize() {
     Session session;
     started_children.clear();
@@ -1900,21 +1923,18 @@ ac::main::components::Session ac::main::components::initialize() {
         );
     }
 
-    if (ac::logger::config::ini_missing()) {
-        auto_core.log_alert(
-            "config/components/logger.ini is missing. Run logger_ac.exe --config to "
-            "generate it. Using built-in defaults; the file will not be "
-            "created."
-        );
-    }
-    if (const auto report = ac::logger::config::configuration_report();
-        !report.empty()) {
-        auto_core.lognl_info(std::string {report});
-    }
-
     std::vector<std::string> remaining;
     remaining.reserve(parsed.enabled.size());
     for (const auto& name : parsed.enabled) {
+        if (name == ac::config::components_list::log_merger_name) {
+            auto_core.log_debug(
+                "components.list entry log_merger does not start a process."
+            );
+            continue;
+        }
+        if (name == "logger") {
+            continue;
+        }
         if (name == "taskbar") {
             auto_core.log_info(
                 "Ignoring components.list entry taskbar. "

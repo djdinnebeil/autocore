@@ -62,6 +62,7 @@
     <ClCompile Include="components_list_lock_tests.cxx" />
     <ClCompile Include="settings_catalog_tests.cxx" />
     <ClCompile Include="logger_shutdown_tests.cxx" />
+    <ClCompile Include="log_merge_tests.cxx" />
     <ClCompile Include="keymap_map_tests.cxx" />
     <ClCompile Include="program_ready_tests.cxx" />
     <ClCompile Include="startup_config_tests.cxx" />

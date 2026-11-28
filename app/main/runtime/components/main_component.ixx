@@ -60,10 +60,15 @@ export namespace ac::main {
 export bool primary = true;
 
 export {
-    /** Removes input hooks, stops components, and posts `WM_QUIT`. */
+    /** Removes input hooks and posts `WM_QUIT`. Component drain follows the message loop. */
     void close_program();
-    /** Shuts down without displaying interactive component recovery UI. */
+    /** Requests shutdown without the interactive component recovery UI. */
     void close_program_noninteractive();
+    /**
+     * Drains hosted component writers after the message loop.
+     * Uses the recovery choice recorded by `close_program`.
+     */
+    void finish_component_shutdown();
     /** Uses each key's secondary keymap action until deactivated. */
     void activate_function_key();
     /** Restores primary keymap actions. */
